@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Расчёт теплопотерь объекта — Aquality | WaterPro · Фергана</title>
+<meta name="description" content="Бесплатный инженерный расчёт теплопотерь по КМК 2.01.04-18. Нарисуйте план здания, укажите материалы — получите мощность котла и секции радиаторов по каждой комнате. г. Фергана.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aqualityheatloss.netlify.app/">
+<meta property="og:title" content="Расчёт теплопотерь объекта — Aquality | WaterPro · Фергана">
+<meta property="og:description" content="Бесплатный инженерный расчёт теплопотерь по КМК. Нарисуйте план → котёл + радиаторы по комнатам. Подбор оборудования из наличия. г. Фергана.">
+<meta property="og:image" content="https://aqualityheatloss.netlify.app/og-image.svg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="Aquality | WaterPro">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Расчёт теплопотерь — Aquality | WaterPro · Фергана">
+<meta name="twitter:description" content="Бесплатный инженерный расчёт теплопотерь по КМК. Котёл + радиаторы по комнатам → подбор из наличия.">
+<meta name="twitter:image" content="https://aqualityheatloss.netlify.app/og-image.svg">
+<link rel="canonical" href="https://aqualityheatloss.netlify.app/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='5' fill='%230a0705'/><path d='M16 5 L8 22 L24 22 Z' stroke='%23f59e0b' stroke-width='1.8' fill='none' stroke-linejoin='round'/><line x1='10.5' y1='17' x2='21.5' y2='17' stroke='%23f59e0b' stroke-width='1.8'/><circle cx='16' cy='22' r='2.5' fill='%23f59e0b'/></svg>" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -107,7 +123,7 @@ select.wi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .btable tr.sub td{background:rgba(255,255,255,.02);font-weight:600;color:#d9c7b4}
 
 /* Modal */
-#modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(10,7,5,.85);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
+#modal-backdrop{position:fixed;inset:0;z-index:200;background:rgba(10,7,5,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
 #modal-backdrop.open{display:flex}
 #modal-card{border-radius:1.5rem;border:1px solid rgba(245,158,11,.18);background:linear-gradient(155deg,rgba(26,22,16,.92),rgba(18,16,11,.88));backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:1.75rem;width:100%;max-width:460px;position:relative;transform:scale(.94);opacity:0;transition:transform .3s cubic-bezier(.175,.885,.32,1.275),opacity .26s;margin:auto;box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 24px 70px rgba(0,0,0,.6),0 0 40px rgba(245,158,11,.06)}
 #modal-backdrop.open #modal-card{transform:scale(1);opacity:1}
@@ -248,7 +264,7 @@ input[type=range]{accent-color:#f59e0b}
 /* ══════════════════════════════════════════════
    AUTH OVERLAY
 ══════════════════════════════════════════════ */
-#auth-overlay{position:fixed;inset:0;z-index:80;background:rgba(10,7,5,.96);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
+#auth-overlay{position:fixed;inset:0;z-index:210;background:rgba(10,7,5,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
 #auth-overlay.open{display:flex}
 #auth-card{width:100%;max-width:480px;border-radius:1.5rem;border:1px solid rgba(245,158,11,.2);background:linear-gradient(155deg,rgba(26,22,16,.97),rgba(18,16,11,.93));backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:2rem;box-shadow:0 1px 0 rgba(255,255,255,.07) inset,0 28px 80px rgba(0,0,0,.7),0 0 50px rgba(245,158,11,.05);margin:auto}
 .auth-tab{flex:1;padding:.58rem;border-radius:.75rem;border:1px solid transparent;font-size:.87rem;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;background:none}
@@ -276,7 +292,7 @@ input[type=range]{accent-color:#f59e0b}
 /* ══════════════════════════════════════════════
    ADMIN PANEL
 ══════════════════════════════════════════════ */
-#admin-overlay{position:fixed;inset:0;z-index:75;background:#0a0705;display:none;flex-direction:column;color:#d9c7b4;overflow:hidden}
+#admin-overlay{position:fixed;inset:0;z-index:150;background:#0a0705;display:none;flex-direction:column;color:#d9c7b4;overflow:hidden}
 #admin-overlay.open{display:flex}
 #admin-top{display:flex;align-items:center;gap:.6rem;padding:.55rem .8rem;border-bottom:1px solid rgba(217,199,180,.1);background:#12100b;flex-wrap:wrap;flex-shrink:0}
 #admin-body{flex:1;display:flex;min-height:0;overflow:hidden}
@@ -293,6 +309,18 @@ input[type=range]{accent-color:#f59e0b}
 .adm-badge.user{background:rgba(154,134,117,.08);color:#9a8675;border:1px solid rgba(154,134,117,.18)}
 .adm-stat{border:1px solid rgba(217,199,180,.08);border-radius:1rem;background:#1a1610;padding:1rem;text-align:center}
 .adm-proj-card{border:1px solid rgba(217,199,180,.08);border-radius:.75rem;background:#0e0c08;padding:.7rem .85rem;margin-bottom:.5rem;font-size:.82rem}
+
+/* ══════════════════════════════════════════════
+   SECTION PANELS — profile / my-calcs / settings
+══════════════════════════════════════════════ */
+.sec-overlay{position:fixed;inset:0;z-index:120;background:#0a0705;display:none;flex-direction:column;color:#d9c7b4;overflow:hidden}
+.sec-overlay.open{display:flex}
+.sec-top{display:flex;align-items:center;gap:.6rem;padding:.55rem .8rem;border-bottom:1px solid rgba(217,199,180,.1);background:#12100b;flex-wrap:wrap;flex-shrink:0}
+.sec-body{flex:1;overflow-y:auto;padding:1.5rem}
+.sec-card{border:1px solid rgba(217,199,180,.1);border-radius:1rem;background:#1a1610;padding:1.2rem 1.4rem;margin-bottom:1rem}
+.sec-label{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8675;margin-bottom:.35rem}
+.hist-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;border:1px solid rgba(217,199,180,.08);border-radius:.7rem;background:#12100b;padding:.6rem .85rem;margin-bottom:.45rem;font-size:.82rem;cursor:pointer;transition:border-color .15s,background .15s}
+.hist-row:hover{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.05)}
 
 /* ══════════════════════════════════════════════
    COPY / SCREENSHOT PROTECTION (Фаза 4)
@@ -333,6 +361,7 @@ input[type=range]{accent-color:#f59e0b}
     </div>
     <div class="flex items-center gap-2.5">
       <a href="tel:+998935551234" class="lg-btn-sec text-xs font-semibold text-amber px-4 py-1.5 hidden sm:inline-flex" style="border-radius:100px;color:#f59e0b;border-color:rgba(245,158,11,.3);">+998 93 555-12-34</a>
+      <button id="lang-toggle-btn" onclick="switchLang()" class="lg-btn-sec text-xs font-bold px-3 py-1.5" aria-label="Переключить язык / Tilni o'zgartirish" style="border-radius:100px;min-width:38px;font-size:11px;letter-spacing:.05em;">UZ</button>
       <div id="nav-auth-wrap">
         <!-- Injected by initAuthNav() -->
       </div>
@@ -382,7 +411,7 @@ input[type=range]{accent-color:#f59e0b}
         <div id="step-panel" class="step-panel rounded-3xl border border-white/8 bg-w850/50 p-5 sm:p-7" style="backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 8px 32px rgba(0,0,0,.3)"></div>
         <div class="mt-5 flex items-center justify-between gap-3">
           <button id="btn-back" onclick="wizBack()" class="lg-btn-sec flex items-center gap-2 px-5 py-3 text-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><polyline points="15 18 9 12 15 6"/></svg>Назад
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><polyline points="15 18 9 12 15 6"/></svg><span data-i18n="back">Назад</span>
           </button>
           <span id="nav-hint" class="text-xs text-muted/70 hidden sm:block text-right"></span>
           <button id="btn-next" onclick="wizNext()" class="lg-btn flex items-center gap-2 px-6 py-3 text-sm">
@@ -553,17 +582,67 @@ input[type=range]{accent-color:#f59e0b}
   <div id="admin-body">
     <div id="admin-sidebar">
       <p class="text-[10px] font-semibold uppercase tracking-widest text-muted/60 px-2 mb-2 mt-1">Навигация</p>
-      <div class="adm-nav active" id="adm-nav-dashboard" onclick="adminPage('dashboard')">
+      <div class="adm-nav active" id="adm-nav-dashboard" onclick="adminPage('dashboard')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Дашборд
       </div>
-      <div class="adm-nav" id="adm-nav-users" onclick="adminPage('users')">
+      <div class="adm-nav" id="adm-nav-users" onclick="adminPage('users')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Пользователи
+      </div>
+      <div class="adm-nav" id="adm-nav-leads" onclick="adminPage('leads')" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Заявки
+        <span id="adm-leads-badge" class="ml-auto"></span>
       </div>
     </div>
     <div id="admin-content">
       <!-- Injected by adminPage() -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ PROFILE OVERLAY ═══════ -->
+<div id="profile-overlay" class="sec-overlay">
+  <div class="sec-top">
+    <button onclick="closeProfile()" class="ed-ico" title="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="ed-title">Мой <span>профиль</span></span>
+  </div>
+  <div class="sec-body">
+    <div class="mx-auto" style="max-width:520px">
+      <div id="profile-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MY CALCS OVERLAY ═══════ -->
+<div id="myCalcs-overlay" class="sec-overlay">
+  <div class="sec-top">
+    <button onclick="closeMyCalcs()" class="ed-ico" title="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="ed-title">Мои <span>расчёты</span></span>
+  </div>
+  <div class="sec-body">
+    <div class="mx-auto" style="max-width:640px">
+      <div id="myCalcs-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SETTINGS OVERLAY ═══════ -->
+<div id="settings-overlay" class="sec-overlay">
+  <div class="sec-top">
+    <button onclick="closeSettings()" class="ed-ico" title="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="ed-title">Настройки <span>расчёта</span></span>
+  </div>
+  <div class="sec-body">
+    <div class="mx-auto" style="max-width:520px">
+      <div id="settings-content"></div>
     </div>
   </div>
 </div>
@@ -577,7 +656,7 @@ const AUTH_USERS_KEY = 'aq_users_v3';
 const AUTH_SESSION_KEY = 'aq_session_v3';
 
 const OWNER_LOGIN = 'Hasanboy.admin';
-const OWNER_PASS  = 'P.maxmud74';
+const OWNER_PASS  = atob('UC5tYXhtdWQ3NA=='); // obfuscated; move to env/backend for real security
 
 const CLIENT_TYPES = [
   {id:'client',   label:'Простой клиент',    desc:'Хочу рассчитать теплопотери для своего дома'},
@@ -604,13 +683,25 @@ function authCurrentUser(){
   return u||null;
 }
 
+/* Simple deterministic hash — not cryptographic, but removes plaintext from storage.
+   For real security migrate to Supabase Auth or similar backend. */
+function _hashPass(p){ return btoa(encodeURIComponent(p)+'|aq2'); }
+
 function authLogin(login, pass){
-  // Owner account (hardcoded)
   if(login===OWNER_LOGIN && pass===OWNER_PASS){ authSetSession('__owner__'); return {ok:true}; }
   const users = authLoadUsers();
   const u = users.find(u=>u.login.toLowerCase()===login.toLowerCase());
   if(!u) return {ok:false, err:'Пользователь не найден'};
-  if(u.password!==pass) return {ok:false, err:'Неверный пароль'};
+  const hashed = _hashPass(pass);
+  if(u.password_hash){
+    if(u.password_hash !== hashed) return {ok:false, err:'Неверный пароль'};
+  } else {
+    // legacy plaintext — verify then migrate
+    if(u.password !== pass) return {ok:false, err:'Неверный пароль'};
+    u.password_hash = hashed; delete u.password;
+    const all = authLoadUsers(); const idx = all.findIndex(x=>x.id===u.id);
+    if(idx>=0){ all[idx]=u; authSaveUsers(all); }
+  }
   authSetSession(u.id);
   return {ok:true};
 }
@@ -625,7 +716,7 @@ function authRegister(data){
   if(users.some(u=>u.login.toLowerCase()===data.login.toLowerCase())) return {ok:false,err:'Логин уже занят'};
   const user = {
     id:'u'+Date.now()+Math.random().toString(36).slice(2,6),
-    login:data.login.trim(), password:data.password,
+    login:data.login.trim(), password_hash:_hashPass(data.password),
     phone:data.phone.trim(), phone2:(data.phone2||'').trim(),
     email:(data.email||'').trim(), city:(data.city||'').trim(),
     clientType:data.clientType, role:'user',
@@ -637,7 +728,7 @@ function authRegister(data){
   return {ok:true};
 }
 
-function authLogout(){ authClearSession(); initAuthNav(); closeAdmin(); location.reload(); }
+function authLogout(){ authClearSession(); initAuthNav(); closeAdmin(); closeProfile(); closeMyCalcs(); closeSettings(); location.reload(); }
 
 /* Save current calc result as a project under the logged-in user */
 function authSaveProject(label){
@@ -656,6 +747,7 @@ let _authTab='login';
 let _authClientType='client';
 
 function openAuth(tab){
+  _closeDropdown();
   _authTab=tab||'login'; _authClientType='client';
   renderAuthBody();
   document.getElementById('auth-overlay').classList.add('open');
@@ -757,10 +849,10 @@ function initAuthNav(){
   const wrap=document.getElementById('nav-auth-wrap'); if(!wrap) return;
   const u=authCurrentUser();
   if(!u){
-    wrap.innerHTML=`<div class="flex gap-2"><button onclick="openAuth('login')" id="user-nav-btn" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07)">Войти</button><button onclick="openAuth('register')" class="lg-btn text-xs px-3 py-1.5">Регистрация</button></div>`;
+    wrap.innerHTML=`<div class="flex gap-2"><button onclick="openAuth('login')" id="user-nav-btn" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07)">${t('login')}</button><button onclick="openAuth('register')" class="lg-btn text-xs px-3 py-1.5">${t('register')}</button></div>`;
     return;
   }
-  const roleLabel=u.role==='owner'?'Владелец':u.role==='admin'?'Администратор':'Пользователь';
+  const roleLabel=u.role==='owner'?t('owner'):u.role==='admin'?t('admin-role'):t('user-role');
   const canAdmin=u.role==='owner'||u.role==='admin';
   wrap.innerHTML=`
   <div id="nav-auth-wrap-inner" class="relative">
@@ -772,9 +864,11 @@ function initAuthNav(){
     <div id="user-dropdown">
       <div class="udrop-info">${roleLabel}</div>
       <div class="udrop-sep"></div>
-      ${canAdmin?`<div class="udrop-item" onclick="openAdmin();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Панель администратора</div>`:''}
+      <div class="udrop-item" role="button" tabindex="0" onclick="openProfile();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${t('profile')}</div>
+      <div class="udrop-item" role="button" tabindex="0" onclick="openMyCalcs();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>${t('my-calcs')}</div>
+      ${canAdmin?`<div class="udrop-item" role="button" tabindex="0" onclick="openAdmin();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>${t('admin')}</div>`:''}
       <div class="udrop-sep"></div>
-      <div class="udrop-item danger" onclick="authLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Выйти</div>
+      <div class="udrop-item danger" role="button" tabindex="0" onclick="authLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>${t('logout')}</div>
     </div>
   </div>`;
 }
@@ -804,6 +898,160 @@ function closeAdmin(){
   document.getElementById('admin-overlay').classList.remove('open');
   document.body.style.overflow='';
 }
+
+/* ══ Helper: close user dropdown ══ */
+function _closeDropdown(){
+  const d=document.getElementById('user-dropdown'); if(d) d.classList.remove('open');
+}
+
+/* ══ Helper: open/close any sec-overlay ══ */
+function _openSec(id,renderFn){
+  _closeDropdown();
+  renderFn();
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function _closeSec(id){
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow='';
+}
+
+/* ════ PROFILE PANEL ════ */
+function openProfile(){
+  const u=authCurrentUser();
+  if(!u){ openAuth('login'); return; }
+  _openSec('profile-overlay',()=>{
+    const roleLabel=u.role==='owner'?t('owner'):u.role==='admin'?t('admin-role'):t('user-role');
+    const ct=CLIENT_TYPES.find(c=>c.id===u.clientType);
+    const projs=(u.projects||[]).length;
+    document.getElementById('profile-content').innerHTML=`
+      <div class="sec-card">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="flex items-center justify-center rounded-2xl" style="width:56px;height:56px;background:rgba(245,158,11,.15);flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" class="h-7 w-7"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <p class="text-lg font-extrabold text-cream">${u.login}</p>
+            <span class="adm-badge ${u.role==='owner'?'owner':u.role==='admin'?'admin':'user'}">${roleLabel}</span>
+          </div>
+        </div>
+        ${ct?`<div class="mb-3"><p class="sec-label">Тип аккаунта</p><p class="text-sm text-cream font-semibold">${ct.label}</p><p class="text-xs text-muted mt-0.5">${ct.desc}</p></div>`:''}
+        <div class="mb-3"><p class="sec-label">Дата регистрации</p><p class="text-sm text-cream">${u.createdAt?new Date(u.createdAt).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}):'—'}</p></div>
+        <div><p class="sec-label">Сохранённых проектов</p><p class="text-2xl font-extrabold text-amber mono">${projs}</p></div>
+      </div>
+      <div class="sec-card">
+        <p class="sec-label mb-3">Действия</p>
+        <button onclick="openMyCalcs();closeProfile()" class="lg-btn-sec w-full py-2.5 text-sm mb-2 flex items-center justify-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+          Мои расчёты
+        </button>
+        <button onclick="authLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all" style="border-color:rgba(255,107,53,.35);background:rgba(255,107,53,.06);color:#ff6b35">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Выйти из аккаунта
+        </button>
+      </div>`;
+  });
+}
+function closeProfile(){ _closeSec('profile-overlay'); }
+
+/* ════ MY CALCS PANEL ════ */
+function openMyCalcs(){
+  _openSec('myCalcs-overlay',()=>{
+    const h=loadHistory();
+    const u=authCurrentUser();
+    let html=`<div class="sec-card"><p class="text-base font-bold text-cream mb-1">История расчётов</p><p class="text-xs text-muted mb-4">Последние ${h.length?h.length+' расчётов':'расчёты не сохранены'}. Нажмите на строку, чтобы загрузить.</p>`;
+    if(!h.length){
+      html+=`<p class="text-sm text-muted text-center py-6">Пока нет сохранённых расчётов.<br>Завершите расчёт на шаге 6, чтобы они появились.</p>`;
+    } else {
+      h.forEach((item,i)=>{
+        const d=new Date(item.t);
+        const dateStr=d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'});
+        html+=`<div class="hist-row" role="button" tabindex="0" onclick="loadFromHistory(${i});closeMyCalcs()">
+          <div><p class="font-semibold text-cream text-sm">${item.label}</p><p class="text-xs text-muted mt-0.5">${dateStr}</p></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0 text-amber"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>`;
+      });
+      html+=`<button onclick="clearHistory();renderMyCalcs()" class="w-full text-xs text-muted hover:text-ember mt-3 py-1.5 text-center transition-colors">Очистить историю</button>`;
+    }
+    html+='</div>';
+    if(u&&u.projects&&u.projects.length){
+      html+=`<div class="sec-card"><p class="text-base font-bold text-cream mb-3">Сохранённые проекты</p>`;
+      u.projects.slice(0,10).forEach(p=>{
+        const d=new Date(p.createdAt);
+        html+=`<div class="hist-row" onclick="${p.state?`loadState(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p.state))}'))); ST.step=6; renderProgress(); renderStep(); updateNavHint(); updateLivePanel(); scrollToEl('calculator'); closeMyCalcs(); toast('Проект загружен ✓')`:``}">
+          <div><p class="font-semibold text-cream text-sm">${p.label}</p><p class="text-xs text-muted mt-0.5">${d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}</p></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0 text-amber"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>`;
+      });
+      html+='</div>';
+    }
+    document.getElementById('myCalcs-content').innerHTML=html;
+  });
+}
+function renderMyCalcs(){ openMyCalcs(); }
+function closeMyCalcs(){ _closeSec('myCalcs-overlay'); }
+
+/* ════ SETTINGS PANEL ════ */
+function openSettings(){
+  _openSec('settings-overlay',()=>{
+    const HEAT_LABELS={1:'55/45 °C (тёплый пол)',2:'70/55 °C (низкотемп.)',3:'80/60 °C (стандарт)',4:'90/70 °C (высокотемп.)'};
+    const AIRT_LABELS={1:'Хорошая герметичность',2:'Обычная',3:'Щелевые окна / старый фонд'};
+    const ATTIC_LABELS={1:'Тёплый чердак / плоская кровля',2:'Холодный чердак'};
+    document.getElementById('settings-content').innerHTML=`
+      <div class="sec-card">
+        <p class="text-base font-bold text-cream mb-4">Текущие параметры расчёта</p>
+        <div class="space-y-4">
+          <div>
+            <p class="sec-label">Город / регион</p>
+            <p class="text-sm text-cream font-semibold">${ST.cityName||'Не выбран'}</p>
+          </div>
+          <div>
+            <p class="sec-label">Тип здания</p>
+            <p class="text-sm text-cream font-semibold">${ST.buildingType==='house'?'Частный дом':ST.buildingType==='apartment'?'Квартира':'Коммерческое'}</p>
+          </div>
+          <div>
+            <p class="sec-label">Режим отопления</p>
+            <p class="text-sm text-cream font-semibold">${HEAT_LABELS[ST.mat.heatMode]||'—'}</p>
+          </div>
+          <div>
+            <p class="sec-label">Воздухопроницаемость</p>
+            <p class="text-sm text-cream font-semibold">${AIRT_LABELS[ST.mat.airtight]||'—'}</p>
+          </div>
+          <div>
+            <p class="sec-label">Тип перекрытия</p>
+            <p class="text-sm text-cream font-semibold">${ATTIC_LABELS[ST.mat.attic]||'—'}</p>
+          </div>
+          <div>
+            <p class="sec-label">Этажей</p>
+            <p class="text-sm text-cream font-semibold">${ST.floors.length}</p>
+          </div>
+        </div>
+      </div>
+      <div class="sec-card">
+        <p class="text-base font-bold text-cream mb-3">Изменить параметры</p>
+        <p class="text-xs text-muted mb-4">Параметры задаются в калькуляторе. Перейдите на нужный шаг:</p>
+        <div class="space-y-2">
+          <button onclick="ST.step=1;renderProgress();renderStep();scrollToEl('calculator');closeSettings()" class="lg-btn-sec w-full py-2 text-sm">Шаг 1 — Город и здание</button>
+          <button onclick="ST.step=2;renderProgress();renderStep();scrollToEl('calculator');closeSettings()" class="lg-btn-sec w-full py-2 text-sm">Шаг 2 — Участок и ориентация</button>
+          <button onclick="ST.step=5;renderProgress();renderStep();scrollToEl('calculator');closeSettings()" class="lg-btn-sec w-full py-2 text-sm">Шаг 5 — Материалы и режим отопления</button>
+        </div>
+      </div>`;
+  });
+}
+function closeSettings(){ _closeSec('settings-overlay'); }
+
+/* ════ ESC key closes any open overlay / modal ════ */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  if(document.getElementById('modal-backdrop')?.classList.contains('open')){ closeModal(); return; }
+  if(document.getElementById('profile-overlay')?.classList.contains('open')){ closeProfile(); return; }
+  if(document.getElementById('myCalcs-overlay')?.classList.contains('open')){ closeMyCalcs(); return; }
+  if(document.getElementById('settings-overlay')?.classList.contains('open')){ closeSettings(); return; }
+  if(document.getElementById('admin-overlay')?.classList.contains('open')){ closeAdmin(); return; }
+  if(document.getElementById('auth-overlay')?.classList.contains('open')){ closeAuth(); return; }
+  if(document.getElementById('ed-root')?.classList.contains('open')){ edClose(); return; }
+});
+
 function adminPage(page){
   _adminPage=page;
   document.querySelectorAll('.adm-nav').forEach(n=>n.classList.remove('active'));
@@ -811,6 +1059,7 @@ function adminPage(page){
   const c=document.getElementById('admin-content'); if(!c) return;
   if(page==='dashboard') c.innerHTML=adminDashboard();
   else if(page==='users') c.innerHTML=adminUsers();
+  else if(page==='leads') c.innerHTML=adminLeads();
   else if(page.startsWith('user:')) c.innerHTML=adminUserProfile(page.slice(5));
 }
 
@@ -831,7 +1080,17 @@ function adminDashboard(){
   <div class="grid grid-cols-3 gap-3 mb-8">
     ${byType.map(t=>`<div class="adm-stat"><p class="text-2xl font-extrabold text-cream mb-1">${t.count}</p><p class="text-xs text-muted">${t.label}</p></div>`).join('')}
   </div>
-  <h3 class="text-sm font-bold text-cream mb-3">Последние регистрации</h3>
+  <h3 class="text-sm font-bold text-cream mb-3">Воронка расчётов</h3>
+  <div class="space-y-1.5 mb-6">${
+    [['step_1','Шаг 1 пройден (Город)'],['step_2','Шаг 2 пройден (Участок)'],['step_3','Шаг 3 пройден (Этажи)'],['step_4','Шаг 4 пройден (Планировка)'],['step_5','Шаг 5 пройден (Материалы)'],['calc_complete','Расчёт завершён (Шаг 6)'],['lead_sent','Заявка отправлена (WhatsApp)']].map(([k,lbl])=>{
+      const n=getEventCount(k), top=getEventCount('step_1')||1, pct=Math.round((n/top)*100);
+      return `<div class="flex items-center gap-3"><span class="text-xs text-muted w-48 flex-shrink-0">${lbl}</span><div class="flex-1 rounded-full h-2 overflow-hidden" style="background:rgba(255,255,255,.06)"><div class="h-2 rounded-full" style="width:${Math.min(pct,100)}%;background:rgba(245,158,11,.7)"></div></div><span class="text-xs font-bold text-cream w-10 text-right">${n}</span></div>`;
+    }).join('')
+  }</div>
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-sm font-bold text-cream">Последние регистрации</h3>
+    <button class="text-xs text-muted hover:text-red-400 transition-colors" onclick="if(confirm('Сбросить статистику воронки?')){clearEvents();adminPage('dashboard');}">Сбросить статистику</button>
+  </div>
   ${[...users].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).map(u=>adminUserRow(u)).join('')}`;
 }
 
@@ -857,7 +1116,8 @@ function adminUserRow(u,clickable){
   const ct=CLIENT_TYPES.find(t=>t.id===u.clientType)||{label:'—'};
   const date=u.createdAt?new Date(u.createdAt).toLocaleDateString('ru-RU'):'—';
   const badge=u.role==='admin'?'<span class="adm-badge admin">Админ</span>':'<span class="adm-badge user">Клиент</span>';
-  return `<div class="adm-ucard${clickable?' onclick="adminPage(\'user:'+u.id+'\')"':''}" >
+  const clickAttrs = clickable ? ` role="button" tabindex="0" onclick="adminPage('user:${u.id}')"` : '';
+  return `<div class="adm-ucard${clickAttrs}">
     <div class="flex items-center justify-between gap-2">
       <div>
         <div class="flex items-center gap-2 mb-0.5"><span class="font-semibold text-cream text-sm">${u.login}</span>${badge}</div>
@@ -911,6 +1171,77 @@ function adminSetRole(uid, role){
   adminPage('user:'+uid);
   toast(role==='admin'?'Администратор назначен ✓':'Права сняты');
 }
+
+function adminLeads(){
+  const leads=loadLeads();
+  const badge=document.getElementById('adm-leads-badge');
+  if(badge&&leads.length){ badge.innerHTML=`<span class="adm-badge user ml-1" style="padding:.1rem .4rem">${leads.length}</span>`; }
+  if(!leads.length) return `
+  <h2 class="text-xl font-extrabold text-cream mb-6">Заявки</h2>
+  <div class="adm-stat text-center py-10">
+    <p class="text-muted text-sm">Заявок пока нет. Когда пользователь нажмёт «Написать в WhatsApp» — заявка появится здесь.</p>
+  </div>`;
+  return `
+  <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+    <h2 class="text-xl font-extrabold text-cream">Заявки <span class="text-amber">(${leads.length})</span></h2>
+    <button onclick="if(confirm('Удалить все заявки?')){saveLeads([]);adminPage('leads')}" class="text-xs text-muted hover:text-ember transition-colors">Очистить</button>
+  </div>
+  ${leads.map(l=>{
+    const d=new Date(l.createdAt);
+    const dateStr=d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<div class="adm-ucard">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="font-semibold text-cream text-sm">${l.name||'—'}</span>
+            ${l.phone?`<span class="text-xs text-muted">${l.phone}</span>`:''}
+          </div>
+          <p class="text-xs text-muted mb-2">${dateStr}</p>
+          <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
+            ${l.city?`<span class="text-sand">📍 ${l.city}</span>`:''}
+            ${l.kw?`<span class="text-amber mono">${l.kw} кВт</span>`:''}
+            ${l.boilerKw?`<span class="text-cream">котёл ${l.boilerKw} кВт</span>`:''}
+            ${l.sections?`<span class="text-muted">${l.sections} сек.</span>`:''}
+            ${l.area?`<span class="text-muted">${l.area} м²</span>`:''}
+            ${l.floors?`<span class="text-muted">${l.floors} эт. · ${l.rooms||0} комн.</span>`:''}
+          </div>
+        </div>
+        ${l.phone?`<a href="https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Звоню по заявке от '+l.name+' ('+l.phone+')')}" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);color:#25D366;white-space:nowrap">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+          Ответить
+        </a>`:''}
+      </div>
+    </div>`;
+  }).join('')}`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   LEADS MODULE — сохраняем заявки из WhatsApp-формы в localStorage
+════════════════════════════════════════════════════════════ */
+const LEADS_KEY = 'aq_leads_v1';
+function loadLeads(){ try{ const d=JSON.parse(localStorage.getItem(LEADS_KEY)); return Array.isArray(d)?d:[]; }catch(e){ return []; } }
+function saveLeads(arr){ try{ localStorage.setItem(LEADS_KEY,JSON.stringify(arr)); }catch(e){} }
+function saveLead(data){
+  const arr=loadLeads();
+  arr.unshift({id:'l'+Date.now(), ...data, createdAt:new Date().toISOString()});
+  if(arr.length>300) arr.splice(300);
+  saveLeads(arr);
+}
+
+/* ════════════════════════════════════════════════════════════
+   FUNNEL ANALYTICS — localStorage counters
+   Events: step_N (1-6), calc_complete, lead_sent
+════════════════════════════════════════════════════════════ */
+const EVENTS_KEY='aq_events_v1';
+function _loadEvents(){ try{ const d=JSON.parse(localStorage.getItem(EVENTS_KEY)); return d&&typeof d==='object'?d:{}; }catch(e){ return {}; } }
+function _saveEvents(obj){ try{ localStorage.setItem(EVENTS_KEY,JSON.stringify(obj)); }catch(e){} }
+function trackEvent(name){
+  const d=_loadEvents();
+  d[name]=(d[name]||0)+1;
+  _saveEvents(d);
+}
+function getEventCount(name){ return _loadEvents()[name]||0; }
+function clearEvents(){ try{ localStorage.removeItem(EVENTS_KEY); }catch(e){} }
 
 /* ════════════════════════════════════════════════════════════
    CONTACT
@@ -992,52 +1323,230 @@ const ROOM_TYPES = [
    homog (коэф. однородности) опционален; по умолчанию 1.0 — как в исходной таблице.
    n — коэф. к неотапл. зонам (КМК 2.01.04-18 табл.3). Пол на грунте: ground+addR → зональный
    расчёт (Староверов, ч.I, гл.8.2, зоны 2.1/4.3/8.6/14.2 + Rвнутр). Окна — реальные профили. */
+/* ══════════════════════════════════════════════════════════════════════
+   BASE_PRESETS — 115 готовых конструкций.
+   Формула стен: R = 0.17(Rвн 0.13 + Rнар 0.04) + Σ(δ/λ).
+   «+штук.» добавляет 2×15мм λ0.81 = +0.037.
+   Самопроверка: brick_380=0.750 ✓  gazo_300=2.313≈2.31 ✓  frame_150=3.884≈3.88 ✓
+   Источники λ: КМК 2.01.04-18 прил.3; SP 50.13330 прил.Т;
+                окна — паспортные данные производителей.
+══════════════════════════════════════════════════════════════════════ */
 const BASE_PRESETS = {
   walls:[
+    /* ─── Кирпич глиняный (λ=0.70) ─── */
     {id:'brick_250',name:'Кирпич глиняный 250 + штук.',r:0.56,desc:'В 1 кирпич, λ0.70'},
     {id:'brick_380',name:'Кирпич глиняный 380 + штук.',r:0.75,desc:'В 1.5 кирпича, λ0.70'},
     {id:'brick_510',name:'Кирпич глиняный 510 + штук.',r:0.93,desc:'В 2 кирпича, λ0.70'},
+    {id:'brick_640',name:'Кирпич глиняный 640 + штук.',r:1.12,desc:'В 2.5 кирпича, λ0.70'},
+    {id:'brick_250_i50',name:'Кирпич 250 + минвата 50',r:1.75,desc:'Кирпич + вата λ0.042'},
+    {id:'brick_250_i100',name:'Кирпич 250 + минвата 100',r:2.95,desc:'Кирпич + вата λ0.042'},
     {id:'brick_380_i50',name:'Кирпич 380 + минвата 50',r:1.94,desc:'Кирпич + вата λ0.042'},
     {id:'brick_380_i100',name:'Кирпич 380 + минвата 100',r:3.13,desc:'Кирпич + вата λ0.042'},
+    {id:'brick_380_i150',name:'Кирпич 380 + минвата 150',r:4.32,desc:'Кирпич + вата λ0.042'},
+    {id:'brick_510_i50',name:'Кирпич 510 + минвата 50',r:2.13,desc:'Кирпич + вата λ0.042'},
+    {id:'brick_510_i100',name:'Кирпич 510 + минвата 100',r:3.32,desc:'Кирпич + вата λ0.042'},
+    {id:'brick_380_eps50',name:'Кирпич 380 + EPS 50',r:2.03,desc:'Кирпич + пенополистирол λ0.039'},
+    {id:'brick_380_xps50',name:'Кирпич 380 + XPS 50',r:2.22,desc:'Кирпич + экструзионный ПС λ0.034'},
+    {id:'brick_sil_380',name:'Кирпич силикатный 380 + штук.',r:0.64,desc:'Силикатный, λ0.87'},
+    {id:'brick_sil_510',name:'Кирпич силикатный 510 + штук.',r:0.79,desc:'Силикатный, λ0.87'},
+    /* ─── Газоблок AAC (КМК 2.01.04-18, прил.3) ─── */
+    {id:'gazo_200_d500',name:'Газоблок 200 (D500)',r:1.60,desc:'AAC, λ0.14'},
     {id:'gazo_300',name:'Газоблок 300 (D500)',r:2.31,desc:'Без утеплителя, λ0.14'},
-    {id:'gazo_300_i50',name:'Газоблок 300 + минвата 50',r:3.50,desc:'Газоблок + вата'},
+    {id:'gazo_375_d500',name:'Газоблок 375 (D500)',r:2.85,desc:'AAC, λ0.14'},
     {id:'gazo_400',name:'Газоблок 400 (D500)',r:3.03,desc:'Без утеплителя, λ0.14'},
+    {id:'gazo_500_d500',name:'Газоблок 500 (D500)',r:3.74,desc:'AAC, λ0.14'},
+    {id:'gazo_300_d400',name:'Газоблок 300 (D400)',r:2.67,desc:'AAC лёгкий, λ0.12'},
+    {id:'gazo_400_d400',name:'Газоблок 400 (D400)',r:3.50,desc:'AAC лёгкий, λ0.12'},
+    {id:'gazo_300_d600',name:'Газоблок 300 (D600)',r:1.93,desc:'AAC плотный, λ0.17'},
+    {id:'gazo_400_d600',name:'Газоблок 400 (D600)',r:2.52,desc:'AAC плотный, λ0.17'},
+    {id:'gazo_300_i50',name:'Газоблок 300 + минвата 50',r:3.50,desc:'Газоблок + вата λ0.042'},
+    {id:'gazo_400_i50',name:'Газоблок 400 + минвата 50',r:4.22,desc:'Газоблок + вата λ0.042'},
+    {id:'gazo_300_i100',name:'Газоблок 300 + минвата 100',r:4.69,desc:'Газоблок + вата λ0.042'},
+    /* ─── Ракушечник (известняк-ракушечник, λ=0.56) ─── */
+    {id:'rakush_200',name:'Ракушечник 200 + штук.',r:0.56,desc:'λ0.56, Фергана/Средняя Азия'},
+    {id:'rakush_300',name:'Ракушечник 300 + штук.',r:0.74,desc:'λ0.56'},
+    {id:'rakush_400',name:'Ракушечник 400 + штук.',r:0.92,desc:'λ0.56'},
+    {id:'rakush_400_i50',name:'Ракушечник 400 + минвата 50',r:2.11,desc:'Ракушечник + вата λ0.042'},
+    {id:'rakush_400_i100',name:'Ракушечник 400 + минвата 100',r:3.30,desc:'Ракушечник + вата λ0.042'},
+    /* ─── Керамзитоблок (D1000, λ=0.47) ─── */
+    {id:'kzb_250',name:'Керамзитоблок 250 + штук.',r:0.74,desc:'λ0.47'},
+    {id:'kzb_380',name:'Керамзитоблок 380 + штук.',r:1.02,desc:'λ0.47'},
+    {id:'kzb_440',name:'Керамзитоблок 440 + штук.',r:1.14,desc:'λ0.47'},
+    /* ─── Шлакоблок (λ=0.70) ─── */
     {id:'shlako_260',name:'Шлакоблок 260 + штук.',r:0.55,desc:'λ0.70'},
+    {id:'shlako_380',name:'Шлакоблок 380 + штук.',r:0.75,desc:'λ0.70'},
+    {id:'shlako_440',name:'Шлакоблок 440 + штук.',r:0.84,desc:'λ0.70'},
+    /* ─── Пеноблок (неавтоклавный, D600 λ=0.22) ─── */
+    {id:'peno_300_d600',name:'Пеноблок 300 (D600)',r:1.53,desc:'λ0.22'},
+    {id:'peno_400_d600',name:'Пеноблок 400 (D600)',r:1.99,desc:'λ0.22'},
+    /* ─── Керамоблок (Porotherm-тип, λeff=0.21) ─── */
+    {id:'keram_250',name:'Керамоблок 250 + штук.',r:1.40,desc:'Porotherm-тип, λeff 0.21'},
+    {id:'keram_380',name:'Керамоблок 380 + штук.',r:2.02,desc:'Porotherm-тип, λeff 0.21'},
+    {id:'keram_440',name:'Керамоблок 440 + штук.',r:2.30,desc:'Porotherm-тип, λeff 0.21'},
+    /* ─── Пахса / Саман (λ=0.69) ─── */
     {id:'pakhsa_380',name:'Пахса (саман) 380',r:0.73,desc:'Глинобитная, λ0.69'},
+    {id:'pakhsa_500',name:'Пахса (саман) 500',r:0.89,desc:'λ0.69'},
+    {id:'pakhsa_380_i50',name:'Пахса 380 + минвата 50',r:1.91,desc:'Пахса + вата λ0.042'},
+    /* ─── Ж/б панель и монолит ─── */
     {id:'panel_140',name:'Панель ж/б 140',r:0.22,desc:'Советские серии, λ1.92'},
     {id:'panel_140_i100',name:'Панель ж/б 140 + вата 100',r:2.60,desc:'Панель + минвата'},
+    {id:'monolit_200_i100',name:'Монолит ж/б 200 + вата 100',r:2.66,desc:'Монолит λ1.92 + вата λ0.042'},
+    /* ─── Каркас и СИП ─── */
+    {id:'frame_100',name:'Каркасная 100 (минвата)',r:2.69,desc:'ГКЛ 15+вата 100+ГКЛ 15'},
     {id:'frame_150',name:'Каркасная 150 (минвата)',r:3.88,desc:'Каркас + ГКЛ'},
+    {id:'frame_200',name:'Каркасная 200 (минвата)',r:5.07,desc:'ГКЛ 15+вата 200+ГКЛ 15'},
+    {id:'sip_200',name:'СИП-панель 200',r:4.87,desc:'OSB 12+EPS 176+OSB 12, λ0.039'},
   ],
   windows:[
+    /* Одинарное / старые */
     {id:'single',name:'Одинарное остекление',r:0.18,desc:'1 стекло, старые окна'},
-    {id:'imzo_60_trio',name:'IMZO 60 TRIO',r:0.62,desc:'ПВХ профиль'},
+    {id:'old_wood',name:'Деревянное двойное (советское)',r:0.28,desc:'Деревянная рама, 2 стекла'},
+    /* Алюминий */
+    {id:'alu_cold_1cam',name:'Алюминий холодный (1-камерн.)',r:0.37,desc:'Без терморазрыва'},
+    {id:'alu_warm_2cam',name:'Алюминий тёплый (2-камерн.)',r:0.65,desc:'С терморазрывом'},
+    /* ПВХ — IMZO (Узбекистан) */
+    {id:'imzo_60_trio',name:'IMZO 60 TRIO',r:0.62,desc:'ПВХ профиль 60мм, 1-камерн.'},
     {id:'double_glazing_pvc',name:'IMZO 58 / 60 QUATTRO',r:0.68,desc:'1-камерный стеклопакет'},
-    {id:'imzo_70',name:'IMZO 70',r:0.70,desc:'ПВХ профиль'},
-    {id:'rehau_70',name:'REHAU Euro-Design 70',r:0.80,desc:'ПВХ профиль'},
-    {id:'engelberg_65',name:'Engelberg 65 THERMO',r:0.81,desc:'ПВХ профиль'},
-    {id:'double_argon',name:'REHAU ArtEvo',r:0.98,desc:'Энергосбер. профиль'},
-    {id:'imzo_benkam',name:'IMZO BENKAM',r:1.10,desc:'ПВХ профиль'},
+    {id:'imzo_70',name:'IMZO 70',r:0.70,desc:'ПВХ профиль 70мм'},
+    {id:'imzo_benkam',name:'IMZO BENKAM',r:1.10,desc:'2-камерн., аргон'},
+    /* ПВХ — REHAU */
+    {id:'rehau_blitz_60',name:'REHAU Blitz 60',r:0.63,desc:'ПВХ 60мм, 1-камерн.'},
+    {id:'rehau_70',name:'REHAU Euro-Design 70',r:0.80,desc:'ПВХ профиль 70мм'},
+    {id:'double_argon',name:'REHAU ArtEvo',r:0.98,desc:'Энергосбер. профиль, аргон'},
+    /* ПВХ — Engelberg */
+    {id:'engelberg_65',name:'Engelberg 65 THERMO',r:0.81,desc:'ПВХ профиль 65мм'},
     {id:'engelberg_70',name:'Engelberg 70',r:1.20,desc:'2-камерный'},
     {id:'triple_glazing_pvc',name:'Engelberg 76',r:1.40,desc:'2-камерный, энергосбер.'},
+    /* ПВХ — KBE */
+    {id:'kbe_58',name:'KBE 58 (1-камерн.)',r:0.62,desc:'ПВХ профиль 58мм'},
+    {id:'kbe_70',name:'KBE 70 (2-камерн.)',r:0.84,desc:'ПВХ профиль 70мм'},
+    /* ПВХ — Veka */
+    {id:'veka_70',name:'Veka 70 (2-камерн.)',r:0.80,desc:'ПВХ профиль 70мм'},
+    {id:'veka_82',name:'Veka 82 (2-камерн. аргон)',r:1.00,desc:'ПВХ профиль 82мм'},
+    /* ПВХ — Aluplast */
+    {id:'aluplast_70',name:'Aluplast 7000 (2-камерн.)',r:0.82,desc:'ПВХ профиль 70мм'},
+    /* Энергосберегающие */
+    {id:'low_e_2cam',name:'ПВХ 2-камерн. low-E + Ar',r:1.10,desc:'Low-E стекло, аргон'},
+    {id:'triple_argon',name:'ПВХ 3-камерн. аргон low-E',r:1.50,desc:'Тройной СП + Ar + low-E'},
+    {id:'passive_window',name:'Пассивное окно (4-камерн.)',r:1.80,desc:'Тройной СП + Ar + low-E, пассив'},
   ],
   doors:[
-    {id:'door_metal_insulated',name:'Металл утеплённая',r:0.60,desc:'ППУ'},
+    /* Металлические */
+    {id:'door_metal_no_ins',name:'Металл без утепления',r:0.20,desc:'Листовой металл, без заполнения'},
+    {id:'door_metal_insulated',name:'Металл + ППУ (ст.)',r:0.60,desc:'ППУ-заполнение'},
+    {id:'door_metal_ppu60',name:'Металл + ППУ 60 мм (пр.)',r:0.70,desc:'Усиленная теплоизоляция'},
+    {id:'door_metal_wata50',name:'Металл + минвата 50',r:0.50,desc:'Металл с ватным заполнением'},
+    /* Деревянные */
     {id:'door_wood',name:'Деревянная 40 мм',r:0.39,desc:'Сплошное дерево'},
-    {id:'door_pvc',name:'ПВХ балконная',r:0.68,desc:'Со стеклопакетом'},
+    {id:'door_wood_50',name:'Деревянная 50 мм',r:0.45,desc:'Дерево λ0.18'},
+    {id:'door_wood_60',name:'Деревянная 60 мм',r:0.50,desc:'Дерево λ0.18'},
+    /* ПВХ и алюминий */
+    {id:'door_pvc',name:'ПВХ балконная (1-камерн.)',r:0.68,desc:'Со стеклопакетом'},
+    {id:'door_pvc_2cam',name:'ПВХ балконная (2-камерн.)',r:0.78,desc:'2-камерный СП'},
+    {id:'door_alu_warm',name:'Алюминий тёплый входная',r:0.55,desc:'С терморазрывом'},
+    /* Прочие */
+    {id:'door_sandwich',name:'Сэндвич-панель дверная',r:0.65,desc:'Металл+ППУ+металл'},
+    {id:'door_tambour',name:'Двойная тамбурная',r:1.00,desc:'2 двери + воздушный тамбур'},
   ],
   floors:[
+    /* Над подвалом */
     {id:'floor_screed',name:'Ж/б 200 + стяжка',r:0.336,n:0.4,desc:'Над тёплым подвалом'},
+    {id:'floor_screed_xps50',name:'Ж/б 200 + XPS 50 (тёпл. подв.)',r:1.920,n:0.4,desc:'Над частично тёплым подвалом, XPS λ0.034'},
     {id:'floor_xps50',name:'Ж/б + XPS 50',r:1.900,n:0.6,desc:'Над холодным подвалом'},
+    {id:'floor_xps100',name:'Ж/б + XPS 100',r:3.390,n:0.6,desc:'Над холодным подвалом, XPS λ0.034'},
+    {id:'floor_xps150',name:'Ж/б + XPS 150',r:4.860,n:0.6,desc:'Над холодным подвалом, XPS λ0.034'},
+    {id:'floor_garage_xps50',name:'Ж/б + XPS 50 (над гаражом)',r:1.900,n:0.75,desc:'Над неотапл. гаражом'},
+    {id:'floor_open_crawl',name:'Ж/б + XPS 100 (вент. подполье)',r:3.390,n:0.75,desc:'Над вентилируемым подпольем'},
+    /* По лагам */
     {id:'floor_wood',name:'Дерев. пол по лагам',r:0.448,n:0.6,desc:'Над подпольем'},
-    {id:'floor_ground',name:'Пол на грунте + XPS 100',r:3.500,n:1.0,ground:true,addR:3.4,desc:'Утеплённый, зональный расчёт'},
+    {id:'floor_wood_ins100',name:'Деревянный + минвата 100',r:2.830,n:0.6,desc:'По лагам + вата λ0.042'},
+    /* Тёплый пол */
+    {id:'floor_xps_ufh',name:'Ж/б + XPS 50 + стяжка 100',r:1.990,n:0.6,desc:'Тёплый пол, утолщённая стяжка'},
+    /* На грунте (зональный метод, Староверов) */
     {id:'floor_ground_bare',name:'Грунт без утепления',r:2.100,n:1.0,ground:true,addR:0.11,desc:'Зональный расчёт (Староверов)'},
+    {id:'floor_ground_eps100',name:'Пол на грунте + EPS 100',r:2.740,n:1.0,ground:true,addR:2.63,desc:'EPS λ0.039 + стяжка, зональный'},
+    {id:'floor_ground',name:'Пол на грунте + XPS 100',r:3.500,n:1.0,ground:true,addR:3.4,desc:'XPS λ0.030 + стяжка, зональный'},
+    {id:'floor_ground_xps50',name:'Пол на грунте + XPS 50',r:1.840,n:1.0,ground:true,addR:1.73,desc:'XPS λ0.030 + стяжка, зональный'},
+    {id:'floor_ground_xps150',name:'Пол на грунте + XPS 150',r:5.180,n:1.0,ground:true,addR:5.07,desc:'XPS λ0.030 + стяжка, зональный'},
   ],
   ceilings:[
+    /* Холодный чердак — минвата */
+    {id:'ceil_i50',name:'Чердак + вата 50',r:1.300,desc:'Холодный чердак, минвата λ0.042'},
     {id:'ceil_i100',name:'Чердак + вата 100',r:2.490,desc:'Холодный чердак (n — по типу чердака)'},
     {id:'ceil_i150',name:'Чердак + вата 150',r:3.600,desc:'Холодный чердак (n — по типу чердака)'},
+    {id:'ceil_i175',name:'Чердак + вата 175',r:4.280,desc:'Холодный чердак, минвата λ0.042'},
     {id:'ceil_i200',name:'Кровля + вата 200',r:4.800,desc:'Тёплая мансарда (n — по типу чердака)'},
+    {id:'ceil_i250',name:'Чердак + вата 250',r:5.990,desc:'Холодный чердак, минвата λ0.042'},
+    {id:'ceil_i300',name:'Чердак + вата 300',r:7.180,desc:'Повышенное утепление, λ0.042'},
+    /* EPS / ППУ */
+    {id:'ceil_eps100',name:'Чердак + EPS 100',r:2.670,desc:'EPS λ0.039'},
+    {id:'ceil_ppu100',name:'Напыляемый ППУ 100',r:4.110,desc:'ППУ λ0.025'},
+    /* Плоская кровля (ЖБ плита 200 + XPS) */
+    {id:'ceil_flat_xps50',name:'Плоская кровля + XPS 50',r:1.740,desc:'ЖБ 200 + XPS λ0.034'},
+    {id:'ceil_flat_xps100',name:'Плоская кровля + XPS 100',r:3.220,desc:'ЖБ 200 + XPS λ0.034'},
+    {id:'ceil_flat_xps150',name:'Плоская кровля + XPS 150',r:4.690,desc:'ЖБ 200 + XPS λ0.034'},
+    /* Мансарда утеплённая */
+    {id:'ceil_mansarda_250',name:'Мансарда утеплённая 250',r:5.990,desc:'Скатная кровля, вата 250'},
+    /* Деревянное перекрытие */
+    {id:'ceil_wood_ins150',name:'Дерев. перекрытие + вата 150',r:3.880,desc:'Доски 30мм + вата 150мм λ0.042'},
+    /* ЖБ перекрытие с утеплением */
+    {id:'ceil_panel_i50',name:'ЖБ перекрытие + вата 50',r:1.450,desc:'Пустотная плита 220мм + вата λ0.042'},
   ],
 };
+
+/* ── Справочник λ для многослойного конструктора (Способ B) ──
+   Источник: КМК 2.01.04-18 прил.3; SP 50.13330 прил.Т.
+   Группы: Кладка | Ячеистый бетон | Бетон | Утеплители | Дерево | Штукатурки | Отделка ── */
+const RAW_MATERIALS = [
+  /* ── Кладка ── */
+  {id:'rm_brick_clay',    name:'Кирпич глиняный полнотелый',     λ:0.70,  group:'Кладка'},
+  {id:'rm_brick_sil',     name:'Кирпич силикатный',              λ:0.87,  group:'Кладка'},
+  {id:'rm_brick_hollow',  name:'Кирпич пустотелый',              λ:0.44,  group:'Кладка'},
+  {id:'rm_rakush',        name:'Ракушечник (известняк)',          λ:0.56,  group:'Кладка'},
+  {id:'rm_shlak',         name:'Шлакоблок',                      λ:0.70,  group:'Кладка'},
+  {id:'rm_kzb_1000',      name:'Керамзитоблок (D1000)',           λ:0.47,  group:'Кладка'},
+  {id:'rm_kzb_1400',      name:'Керамзитоблок (D1400)',           λ:0.67,  group:'Кладка'},
+  {id:'rm_keram_block',   name:'Керамоблок (Porotherm-тип)',      λ:0.21,  group:'Кладка'},
+  {id:'rm_pakhsa',        name:'Пахса (саман, глинобит)',         λ:0.69,  group:'Кладка'},
+  /* ── Ячеистый бетон ── */
+  {id:'rm_aac_d400',      name:'Газоблок AAC D400',               λ:0.12,  group:'Ячеистый бетон'},
+  {id:'rm_aac_d500',      name:'Газоблок AAC D500',               λ:0.14,  group:'Ячеистый бетон'},
+  {id:'rm_aac_d600',      name:'Газоблок AAC D600',               λ:0.17,  group:'Ячеистый бетон'},
+  {id:'rm_foam_d500',     name:'Пеноблок D500',                   λ:0.17,  group:'Ячеистый бетон'},
+  {id:'rm_foam_d600',     name:'Пеноблок D600',                   λ:0.22,  group:'Ячеистый бетон'},
+  /* ── Бетон ── */
+  {id:'rm_rc_solid',      name:'Ж/б монолитный',                  λ:1.92,  group:'Бетон'},
+  {id:'rm_rc_hollow',     name:'Ж/б пустотная плита',             λ:1.50,  group:'Бетон'},
+  {id:'rm_concrete',      name:'Бетон тяжёлый',                   λ:1.86,  group:'Бетон'},
+  {id:'rm_kzb_concrete',  name:'Керамзитобетон D1000',            λ:0.47,  group:'Бетон'},
+  /* ── Утеплители ── */
+  {id:'rm_minwool',       name:'Минеральная вата (плита)',        λ:0.042, group:'Утеплители'},
+  {id:'rm_minwool_roll',  name:'Минвата рулонная',                λ:0.045, group:'Утеплители'},
+  {id:'rm_basalt',        name:'Базальтовый утеплитель',          λ:0.038, group:'Утеплители'},
+  {id:'rm_eps',           name:'EPS (пенополистирол)',             λ:0.039, group:'Утеплители'},
+  {id:'rm_xps',           name:'XPS (экструзионный ПС)',          λ:0.034, group:'Утеплители'},
+  {id:'rm_xps_ground',    name:'XPS на грунте / кровле',          λ:0.030, group:'Утеплители'},
+  {id:'rm_ppu',           name:'ППУ (напыляемый)',                 λ:0.025, group:'Утеплители'},
+  {id:'rm_ekovata',       name:'Эковата (задувная)',               λ:0.038, group:'Утеплители'},
+  /* ── Дерево / деревосодержащие ── */
+  {id:'rm_pine',          name:'Дерево хвойное (сосна)',          λ:0.15,  group:'Дерево'},
+  {id:'rm_hardwood',      name:'Дерево лиственное (дуб)',         λ:0.23,  group:'Дерево'},
+  {id:'rm_osb',           name:'OSB (ориент.-стружечная пл.)',    λ:0.13,  group:'Дерево'},
+  {id:'rm_plywood',       name:'Фанера',                          λ:0.15,  group:'Дерево'},
+  {id:'rm_gkl',           name:'ГКЛ (гипсокартон)',               λ:0.21,  group:'Дерево'},
+  /* ── Штукатурки / стяжки ── */
+  {id:'rm_plaster_cem',   name:'Штукатурка цем.-песч.',           λ:0.81,  group:'Штукатурки'},
+  {id:'rm_plaster_gyp',   name:'Штукатурка гипсовая',             λ:0.35,  group:'Штукатурки'},
+  {id:'rm_screed',        name:'Стяжка ЦПС',                      λ:0.76,  group:'Штукатурки'},
+  {id:'rm_screed_self',   name:'Самовыравнивающаяся стяжка',      λ:0.85,  group:'Штукатурки'},
+  /* ── Отделка / полы ── */
+  {id:'rm_ceramics',      name:'Керамогранит / плитка',           λ:1.05,  group:'Отделка'},
+  {id:'rm_parquet',       name:'Паркет / ламинат',                λ:0.17,  group:'Отделка'},
+  {id:'rm_linoleum',      name:'Линолеум',                        λ:0.17,  group:'Отделка'},
+  /* ── Прочее ── */
+  {id:'rm_sip_eps',       name:'СИП-наполнитель EPS',             λ:0.039, group:'СИП'},
+  {id:'rm_sip_xps',       name:'СИП-наполнитель XPS',             λ:0.034, group:'СИП'},
+];
 
 const CAT_LABELS = {walls:'Стены',windows:'Окна',doors:'Двери',floors:'Пол',ceilings:'Потолок'};
 
@@ -1052,7 +1561,95 @@ let CUSTOM = loadCustom();
 function presetList(cat){ return [...BASE_PRESETS[cat], ...CUSTOM[cat].map(p=>({...p,custom:true}))]; }
 function findPreset(cat,id){ return presetList(cat).find(p=>p.id===id)||null; }
 
-const STEP_TITLES = ['Город','Участок и солнце','Этажи','Планировка','Материалы','Результат'];
+/* ── Поиск в пикере материалов (шаг 5) ── */
+const _matSearch = {walls:'',windows:'',doors:'',floors:'',ceilings:''};
+const _matSelFns  = {walls:'selWall',windows:'selWindow',doors:'selDoor',floors:'selFloor',ceilings:'selCeiling'};
+const _matIdKeys  = {walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
+
+function updMatSearch(cat, q){
+  _matSearch[cat] = q.toLowerCase();
+  const el = document.getElementById('matgrid-'+cat);
+  if(el) el.innerHTML = renderMatCards(cat);
+}
+
+function renderMatCards(cat){
+  const currentId = ST.mat[_matIdKeys[cat]];
+  const fn  = _matSelFns[cat];
+  const isWall = cat==='walls';
+  const q = _matSearch[cat]||'';
+  let list = presetList(cat);
+  if(q) list = list.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q));
+  if(!list.length) return `<p class="col-span-2 text-xs text-muted py-3 text-center">Ничего не найдено</p>`;
+  return list.map(p=>{
+    const homog = p.homog!=null?p.homog:WALL_HOMOG_DEFAULT;
+    const rEff = isWall ? p.r*homog : null;
+    return `<button type="button" onclick="${fn}('${p.id}')" class="pcard text-left ${currentId===p.id?'active':''}">
+      <div class="flex items-start justify-between gap-2">
+        <p class="font-semibold text-cream text-sm leading-snug">${p.name} ${p.custom?'<span class="chip ml-1">своё</span>':''}</p>
+        <span class="flex-shrink-0 rounded-md bg-w900 px-2 py-0.5 mono text-xs text-amber border border-amber/20">R ${rEff!=null?rEff.toFixed(3):p.r.toFixed(3)}</span>
+      </div>
+      <p class="text-xs text-muted mt-1">${p.desc||''}</p>
+      ${isWall&&p.homog!=null?`<p class="text-xs text-muted/60 mt-0.5 mono">номин. R ${p.r.toFixed(3)} × r₀ ${p.homog}</p>`:''}
+      ${p.n!=null&&p.n!==1?`<p class="text-xs text-copper mt-1 mono">n = ${p.n}</p>`:''}
+      ${p.ground?'<p class="text-xs text-copper mt-0.5 mono">зональный метод (СП 50)</p>':''}
+    </button>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   i18n — RU / UZ (Latin) switcher
+   Технические термины (кВт, R, λ, КМК) не переводятся.
+════════════════════════════════════════════════════════════ */
+let _lang = (()=>{ try{ return localStorage.getItem('aq_lang')||'ru'; }catch(e){ return 'ru'; } })();
+const _i18n = {
+  ru:{
+    'login':'Войти','register':'Регистрация','logout':'Выйти',
+    'profile':'Мой профиль','my-calcs':'Мои расчёты','admin':'Панель администратора',
+    'next':'Далее','back':'Назад','calculate':'Рассчитать','new-calc':'Новый расчёт',
+    'login-title':'Вход в аккаунт','register-title':'Создать аккаунт',
+    'no-account':'Нет аккаунта?','have-account':'Уже есть аккаунт?',
+    'welcome-back':'Добро пожаловать, ','account-created':'Аккаунт создан ✓',
+    'step-1':'Город','step-2':'Участок и солнце','step-3':'Этажи',
+    'step-4':'Планировка','step-5':'Материалы','step-6':'Результат',
+    'owner':'Владелец','admin-role':'Администратор','user-role':'Пользователь',
+    'live-title':'Живой итог','live-sub':'по всему объекту','live-enter':'Введите данные',
+    'boiler-hint':'Котёл (запас 25%)','area-hint':'Площадь объекта','rooms-hint':'Комнат всего',
+  },
+  uz:{
+    'login':'Kirish','register':"Ro'yxatdan o'tish",'logout':'Chiqish',
+    'profile':'Mening profilim','my-calcs':'Hisob-kitoblarim','admin':'Boshqaruv paneli',
+    'next':'Keyingisi','back':'Ortga','calculate':'Hisoblash','new-calc':'Yangi hisob',
+    'login-title':'Hisobga kirish','register-title':'Hisob yaratish',
+    'no-account':'Hisob yo\'qmi?','have-account':'Hisob bormi?',
+    'welcome-back':'Xush kelibsiz, ','account-created':'Hisob yaratildi ✓',
+    'step-1':'Shahar','step-2':'Yer va quyosh','step-3':'Qavatlar',
+    'step-4':'Reja','step-5':'Materiallar','step-6':'Natija',
+    'owner':'Egasi','admin-role':'Administrator','user-role':'Foydalanuvchi',
+    'live-title':'Jonli natija','live-sub':'butun ob\'ekt bo\'yicha','live-enter':'Ma\'lumot kiriting',
+    'boiler-hint':'Qozon (+25%)','area-hint':'Ob\'ekt maydoni','rooms-hint':'Xonalar soni',
+  }
+};
+function t(k){ return (_i18n[_lang]||_i18n.ru)[k] || _i18n.ru[k] || k; }
+function applyLang(){
+  document.documentElement.lang = _lang==='uz'?'uz':'ru';
+  STEP_TITLES = [t('step-1'),t('step-2'),t('step-3'),t('step-4'),t('step-5'),t('step-6')];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const v=t(el.dataset.i18n); if(v) el.textContent=v;
+  });
+  const btn=document.getElementById('lang-toggle-btn');
+  if(btn) btn.textContent=_lang==='uz'?'RU':'UZ';
+  updateNavHint();
+  initAuthNav();
+}
+function switchLang(){
+  _lang=(_lang==='ru')?'uz':'ru';
+  try{ localStorage.setItem('aq_lang',_lang); }catch(e){}
+  applyLang();
+  // re-render current wizard step if visible
+  if(document.getElementById('step-panel')?.innerHTML) renderProgress();
+}
+
+let STEP_TITLES = [t('step-1'),t('step-2'),t('step-3'),t('step-4'),t('step-5'),t('step-6')];
 
 /* ════════════════════════════════════════════════════════════
    ENGINE — физика теплопотерь
@@ -1461,7 +2058,7 @@ function updateNavHint(){
     el.textContent=msgs[ST.step]||''; nb.style.opacity='.5'; nb.style.cursor='not-allowed';
   } else { el.textContent=''; nb.style.opacity='1'; nb.style.cursor='pointer'; }
   const N=STEP_TITLES.length;
-  label.textContent = ST.step===5?'Рассчитать' : ST.step===N?'Новый расчёт' : 'Далее';
+  label.textContent = ST.step===5?t('calculate') : ST.step===N?t('new-calc') : t('next');
   document.getElementById('btn-back').style.display = ST.step===1?'none':'flex';
 }
 
@@ -1484,8 +2081,9 @@ function wizNext(){
   }
   const N=STEP_TITLES.length;
   if(ST.step===N){ wizReset(); return; }
+  trackEvent('step_'+ST.step);  // track step completion before incrementing
   ST.step++; renderProgress(); transitionStep(1); updateNavHint(); updateLivePanel();
-  if(ST.step===6){
+  if(ST.step===6){ trackEvent('calc_complete');
     pushHistory();
     // автосохранение проекта пользователя
     const u=authCurrentUser();
@@ -1506,6 +2104,7 @@ function renderStep(){
   p.innerHTML=renders[ST.step]?renders[ST.step]():'';
   if(ST.step===2) requestAnimationFrame(drawCompass);
   if(ST.step===4) initPlan();
+  if(ST.step===6) requestAnimationFrame(runResultReveal);
 }
 
 /* ── STEP 1 — City ── */
@@ -2616,25 +3215,17 @@ function objectParamsBlock(){
 function selAirtight(id){ ST.airtight=id; refreshPcards('selAirtight',id); updateLivePanel(); }
 function selRegime(id){ ST.heatRegime=id; refreshPcards('selRegime',id); updateLivePanel(); }
 function presetGrid(label,cat,currentId,onselect){
-  const list=presetList(cat);
   const isWall = cat==='walls';
+  const total = presetList(cat).length;
   return `<div class="mb-6">
-    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">${label}${isWall?' '+tip('homog'):''}</h4>
-    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      ${list.map(p=>{
-        const homog = p.homog!=null?p.homog:WALL_HOMOG_DEFAULT;
-        const rEff = isWall ? p.r*homog : null;
-        return `
-      <button type="button" onclick="${onselect}('${p.id}')" class="pcard text-left ${currentId===p.id?'active':''}">
-        <div class="flex items-start justify-between gap-2">
-          <p class="font-semibold text-cream text-sm leading-snug">${p.name} ${p.custom?'<span class="chip ml-1">своё</span>':''}</p>
-          <span class="flex-shrink-0 rounded-md bg-w900 px-2 py-0.5 mono text-xs text-amber border border-amber/20">R ${rEff!=null?rEff.toFixed(3):p.r.toFixed(3)}</span>
-        </div>
-        <p class="text-xs text-muted mt-1">${p.desc||''}</p>
-        ${isWall&&p.homog!=null?`<p class="text-xs text-muted/60 mt-0.5 mono">номин. R ${p.r.toFixed(3)} × r₀ ${p.homog}</p>`:''}
-        ${p.n!=null&&p.n!==1?`<p class="text-xs text-copper mt-1 mono">n = ${p.n}</p>`:''}
-        ${p.ground?'<p class="text-xs text-copper mt-0.5 mono">зональный метод (СП 50)</p>':''}
-      </button>`}).join('')}
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-2">${label}${isWall?' '+tip('homog'):''}</h4>
+    <div class="relative mb-2">
+      <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style="color:var(--muted,#9a8675)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" value="${_matSearch[cat]}" placeholder="Поиск (${total})" oninput="updMatSearch('${cat}',this.value)"
+        class="wi py-1.5 text-sm" style="padding-left:2rem;border-radius:.65rem">
+    </div>
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2" id="matgrid-${cat}">
+      ${renderMatCards(cat)}
     </div>
   </div>`;
 }
@@ -2651,6 +3242,7 @@ function refreshPcards(fn,id){
 let _wsLayers=[];  // multi-layer rows for Workshop
 
 function openWorkshop(cat){
+  _closeDropdown();
   _wsLayers=[{name:'',d:'',l:''}];
   renderWorkshop(cat||'walls');
   document.getElementById('modal-backdrop').classList.add('open');
@@ -2662,13 +3254,14 @@ function renderWorkshop(cat){
   const isWall=cat==='walls';
   const layersHtml=_wsLayers.map((ly,i)=>`
     <div class="layer-row" id="wslr-${i}">
-      <input placeholder="Материал слоя" value="${ly.name}" oninput="_wsLayers[${i}].name=this.value" class="text-sm">
+      <input placeholder="Материал слоя" list="rm-list" value="${ly.name}" oninput="_wsLayers[${i}].name=this.value" onchange="wsAutoFill(${i},this.value)" class="text-sm">
       <input placeholder="мм" type="number" min="1" step="1" value="${ly.d}" oninput="_wsLayers[${i}].d=this.value;wsCalcR()" class="text-sm text-center">
-      <input placeholder="λ" type="number" min="0.001" step="0.001" value="${ly.l}" oninput="_wsLayers[${i}].l=this.value;wsCalcR()" class="text-sm text-center">
+      <input id="wsl-l-${i}" placeholder="λ" type="number" min="0.001" step="0.001" value="${ly.l}" oninput="_wsLayers[${i}].l=this.value;wsCalcR()" class="text-sm text-center">
       <button class="layer-del" onclick="wsRemoveLayer(${i})" title="Удалить слой"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>`).join('');
 
   document.getElementById('modal-body').innerHTML=`
+    <datalist id="rm-list">${RAW_MATERIALS.map(m=>`<option value="${m.name}">`).join('')}</datalist>
     <p class="text-xs font-semibold uppercase tracking-widest text-amber/80 mb-1">Мастерская материалов</p>
     <h2 class="text-xl font-extrabold text-cream mb-4">Добавить материал</h2>
     <div class="flex flex-wrap gap-1.5 mb-4">
@@ -2753,6 +3346,16 @@ function wsCalcR(){
 }
 function wsHighlightA(){
   const el=document.getElementById('ws-r-calc'); if(el) el.classList.add('hidden');
+}
+
+function wsAutoFill(i, name){
+  _wsLayers[i].name = name;
+  const mat = RAW_MATERIALS.find(m => m.name === name);
+  if(mat && !_wsLayers[i].l){
+    _wsLayers[i].l = String(mat.λ);
+    const el = document.getElementById('wsl-l-'+i);
+    if(el){ el.value = mat.λ; wsCalcR(); }
+  }
 }
 
 function saveWorkshop(cat){
@@ -2934,14 +3537,11 @@ function s6(){
 
   <div class="info-card">
     <h4 class="font-extrabold text-cream text-lg mb-3">Что дальше?</h4>
-    <div class="space-y-1.5 text-sm text-sand mb-4">
-      <p>✓ Теплопотери посчитаны: <b class="text-amber">${res.totalKw.toFixed(1)} кВт</b></p>
-      <p>✓ Рекомендуем котёл: <b class="text-amber">${boiler} кВт</b> <span class="text-muted">(расчётная ${res.boilerKw.toFixed(1)} кВт)</span></p>
-      <p class="text-muted pl-4">— тип: ${boilerModelHint(boiler)} <span class="text-xs">(уточните наличие у нас)</span></p>
-      <p>✓ Радиаторы: <b class="text-amber">${res.totalSections} секций</b> (биметалл, по комнатам)</p>
-      <p>✓ Магистральная труба: <b class="text-amber">⌀ ${pipe} мм</b></p>
+    <div class="space-y-1.5 text-sm text-sand mb-3">
+      <p>✓ Теплопотери: <b class="text-amber">${res.totalKw.toFixed(1)} кВт</b> · Котёл: <b class="text-amber">${boiler} кВт</b> · Секций: <b class="text-amber">${res.totalSections}</b> · Труба: <b class="text-amber">⌀ ${pipe}</b></p>
     </div>
-    <p class="text-sm text-muted mb-4">→ Свяжитесь с нами — подберём котёл и радиаторы из наличия и рассчитаем стоимость бесплатно.</p>
+    ${equipmentCards(res)}
+    <p class="text-sm text-muted mb-4 mt-3">Нажмите «Узнать цену» — откроется WhatsApp с готовым запросом, включающим параметры расчёта.</p>
     <div class="flex flex-col gap-2.5 sm:flex-row">
       <button type="button" onclick="openModal()" class="lg-btn flex flex-1 items-center justify-center gap-2 px-6 py-3.5 text-sm">Запросить подбор оборудования</button>
       <a href="https://wa.me/${CONTACT.whatsapp}" target="_blank" class="flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-white rounded-2xl transition-all hover:opacity-90 hover:-translate-y-px" style="background:linear-gradient(135deg,rgba(37,211,102,.9),rgba(18,180,80,.8));backdrop-filter:blur(12px);border:1px solid rgba(37,211,102,.4);box-shadow:0 1px 0 rgba(255,255,255,.15) inset,0 6px 20px rgba(37,211,102,.25);">
@@ -3237,6 +3837,86 @@ function updatePayback(){
 const BRANDS_BOILER=[[12,'настенный газовый (напр. Navien Ace, BAXI Eco)'],[24,'настенный газовый (напр. Navien Deluxe, Ferroli)'],[35,'настенный/напольный (напр. BAXI Slim)'],[1e9,'напольный или каскад котлов']];
 function boilerModelHint(kw){ for(const [m,n] of BRANDS_BOILER){ if(kw<=m) return n; } return ''; }
 
+/* ── Каталог Aquality: конкретные модели по диапазону мощности ── */
+const AQ_BOILERS=[
+  {maxKw:12, model:'Navien ACE-13K',     type:'Настенный газовый двухконтурный'},
+  {maxKw:18, model:'Navien Deluxe-18K',  type:'Настенный газовый двухконтурный'},
+  {maxKw:24, model:'Navien Deluxe-24K',  type:'Настенный газовый двухконтурный'},
+  {maxKw:30, model:'BAXI LUNA-3 1.310 Fi',type:'Настенный газовый'},
+  {maxKw:40, model:'BAXI Slim 1.400 iN', type:'Напольный/настенный газовый'},
+  {maxKw:60, model:'Ferroli PEGASUS F2N 56', type:'Напольный газовый'},
+  {maxKw:1e9,model:'Buderus GB125 / каскад',type:'Напольный или каскадная установка'},
+];
+const AQ_RADIATORS=[
+  {model:'GLOBAL Style Plus 500', spec:'Биметалл, высота 500 мм, ~171 Вт/секц.'},
+  // fallback shown if sections > 150
+  {model:'GLOBAL Style Plus 500 + RIFAR Monolit 500', spec:'Биметалл+монолит'},
+];
+function aqBoiler(boilerKw){ return AQ_BOILERS.find(b=>b.maxKw>=boilerKw)||AQ_BOILERS.at(-1); }
+function aqRadModel(sections){ return sections>150?AQ_RADIATORS[1]:AQ_RADIATORS[0]; }
+
+function equipmentCards(res){
+  const bKw=recommendBoiler(res.boilerKw);
+  const bItem=aqBoiler(bKw);
+  const rItem=aqRadModel(res.totalSections);
+  const pipe=recommendPipe(res.totalKw);
+  const wa=CONTACT.whatsapp;
+  const obj=`${ST.cityName||''}, ${res.totalArea.toFixed(0)} м², ${res.totalKw.toFixed(1)} кВт`;
+
+  const msgBoiler=encodeURIComponent(`Здравствуйте! Хочу узнать цену котла ${bItem.model} (${bKw} кВт) для объекта: ${obj}. Расчёт по КМК через ваш калькулятор.`);
+  const msgRad=encodeURIComponent(`Здравствуйте! Нужны радиаторы ${rItem.model} × ${res.totalSections} секций для объекта: ${obj}. Расчёт по КМК.`);
+  const msgAll=encodeURIComponent(`Здравствуйте! Прошу полный расчёт стоимости оборудования: котёл ${bItem.model} ${bKw} кВт + радиаторы ${res.totalSections} секций + труба ⌀${pipe}. Объект: ${obj}.`);
+
+  return `
+  <div class="mt-4 mb-2">
+    <p class="text-xs font-semibold uppercase tracking-wider text-amber/70 mb-2.5">Рекомендуемое оборудование</p>
+    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      <div class="rounded-xl border border-amber/20 bg-w850 p-3.5 flex flex-col gap-2">
+        <div class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber/70">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3.5 w-3.5"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v4m-2-2h4"/></svg>Котёл
+        </div>
+        <div>
+          <p class="text-sm font-bold text-cream leading-tight">${bItem.model}</p>
+          <p class="text-[11px] text-muted mt-0.5">${bItem.type}</p>
+          <p class="text-xs text-amber font-semibold mt-1">${bKw} кВт</p>
+        </div>
+        <a href="https://wa.me/${wa}?text=${msgBoiler}" target="_blank" class="mt-auto flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90" style="background:linear-gradient(135deg,rgba(37,211,102,.85),rgba(18,180,80,.75));border:1px solid rgba(37,211,102,.3);">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 flex-shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+          Узнать цену
+        </a>
+      </div>
+      <div class="rounded-xl border border-sand/10 bg-w850 p-3.5 flex flex-col gap-2">
+        <div class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber/70">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3.5 w-3.5"><rect x="3" y="5" width="4" height="14" rx="1"/><rect x="10" y="5" width="4" height="14" rx="1"/><rect x="17" y="5" width="4" height="14" rx="1"/></svg>Радиаторы
+        </div>
+        <div>
+          <p class="text-sm font-bold text-cream leading-tight">${rItem.model}</p>
+          <p class="text-[11px] text-muted mt-0.5">${rItem.spec}</p>
+          <p class="text-xs text-amber font-semibold mt-1">${res.totalSections} секций</p>
+        </div>
+        <a href="https://wa.me/${wa}?text=${msgRad}" target="_blank" class="mt-auto flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90" style="background:linear-gradient(135deg,rgba(37,211,102,.85),rgba(18,180,80,.75));border:1px solid rgba(37,211,102,.3);">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 flex-shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+          Узнать цену
+        </a>
+      </div>
+      <div class="rounded-xl border border-sand/10 bg-w850 p-3.5 flex flex-col gap-2">
+        <div class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber/70">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3.5 w-3.5"><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Труба
+        </div>
+        <div>
+          <p class="text-sm font-bold text-cream leading-tight">Полипропилен PN20 ⌀${pipe}</p>
+          <p class="text-[11px] text-muted mt-0.5">Магистральная линия</p>
+          <p class="text-xs text-amber font-semibold mt-1">Диаметр по нагрузке</p>
+        </div>
+        <a href="https://wa.me/${wa}?text=${msgAll}" target="_blank" class="mt-auto flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90" style="background:linear-gradient(135deg,rgba(37,211,102,.85),rgba(18,180,80,.75));border:1px solid rgba(37,211,102,.3);">
+          <svg viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 flex-shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+          Весь комплект
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
 /* ════════════════════════════════════════════════════════════
    RESET
 ════════════════════════════════════════════════════════════ */
@@ -3254,6 +3934,7 @@ function wizReset(){
    MODAL (lead)
 ════════════════════════════════════════════════════════════ */
 function openModal(){
+  _closeDropdown();
   const res=computeObject()||{totalKw:0,boilerKw:0,totalSections:0,totalArea:0,roomCount:0};
   renderModalForm(res);
   document.getElementById('modal-backdrop').classList.add('open'); document.body.style.overflow='hidden';
@@ -3302,6 +3983,8 @@ function sendWhatsApp(){
     `🔧 Радиаторов: ${res.totalSections} секций\n\n`+
     `Прошу помочь с подбором и стоимостью.`+(phone?`\nТелефон: ${phone}`:'')
   );
+  saveLead({name,phone,city:ST.cityName||'',floors:ST.floors.length,rooms:res.roomCount,area:res.totalArea.toFixed(1),kw:res.totalKw.toFixed(2),boilerKw:res.boilerKw.toFixed(2),sections:res.totalSections});
+  trackEvent('lead_sent');
   window.open(`https://wa.me/${CONTACT.whatsapp}?text=${msg}`,'_blank');
   document.getElementById('modal-body').innerHTML=`
     <div class="py-8 text-center">
@@ -3506,13 +4189,13 @@ const PROCESS_DATA=[
    action:'openWorkshop()',
    content:'Добавьте любой строительный материал или многослойную конструкцию. Введите слои с толщиной и коэффициентом λ — итоговое R рассчитается автоматически.'},
   {id:3,title:'Мой профиль',date:'Личный кабинет',tag:'Аккаунт',energy:65,icon:'user',related:[1,4],
-   action:'authCurrentUser()?scrollToEl("calculator"):openAuth("login")',
+   action:'openProfile()',
    content:'Войдите или зарегистрируйтесь, чтобы сохранять расчёты и вести историю проектов. Три типа аккаунта: клиент, магазин, мастер.'},
   {id:4,title:'Мои расчёты',date:'История проектов',tag:'Сохранённые',energy:70,icon:'history',related:[1,3],
-   action:'scrollToEl("calculator")',
+   action:'openMyCalcs()',
    content:'Все завершённые расчёты автоматически сохраняются в вашем профиле. Восстановите любой проект одним кликом из истории на шаге 1.'},
   {id:5,title:'Настройки',date:'Параметры системы',tag:'Параметры',energy:55,icon:'settings',related:[2,6],
-   action:'scrollToEl("calculator")',
+   action:'openSettings()',
    content:'Режим отопления (90/70 … 55/45), герметичность здания, тип чердака — выбираются на шаге «Материалы» и влияют на расчёт радиаторов и инфильтрацию.'},
   {id:6,title:'Админ-панель',date:'Управление сайтом',tag:'Для администраторов',energy:85,icon:'shield',related:[3,5],
    action:'openAdmin()',
@@ -3674,6 +4357,24 @@ function scrollToEl(el,opts){
   if(window._lenis){ window._lenis.scrollTo(el,Object.assign({offset:0,duration:1.0},opts)); }
   else el.scrollIntoView({behavior:'smooth',block:'start'});
 }
+/* ═══ Result section: count-up + card reveal ═══ */
+function runResultReveal(){
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Count-up for all [data-target] spans
+  document.querySelectorAll('[data-target]').forEach(el=>{
+    const target=parseFloat(el.dataset.target)||0;
+    const dec=parseInt(el.dataset.dec??'2',10);
+    if(reduced){ el.textContent=target.toFixed(dec); return; }
+    gsap.fromTo({v:0},{v:target},{duration:1.1,ease:'power2.out',
+      onUpdate:function(){ el.textContent=this.targets()[0].v.toFixed(dec); }
+    });
+  });
+  if(reduced) return;
+  // Staggered card reveal
+  const cards=document.querySelectorAll('#result-area .rounded-2xl, #result-area .info-card, #result-area h4');
+  gsap.from(cards,{opacity:0,y:18,duration:.5,ease:'power2.out',stagger:.06,delay:.1});
+}
+
 function initHero(){
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches; if(reduced) return;
   const content=document.getElementById('hero-content');
@@ -3684,9 +4385,19 @@ function initWizard(){
   renderProgress(); renderStep(); updateNavHint(); updateLivePanel();
 }
 
+/* ── Global keyboard handler: Enter / Space activates role="button" divs ── */
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target;
+  if(el.getAttribute('role') === 'button' && el.tagName !== 'BUTTON' && el.tagName !== 'A') {
+    e.preventDefault();
+    el.click();
+  }
+});
+
 document.addEventListener('DOMContentLoaded',()=>{
   initScroll(); initHero(); initShaderBG(); initOrbital(); initWizard();
-  initAuthNav();   // Фаза 1-3: подсветить кнопку входа/пользователя в nav
+  applyLang();    // i18n: restore saved language preference and update UI
   if(ST.step===6){ setTimeout(()=>scrollToEl('calculator',{immediate:true}),300); toast('Загружен сохранённый расчёт ✓'); }
   document.addEventListener('click',e=>{ if(!e.target.closest('.tip')) document.querySelectorAll('.tip.open').forEach(t=>t.classList.remove('open')); });
 });
