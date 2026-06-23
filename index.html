@@ -39,6 +39,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<!-- ════════════════════════════════════════════════════════════════════
+     SUPABASE BACKEND CONFIG
+     Владелец: вставьте сюда свои значения из Supabase → Settings → API.
+     Только anon (public) ключ! service_role в клиент НИКОГДА не кладём.
+     Пока стоят плейсхолдеры YOUR_SUPABASE_* — сайт работает в офлайн-режиме
+     (математика расчёта полностью доступна; аккаунт/заявки — локально).
+     Полная инструкция: README-SUPABASE.md, схема БД: supabase/schema.sql
+════════════════════════════════════════════════════════════════════ -->
+<script>
+  window.AQ_CONFIG = {
+    SUPABASE_URL: 'YOUR_SUPABASE_URL',
+    SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY'
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box}
 /* Native smooth-scroll ТОЛЬКО когда Lenis выключен (reduced-motion).
@@ -649,8 +664,202 @@ input[type=range]{accent-color:#f59e0b}
 
 <script>
 /* ════════════════════════════════════════════════════════════
+   SUPABASE DATA LAYER (бэкенд: Auth + Postgres + RLS)
+   Единый слой данных. Если ключи не заданы — graceful degradation:
+   математика работает, аккаунт/заявки откатываются на localStorage.
+════════════════════════════════════════════════════════════ */
+const AQ_CFG = window.AQ_CONFIG || {};
+const SB_CONFIGURED = !!(
+  AQ_CFG.SUPABASE_URL && AQ_CFG.SUPABASE_ANON_KEY &&
+  !/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_URL) &&
+  !/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_ANON_KEY)
+);
+let _sbClient = null;
+function sb(){
+  if(!SB_CONFIGURED) return null;
+  if(_sbClient) return _sbClient;
+  if(!window.supabase || !window.supabase.createClient){
+    console.warn('[AQ] Supabase JS (CDN) не загрузился — работаем в офлайн-режиме');
+    return null;
+  }
+  _sbClient = window.supabase.createClient(AQ_CFG.SUPABASE_URL, AQ_CFG.SUPABASE_ANON_KEY);
+  return _sbClient;
+}
+/* Синхронный кэш текущего пользователя — чтобы синхронные authCurrentUser()
+   по всему коду продолжали работать без переписывания на async. */
+const _AQ = { user:null, hydrated:false };
+
+function aqMapUser(authUser, prof, projects){
+  return {
+    id: authUser.id,
+    login: (prof && prof.full_name) || authUser.email || 'Пользователь',
+    name:  (prof && prof.full_name) || authUser.email || 'Пользователь',
+    email: authUser.email || (prof && prof.email) || '',
+    role:  (prof && prof.role) || 'user',
+    phone: (prof && prof.phone) || '',
+    phone2:(prof && prof.phone2) || '',
+    company:(prof && prof.company) || '',
+    city:  (prof && prof.city) || '',
+    clientType: (prof && prof.client_type) || 'client',
+    createdAt: (prof && prof.created_at) || authUser.created_at,
+    projects: projects || [],
+    _sb: true
+  };
+}
+
+async function aqLoadSession(session){
+  const c = sb();
+  if(!session || !session.user || !c){ _AQ.user = null; initAuthNav(); return; }
+  const u = session.user;
+  let prof = null, projects = [];
+  try{
+    const { data } = await c.from('profiles').select('*').eq('id', u.id).maybeSingle();
+    prof = data;
+    // Если профиля нет (триггер не отработал) — создаём из метаданных.
+    if(!prof){
+      const m = u.user_metadata || {};
+      const ins = { id:u.id, full_name:m.full_name||u.email, phone:m.phone||'', phone2:m.phone2||'',
+        email:u.email, city:m.city||'', client_type:m.client_type||'client', role:'user' };
+      const { data:created } = await c.from('profiles').upsert(ins).select().maybeSingle();
+      prof = created || ins;
+    }
+  }catch(e){ console.warn('[AQ] профиль не загружен', e); }
+  try{
+    const { data } = await c.from('calculations').select('id,name,payload,created_at,result_kw')
+      .eq('user_id', u.id).order('created_at',{ascending:false});
+    projects = (data||[]).map(r=>({ id:r.id, label:r.name, createdAt:r.created_at,
+      state:(r.payload && r.payload.state) || null }));
+  }catch(e){ console.warn('[AQ] расчёты не загружены', e); }
+  _AQ.user = aqMapUser(u, prof, projects);
+  initAuthNav();
+}
+
+async function aqHydrate(){
+  if(!SB_CONFIGURED){ _AQ.hydrated = true; return; }
+  const c = sb();
+  if(!c){ _AQ.hydrated = true; return; }
+  try{
+    const { data:{ session } } = await c.auth.getSession();
+    await aqLoadSession(session);
+    c.auth.onAuthStateChange((_evt, sess)=>{ aqLoadSession(sess); });
+  }catch(e){ console.warn('[AQ] hydrate error', e); }
+  _AQ.hydrated = true;
+  if(_AQ.user) aqMaybeMigrate();
+}
+
+/* ── Auth actions (Supabase) ── */
+async function sbSignUp(data){
+  const c = sb(); if(!c) return {ok:false, err:'Supabase не настроен'};
+  const { error } = await c.auth.signUp({
+    email: data.email,
+    password: data.password,
+    options:{ data:{ full_name:data.login, phone:data.phone, phone2:data.phone2||'',
+      city:data.city||'', client_type:data.clientType||'client' } }
+  });
+  if(error){
+    const m = /already registered|exists/i.test(error.message) ? 'Этот email уже зарегистрирован'
+      : /password/i.test(error.message) ? 'Пароль слишком короткий (мин. 6 символов)'
+      : /valid email|invalid/i.test(error.message) ? 'Введите корректный email'
+      : error.message;
+    return {ok:false, err:m};
+  }
+  // Если в проекте включён «Confirm email», сессии сразу не будет.
+  const { data:{ session } } = await c.auth.getSession();
+  if(session) await aqLoadSession(session);
+  return {ok:true, needsConfirm: !session};
+}
+async function sbSignIn(email, password){
+  const c = sb(); if(!c) return {ok:false, err:'Supabase не настроен'};
+  const { data, error } = await c.auth.signInWithPassword({ email, password });
+  if(error){
+    const m = /Email not confirmed/i.test(error.message) ? 'Подтвердите email по ссылке из письма'
+      : /Invalid login/i.test(error.message) ? 'Неверный email или пароль'
+      : error.message;
+    return {ok:false, err:m};
+  }
+  await aqLoadSession(data.session);
+  return {ok:true};
+}
+
+/* ── Профиль: сохранение в Supabase ── */
+async function aqSaveProfile(patch){
+  const c = sb(), u = _AQ.user;
+  if(!c || !u) return {ok:false, err:'Не авторизован'};
+  const { error } = await c.from('profiles').update({
+    full_name:patch.full_name, phone:patch.phone, phone2:patch.phone2,
+    company:patch.company, city:patch.city
+  }).eq('id', u.id);
+  if(error) return {ok:false, err:error.message};
+  Object.assign(u, { name:patch.full_name, login:patch.full_name, phone:patch.phone,
+    phone2:patch.phone2, company:patch.company, city:patch.city });
+  initAuthNav();
+  return {ok:true};
+}
+
+/* ── Расчёты: сохранение/удаление в Supabase ── */
+async function aqSaveCalc(){
+  const u = authCurrentUser();
+  if(!u){ openAuth('login'); toast('Войдите, чтобы сохранить расчёт в кабинет','err'); return; }
+  const res = computeObject();
+  if(!res || !res.roomCount){ toast('Сначала завершите расчёт','err'); return; }
+  const label = `${ST.cityName||'—'} · ${ST.floors.length} эт. · ${res.totalArea.toFixed(0)} м² · ${res.totalKw.toFixed(1)} кВт`;
+  const payload = { state: serializeState(), summary:{ kw:+res.totalKw.toFixed(2),
+    boilerKw:+res.boilerKw.toFixed(2), sections:res.totalSections, area:+res.totalArea.toFixed(1),
+    rooms:res.roomCount, city:ST.cityName||'' } };
+  if(SB_CONFIGURED){
+    const c = sb();
+    const { data, error } = await c.from('calculations')
+      .insert({ user_id:u.id, name:label, payload, result_kw:+res.totalKw.toFixed(2) })
+      .select().maybeSingle();
+    if(error){ console.error('[AQ] save calc failed', error); toast('Не удалось сохранить расчёт','err'); return; }
+    if(_AQ.user) _AQ.user.projects.unshift({ id:data.id, label, createdAt:data.created_at, state:payload.state });
+    toast('Расчёт сохранён в кабинет ✓');
+  } else {
+    authSaveProject(label);
+    toast('Расчёт сохранён в кабинет (локально) ✓');
+  }
+}
+async function aqDeleteCalc(id){
+  if(SB_CONFIGURED){
+    const { error } = await sb().from('calculations').delete().eq('id', id);
+    if(error){ toast('Не удалось удалить','err'); return; }
+    if(_AQ.user) _AQ.user.projects = _AQ.user.projects.filter(p=>String(p.id)!==String(id));
+  } else {
+    const lu = _legacyCurrentUser();
+    if(lu){ const users=authLoadUsers(); const idx=users.findIndex(x=>x.id===lu.id);
+      if(idx>=0){ users[idx].projects=(users[idx].projects||[]).filter(p=>String(p.id)!==String(id)); authSaveUsers(users); } }
+  }
+  renderMyCalcs();
+  toast('Расчёт удалён');
+}
+
+/* ── Миграция localStorage → Supabase (Задача E) ── */
+async function aqMaybeMigrate(){
+  if(!SB_CONFIGURED) return;
+  const u = _AQ.user; if(!u) return;
+  if(localStorage.getItem('aq_migrated_v1')) return;
+  const hist = loadHistory();
+  if(!hist.length){ localStorage.setItem('aq_migrated_v1','1'); return; }
+  if(!confirm(`На этом устройстве найдено ${hist.length} локальных расчётов. Перенести их в ваш аккаунт?`)){
+    localStorage.setItem('aq_migrated_v1','1'); return;
+  }
+  const c = sb();
+  for(const h of hist){
+    try{
+      const kw = parseFloat((String(h.label).match(/([\d.]+)\s*кВт/)||[])[1]) || null;
+      await c.from('calculations').insert({ user_id:u.id, name:h.label,
+        payload:{ state:h.state, migrated:true }, result_kw:kw });
+    }catch(e){ console.error('[AQ] migrate item failed', e); }
+  }
+  localStorage.setItem('aq_migrated_v1','1');
+  try{ const { data:{ session } } = await c.auth.getSession(); await aqLoadSession(session); }catch(e){}
+  toast('Локальные расчёты перенесены в аккаунт ✓');
+}
+
+/* ════════════════════════════════════════════════════════════
    AUTH MODULE (Фаза 1-3)
-   Данные хранятся в localStorage. Владелец захардкожен.
+   localStorage-путь — теперь это ОФЛАЙН-FALLBACK (когда Supabase не настроен).
+   Когда SB_CONFIGURED=true, активен только путь Supabase (одна точка правды).
 ════════════════════════════════════════════════════════════ */
 const AUTH_USERS_KEY = 'aq_users_v3';
 const AUTH_SESSION_KEY = 'aq_session_v3';
@@ -676,7 +885,13 @@ function authGetSession(){ try{ return localStorage.getItem(AUTH_SESSION_KEY)||n
 function authSetSession(id){ try{ localStorage.setItem(AUTH_SESSION_KEY, id||''); }catch(e){} }
 function authClearSession(){ try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){} }
 
+/* Роутер: при настроенном Supabase читаем синхронный кэш _AQ.user,
+   иначе — localStorage-fallback (_legacyCurrentUser). */
 function authCurrentUser(){
+  if(SB_CONFIGURED) return _AQ.user;
+  return _legacyCurrentUser();
+}
+function _legacyCurrentUser(){
   const sid = authGetSession(); if(!sid) return null;
   if(sid==='__owner__') return {id:'__owner__',login:OWNER_LOGIN,role:'owner',phone:'',phone2:'',email:'',city:'',clientType:'',name:OWNER_LOGIN};
   const u = authLoadUsers().find(u=>u.id===sid);
@@ -728,7 +943,12 @@ function authRegister(data){
   return {ok:true};
 }
 
-function authLogout(){ authClearSession(); initAuthNav(); closeAdmin(); closeProfile(); closeMyCalcs(); closeSettings(); location.reload(); }
+async function authLogout(){
+  if(SB_CONFIGURED){ try{ await sb().auth.signOut(); }catch(e){} _AQ.user=null; }
+  else { authClearSession(); }
+  initAuthNav(); closeAdmin(); closeProfile(); closeMyCalcs(); closeSettings();
+  location.reload();
+}
 
 /* Save current calc result as a project under the logged-in user */
 function authSaveProject(label){
@@ -772,8 +992,8 @@ function renderLoginForm(){
   </div>
   <h2 class="text-xl font-extrabold text-cream mb-5">Вход в аккаунт</h2>
   <div class="space-y-3">
-    <div><label class="block text-xs font-semibold text-sand mb-1">Логин</label>
-      <input id="al-login" class="wi" placeholder="Ваш логин" autocomplete="username"></div>
+    <div><label class="block text-xs font-semibold text-sand mb-1">${SB_CONFIGURED?'Email':'Логин'}</label>
+      <input id="al-login" class="wi" type="${SB_CONFIGURED?'email':'text'}" placeholder="${SB_CONFIGURED?'you@example.com':'Ваш логин'}" autocomplete="username"></div>
     <div><label class="block text-xs font-semibold text-sand mb-1">Пароль</label>
       <input id="al-pass" class="wi" type="password" placeholder="Пароль" autocomplete="current-password"></div>
   </div>
@@ -792,10 +1012,10 @@ function renderRegisterForm(){
   <h2 class="text-xl font-extrabold text-cream mb-4">Создать аккаунт</h2>
   <div class="space-y-2.5">
     <div class="grid grid-cols-2 gap-2.5">
-      <div><label class="block text-xs font-semibold text-sand mb-1">Логин <span class="text-ember">*</span></label>
-        <input id="ar-login" class="wi" placeholder="Ваш логин" autocomplete="username"></div>
+      <div><label class="block text-xs font-semibold text-sand mb-1">${SB_CONFIGURED?'Имя':'Логин'} <span class="text-ember">*</span></label>
+        <input id="ar-login" class="wi" placeholder="${SB_CONFIGURED?'Ваше имя':'Ваш логин'}" autocomplete="${SB_CONFIGURED?'name':'username'}"></div>
       <div><label class="block text-xs font-semibold text-sand mb-1">Пароль <span class="text-ember">*</span></label>
-        <input id="ar-pass" class="wi" type="password" placeholder="Мин. 4 символа"></div>
+        <input id="ar-pass" class="wi" type="password" placeholder="${SB_CONFIGURED?'Мин. 6 символов':'Мин. 4 символа'}"></div>
     </div>
     <div class="grid grid-cols-2 gap-2.5">
       <div><label class="block text-xs font-semibold text-sand mb-1">Телефон <span class="text-ember">*</span></label>
@@ -804,8 +1024,8 @@ function renderRegisterForm(){
         <input id="ar-phone2" class="wi" placeholder="необязательно" type="tel"></div>
     </div>
     <div class="grid grid-cols-2 gap-2.5">
-      <div><label class="block text-xs font-semibold text-sand mb-1">Email</label>
-        <input id="ar-email" class="wi" placeholder="необязательно" type="email"></div>
+      <div><label class="block text-xs font-semibold text-sand mb-1">Email ${SB_CONFIGURED?'<span class="text-ember">*</span>':''}</label>
+        <input id="ar-email" class="wi" placeholder="${SB_CONFIGURED?'you@example.com':'необязательно'}" type="email"></div>
       <div><label class="block text-xs font-semibold text-sand mb-1">Город</label>
         <select id="ar-city" class="wi"><option value="">— выберите —</option>${cities.map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div>
     </div>
@@ -826,17 +1046,38 @@ function renderRegisterForm(){
 
 function setClientType(t){ _authClientType=t; document.querySelectorAll('.ctype-btn').forEach(b=>{ const oc=b.getAttribute('onclick')||''; b.classList.toggle('active',oc.includes(`'${t}'`)); }); }
 
-function doLogin(){
+async function doLogin(){
   const login=(document.getElementById('al-login').value||'').trim();
   const pass=document.getElementById('al-pass').value||'';
+  if(SB_CONFIGURED){
+    if(!login||!pass){ showAuthErr('Введите email и пароль'); return; }
+    const btn=event&&event.target; if(btn) btn.disabled=true;
+    const r=await sbSignIn(login,pass);
+    if(btn) btn.disabled=false;
+    if(!r.ok){ showAuthErr(r.err); return; }
+    closeAuth(); toast('Добро пожаловать ✓');
+    return;
+  }
   const r=authLogin(login,pass);
   if(!r.ok){ showAuthErr(r.err); return; }
   closeAuth(); initAuthNav();
   toast('Добро пожаловать, '+login+' ✓');
 }
-function doRegister(){
-  const err=document.getElementById('auth-err');
+async function doRegister(){
   const data={login:(document.getElementById('ar-login').value||'').trim(),password:document.getElementById('ar-pass').value||'',phone:(document.getElementById('ar-phone').value||'').trim(),phone2:(document.getElementById('ar-phone2').value||'').trim(),email:(document.getElementById('ar-email').value||'').trim(),city:document.getElementById('ar-city').value||'',clientType:_authClientType};
+  if(SB_CONFIGURED){
+    if(!data.login){ showAuthErr('Укажите имя'); return; }
+    if(!data.email){ showAuthErr('Укажите email'); return; }
+    if(!data.password||data.password.length<6){ showAuthErr('Пароль минимум 6 символов'); return; }
+    if(!data.phone||data.phone.length<7){ showAuthErr('Укажите номер телефона'); return; }
+    const btn=event&&event.target; if(btn) btn.disabled=true;
+    const r=await sbSignUp(data);
+    if(btn) btn.disabled=false;
+    if(!r.ok){ showAuthErr(r.err); return; }
+    closeAuth();
+    toast(r.needsConfirm?'Аккаунт создан — подтвердите email по ссылке из письма ✓':'Добро пожаловать! Аккаунт создан ✓');
+    return;
+  }
   const r=authRegister(data);
   if(!r.ok){ showAuthErr(r.err); return; }
   closeAuth(); initAuthNav();
@@ -936,9 +1177,31 @@ function openProfile(){
           </div>
         </div>
         ${ct?`<div class="mb-3"><p class="sec-label">Тип аккаунта</p><p class="text-sm text-cream font-semibold">${ct.label}</p><p class="text-xs text-muted mt-0.5">${ct.desc}</p></div>`:''}
+        ${u.email?`<div class="mb-3"><p class="sec-label">Email</p><p class="text-sm text-cream">${u.email}</p></div>`:''}
         <div class="mb-3"><p class="sec-label">Дата регистрации</p><p class="text-sm text-cream">${u.createdAt?new Date(u.createdAt).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}):'—'}</p></div>
-        <div><p class="sec-label">Сохранённых проектов</p><p class="text-2xl font-extrabold text-amber mono">${projs}</p></div>
+        <div><p class="sec-label">Сохранённых расчётов</p><p class="text-2xl font-extrabold text-amber mono">${projs}</p></div>
       </div>
+      ${u.id!=='__owner__'?`<div class="sec-card">
+        <p class="text-base font-bold text-cream mb-3">Редактировать профиль</p>
+        <div class="space-y-2.5">
+          <div><label class="block text-xs font-semibold text-sand mb-1">Имя</label>
+            <input id="pf-name" class="wi" value="${(u.name||u.login||'').replace(/"/g,'&quot;')}"></div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="block text-xs font-semibold text-sand mb-1">Телефон</label>
+              <input id="pf-phone" class="wi" type="tel" value="${(u.phone||'').replace(/"/g,'&quot;')}"></div>
+            <div><label class="block text-xs font-semibold text-sand mb-1">Телефон 2</label>
+              <input id="pf-phone2" class="wi" type="tel" value="${(u.phone2||'').replace(/"/g,'&quot;')}"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="block text-xs font-semibold text-sand mb-1">Компания</label>
+              <input id="pf-company" class="wi" value="${(u.company||'').replace(/"/g,'&quot;')}"></div>
+            <div><label class="block text-xs font-semibold text-sand mb-1">Город</label>
+              <input id="pf-city" class="wi" value="${(u.city||'').replace(/"/g,'&quot;')}"></div>
+          </div>
+        </div>
+        <p id="pf-msg" class="text-xs mt-2 hidden"></p>
+        <button onclick="doSaveProfile(this)" class="lg-btn w-full mt-3 py-2.5 text-sm">Сохранить профиль</button>
+      </div>`:''}
       <div class="sec-card">
         <p class="sec-label mb-3">Действия</p>
         <button onclick="openMyCalcs();closeProfile()" class="lg-btn-sec w-full py-2.5 text-sm mb-2 flex items-center justify-center gap-2">
@@ -953,6 +1216,31 @@ function openProfile(){
   });
 }
 function closeProfile(){ _closeSec('profile-overlay'); }
+async function doSaveProfile(btn){
+  const patch={
+    full_name:(document.getElementById('pf-name')?.value||'').trim(),
+    phone:(document.getElementById('pf-phone')?.value||'').trim(),
+    phone2:(document.getElementById('pf-phone2')?.value||'').trim(),
+    company:(document.getElementById('pf-company')?.value||'').trim(),
+    city:(document.getElementById('pf-city')?.value||'').trim()
+  };
+  const msg=document.getElementById('pf-msg');
+  const ok=(t)=>{ if(msg){ msg.textContent=t; msg.className='text-xs mt-2 text-green-400'; } };
+  const bad=(t)=>{ if(msg){ msg.textContent=t; msg.className='text-xs mt-2 text-ember'; } };
+  if(btn) btn.disabled=true;
+  if(SB_CONFIGURED){
+    const r=await aqSaveProfile(patch);
+    if(btn) btn.disabled=false;
+    if(!r.ok){ bad('Ошибка: '+r.err); return; }
+    ok('Профиль сохранён ✓');
+  } else {
+    const lu=_legacyCurrentUser();
+    if(!lu||lu.id==='__owner__'){ if(btn) btn.disabled=false; bad('Недоступно'); return; }
+    const users=authLoadUsers(); const idx=users.findIndex(x=>x.id===lu.id);
+    if(idx>=0){ Object.assign(users[idx],{login:patch.full_name||users[idx].login,phone:patch.phone,phone2:patch.phone2,company:patch.company,city:patch.city}); authSaveUsers(users); }
+    if(btn) btn.disabled=false; initAuthNav(); ok('Профиль сохранён ✓');
+  }
+}
 
 /* ════ MY CALCS PANEL ════ */
 function openMyCalcs(){
@@ -975,12 +1263,15 @@ function openMyCalcs(){
     }
     html+='</div>';
     if(u&&u.projects&&u.projects.length){
-      html+=`<div class="sec-card"><p class="text-base font-bold text-cream mb-3">Сохранённые проекты</p>`;
-      u.projects.slice(0,10).forEach(p=>{
+      html+=`<div class="sec-card"><p class="text-base font-bold text-cream mb-3">Сохранённые расчёты (кабинет)</p>`;
+      u.projects.slice(0,30).forEach(p=>{
         const d=new Date(p.createdAt);
-        html+=`<div class="hist-row" onclick="${p.state?`loadState(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p.state))}'))); ST.step=6; renderProgress(); renderStep(); updateNavHint(); updateLivePanel(); scrollToEl('calculator'); closeMyCalcs(); toast('Проект загружен ✓')`:``}">
-          <div><p class="font-semibold text-cream text-sm">${p.label}</p><p class="text-xs text-muted mt-0.5">${d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}</p></div>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0 text-amber"><polyline points="9 18 15 12 9 6"/></svg>
+        const loadAttr=p.state?`onclick="loadState(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p.state))}'))); ST.step=6; renderProgress(); renderStep(); updateNavHint(); updateLivePanel(); scrollToEl('calculator'); closeMyCalcs(); toast('Расчёт загружен ✓')"`:'';
+        html+=`<div class="hist-row" style="cursor:${p.state?'pointer':'default'}">
+          <div ${loadAttr} class="flex-1"><p class="font-semibold text-cream text-sm">${p.label}</p><p class="text-xs text-muted mt-0.5">${d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}</p></div>
+          <button onclick="event.stopPropagation(); if(confirm('Удалить этот расчёт?')) aqDeleteCalc('${p.id}')" class="flex-shrink-0 p-1.5 rounded-lg text-muted hover:text-ember transition-colors" title="Удалить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
         </div>`;
       });
       html+='</div>';
@@ -1052,20 +1343,34 @@ document.addEventListener('keydown',e=>{
   if(document.getElementById('ed-root')?.classList.contains('open')){ edClose(); return; }
 });
 
-function adminPage(page){
+async function adminPage(page){
   _adminPage=page;
   document.querySelectorAll('.adm-nav').forEach(n=>n.classList.remove('active'));
-  const navEl=document.getElementById('adm-nav-'+page); if(navEl) navEl.classList.add('active');
+  const navEl=document.getElementById('adm-nav-'+page.split(':')[0]); if(navEl) navEl.classList.add('active');
   const c=document.getElementById('admin-content'); if(!c) return;
-  if(page==='dashboard') c.innerHTML=adminDashboard();
-  else if(page==='users') c.innerHTML=adminUsers();
-  else if(page==='leads') c.innerHTML=adminLeads();
-  else if(page.startsWith('user:')) c.innerHTML=adminUserProfile(page.slice(5));
+  if(SB_CONFIGURED) c.innerHTML=`<p class="text-muted text-sm py-8 text-center">Загрузка…</p>`;
+  if(page==='dashboard') c.innerHTML=await adminDashboard();
+  else if(page==='users') c.innerHTML=await adminUsers();
+  else if(page==='leads') c.innerHTML=await adminLeads();
+  else if(page.startsWith('user:')) c.innerHTML=await adminUserProfile(page.slice(5));
 }
 
-function adminDashboard(){
-  const users=authLoadUsers();
-  const total=users.length, admins=users.filter(u=>u.role==='admin').length;
+/* Загрузка пользователей: Supabase (профили) или localStorage-fallback. */
+async function aqFetchProfiles(){
+  if(!SB_CONFIGURED) return authLoadUsers();
+  const c=sb(); if(!c) return [];
+  try{
+    const { data, error } = await c.from('profiles').select('*').order('created_at',{ascending:false});
+    if(error){ console.error('[AQ] profiles fetch', error); return []; }
+    return (data||[]).map(p=>({ id:p.id, login:p.full_name||p.email||'—', role:p.role||'user',
+      clientType:p.client_type||'client', city:p.city||'', phone:p.phone||'', phone2:p.phone2||'',
+      email:p.email||'', company:p.company||'', createdAt:p.created_at, projects:[] }));
+  }catch(e){ console.error('[AQ] profiles fetch exception', e); return []; }
+}
+
+async function adminDashboard(){
+  const users=await aqFetchProfiles();
+  const total=users.length, admins=users.filter(u=>u.role==='admin'||u.role==='owner').length;
   const byType=CLIENT_TYPES.map(t=>({...t,count:users.filter(u=>u.clientType===t.id).length}));
   const totalProj=users.reduce((s,u)=>s+(u.projects||[]).length,0);
   return `
@@ -1094,20 +1399,20 @@ function adminDashboard(){
   ${[...users].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).map(u=>adminUserRow(u)).join('')}`;
 }
 
-function adminUsers(){
-  const users=authLoadUsers();
+async function adminUsers(){
+  const users=await aqFetchProfiles();
   return `
   <div class="flex items-center justify-between mb-5">
     <h2 class="text-xl font-extrabold text-cream">Пользователи</h2>
     <span class="text-xs text-muted">${users.length} аккаунтов</span>
   </div>
-  <!-- Owner row -->
+  ${!SB_CONFIGURED?`<!-- Owner row (legacy offline mode) -->
   <div class="adm-ucard flex items-center justify-between gap-3 cursor-default" style="border-color:rgba(194,112,61,.25);background:rgba(194,112,61,.05)">
     <div>
       <div class="flex items-center gap-2 mb-0.5"><span class="font-semibold text-cream text-sm">${OWNER_LOGIN}</span><span class="adm-badge owner">Владелец</span></div>
       <p class="text-xs text-muted">Владелец сайта — системный аккаунт</p>
     </div>
-  </div>
+  </div>`:''}
   ${users.length===0?'<p class="text-muted text-sm mt-6 text-center">Нет зарегистрированных пользователей</p>':
     [...users].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map(u=>adminUserRow(u,true)).join('')}`;
 }
@@ -1115,7 +1420,7 @@ function adminUsers(){
 function adminUserRow(u,clickable){
   const ct=CLIENT_TYPES.find(t=>t.id===u.clientType)||{label:'—'};
   const date=u.createdAt?new Date(u.createdAt).toLocaleDateString('ru-RU'):'—';
-  const badge=u.role==='admin'?'<span class="adm-badge admin">Админ</span>':'<span class="adm-badge user">Клиент</span>';
+  const badge=u.role==='owner'?'<span class="adm-badge owner">Владелец</span>':u.role==='admin'?'<span class="adm-badge admin">Админ</span>':'<span class="adm-badge user">Клиент</span>';
   const clickAttrs = clickable ? ` role="button" tabindex="0" onclick="adminPage('user:${u.id}')"` : '';
   return `<div class="adm-ucard${clickAttrs}">
     <div class="flex items-center justify-between gap-2">
@@ -1128,14 +1433,21 @@ function adminUserRow(u,clickable){
   </div>`;
 }
 
-function adminUserProfile(uid){
-  const users=authLoadUsers();
-  const u=users.find(x=>x.id===uid);
+async function adminUserProfile(uid){
+  let u;
+  if(SB_CONFIGURED){
+    const list=await aqFetchProfiles();
+    u=list.find(x=>x.id===uid);
+    if(u){ try{ const { count }=await sb().from('calculations').select('id',{count:'exact',head:true}).eq('user_id',uid); u.projectCount=count||0; }catch(e){ u.projectCount=0; } }
+  } else {
+    u=authLoadUsers().find(x=>x.id===uid);
+  }
   if(!u) return '<p class="text-muted">Пользователь не найден</p>';
   const ct=CLIENT_TYPES.find(t=>t.id===u.clientType)||{label:'—'};
   const isAdmin=u.role==='admin';
   const cu=authCurrentUser();
-  const canToggleAdmin=cu&&cu.role==='owner';
+  const canToggleAdmin=cu&&cu.role==='owner'&&!SB_CONFIGURED;
+  const projCount=u.projectCount!=null?u.projectCount:(u.projects||[]).length;
   return `
   <button onclick="adminPage('users')" class="flex items-center gap-1.5 text-xs text-muted hover:text-cream mb-4 transition-colors">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><polyline points="15 18 9 12 15 6"/></svg>Все пользователи
@@ -1153,14 +1465,17 @@ function adminUserProfile(uid){
     <div class="adm-stat text-left"><p class="text-xs text-muted mb-0.5">Email</p><p class="font-semibold text-cream text-sm">${u.email||'—'}</p></div>
     <div class="adm-stat text-left"><p class="text-xs text-muted mb-0.5">Город</p><p class="font-semibold text-cream text-sm">${u.city||'—'}</p></div>
     <div class="adm-stat text-left"><p class="text-xs text-muted mb-0.5">Дата регистрации</p><p class="font-semibold text-cream text-sm">${u.createdAt?new Date(u.createdAt).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}):'—'}</p></div>
-    <div class="adm-stat text-left"><p class="text-xs text-muted mb-0.5">Проектов</p><p class="font-semibold text-cream text-sm">${(u.projects||[]).length}</p></div>
+    <div class="adm-stat text-left"><p class="text-xs text-muted mb-0.5">Расчётов</p><p class="font-semibold text-cream text-sm">${projCount}</p></div>
   </div>
   ${canToggleAdmin?`<div class="mb-6 flex gap-2">
     ${!isAdmin?`<button onclick="adminSetRole('${u.id}','admin')" class="lg-btn px-5 py-2 text-sm">Назначить администратором</button>`:`<button onclick="adminSetRole('${u.id}','user')" class="lg-btn-sec px-5 py-2 text-sm">Снять права администратора</button>`}
   </div>`:''}
-  <h3 class="text-sm font-bold text-cream mb-3">Проекты пользователя</h3>
-  ${(u.projects||[]).length===0?'<p class="text-xs text-muted">Нет сохранённых проектов</p>':
-    (u.projects||[]).map(p=>`<div class="adm-proj-card"><div class="flex justify-between items-center"><span class="font-semibold text-cream">${p.label}</span><span class="text-xs text-muted">${new Date(p.createdAt).toLocaleDateString('ru-RU')}</span></div></div>`).join('')}`;
+  ${SB_CONFIGURED?`<p class="text-xs text-muted mb-6">Роль пользователя меняется в Supabase: <span class="mono">update profiles set role='admin' where id='${u.id}';</span></p>`:''}
+  <h3 class="text-sm font-bold text-cream mb-3">Расчёты пользователя</h3>
+  ${SB_CONFIGURED
+    ? `<p class="text-xs text-muted">${projCount?`Сохранённых расчётов: <b class="text-cream">${projCount}</b> (содержимое скрыто — приватность RLS).`:'Нет сохранённых расчётов'}</p>`
+    : ((u.projects||[]).length===0?'<p class="text-xs text-muted">Нет сохранённых проектов</p>':
+      (u.projects||[]).map(p=>`<div class="adm-proj-card"><div class="flex justify-between items-center"><span class="font-semibold text-cream">${p.label}</span><span class="text-xs text-muted">${new Date(p.createdAt).toLocaleDateString('ru-RU')}</span></div></div>`).join(''))}`;
 }
 
 function adminSetRole(uid, role){
@@ -1172,8 +1487,21 @@ function adminSetRole(uid, role){
   toast(role==='admin'?'Администратор назначен ✓':'Права сняты');
 }
 
-function adminLeads(){
-  const leads=loadLeads();
+async function adminLeads(){
+  let leads;
+  if(SB_CONFIGURED){
+    const c=sb();
+    try{
+      const { data, error } = await c.from('leads').select('*').order('created_at',{ascending:false}).limit(500);
+      if(error){ console.error('[AQ] leads fetch', error); leads=[]; }
+      else leads=(data||[]).map(l=>({ id:l.id, name:l.name, phone:l.phone, city:l.city,
+        kw:l.calc_result_kw, createdAt:l.created_at,
+        boilerKw:(l.payload&&l.payload.boilerKw)||'', sections:(l.payload&&l.payload.sections)||'',
+        area:(l.payload&&l.payload.area)||'', floors:(l.payload&&l.payload.floors)||'', rooms:(l.payload&&l.payload.rooms)||'' }));
+    }catch(e){ console.error('[AQ] leads fetch exception', e); leads=[]; }
+  } else {
+    leads=loadLeads();
+  }
   const badge=document.getElementById('adm-leads-badge');
   if(badge&&leads.length){ badge.innerHTML=`<span class="adm-badge user ml-1" style="padding:.1rem .4rem">${leads.length}</span>`; }
   if(!leads.length) return `
@@ -1184,7 +1512,7 @@ function adminLeads(){
   return `
   <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
     <h2 class="text-xl font-extrabold text-cream">Заявки <span class="text-amber">(${leads.length})</span></h2>
-    <button onclick="if(confirm('Удалить все заявки?')){saveLeads([]);adminPage('leads')}" class="text-xs text-muted hover:text-ember transition-colors">Очистить</button>
+    ${SB_CONFIGURED?'':`<button onclick="if(confirm('Удалить все заявки?')){saveLeads([]);adminPage('leads')}" class="text-xs text-muted hover:text-ember transition-colors">Очистить</button>`}
   </div>
   ${leads.map(l=>{
     const d=new Date(l.createdAt);
@@ -3779,6 +4107,10 @@ function s6(){
   </div>
 
   <div class="flex flex-col gap-3 sm:flex-row">
+    <button type="button" onclick="aqSaveCalc()" class="lg-btn flex flex-1 items-center justify-center gap-2 px-5 py-3.5 text-sm font-medium">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Сохранить в кабинет
+    </button>
     <button type="button" onclick="saveLink()" class="lg-btn-sec flex flex-1 items-center justify-center gap-2 px-5 py-3.5 text-sm font-medium">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
       Сохранить расчёт (ссылка)
@@ -4209,8 +4541,21 @@ function sendWhatsApp(){
     `🔧 Радиаторов: ${res.totalSections} секций\n\n`+
     `Прошу помочь с подбором и стоимостью.`+(phone?`\nТелефон: ${phone}`:'')
   );
+  const leadPayload={floors:ST.floors.length,rooms:res.roomCount,area:+res.totalArea.toFixed(1),kw:+res.totalKw.toFixed(2),boilerKw:+res.boilerKw.toFixed(2),sections:res.totalSections,city:ST.cityName||''};
+  // 1) Сохраняем заявку в Supabase (бизнес не должен терять лиды).
+  //    Insert инициируется ПЕРВЫМ; ошибка не мешает открыть мессенджер.
+  if(SB_CONFIGURED){
+    const c=sb();
+    if(c){
+      c.from('leads').insert({name,phone,city:ST.cityName||'',calc_result_kw:+res.totalKw.toFixed(2),source:'whatsapp',payload:leadPayload})
+        .then(({error})=>{ if(error) console.error('[AQ] lead insert failed', error); })
+        .catch(e=>console.error('[AQ] lead insert exception', e));
+    }
+  }
+  // Локальная копия + аналитика (back-compat / офлайн-режим).
   saveLead({name,phone,city:ST.cityName||'',floors:ST.floors.length,rooms:res.roomCount,area:res.totalArea.toFixed(1),kw:res.totalKw.toFixed(2),boilerKw:res.boilerKw.toFixed(2),sections:res.totalSections});
   trackEvent('lead_sent');
+  // 2) Открываем WhatsApp синхронно (внутри жеста пользователя — без блокировки попапа).
   window.open(`https://wa.me/${CONTACT.whatsapp}?text=${msg}`,'_blank');
   document.getElementById('modal-body').innerHTML=`
     <div class="py-8 text-center">
@@ -4624,6 +4969,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('DOMContentLoaded',()=>{
   initScroll(); initHero(); initShaderBG(); initOrbital(); initWizard();
   applyLang();    // i18n: restore saved language preference and update UI
+  aqHydrate();    // Supabase: восстановить сессию (переживает перезагрузку) и профиль
+  if(SB_CONFIGURED) console.info('[AQ] Supabase backend: ON');
+  else console.info('[AQ] Supabase не настроен — офлайн-режим (математика работает, аккаунт/заявки локально)');
   if(ST.step===6){ setTimeout(()=>scrollToEl('calculator',{immediate:true}),300); toast('Загружен сохранённый расчёт ✓'); }
   document.addEventListener('click',e=>{ if(!e.target.closest('.tip')) document.querySelectorAll('.tip.open').forEach(t=>t.classList.remove('open')); });
 });
