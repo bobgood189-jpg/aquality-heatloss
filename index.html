@@ -53,7 +53,8 @@
     SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY'
   };
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Supabase JS подгружается ДИНАМИЧЕСКИ и только если заданы ключи (см. loadSupabaseLib).
+     В офлайн-режиме внешний бэкенд-CDN не запрашивается вообще. -->
 <style>
 *,*::before,*::after{box-sizing:border-box}
 /* Native smooth-scroll ТОЛЬКО когда Lenis выключен (reduced-motion).
@@ -675,11 +676,27 @@ const SB_CONFIGURED = !!(
   !/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_ANON_KEY)
 );
 let _sbClient = null;
+let _sbLibPromise = null;
+/* Грузим Supabase JS динамически и только когда заданы ключи. Если CDN недоступен —
+   не падаем: возвращаем false, аккаунт/заявки работают в офлайн-fallback. */
+function loadSupabaseLib(){
+  if(window.supabase && window.supabase.createClient) return Promise.resolve(true);
+  if(_sbLibPromise) return _sbLibPromise;
+  _sbLibPromise = new Promise((resolve)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    s.async=true;
+    s.onload=()=>resolve(!!(window.supabase && window.supabase.createClient));
+    s.onerror=()=>{ console.error('[AQ] Supabase JS (CDN) не загрузился — аккаунт/заявки временно офлайн'); resolve(false); };
+    document.head.appendChild(s);
+  });
+  return _sbLibPromise;
+}
 function sb(){
   if(!SB_CONFIGURED) return null;
   if(_sbClient) return _sbClient;
   if(!window.supabase || !window.supabase.createClient){
-    console.warn('[AQ] Supabase JS (CDN) не загрузился — работаем в офлайн-режиме');
+    console.warn('[AQ] Supabase JS ещё не загружен');
     return null;
   }
   _sbClient = window.supabase.createClient(AQ_CFG.SUPABASE_URL, AQ_CFG.SUPABASE_ANON_KEY);
@@ -736,6 +753,8 @@ async function aqLoadSession(session){
 
 async function aqHydrate(){
   if(!SB_CONFIGURED){ _AQ.hydrated = true; return; }
+  const libOk = await loadSupabaseLib();
+  if(!libOk){ _AQ.hydrated = true; return; }
   const c = sb();
   if(!c){ _AQ.hydrated = true; return; }
   try{
@@ -2568,7 +2587,7 @@ function updateLivePanel(){
     const kw=res.totalKw;
     valEl.style.fontSize = kw>=1000?'1.9rem':kw>=100?'2.4rem':'3rem';
     const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(reduced||_prevKw===null){ valEl.textContent=kw.toFixed(2); }
+    if(reduced||_prevKw===null||typeof gsap==='undefined'){ valEl.textContent=kw.toFixed(2); }
     else { const obj={v:_prevKw||0}; if(_kwAnim)_kwAnim.kill();
       _kwAnim=gsap.to(obj,{v:kw,duration:.6,ease:'power2.out',onUpdate(){valEl.textContent=obj.v.toFixed(2);}}); }
     _prevKw=kw;
@@ -2647,7 +2666,7 @@ function updateNavHint(){
 function transitionStep(dir){
   const panel=document.getElementById('step-panel'); if(!panel) return;
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(reduced){ renderStep(); return; }
+  if(reduced || typeof gsap==='undefined'){ renderStep(); return; }
   gsap.to(panel,{opacity:0,x:dir*-24,duration:.15,ease:'power2.in',onComplete:()=>{
     renderStep();
     gsap.fromTo(panel,{opacity:0,x:dir*24},{opacity:1,x:0,duration:.24,ease:'power2.out'});
@@ -4959,7 +4978,7 @@ function scrollToEl(el,opts){
 }
 /* ═══ Result section: count-up + card reveal ═══ */
 function runResultReveal(){
-  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof gsap==='undefined';
   // Count-up for all [data-target] spans
   document.querySelectorAll('[data-target]').forEach(el=>{
     const target=parseFloat(el.dataset.target)||0;
@@ -4976,7 +4995,7 @@ function runResultReveal(){
 }
 
 function initHero(){
-  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches; if(reduced) return;
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches; if(reduced || typeof gsap==='undefined') return;
   const content=document.getElementById('hero-content');
   if(content){ const items=content.querySelectorAll('p,h1,div.mt-9'); gsap.from(items,{opacity:0,y:24,duration:.7,ease:'power2.out',stagger:.1,delay:.15}); }
 }
@@ -4996,9 +5015,18 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('DOMContentLoaded',()=>{
-  initScroll(); initHero(); initShaderBG(); initOrbital(); initWizard();
-  applyLang();    // i18n: restore saved language preference and update UI
-  aqHydrate();    // Supabase: восстановить сессию (переживает перезагрузку) и профиль
+  // Каждый init изолирован: если какой-то CDN (GSAP/Lenis/Three) не загрузился
+  // (медленный/заблокированный CDN, открытие через file://), это НЕ должно убивать
+  // остальной интерфейс. Сначала — критичный UI (калькулятор + меню аккаунта),
+  // потом — анимации/визуал (необязательные).
+  const safe=(name,fn)=>{ try{ fn(); }catch(e){ console.error('[AQ] init «'+name+'» упал (не критично):', e); } };
+  safe('wizard', initWizard);     // рендер мастера расчёта — кнопки/шаги
+  safe('lang', applyLang);        // i18n + меню аккаунта (initAuthNav)
+  safe('hydrate', aqHydrate);     // Supabase: восстановление сессии (если настроен)
+  safe('scroll', initScroll);
+  safe('hero', initHero);
+  safe('shaderBG', initShaderBG);
+  safe('orbital', initOrbital);
   if(SB_CONFIGURED) console.info('[AQ] Supabase backend: ON');
   else console.info('[AQ] Supabase не настроен — офлайн-режим (математика работает, аккаунт/заявки локально)');
   if(ST.step===6){ setTimeout(()=>scrollToEl('calculator',{immediate:true}),300); toast('Загружен сохранённый расчёт ✓'); }
