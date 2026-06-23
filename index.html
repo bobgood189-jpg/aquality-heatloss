@@ -39,6 +39,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box}
 /* Native smooth-scroll ТОЛЬКО когда Lenis выключен (reduced-motion).
@@ -181,6 +183,53 @@ input[type=range]{accent-color:#f59e0b}
 .ed-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
 .ed-hint{position:absolute;right:10px;top:10px;background:rgba(18,16,11,.82);border:1px solid rgba(217,199,180,.1);border-radius:.5rem;padding:.35rem .55rem;font-size:.66rem;color:#9a8675;pointer-events:none;font-family:'JetBrains Mono',monospace}
 @media (max-width:760px){ .ed-props{display:none} .ed-palette{width:52px} .ed-ico{width:40px;height:38px} }
+
+/* ── Mini-Revit Ribbon ── */
+.ed-ribbon{display:flex;flex-direction:column;gap:0;padding:.3rem .28rem;border-right:1px solid rgba(217,199,180,.1);background:#12100b;width:148px;flex-shrink:0;overflow-y:auto;overflow-x:hidden}
+.er-search{padding:.2rem .15rem .3rem}
+.er-search input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(217,199,180,.13);border-radius:.45rem;color:#d9c7b4;font-size:.7rem;padding:.28rem .5rem;outline:none;font-family:'Manrope',sans-serif;transition:border-color .15s}
+.er-search input:focus{border-color:rgba(245,158,11,.4)}
+.er-search input::placeholder{color:rgba(154,134,117,.35)}
+.er-cat{border-bottom:1px solid rgba(217,199,180,.06)}
+.er-head{display:flex;align-items:center;gap:.35rem;padding:.3rem .35rem;cursor:pointer;border-radius:.38rem;color:#6b5d4f;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;user-select:none;transition:color .15s,background .15s}
+.er-head:hover{color:#d9c7b4;background:rgba(255,255,255,.03)}
+.er-head svg{flex-shrink:0;opacity:.7}
+.er-chev{margin-left:auto;transition:transform .18s;font-size:.75rem;color:rgba(154,134,117,.4);line-height:1}
+.er-head.open .er-chev{transform:rotate(90deg)}
+.er-body{display:grid;grid-template-columns:1fr 1fr;gap:.22rem;padding:.2rem .15rem .38rem}
+.er-body.hidden{display:none}
+.er-ico{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:.5rem;border:1px solid rgba(217,199,180,.09);background:rgba(255,255,255,.02);padding:.3rem .15rem;font-size:.5rem;color:#6b5d4f;cursor:pointer;transition:border-color .15s,background .15s,color .15s,box-shadow .15s;line-height:1.25;text-align:center;min-height:44px;word-break:break-word;position:relative;overflow:hidden}
+.er-ico:hover{border-color:rgba(245,158,11,.35);color:#faf6f0;background:rgba(245,158,11,.07);box-shadow:0 1px 0 rgba(255,255,255,.07) inset}
+.er-ico.active{border-color:#f59e0b;background:rgba(245,158,11,.14);color:#f59e0b;box-shadow:0 1px 0 rgba(255,210,122,.1) inset,0 0 10px rgba(245,158,11,.18)}
+.er-ico svg{width:14px;height:14px;flex-shrink:0}
+.er-hk{position:absolute;bottom:2px;right:3px;font-family:'JetBrains Mono',monospace;font-size:.42rem;color:rgba(255,210,122,.5);line-height:1}
+@media(max-width:760px){.ed-ribbon{width:52px}.er-body{grid-template-columns:1fr}.er-ico span:not(.er-hk){display:none}}
+
+/* ── Tool Tooltip ── */
+.et-tip-wrap{position:fixed;z-index:500;pointer-events:none}
+.et-tip{background:linear-gradient(145deg,rgba(26,22,16,.98),rgba(18,16,11,.95));border:1px solid rgba(245,158,11,.28);border-radius:.9rem;padding:.8rem .95rem;box-shadow:0 20px 50px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.05) inset;min-width:210px;max-width:265px;opacity:0;transform:scale(.94) translateY(6px)}
+.et-tip-label{font-size:.84rem;font-weight:800;color:#faf6f0;margin-bottom:.28rem}
+.et-tip-desc{font-size:.72rem;color:#9a8675;line-height:1.52;margin-bottom:.6rem}
+.et-tip-foot{display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-top:1px solid rgba(217,199,180,.08);padding-top:.45rem;margin-top:.1rem}
+kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radius:.32rem;background:#0e0c08;border:1px solid rgba(217,199,180,.22);font-family:'JetBrains Mono',monospace;font-size:.64rem;color:#ffd27a;box-shadow:0 2px 0 rgba(0,0,0,.5);letter-spacing:.04em}
+.et-tip-change{font-size:.65rem;color:rgba(154,134,117,.75);cursor:pointer;text-decoration:underline;text-underline-offset:2px;pointer-events:auto}
+.et-tip-change:hover{color:#f59e0b}
+
+/* ── Hotkey Capture ── */
+.hk-capture{position:fixed;inset:0;z-index:600;background:rgba(10,7,5,.88);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center}
+.hk-capture-box{background:linear-gradient(145deg,rgba(26,22,16,.97),rgba(18,16,11,.95));border:1px solid rgba(245,158,11,.4);border-radius:1.1rem;padding:1.6rem 2.1rem;text-align:center;box-shadow:0 28px 70px rgba(0,0,0,.75),0 1px 0 rgba(255,255,255,.06) inset;min-width:290px}
+.hk-capture-box h3{color:#faf6f0;font-size:1.05rem;font-weight:800;margin:0 0 .4rem}
+.hk-capture-box p{color:#9a8675;font-size:.78rem;margin:0 0 .5rem;line-height:1.45}
+.hk-live{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:700;color:#f59e0b;min-height:2.8rem;letter-spacing:.12em;margin:.4rem 0}
+
+/* ── 3D View overlay ── */
+#view3d-root{position:absolute;inset:0;z-index:5;display:none;background:#0a0705}
+#view3d-root.open{display:block}
+#view3d-canvas{display:block}
+.v3d-bar{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:.35rem;z-index:10}
+.v3d-btn{display:flex;align-items:center;gap:.35rem;background:rgba(18,16,11,.9);border:1px solid rgba(217,199,180,.16);border-radius:.55rem;color:#d9c7b4;font-size:.75rem;padding:.38rem .65rem;cursor:pointer;backdrop-filter:blur(8px);transition:border-color .15s,color .15s;white-space:nowrap}
+.v3d-btn:hover{border-color:rgba(245,158,11,.42);color:#faf6f0}
+.v3d-btn.active{border-color:#f59e0b;color:#f59e0b}
 
 /* Tooltips (? icons) */
 .tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid rgba(245,158,11,.45);color:#f59e0b;font-size:10px;font-weight:700;cursor:help;margin-left:5px;vertical-align:middle;user-select:none;flex-shrink:0}
@@ -2721,10 +2770,355 @@ function loadDemo(){
    Работает с теми же ST.floors / комнатами. Зум+панорама, ручки-resize,
    привязки и направляющие, размеры, undo/redo, горячие клавиши, экспорт PNG.
 ════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   TOOL CATEGORIES & REGISTRY — единый источник правды
+═══════════════════════════════════════════════════════════ */
+const TOOL_CATEGORIES=[
+  {id:'draw',    label:'Черчение',      sp:'<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>'},
+  {id:'modify',  label:'Редактирование',sp:'<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>'},
+  {id:'heating', label:'Отопление',     sp:'<path d="M12 2c0 6-8 8-8 14a8 8 0 0 0 16 0c0-6-8-8-8-14z"/>'},
+  {id:'rooms',   label:'Помещения',     sp:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>'},
+  {id:'annotate',label:'Аннотации',     sp:'<line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="12" y2="6"/><line x1="4" y1="18" x2="16" y2="18"/>'},
+  {id:'measure', label:'Измерения',     sp:'<path d="M3 6h18M3 6v4M21 6v4M7 8h10"/>'},
+  {id:'view',    label:'Вид',           sp:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'},
+];
+
+const TOOL_REGISTRY=[
+  /* ─── DRAW ─── */
+  {id:'draw',  label:'Прямоугольник',category:'draw',  defaultHotkey:'DR',
+   description:'Нарисовать прямоугольную комнату — зажмите ЛКМ и потяните.',
+   icon:'<rect x="3" y="3" width="18" height="18" rx="2"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('draw')},
+  {id:'poly',  label:'Полигон',      category:'draw',  defaultHotkey:'PL',
+   description:'Произвольная комната любой формы. Кликайте углы, замкните на первой точке или Enter.',
+   icon:'<path d="M12 2l8 5v7l-5 8H9l-4-6 2-7z"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('poly')},
+  {id:'line',  label:'Линия',        category:'draw',  defaultHotkey:'LI',
+   description:'Нарисовать произвольную линию-разметку (аннотационная, не стена).',
+   icon:'<line x1="5" y1="19" x2="19" y2="5"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('line')},
+  {id:'arc',   label:'Дуга',         category:'draw',  defaultHotkey:'AC',
+   description:'Нарисовать дугу: три клика — начало, конец, точка на дуге.',
+   icon:'<path d="M3 12c0-5 3.5-9 9-9s9 4 9 9"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('arc')},
+  {id:'circle',label:'Окружность',   category:'draw',  defaultHotkey:'CI',
+   description:'Нарисовать окружность — клик центр, тяните до нужного радиуса.',
+   icon:'<circle cx="12" cy="12" r="9"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('circle')},
+  /* ─── MODIFY ─── */
+  {id:'select',     label:'Выбрать',   category:'modify',defaultHotkey:'SS',
+   description:'Выбрать комнату, тянуть ручки для изменения размеров, тянуть комнату для перемещения.',
+   icon:'<path d="M3 3l7 18 2-7 7-2z"/>',cursor:'default',isToggle:false,
+   action:()=>setEdTool('select')},
+  {id:'duplicate',  label:'Копировать',category:'modify',defaultHotkey:'CO',
+   description:'Дублировать выбранную комнату со смещением 0.5 м.',
+   icon:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',cursor:'default',isToggle:false,
+   action:()=>edDuplicate()},
+  {id:'rotate',     label:'Повернуть', category:'modify',defaultHotkey:'RO',
+   description:'Повернуть выбранную комнату на 90°.',
+   icon:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',cursor:'default',isToggle:false,
+   action:()=>edRotate()},
+  {id:'mirror',     label:'Зеркало',   category:'modify',defaultHotkey:'MM',
+   description:'Отразить выбранную комнату по горизонтали.',
+   icon:'<line x1="12" y1="3" x2="12" y2="21"/><polyline points="8 7 4 12 8 17"/><polyline points="16 7 20 12 16 17"/>',cursor:'default',isToggle:false,
+   action:()=>edMirror()},
+  {id:'scale',      label:'Масштаб',   category:'modify',defaultHotkey:'SC',
+   description:'Масштабировать выбранную комнату: введите коэффициент.',
+   icon:'<path d="M3 3l5 5M21 3l-5 5M3 21l5-5M21 21l-5-5"/>',cursor:'default',isToggle:false,
+   action:()=>edScaleTool()},
+  {id:'align',      label:'Выровнять', category:'modify',defaultHotkey:'AL',
+   description:'Выровнять выбранную комнату: левый край, правый, верх, низ, центр.',
+   icon:'<line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/>',cursor:'default',isToggle:false,
+   action:()=>edAlignMenu()},
+  {id:'offset',     label:'Смещение',  category:'modify',defaultHotkey:'OF',
+   description:'Сдвинуть все стороны комнаты: положительное — увеличить, отрицательное — уменьшить.',
+   icon:'<rect x="5" y="5" width="14" height="14" rx="1"/><rect x="2" y="2" width="20" height="20" rx="2"/>',cursor:'default',isToggle:false,
+   action:()=>edOffsetTool()},
+  {id:'bring-front',label:'На перед',  category:'modify',defaultHotkey:'BF',
+   description:'Переместить выбранную комнату на передний план (поверх других).',
+   icon:'<rect x="3" y="8" width="13" height="13" rx="2"/><path d="M8 8V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9"/>',cursor:'default',isToggle:false,
+   action:()=>edBringFront()},
+  {id:'delete',     label:'Удалить',   category:'modify',defaultHotkey:'DL',
+   description:'Удалить выбранную комнату (клавиша Del).',
+   icon:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/>',cursor:'default',isToggle:false,
+   action:()=>edDelete()},
+  /* ─── HEATING ─── */
+  {id:'radiator',   label:'Радиатор',  category:'heating',defaultHotkey:'RA',
+   description:'Разместить радиатор отопления — кликните на стену/угол помещения.',
+   icon:'<rect x="3" y="7" width="18" height="10" rx="1"/><line x1="7" y1="7" x2="7" y2="17"/><line x1="11" y1="7" x2="11" y2="17"/><line x1="15" y1="7" x2="15" y2="17"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('radiator')},
+  {id:'warm-floor', label:'Тёплый пол',category:'heating',defaultHotkey:'WF',
+   description:'Пометить выбранное помещение как «тёплый пол» (UFH). Влияет на расчёт теплопотерь.',
+   icon:'<path d="M12 2c0 5-5 7-5 12a5 5 0 0 0 10 0c0-5-5-7-5-12z"/><path d="M9 17c1-1.5 3-1.5 4 0"/>',cursor:'default',isToggle:false,
+   action:()=>edToggleWarmFloor()},
+  {id:'boiler',     label:'Котёл',     category:'heating',defaultHotkey:'BO',
+   description:'Разместить маркер котла/теплогенератора на плане.',
+   icon:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="3" x2="12" y2="8"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('boiler')},
+  {id:'pipe',       label:'Трасса',    category:'heating',defaultHotkey:'PP',
+   description:'Нарисовать трассу трубопровода (ломаная линия). Enter/ПКМ — завершить.',
+   icon:'<path d="M3 12h18M8 7v10M16 7v10"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('pipe')},
+  {id:'collector',  label:'Коллектор', category:'heating',defaultHotkey:'CL',
+   description:'Разместить коллектор системы отопления/тёплого пола.',
+   icon:'<rect x="3" y="9" width="18" height="6" rx="1"/><line x1="7" y1="4" x2="7" y2="9"/><line x1="12" y1="4" x2="12" y2="9"/><line x1="17" y1="4" x2="17" y2="9"/><line x1="7" y1="15" x2="7" y2="20"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="17" y1="15" x2="17" y2="20"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('collector')},
+  {id:'thermostat', label:'Термостат', category:'heating',defaultHotkey:'TH',
+   description:'Разместить термостат/регулятор температуры в помещении.',
+   icon:'<circle cx="12" cy="14" r="5"/><line x1="12" y1="2" x2="12" y2="9"/><path d="M12 9a3 3 0 0 1 3 3"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('thermostat')},
+  /* ─── ROOMS ─── */
+  {id:'area-tag',   label:'Тег площади',category:'rooms',defaultHotkey:'AT',
+   description:'Показать/скрыть теги площади на всех комнатах плана.',
+   icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h4M9 15h2"/>',cursor:'default',isToggle:true,
+   action:()=>edToggleAreaTags()},
+  {id:'room-type',  label:'Тип комнаты',category:'rooms',defaultHotkey:'RT',
+   description:'Изменить тип выбранной комнаты — влияет на расчётную температуру и теплопотери.',
+   icon:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',cursor:'default',isToggle:false,
+   action:()=>edRoomTypeMenu()},
+  {id:'ext-wall',   label:'Нар. стена',category:'rooms',defaultHotkey:'EW',
+   description:'Граница теплопотерь определяется автоматически по внешнему периметру объекта.',
+   icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="3" x2="3" y2="21" stroke-width="4"/>',cursor:'default',isToggle:false,
+   action:()=>toast('Граница наружных стен определяется автоматически по контуру объекта')},
+  /* ─── ANNOTATE ─── */
+  {id:'dim',        label:'Размер',    category:'annotate',defaultHotkey:'DI',
+   description:'Поставить размерную линию — два клика: начало и конец.',
+   icon:'<path d="M3 6h18M3 6v4M21 6v4M7 8h10"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('dim')},
+  {id:'text',       label:'Текст',     category:'annotate',defaultHotkey:'TX',
+   description:'Добавить текстовую надпись на план — кликните позицию и введите текст.',
+   icon:'<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>',cursor:'text',isToggle:false,
+   action:()=>setEdTool('text')},
+  {id:'leader',     label:'Выноска',   category:'annotate',defaultHotkey:'LD',
+   description:'Выноска с текстом к элементу плана — клик на точку, потом на текст.',
+   icon:'<path d="M3 17l4-6 4 3 4-8 4 5"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('leader')},
+  {id:'heat-label', label:'Q-метка',   category:'annotate',defaultHotkey:'QL',
+   description:'Показать расчётные теплопотери (Вт/кВт) на каждой комнате плана.',
+   icon:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/>',cursor:'default',isToggle:true,
+   action:()=>edToggleHeatLabels()},
+  /* ─── MEASURE ─── */
+  {id:'distance',   label:'Расстояние',category:'measure',defaultHotkey:'DS',
+   description:'Измерить расстояние — два клика: начало и конец отрезка.',
+   icon:'<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="3" y2="18"/><line x1="21" y1="6" x2="21" y2="18"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('distance')},
+  {id:'area-measure',label:'Площадь', category:'measure',defaultHotkey:'AM',
+   description:'Измерить площадь произвольного полигона — кликайте углы, Enter завершает.',
+   icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',cursor:'crosshair',isToggle:false,
+   action:()=>setEdTool('area-measure')},
+  {id:'perimeter',  label:'Периметр', category:'measure',defaultHotkey:'PM',
+   description:'Показать периметр выбранной комнаты в статус-баре.',
+   icon:'<rect x="3" y="3" width="18" height="18" rx="2"/>',cursor:'default',isToggle:false,
+   action:()=>edShowPerimeter()},
+  /* ─── VIEW ─── */
+  {id:'hand',       label:'Панорама',  category:'view',defaultHotkey:'HA',
+   description:'Режим панорамирования — тяните холст. Пробел временно активирует из любого инструмента.',
+   icon:'<path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8a8 8 0 0 0 16 0v-2a2 2 0 0 0-4 0"/>',cursor:'grab',isToggle:false,
+   action:()=>setEdTool('hand')},
+  {id:'zoom-in',    label:'Приблизить',category:'view',defaultHotkey:'ZI',
+   description:'Приблизить план (+ или колесо мыши вверх).',
+   icon:'<circle cx="11" cy="11" r="8"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>',cursor:'default',isToggle:false,
+   action:()=>edZoom(1.2)},
+  {id:'zoom-out',   label:'Отдалить',  category:'view',defaultHotkey:'ZO',
+   description:'Отдалить план (− или колесо мыши вниз).',
+   icon:'<circle cx="11" cy="11" r="8"/><line x1="8" y1="11" x2="14" y2="11"/>',cursor:'default',isToggle:false,
+   action:()=>edZoom(0.833)},
+  {id:'fit',        label:'По экрану', category:'view',defaultHotkey:'FT',
+   description:'Вписать весь план в экран.',
+   icon:'<path d="M3 8V5a2 2 0 0 1 2-2h3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3"/>',cursor:'default',isToggle:false,
+   action:()=>{edFit();edDraw();edStatus();}},
+  {id:'snap',       label:'Привязка',  category:'view',defaultHotkey:'SN',
+   description:'Включить/выключить привязку курсора к сетке и ближайшим комнатам.',
+   icon:'<path d="M5 3v18M3 5h18M3 19h18M19 3v18"/>',cursor:'default',isToggle:true,
+   action:()=>edToggleSnap()},
+  {id:'grid',       label:'Сетка',     category:'view',defaultHotkey:'GR',
+   description:'Переключить шаг сетки: 0.5 м / 1 м.',
+   icon:'<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>',cursor:'default',isToggle:false,
+   action:()=>edToggleGrid()},
+  {id:'dims',       label:'Размеры',   category:'view',defaultHotkey:'DM',
+   description:'Показать/скрыть размерные подписи стен на плане.',
+   icon:'<path d="M3 6h18M3 6v4M21 6v4M7 8h10"/>',cursor:'default',isToggle:true,
+   action:()=>edToggleDims()},
+  {id:'view3d',     label:'3D-вид',    category:'view',defaultHotkey:'3D',
+   description:'Переключиться в 3D-вид (Three.js). Повернуть — ЛКМ, зум — колесо, пан — ПКМ.',
+   icon:'<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>',cursor:'default',isToggle:true,
+   action:()=>VIEW3D.toggle()},
+];
+
+/* VIEW3D — заглушка (инициализируется ниже) */
+const VIEW3D={
+  active:false, dirty:true, showCeiling:false,
+  scene:null, camera:null, renderer:null, controls:null, meshes:[], _raf:0, _resizeObs:null,
+
+  toggle(){ this.active?this.close():this.open(); },
+
+  open(){
+    if(this.active) return; this.active=true;
+    let root=document.getElementById('view3d-root');
+    if(!root){ root=document.createElement('div'); root.id='view3d-root'; document.getElementById('ed-root').appendChild(root); }
+    root.style.display='flex';
+    root.innerHTML=`<canvas id="v3d-canvas" style="flex:1;width:100%;height:100%;display:block"></canvas>
+      <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:2">
+        <button class="v3d-btn" onclick="VIEW3D.fit()">Вписать</button>
+        <button class="v3d-btn" onclick="VIEW3D.toggleCeiling()">Потолок</button>
+        <button class="v3d-btn" style="color:#ffd27a" onclick="VIEW3D.close()">✕ 2D</button>
+      </div>`;
+    if(!window.THREE){ toast('Three.js не загружен','err'); this.active=false; return; }
+    this._initScene(); this.build(); this.fit(); this._startLoop();
+    erUpdateActive();
+    gsap.fromTo(root,{opacity:0},{opacity:1,duration:.35,ease:'power2.out'});
+  },
+
+  close(){
+    if(!this.active) return; this.active=false;
+    const root=document.getElementById('view3d-root'); if(!root) return;
+    gsap.to(root,{opacity:0,duration:.25,ease:'power2.in',onComplete:()=>{ root.style.display='none'; this._dispose(); }});
+    erUpdateActive();
+  },
+
+  _initScene(){
+    const THREE=window.THREE;
+    const canvas=document.getElementById('v3d-canvas');
+    const W=canvas.clientWidth||800, H=canvas.clientHeight||600;
+    this.scene=new THREE.Scene(); this.scene.background=new THREE.Color(0x1a1612);
+    this.camera=new THREE.PerspectiveCamera(45,W/H,0.01,500);
+    this.renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,2)); this.renderer.setSize(W,H,false);
+    this.renderer.shadowMap.enabled=true;
+    if(window.THREE.OrbitControls){
+      this.controls=new THREE.OrbitControls(this.camera,this.renderer.domElement);
+      this.controls.enableDamping=true; this.controls.dampingFactor=0.08;
+    }
+    // Lights
+    const amb=new THREE.AmbientLight(0xfff5e0,0.55); this.scene.add(amb);
+    const dir=new THREE.DirectionalLight(0xfff0cc,1.1); dir.position.set(10,20,10); dir.castShadow=true; this.scene.add(dir);
+    const fill=new THREE.PointLight(0x7dd3fc,0.4,80); fill.position.set(-10,8,-5); this.scene.add(fill);
+    // Ground grid
+    const grid=new THREE.GridHelper(50,50,0x3a3025,0x2a2018); this.scene.add(grid);
+    // Resize observer
+    this._resizeObs=new ResizeObserver(()=>this._onResize()); this._resizeObs.observe(canvas.parentElement);
+  },
+
+  _onResize(){
+    const canvas=document.getElementById('v3d-canvas'); if(!canvas||!this.renderer) return;
+    const W=canvas.clientWidth, H=canvas.clientHeight;
+    this.camera.aspect=W/H; this.camera.updateProjectionMatrix(); this.renderer.setSize(W,H,false);
+  },
+
+  build(){
+    if(!this.scene) return;
+    const THREE=window.THREE; this._disposeMeshes();
+    const WALL=0.15, FLOOR_H=0.12;
+    for(const floor of ST.floors){
+      const baseY=(ST.floors.indexOf(floor))*(floor.height||2.7);
+      const matWall=new THREE.MeshLambertMaterial({color:0xe8d9c0});
+      const matFloor=new THREE.MeshLambertMaterial({color:0xc8b89a,side:THREE.DoubleSide});
+      const matCeil=new THREE.MeshLambertMaterial({color:0xd8c9aa,transparent:true,opacity:this.showCeiling?0.6:0});
+      for(const room of floor.rooms){
+        const verts=roomVerts(room);
+        const minX=Math.min(...verts.map(v=>v[0])), maxX=Math.max(...verts.map(v=>v[0]));
+        const minY=Math.min(...verts.map(v=>v[1])), maxY=Math.max(...verts.map(v=>v[1]));
+        const W2=maxX-minX, D2=maxY-minY, H2=floor.height||2.7;
+        // Floor slab
+        const flG=new THREE.BoxGeometry(W2,FLOOR_H,D2);
+        const flM=new THREE.Mesh(flG,matFloor); flM.position.set(minX+W2/2,baseY,minY+D2/2); flM.receiveShadow=true;
+        this.scene.add(flM); this.meshes.push(flM);
+        // Ceiling
+        if(this.showCeiling){
+          const cG=new THREE.BoxGeometry(W2,FLOOR_H,D2);
+          const cM=new THREE.Mesh(cG,matCeil); cM.position.set(minX+W2/2,baseY+H2,minY+D2/2);
+          this.scene.add(cM); this.meshes.push(cM);
+        }
+        // Walls — left/right/top/bottom minus openings
+        const wallDefs=[
+          {dir:'left', x:minX, z:minY+D2/2, len:D2, axis:'z', rot:Math.PI/2},
+          {dir:'right', x:maxX, z:minY+D2/2, len:D2, axis:'z', rot:Math.PI/2},
+          {dir:'top', x:minX+W2/2, z:minY, len:W2, axis:'x', rot:0},
+          {dir:'bottom', x:minX+W2/2, z:maxY, len:W2, axis:'x', rot:0},
+        ];
+        for(const wd of wallDefs){
+          // Build wall sections, cutting out openings
+          const ops=(room.openings||[]).filter(op=>op.side===wd.dir);
+          const segments=this._wallSegments(wd.len,ops);
+          for(const seg of segments){
+            const segL=seg.end-seg.start; if(segL<0.01) continue;
+            const wG=new THREE.BoxGeometry(segL,H2,WALL);
+            const wM=new THREE.Mesh(wG,matWall); wM.castShadow=true; wM.receiveShadow=true;
+            if(wd.axis==='z'){ wM.position.set(wd.x,baseY+H2/2,wd.z-D2/2+seg.start+segL/2); wM.rotation.y=Math.PI/2; }
+            else { wM.position.set(wd.x-W2/2+seg.start+segL/2,baseY+H2/2,wd.z); }
+            this.scene.add(wM); this.meshes.push(wM);
+          }
+        }
+        // Radiator markers from annotations
+        if(floor.annotations){
+          const radMat=new THREE.MeshLambertMaterial({color:0x7dd3fc});
+          for(const ann of floor.annotations){
+            if(ann.type==='radiator'||ann.type==='boiler'){
+              const rG=new THREE.BoxGeometry(0.4,0.2,0.06); const rM=new THREE.Mesh(rG,radMat);
+              rM.position.set(ann.x,baseY+0.5,ann.y); this.scene.add(rM); this.meshes.push(rM);
+            }
+          }
+        }
+      }
+    }
+    this.dirty=false;
+  },
+
+  _wallSegments(len,openings){
+    if(!openings||!openings.length) return [{start:0,end:len}];
+    const cuts=[]; for(const op of openings){ const s=(op.pos/100)*len; const w=op.w||0.9; cuts.push({s:Math.max(0,s-w/2),e:Math.min(len,s+w/2)}); }
+    cuts.sort((a,b)=>a.s-b.s); const segs=[]; let cur=0;
+    for(const c of cuts){ if(c.s>cur) segs.push({start:cur,end:c.s}); cur=Math.max(cur,c.e); }
+    if(cur<len) segs.push({start:cur,end:len}); return segs;
+  },
+
+  _disposeMeshes(){
+    for(const m of this.meshes){ if(m.geometry) m.geometry.dispose(); this.scene&&this.scene.remove(m); }
+    this.meshes=[];
+  },
+
+  _dispose(){
+    cancelAnimationFrame(this._raf); this._raf=0;
+    if(this._resizeObs){this._resizeObs.disconnect();this._resizeObs=null;}
+    this._disposeMeshes();
+    if(this.renderer){this.renderer.dispose();this.renderer=null;}
+    if(this.controls){this.controls.dispose();this.controls=null;}
+    this.scene=null; this.camera=null;
+  },
+
+  _startLoop(){
+    const loop=()=>{
+      if(!this.active){return;}
+      this._raf=requestAnimationFrame(loop);
+      if(this.dirty){this.build();}
+      if(this.controls) this.controls.update();
+      if(this.renderer&&this.scene&&this.camera) this.renderer.render(this.scene,this.camera);
+    }; loop();
+  },
+
+  fit(){
+    if(!this.camera||!this.scene) return;
+    const THREE=window.THREE; const box=new THREE.Box3().setFromObject(this.scene);
+    if(box.isEmpty()) return;
+    const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3());
+    const maxD=Math.max(size.x,size.y,size.z)||5;
+    const dist=maxD/(2*Math.tan(this.camera.fov*Math.PI/360));
+    this.camera.position.set(center.x+dist*0.7,center.y+dist*0.6,center.z+dist*0.7);
+    this.camera.lookAt(center); if(this.controls){this.controls.target.copy(center);this.controls.update();}
+  },
+
+  toggleCeiling(){
+    this.showCeiling=!this.showCeiling; this.dirty=true;
+    toast(this.showCeiling?'Потолок включён':'Потолок скрыт');
+  }
+};
+
 const EDITOR = { open:false, tool:'select', scale:40, baseScale:40, offX:0, offY:0, dpr:1,
   cssW:0, cssH:0, selId:null, drag:null, draw:null, resize:null, opDrag:null, pan:null,
   snap:true, gridStep:0.5, showDims:true, guides:[], clip:null, hist:[], hi:-1, raf:0,
-  cur:null, _space:false, _export:false, polyPts:[], polyCur:null };
+  cur:null, _space:false, _export:false, polyPts:[], polyCur:null,
+  _measure:null, _hkbuf:'', _hktime:0, _linePt:null, _arcPts:[], _circlePt:null,
+  _pipePoints:[], showAreaTags:false, showHeatLabels:false };
 
 const exToPx=(m)=>m*EDITOR.scale+EDITOR.offX;
 const eyToPx=(m)=>m*EDITOR.scale+EDITOR.offY;
@@ -2737,6 +3131,7 @@ const edClampY=(m)=>Math.max(0,Math.min(ST.plot.d,m));
 function _svg(p){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">${p}</svg>`; }
 
 function openEditor(){
+  HOTKEYS.load();
   EDITOR.open=true; EDITOR.selId=null;
   document.body.style.overflow='hidden';
   const root=document.getElementById('ed-root');
@@ -2749,7 +3144,7 @@ function openEditor(){
   window.addEventListener('keyup', edKeyUp);
   window.addEventListener('resize', edOnResize, {passive:true});
   document.addEventListener('pointerdown', edDocDown, true);
-  requestAnimationFrame(()=>{ edFit(); edPushHist(true); edRebuildTabs(); edDraw(); edProps(); edStatus(); });
+  requestAnimationFrame(()=>{ edFit(); edPushHist(true); edRebuildTabs(); edDraw(); edProps(); edStatus(); erAttachTooltips(); });
 }
 function closeEditor(){
   EDITOR.open=false; hideCtx();
@@ -2777,24 +3172,7 @@ function buildEditorUI(){
     <button class="ed-tbtn" style="border-color:rgba(245,158,11,.5);color:#ffd27a" onclick="closeEditor()">${_svg('<polyline points="20 6 9 17 4 12"/>')}Готово</button>
   </div>
   <div class="ed-body">
-    <div class="ed-palette">
-      <button class="ed-ico ${EDITOR.tool==='select'?'active':''}" data-tool="select" onclick="setEdTool('select')" title="Выбрать/двигать (1)">${_svg('<path d="M3 3l7 18 2-7 7-2z"/>')}<span class="lbl">V</span></button>
-      <button class="ed-ico ${EDITOR.tool==='draw'?'active':''}" data-tool="draw" onclick="setEdTool('draw')" title="Прямоугольная комната (2)">${_svg('<rect x="3" y="3" width="18" height="18" rx="2"/>')}<span class="lbl">R</span></button>
-      <button class="ed-ico ${EDITOR.tool==='poly'?'active':''}" data-tool="poly" onclick="setEdTool('poly')" title="Произвольная фигура — кликайте углы, замкните на 1-й точке / Enter (4)">${_svg('<path d="M12 2l8 5v7l-5 8H9l-4-6 2-7z"/>')}<span class="lbl">poly</span></button>
-      <button class="ed-ico ${EDITOR.tool==='hand'?'active':''}" data-tool="hand" onclick="setEdTool('hand')" title="Панорама (3 / пробел)">${_svg('<path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8a8 8 0 0 0 16 0v-2a2 2 0 0 0-4 0"/>')}<span class="lbl">H</span></button>
-      <div class="sep"></div>
-      <button class="ed-ico" onclick="edZoom(1.2)" title="Приблизить (+)">${_svg('<circle cx="11" cy="11" r="8"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>')}</button>
-      <button class="ed-ico" onclick="edZoom(0.833)" title="Отдалить (−)">${_svg('<circle cx="11" cy="11" r="8"/><line x1="8" y1="11" x2="14" y2="11"/>')}</button>
-      <button class="ed-ico" onclick="edFit();edDraw();edStatus()" title="Вписать">${_svg('<path d="M3 8V5a2 2 0 0 1 2-2h3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3"/>')}</button>
-      <div class="sep"></div>
-      <button id="ed-snap" class="ed-ico ${EDITOR.snap?'active':''}" onclick="edToggleSnap()" title="Привязка к сетке/комнатам">${_svg('<path d="M5 3v18M3 5h18M3 19h18M19 3v18"/>')}<span class="lbl">snap</span></button>
-      <button id="ed-grid" class="ed-ico" onclick="edToggleGrid()" title="Шаг сетки">${_svg('<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>')}<span class="lbl" id="ed-grid-lbl">${EDITOR.gridStep}м</span></button>
-      <button id="ed-dims" class="ed-ico ${EDITOR.showDims?'active':''}" onclick="edToggleDims()" title="Размеры">${_svg('<path d="M3 6h18M3 6v4M21 6v4M7 8h10"/>')}<span class="lbl">dim</span></button>
-      <div class="sep"></div>
-      <button class="ed-ico" onclick="edDuplicate()" title="Дублировать (Ctrl+D)">${_svg('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>')}</button>
-      <button class="ed-ico" onclick="edRotate()" title="Повернуть/сменить стороны (R)">${_svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>')}</button>
-      <button class="ed-ico" onclick="edDelete()" title="Удалить (Del)" style="color:#ff8a5c">${_svg('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/>')}</button>
-    </div>
+    ${buildRibbon()}
     <div class="ed-canvas-wrap" id="ed-canvas-wrap">
       <canvas id="ed-canvas"></canvas>
       <div class="ed-legend">
@@ -2803,11 +3181,82 @@ function buildEditorUI(){
         <div><i style="background:#c2703d"></i>Кухня/коридор 15–19°</div>
         <div><i style="background:#9a8675"></i>Склад/гараж &lt;15°</div>
       </div>
-      <div class="ed-hint">ЛКМ — выбор · колесо — зум · пробел — панорама · ПКМ — меню</div>
+      <div class="ed-hint" id="ed-hint">ЛКМ — выбор · колесо — зум · пробел — панорама · ПКМ — меню</div>
     </div>
     <div class="ed-props" id="ed-props"></div>
   </div>
   <div class="ed-status" id="ed-status"></div>`;
+}
+
+/* ─── Ribbon builder ─── */
+function _rsvg(p){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">${p}</svg>`;}
+
+function erToolBtn(t){
+  const hk=HOTKEYS.get(t.id);
+  const active=(t.id===EDITOR.tool)||(t.id==='snap'&&EDITOR.snap)||(t.id==='dims'&&EDITOR.showDims)||
+    (t.id==='area-tag'&&EDITOR.showAreaTags)||(t.id==='heat-label'&&EDITOR.showHeatLabels)||(t.id==='view3d'&&VIEW3D.active);
+  return `<button class="er-ico${active?' active':''}" data-tool-id="${t.id}" onclick="erClick('${t.id}')">
+    ${_rsvg(t.icon)}<span>${t.label}</span>${hk?`<span class="er-hk">${hk}</span>`:''}
+  </button>`;
+}
+
+function buildRibbon(){
+  const catState=erLoadCats();
+  const rows=TOOL_CATEGORIES.map(cat=>{
+    const open=catState[cat.id]!==undefined?catState[cat.id]:(cat.id!=='view');
+    const tools=TOOL_REGISTRY.filter(t=>t.category===cat.id);
+    return `<div class="er-cat"><div class="er-head${open?' open':''}" id="er-head-${cat.id}" onclick="erToggleCat('${cat.id}')">
+      ${_rsvg(cat.sp)}<span>${cat.label}</span><span class="er-chev">›</span></div>
+      <div class="er-body${open?'':' hidden'}" id="er-body-${cat.id}">${tools.map(t=>erToolBtn(t)).join('')}</div></div>`;
+  }).join('');
+  return `<div class="ed-ribbon" id="ed-ribbon">
+    <div class="er-search"><input type="text" id="er-search" placeholder="Поиск…" oninput="erFilter(this.value)" autocomplete="off"></div>
+    ${rows}</div>`;
+}
+
+function erLoadCats(){try{return JSON.parse(localStorage.getItem('mr_cats')||'{}');}catch(e){return {};}}
+function erSaveCats(s){localStorage.setItem('mr_cats',JSON.stringify(s));}
+
+function erToggleCat(id){
+  const body=document.getElementById('er-body-'+id), head=document.getElementById('er-head-'+id);
+  if(!body)return; const open=!body.classList.contains('hidden');
+  body.classList.toggle('hidden',open); head.classList.toggle('open',!open);
+  const s=erLoadCats(); s[id]=!open; erSaveCats(s);
+}
+
+function erClick(id){
+  const t=TOOL_REGISTRY.find(x=>x.id===id); if(t) t.action();
+  erUpdateActive();
+}
+
+function erUpdateActive(){
+  document.querySelectorAll('.er-ico').forEach(btn=>{
+    const id=btn.dataset.toolId;
+    const active=(id===EDITOR.tool)||(id==='snap'&&EDITOR.snap)||(id==='dims'&&EDITOR.showDims)||
+      (id==='area-tag'&&EDITOR.showAreaTags)||(id==='heat-label'&&EDITOR.showHeatLabels)||(id==='view3d'&&VIEW3D.active);
+    btn.classList.toggle('active',active);
+  });
+}
+
+function erFilter(q){
+  q=q.trim().toLowerCase();
+  for(const cat of TOOL_CATEGORIES){
+    const body=document.getElementById('er-body-'+cat.id);
+    const head=document.getElementById('er-head-'+cat.id);
+    if(!body) continue;
+    let vis=0;
+    body.querySelectorAll('.er-ico').forEach(btn=>{
+      const t=TOOL_REGISTRY.find(x=>x.id===btn.dataset.toolId);
+      const match=!q||!t||t.label.toLowerCase().includes(q)||t.description.toLowerCase().includes(q)||(HOTKEYS.get(t.id)||'').toLowerCase().includes(q);
+      btn.style.display=match?'':'none'; if(match) vis++;
+    });
+    const cat2=head?.closest('.er-cat'); if(cat2) cat2.style.display=(vis===0&&q)?'none':'';
+    if(q&&vis>0){body.classList.remove('hidden');head?.classList.add('open');}
+  }
+}
+
+function erAttachTooltips(){
+  document.querySelectorAll('.er-ico').forEach(btn=>TOOLTIP.attach(btn,btn.dataset.toolId));
 }
 
 function edRebuildTabs(){
@@ -2817,9 +3266,12 @@ function edRebuildTabs(){
 function edSwitchFloor(id){ ST.activeFloorId=id; EDITOR.selId=null; edRebuildTabs(); edFit(); edDraw(); edProps(); edStatus(); }
 
 function setEdTool(t){
-  if(EDITOR.tool==='poly' && t!=='poly') edCancelPoly();
+  if(EDITOR.tool==='poly'&&t!=='poly') edCancelPoly();
+  if(['distance','dim','area-measure','line'].includes(EDITOR.tool)&&t!==EDITOR.tool){EDITOR._measure=null;EDITOR._linePt=null;EDITOR._pipePoints=[];}
   EDITOR.tool=t;
-  document.querySelectorAll('#ed-root .ed-ico[data-tool]').forEach(el=>el.classList.toggle('active', el.getAttribute('data-tool')===t));
+  erUpdateActive();
+  const hint=document.getElementById('ed-hint');
+  if(hint){const tool=TOOL_REGISTRY.find(x=>x.id===t);hint.textContent=tool?tool.description:'ЛКМ — выбор · колесо — зум · пробел — панорама · ПКМ — меню';}
   edHoverCursor(); edDraw();
 }
 function edToggleSnap(){ EDITOR.snap=!EDITOR.snap; document.getElementById('ed-snap').classList.toggle('active',EDITOR.snap); edDraw(); }
@@ -2880,6 +3332,8 @@ function edDraw(){
   const cmid={top:[px0+pw/2,py0-30],bottom:[px0+pw/2,py0+ph+30],left:[px0-26,py0+ph/2],right:[px0+pw+26,py0+ph/2]};
   for(const s of ['top','right','bottom','left']){ const d=sideDir(s); ctx.fillStyle=d==='S'?'#f59e0b':d==='N'?'#ff6b35':'#9a8675'; ctx.fillText(DIR_RU[d][0]+(s===sun?' ☀':''), cmid[s][0], cmid[s][1]); }
   for(const room of f.rooms) edDrawRoom(ctx,room,f.rooms,room.id===EDITOR.selId);
+  edDrawAnnotations(ctx,f);
+  edDrawToolPreview(ctx);
   if(!EDITOR._export && EDITOR.guides.length){
     ctx.strokeStyle='rgba(125,211,252,.9)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
     for(const g of EDITOR.guides){ ctx.beginPath(); if(g.t==='v'){ const X=exToPx(g.x); ctx.moveTo(X,0); ctx.lineTo(X,H);} else { const Y=eyToPx(g.y); ctx.moveTo(0,Y); ctx.lineTo(W,Y);} ctx.stroke(); }
@@ -2992,11 +3446,95 @@ function edDown(e){
   if(e.button!==0) return;
   const f=activeFloor();
   if(EDITOR.tool==='poly'){
-    // замкнуть, если кликнули рядом с первой точкой
     if(EDITOR.polyPts.length>=3){ const p0=EDITOR.polyPts[0]; if(Math.hypot(exToPx(p0[0])-sx, eyToPx(p0[1])-sy)<11){ edFinishPoly(); return; } }
     EDITOR.polyPts.push([edClampX(eSnap(mx)), edClampY(eSnap(my))]); EDITOR.polyCur=[mx,my]; edDraw(); edStatus(); return;
   }
   if(EDITOR.tool==='draw'){ EDITOR.draw={x0:edClampX(mx),y0:edClampY(my),x1:edClampX(mx),y1:edClampY(my)}; return; }
+  /* ── New tool handlers ── */
+  if(EDITOR.tool==='line'){
+    const px=eSnap(mx), py=eSnap(my);
+    if(!EDITOR._linePt){EDITOR._linePt=[px,py];}
+    else{
+      if(!f.annotations)f.annotations=[];
+      f.annotations.push({id:uid('ann'),type:'line',pts:[EDITOR._linePt,[px,py]]});
+      EDITOR._linePt=null; edPushHist(); edDraw();
+    } edStatus(); return;
+  }
+  if(EDITOR.tool==='circle'){
+    if(!EDITOR._circlePt){EDITOR._circlePt=[eSnap(mx),eSnap(my)];}
+    else{
+      const r=Math.hypot(mx-EDITOR._circlePt[0],my-EDITOR._circlePt[1]);
+      if(!f.annotations)f.annotations=[];
+      f.annotations.push({id:uid('ann'),type:'circle',cx:EDITOR._circlePt[0],cy:EDITOR._circlePt[1],r:Math.max(0.2,r)});
+      EDITOR._circlePt=null; edPushHist(); edDraw();
+    } edStatus(); return;
+  }
+  if(EDITOR.tool==='arc'){
+    if(!EDITOR._arcPts) EDITOR._arcPts=[];
+    EDITOR._arcPts.push([eSnap(mx),eSnap(my)]);
+    if(EDITOR._arcPts.length===3){
+      if(!f.annotations)f.annotations=[];
+      f.annotations.push({id:uid('ann'),type:'arc',pts:[...EDITOR._arcPts]});
+      EDITOR._arcPts=[]; edPushHist(); edDraw();
+    } edStatus(); return;
+  }
+  if(EDITOR.tool==='distance'||EDITOR.tool==='dim'){
+    const px=eSnap(mx),py=eSnap(my);
+    if(!EDITOR._measure){EDITOR._measure={type:EDITOR.tool,pts:[[px,py]]};}
+    else{
+      EDITOR._measure.pts.push([px,py]);
+      if(EDITOR._measure.pts.length===2){
+        const [a,b]=EDITOR._measure.pts;
+        const dist=Math.hypot(b[0]-a[0],b[1]-a[1]);
+        if(EDITOR.tool==='dim'){
+          if(!f.annotations)f.annotations=[];
+          f.annotations.push({id:uid('ann'),type:'dim',pts:[a,b],label:dist.toFixed(2)+' м'});
+          edPushHist();
+        } else { toast('Расстояние: '+dist.toFixed(2)+' м'); }
+        EDITOR._measure=null;
+      }
+    } edDraw(); edStatus(); return;
+  }
+  if(EDITOR.tool==='area-measure'){
+    const px=eSnap(mx),py=eSnap(my);
+    if(!EDITOR._measure)EDITOR._measure={type:'area-measure',pts:[]};
+    if(EDITOR._measure.pts.length>=3){
+      const p0=EDITOR._measure.pts[0];
+      if(Math.hypot(exToPx(p0[0])-sx,eyToPx(p0[1])-sy)<11){edFinishMeasure();return;}
+    }
+    EDITOR._measure.pts.push([px,py]); edDraw(); edStatus(); return;
+  }
+  if(EDITOR.tool==='text'){
+    const px=eSnap(mx),py=eSnap(my);
+    const txt=prompt('Введите текст:');
+    if(txt){if(!f.annotations)f.annotations=[];f.annotations.push({id:uid('ann'),type:'text',x:px,y:py,text:txt});edPushHist();edDraw();}
+    return;
+  }
+  if(EDITOR.tool==='leader'){
+    const px=eSnap(mx),py=eSnap(my);
+    if(!EDITOR._linePt){EDITOR._linePt=[px,py];}
+    else{
+      const txt=prompt('Текст выноски:');
+      if(txt){if(!f.annotations)f.annotations=[];f.annotations.push({id:uid('ann'),type:'leader',pts:[EDITOR._linePt,[px,py]],text:txt});edPushHist();edDraw();}
+      EDITOR._linePt=null;
+    } edStatus(); return;
+  }
+  if(EDITOR.tool==='pipe'){
+    const px=eSnap(mx),py=eSnap(my);
+    EDITOR._pipePoints.push([px,py]); edDraw(); edStatus(); return;
+  }
+  if(['radiator','boiler','collector','thermostat'].includes(EDITOR.tool)){
+    const px=eSnap(mx),py=eSnap(my);
+    const room=edRoomAt(mx,my);
+    if(!f.annotations)f.annotations=[];
+    const ann={id:uid('ann'),type:EDITOR.tool,x:px,y:py,roomId:room?.id||null};
+    f.annotations.push(ann);
+    if(EDITOR.tool==='radiator'&&room)room.hasRadiator=true;
+    if(EDITOR.tool==='thermostat'&&room)room.hasThermostat=true;
+    edPushHist(); edDraw(); edStatus();
+    const tlabel=TOOL_REGISTRY.find(t=>t.id===EDITOR.tool)?.label||EDITOR.tool;
+    toast(tlabel+' размещён'); return;
+  }
   const sel=f.rooms.find(r=>r.id===EDITOR.selId);
   if(sel){ const hh=edHandleHit(sel,sx,sy); if(hh){ EDITOR.resize={id:sel.id,h:hh}; return; }
     const oh=edOpeningHit(sel,sx,sy); if(oh){ EDITOR.opDrag={id:sel.id,opId:oh}; return; } }
@@ -3008,12 +3546,16 @@ function edMove(e){
   const cv=e.currentTarget, rect=cv.getBoundingClientRect();
   const sx=e.clientX-rect.left, sy=e.clientY-rect.top, mx=pxToEx(sx), my=pxToEy(sy);
   EDITOR.cur=[mx,my];
-  if(EDITOR.tool==='poly' && EDITOR.polyPts.length){ EDITOR.polyCur=[mx,my]; edSchedule(); edStatus(); return; }
+  if(EDITOR.tool==='poly'&&EDITOR.polyPts.length){ EDITOR.polyCur=[mx,my]; edSchedule(); edStatus(); return; }
   if(EDITOR.pan){ EDITOR.offX=EDITOR.pan.ox+(sx-EDITOR.pan.sx); EDITOR.offY=EDITOR.pan.oy+(sy-EDITOR.pan.sy); edSchedule(); edStatus(); return; }
   if(EDITOR.draw){ EDITOR.draw.x1=edClampX(mx); EDITOR.draw.y1=edClampY(my); edSchedule(); edStatus(); return; }
   if(EDITOR.resize){ edDoResize(mx,my); edSchedule(); edStatus(); return; }
   if(EDITOR.opDrag){ edDoOpDrag(mx,my); edSchedule(); return; }
   if(EDITOR.drag){ edApplyDrag(mx,my); edSchedule(); edStatus(); return; }
+  // Previews for new tools
+  if(EDITOR._measure||EDITOR._linePt||EDITOR._circlePt||(EDITOR._arcPts&&EDITOR._arcPts.length)||(EDITOR._pipePoints&&EDITOR._pipePoints.length)){
+    EDITOR._cursorPos=[mx,my]; edSchedule();
+  }
   edStatus();
 }
 function edUp(e){
@@ -3150,7 +3692,11 @@ function edAfterRestore(){ edRebuildTabs(); edDraw(); edProps(); edStatus(); upd
 function edUpdateHistBtns(){ const u=document.getElementById('ed-undo'), r=document.getElementById('ed-redo'); if(u) u.disabled=EDITOR.hi<=0; if(r) r.disabled=EDITOR.hi>=EDITOR.hist.length-1; }
 
 /* ---- KEYBOARD ---- */
-function edKey(e){ if(!EDITOR.open) return; const tag=(e.target.tagName||'').toLowerCase(); if(tag==='input'||tag==='select'||tag==='textarea') return;
+function edKey(e){
+  if(!EDITOR.open) return;
+  const tag=(e.target.tagName||'').toLowerCase(); if(tag==='input'||tag==='select'||tag==='textarea') return;
+  // Hotkey capture mode — absorb all keys
+  if(HOTKEYS._cap){ HOTKEYS.captureKey(e.key); e.preventDefault(); return; }
   const k=e.key, ctrl=e.ctrlKey||e.metaKey;
   if(k===' '){ EDITOR._space=true; edHoverCursor(); e.preventDefault(); return; }
   if(ctrl&&(k==='z'||k==='Z')){ e.preventDefault(); e.shiftKey?edRedo():edUndo(); return; }
@@ -3158,18 +3704,383 @@ function edKey(e){ if(!EDITOR.open) return; const tag=(e.target.tagName||'').toL
   if(ctrl&&(k==='d'||k==='D')){ e.preventDefault(); edDuplicate(); return; }
   if(ctrl&&(k==='c'||k==='C')){ e.preventDefault(); edCopy(); return; }
   if(ctrl&&(k==='v'||k==='V')){ e.preventDefault(); edPaste(); return; }
-  if(k==='Enter'){ if(EDITOR.tool==='poly' && EDITOR.polyPts.length>=3){ e.preventDefault(); edFinishPoly(); } return; }
-  if(k==='Delete'||k==='Backspace'){ e.preventDefault();
-    if(EDITOR.tool==='poly' && EDITOR.polyPts.length){ EDITOR.polyPts.pop(); edDraw(); return; }  // удалить последнюю точку
-    edDelete(); return; }
-  if(k==='Escape'){ if(EDITOR.polyPts.length){ edCancelPoly(); edDraw(); edStatus(); } else if(EDITOR.selId){ EDITOR.selId=null; edDraw(); edProps(); edStatus(); } return; }
-  if(k==='r'||k==='R'){ edRotate(); return; }
-  if(k==='1'){ setEdTool('select'); return; } if(k==='2'){ setEdTool('draw'); return; } if(k==='3'){ setEdTool('hand'); return; } if(k==='4'){ setEdTool('poly'); return; }
-  if(k==='='||k==='+'){ edZoom(1.15); return; } if(k==='-'||k==='_'){ edZoom(0.87); return; }
+  if(k==='Enter'){
+    if(EDITOR.tool==='poly'&&EDITOR.polyPts.length>=3){e.preventDefault();edFinishPoly();}
+    if(EDITOR.tool==='area-measure'&&EDITOR._measure?.pts?.length>=3){e.preventDefault();edFinishMeasure();}
+    if(EDITOR.tool==='pipe'&&EDITOR._pipePoints.length>=2){e.preventDefault();edFinishPipe();}
+    return;
+  }
+  if(k==='Delete'||k==='Backspace'){e.preventDefault();
+    if(EDITOR.tool==='poly'&&EDITOR.polyPts.length){EDITOR.polyPts.pop();edDraw();return;}
+    if(EDITOR._measure){EDITOR._measure.pts.pop();if(!EDITOR._measure.pts.length)EDITOR._measure=null;edDraw();return;}
+    edDelete(); return;
+  }
+  if(k==='Escape'){
+    if(EDITOR.polyPts.length){edCancelPoly();edDraw();edStatus();}
+    else if(EDITOR._measure){EDITOR._measure=null;EDITOR._linePt=null;EDITOR._pipePoints=[];edDraw();edStatus();}
+    else if(EDITOR.selId){EDITOR.selId=null;edDraw();edProps();edStatus();}
+    return;
+  }
+  if(k==='='||k==='+'){ edZoom(1.15); return; }
+  if(k==='-'||k==='_'){ edZoom(0.87); return; }
   if(k.indexOf('Arrow')===0){ e.preventDefault(); edNudge(k,e.shiftKey); return; }
+  // Two-character Revit-style hotkeys
+  if(/^[a-zA-Z0-9]$/.test(k)){
+    const now=Date.now();
+    if(now-EDITOR._hktime>1400) EDITOR._hkbuf='';
+    EDITOR._hktime=now;
+    EDITOR._hkbuf=(EDITOR._hkbuf+k.toUpperCase()).slice(-2);
+    if(HOTKEYS.dispatch(EDITOR._hkbuf)){EDITOR._hkbuf='';return;}
+    if(HOTKEYS.dispatch(EDITOR._hkbuf.slice(-1))){EDITOR._hkbuf='';return;}
+  }
 }
 function edKeyUp(e){ if(e.key===' '){ EDITOR._space=false; edHoverCursor(); } }
-function edHoverCursor(){ const cv=document.getElementById('ed-canvas'); if(!cv) return; cv.style.cursor=(EDITOR.tool==='hand'||EDITOR._space)?'grab':((EDITOR.tool==='draw'||EDITOR.tool==='poly')?'crosshair':'default'); }
+function edHoverCursor(){
+  const cv=document.getElementById('ed-canvas'); if(!cv) return;
+  const t=EDITOR.tool;
+  if(EDITOR._space||t==='hand') cv.style.cursor='grab';
+  else if(['draw','poly','line','arc','circle','dim','distance','area-measure','radiator','boiler','pipe','collector','thermostat','leader'].includes(t)) cv.style.cursor='crosshair';
+  else if(t==='text') cv.style.cursor='text';
+  else cv.style.cursor='default';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOTKEYS SYSTEM
+═══════════════════════════════════════════════════════════ */
+const HOTKEYS={
+  _map:{}, _rev:{}, _cap:null, _capBuf:'',
+  load(){
+    const def={}; for(const t of TOOL_REGISTRY) if(t.defaultHotkey) def[t.id]=t.defaultHotkey;
+    let saved={}; try{saved=JSON.parse(localStorage.getItem('mr_hotkeys')||'{}');}catch(e){}
+    this._map=Object.assign({},def,saved); this._buildRev();
+  },
+  _buildRev(){ this._rev={}; for(const[id,k] of Object.entries(this._map)) if(k) this._rev[k.toUpperCase()]=id; },
+  save(){ const custom={}; for(const t of TOOL_REGISTRY) if(this._map[t.id]!==t.defaultHotkey) custom[t.id]=this._map[t.id]; localStorage.setItem('mr_hotkeys',JSON.stringify(custom)); },
+  get(id){ return this._map[id]||''; },
+  set(id,key){
+    const k=key.toUpperCase(); const existing=this._rev[k];
+    if(existing&&existing!==id) return {conflict:existing};
+    const old=this._map[id]; if(old) delete this._rev[old.toUpperCase()];
+    this._map[id]=k; this._rev[k]=id; this.save(); return {ok:true};
+  },
+  reset(){ localStorage.removeItem('mr_hotkeys'); this.load(); toast('Все клавиши сброшены'); erAttachTooltips&&erUpdateActive&&(erRebuildRibbon()); },
+  resetOne(id){ const t=TOOL_REGISTRY.find(x=>x.id===id); if(t){this.set(id,t.defaultHotkey||'');this.save();} this.cancelCapture(); toast('Клавиша сброшена'); erRebuildRibbon(); },
+  dispatch(keyStr){
+    const id=this._rev[keyStr.toUpperCase()]; if(!id) return false;
+    const t=TOOL_REGISTRY.find(x=>x.id===id); if(t){t.action();return true;} return false;
+  },
+  startCapture(toolId){
+    this._cap=toolId; this._capBuf='';
+    const tool=TOOL_REGISTRY.find(t=>t.id===toolId);
+    const box=document.createElement('div'); box.className='hk-capture'; box.id='hk-capture';
+    box.innerHTML=`<div class="hk-capture-box">
+      <h3>Назначить клавишу</h3>
+      <p>Инструмент: <b style="color:#faf6f0">${tool?.label||toolId}</b></p>
+      <p>Текущая: <kbd class="hk">${this.get(toolId)||'—'}</kbd></p>
+      <p>Нажмите 1–2 клавиши (Enter — принять, Esc — отмена)</p>
+      <div class="hk-live" id="hk-live">&nbsp;</div>
+      <div style="margin-top:1rem;display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap">
+        <button onclick="HOTKEYS._confirm()" class="ed-tbtn">✓ Назначить</button>
+        <button onclick="HOTKEYS.cancelCapture()" class="ed-tbtn">✕ Отмена</button>
+        <button onclick="HOTKEYS.resetOne('${toolId}')" class="ed-tbtn" style="color:#9a8675">↺ Сброс</button>
+      </div></div>`;
+    document.body.appendChild(box);
+  },
+  _confirm(){
+    if(!this._capBuf){this.cancelCapture();return;}
+    const result=this.set(this._cap,this._capBuf);
+    if(result.conflict){
+      const ct=TOOL_REGISTRY.find(t=>t.id===result.conflict);
+      toast('Клавиша занята: «'+(ct?.label||result.conflict)+'»','err');
+      this._capBuf=''; const live=document.getElementById('hk-live'); if(live) live.textContent=' '; return;
+    }
+    this.cancelCapture(); erRebuildRibbon(); toast('Назначено: '+this._map[this._cap]);
+  },
+  captureKey(key){
+    if(!this._cap) return false;
+    if(key==='Escape'){this.cancelCapture();return true;}
+    if(key==='Enter'){this._confirm();return true;}
+    if(key==='Backspace'){this._capBuf=this._capBuf.slice(0,-1);const l=document.getElementById('hk-live');if(l)l.textContent=this._capBuf||' ';return true;}
+    if(key.length===1&&/[a-zA-Z0-9]/.test(key)){
+      this._capBuf=(this._capBuf+key.toUpperCase()).slice(0,2);
+      const l=document.getElementById('hk-live'); if(l) l.textContent=this._capBuf;
+    } return true;
+  },
+  cancelCapture(){ this._cap=null; this._capBuf=''; const b=document.getElementById('hk-capture'); if(b) b.remove(); }
+};
+
+function erRebuildRibbon(){
+  // Rebuild just the tool buttons to reflect new hotkeys / active states
+  for(const cat of TOOL_CATEGORIES){
+    const body=document.getElementById('er-body-'+cat.id); if(!body) continue;
+    const tools=TOOL_REGISTRY.filter(t=>t.category===cat.id);
+    body.innerHTML=tools.map(t=>erToolBtn(t)).join('');
+  }
+  erAttachTooltips();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOOL TOOLTIP SYSTEM
+═══════════════════════════════════════════════════════════ */
+const TOOLTIP={
+  _timer:null, _el:null,
+  show(toolId,anchor){ clearTimeout(this._timer); this._timer=setTimeout(()=>this._render(toolId,anchor),360); },
+  hide(){ clearTimeout(this._timer); if(this._el){
+    const el=this._el; this._el=null;
+    gsap.to(el.querySelector('.et-tip'),{opacity:0,scale:.94,y:4,duration:.15,ease:'power2.in',onComplete:()=>el.remove()});
+  }},
+  _render(toolId,anchor){
+    const tool=TOOL_REGISTRY.find(t=>t.id===toolId); if(!tool||!anchor.isConnected) return;
+    if(this._el){this._el.remove();this._el=null;}
+    const hk=HOTKEYS.get(toolId);
+    const div=document.createElement('div'); div.className='et-tip-wrap';
+    div.innerHTML=`<div class="et-tip">
+      <div class="et-tip-label">${tool.label}</div>
+      <div class="et-tip-desc">${tool.description}</div>
+      <div class="et-tip-foot">
+        ${hk?`<kbd class="hk">${hk}</kbd>`:'<span style="color:#3a3025;font-size:.66rem">нет клавиши</span>'}
+        <span class="et-tip-change" onclick="HOTKEYS.startCapture('${toolId}');TOOLTIP.hide()">Изменить…</span>
+      </div></div>`;
+    document.body.appendChild(div); this._el=div;
+    const ar=anchor.getBoundingClientRect(), tip=div.querySelector('.et-tip');
+    const TW=240, pad=10;
+    let left=ar.right+pad; if(left+TW>window.innerWidth) left=ar.left-TW-pad;
+    let top=ar.top; if(top+130>window.innerHeight) top=Math.max(pad,window.innerHeight-135);
+    div.style.left=Math.max(pad,left)+'px'; div.style.top=Math.max(pad,top)+'px';
+    gsap.fromTo(tip,{opacity:0,scale:.94,y:6},{opacity:1,scale:1,y:0,duration:.22,ease:'power2.out'});
+  },
+  attach(el,toolId){
+    if(!el||!toolId) return;
+    el.addEventListener('mouseenter',()=>this.show(toolId,el));
+    el.addEventListener('mouseleave',()=>this.hide());
+    el.addEventListener('focus',()=>this.show(toolId,el));
+    el.addEventListener('blur',()=>this.hide());
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════
+   ANNOTATIONS — рендер и вспомогательные функции
+═══════════════════════════════════════════════════════════ */
+function edDrawAnnotations(ctx,f){
+  if(!f.annotations||EDITOR._export) return;
+  for(const ann of f.annotations){
+    ctx.save();
+    switch(ann.type){
+      case 'line':
+        if(ann.pts&&ann.pts.length===2){
+          ctx.strokeStyle='rgba(125,211,252,.8)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+          ctx.beginPath(); ctx.moveTo(exToPx(ann.pts[0][0]),eyToPx(ann.pts[0][1])); ctx.lineTo(exToPx(ann.pts[1][0]),eyToPx(ann.pts[1][1])); ctx.stroke(); ctx.setLineDash([]);
+        } break;
+      case 'arc':
+        if(ann.pts&&ann.pts.length===3){
+          const [a,b,c]=ann.pts.map(([x,y])=>[exToPx(x),eyToPx(y)]);
+          ctx.strokeStyle='rgba(125,211,252,.8)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+          ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.quadraticCurveTo(c[0],c[1],b[0],b[1]); ctx.stroke(); ctx.setLineDash([]);
+        } break;
+      case 'circle':
+        ctx.strokeStyle='rgba(125,211,252,.8)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.arc(exToPx(ann.cx),eyToPx(ann.cy),ann.r*EDITOR.scale,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+        break;
+      case 'dim': {
+        const [a,b]=ann.pts;
+        edDimLine(ctx,exToPx(a[0]),eyToPx(a[1]),exToPx(b[0]),eyToPx(b[1]),ann.label,'#ffd27a');
+        break;
+      }
+      case 'text':
+        ctx.fillStyle='rgba(255,210,122,.92)'; ctx.font='600 12px Manrope,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.fillText(ann.text,exToPx(ann.x)+4,eyToPx(ann.y)); break;
+      case 'leader':
+        if(ann.pts&&ann.pts.length===2){
+          ctx.strokeStyle='rgba(255,210,122,.7)'; ctx.lineWidth=1.2;
+          ctx.beginPath(); ctx.moveTo(exToPx(ann.pts[0][0]),eyToPx(ann.pts[0][1])); ctx.lineTo(exToPx(ann.pts[1][0]),eyToPx(ann.pts[1][1])); ctx.stroke();
+          ctx.fillStyle='rgba(255,210,122,.92)'; ctx.font='500 11px Manrope,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+          ctx.fillText(ann.text,exToPx(ann.pts[1][0])+4,eyToPx(ann.pts[1][1])-2);
+        } break;
+      case 'radiator': {
+        const cx=exToPx(ann.x),cy=eyToPx(ann.y),s=EDITOR.scale*0.35;
+        ctx.fillStyle='rgba(125,211,252,.9)'; ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=1;
+        ctx.fillRect(cx-s,cy-s*0.4,s*2,s*0.8); ctx.strokeRect(cx-s,cy-s*0.4,s*2,s*0.8);
+        ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=0.7;
+        [-s*0.45,0,s*0.45].forEach(dx=>{ ctx.beginPath(); ctx.moveTo(cx+dx,cy-s*0.4); ctx.lineTo(cx+dx,cy+s*0.4); ctx.stroke(); });
+        ctx.fillStyle='rgba(125,211,252,.75)'; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.fillText('RAD',cx,cy+s*0.45); break;
+      }
+      case 'boiler': {
+        const cx=exToPx(ann.x),cy=eyToPx(ann.y),r=EDITOR.scale*0.22;
+        ctx.fillStyle='rgba(255,107,53,.85)'; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=1.5; ctx.stroke();
+        ctx.fillStyle='#fff'; ctx.font='700 8px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('B',cx,cy); break;
+      }
+      case 'collector': {
+        const cx=exToPx(ann.x),cy=eyToPx(ann.y),s=EDITOR.scale*0.28;
+        ctx.fillStyle='rgba(245,158,11,.8)'; ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1;
+        ctx.fillRect(cx-s,cy-s*0.35,s*2,s*0.7); ctx.strokeRect(cx-s,cy-s*0.35,s*2,s*0.7);
+        ctx.fillStyle='#fff'; ctx.font='700 7px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('COL',cx,cy); break;
+      }
+      case 'thermostat': {
+        const cx=exToPx(ann.x),cy=eyToPx(ann.y),r=EDITOR.scale*0.18;
+        ctx.fillStyle='rgba(194,112,61,.9)'; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=1; ctx.stroke();
+        ctx.fillStyle='#fff'; ctx.font='700 7px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('T°',cx,cy); break;
+      }
+      case 'pipe':
+        if(ann.pts&&ann.pts.length>=2){
+          ctx.strokeStyle='rgba(125,211,252,.65)'; ctx.lineWidth=2.5;
+          ctx.beginPath(); ann.pts.forEach(([x,y],i)=>i?ctx.lineTo(exToPx(x),eyToPx(y)):ctx.moveTo(exToPx(x),eyToPx(y))); ctx.stroke();
+        } break;
+    }
+    ctx.restore();
+  }
+  // Heat labels overlay
+  if(EDITOR.showHeatLabels){
+    const res=computeObject();
+    for(const room of f.rooms){
+      const fr=res?.floors?.find(x=>x.id===f.id); const rr=fr?.rooms?.find(x=>x.id===room.id);
+      if(!rr) continue; const c=roomCentroid(room);
+      ctx.save(); ctx.fillStyle='rgba(255,107,53,.9)'; ctx.font='700 10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText(rr.qW.toFixed(0)+' Вт',exToPx(c[0]),eyToPx(c[1])+12); ctx.restore();
+    }
+  }
+  // Warm floor highlight
+  for(const room of f.rooms){
+    if(!room.warmFloor) continue;
+    const vp=roomVerts(room).map(([x,y])=>[exToPx(x),eyToPx(y)]);
+    ctx.save(); ctx.strokeStyle='rgba(255,107,53,.6)'; ctx.lineWidth=3; ctx.setLineDash([6,4]);
+    ctx.beginPath(); vp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+}
+
+function edDrawToolPreview(ctx){
+  const cur=EDITOR._cursorPos||EDITOR.cur; if(!cur) return;
+  const cx=exToPx(cur[0]),cy=eyToPx(cur[1]);
+  ctx.save();
+  // Line tool
+  if(EDITOR._linePt){
+    ctx.strokeStyle='rgba(125,211,252,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(exToPx(EDITOR._linePt[0]),eyToPx(EDITOR._linePt[1])); ctx.lineTo(cx,cy); ctx.stroke(); ctx.setLineDash([]);
+    const d=Math.hypot(cur[0]-EDITOR._linePt[0],cur[1]-EDITOR._linePt[1]);
+    ctx.fillStyle='rgba(125,211,252,.85)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText(d.toFixed(2)+' м',cx+8,cy-4);
+  }
+  // Circle tool
+  if(EDITOR._circlePt){
+    const r=Math.hypot(cur[0]-EDITOR._circlePt[0],cur[1]-EDITOR._circlePt[1]);
+    ctx.strokeStyle='rgba(125,211,252,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.arc(exToPx(EDITOR._circlePt[0]),eyToPx(EDITOR._circlePt[1]),r*EDITOR.scale,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(125,211,252,.85)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText('r='+r.toFixed(2)+' м',cx+8,cy-4);
+  }
+  // Arc tool
+  if(EDITOR._arcPts&&EDITOR._arcPts.length){
+    ctx.strokeStyle='rgba(125,211,252,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    const pts=[...EDITOR._arcPts.map(([x,y])=>[exToPx(x),eyToPx(y)]),[cx,cy]];
+    ctx.beginPath(); pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(125,211,252,.85)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText('Точка '+(EDITOR._arcPts.length+1)+'/3',cx+8,cy-4);
+  }
+  // Measure (distance/dim) tool
+  if(EDITOR._measure){
+    const pts=EDITOR._measure.pts;
+    ctx.strokeStyle='rgba(255,210,122,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    pts.forEach(([x,y],i)=>i?ctx.lineTo(exToPx(x),eyToPx(y)):ctx.moveTo(exToPx(x),eyToPx(y)));
+    ctx.lineTo(cx,cy); ctx.stroke(); ctx.setLineDash([]);
+    pts.forEach(([x,y])=>{ ctx.fillStyle='#ffd27a'; ctx.beginPath(); ctx.arc(exToPx(x),eyToPx(y),4,0,Math.PI*2); ctx.fill(); });
+    if(pts.length>=1){
+      const last=pts[pts.length-1]; const d=Math.hypot(cur[0]-last[0],cur[1]-last[1]);
+      ctx.fillStyle='rgba(255,210,122,.9)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText(d.toFixed(2)+' м',cx+8,cy-4);
+    }
+    if(EDITOR._measure.type==='area-measure'&&pts.length>=2){
+      const hint=pts.length>=3?'клик по 1-й точке / Enter — завершить':'кликайте углы…';
+      ctx.fillStyle='rgba(255,210,122,.7)'; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillText(hint,cx+10,cy+8);
+    }
+  }
+  // Pipe tool
+  if(EDITOR._pipePoints&&EDITOR._pipePoints.length){
+    ctx.strokeStyle='rgba(125,211,252,.65)'; ctx.lineWidth=2.5;
+    ctx.beginPath(); EDITOR._pipePoints.forEach(([x,y],i)=>i?ctx.lineTo(exToPx(x),eyToPx(y)):ctx.moveTo(exToPx(x),eyToPx(y)));
+    ctx.lineTo(cx,cy); ctx.stroke();
+    ctx.fillStyle='rgba(125,211,252,.8)'; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText('Enter/Esc — завершить',cx+8,cy-4);
+  }
+  ctx.restore();
+}
+
+/* ── New tool action functions ── */
+function edFinishMeasure(){
+  if(!EDITOR._measure||!EDITOR._measure.pts.length) return;
+  const pts=EDITOR._measure.pts;
+  let area=0; for(let i=0,j=pts.length-1;i<pts.length;j=i++) area+=pts[j][0]*pts[i][1]-pts[i][0]*pts[j][1];
+  toast('Площадь: '+Math.abs(area/2).toFixed(2)+' м²');
+  EDITOR._measure=null; edDraw(); edStatus();
+}
+function edFinishPipe(){
+  if(!EDITOR._pipePoints||EDITOR._pipePoints.length<2) return;
+  const f=activeFloor(); if(!f.annotations) f.annotations=[];
+  f.annotations.push({id:uid('ann'),type:'pipe',pts:[...EDITOR._pipePoints]});
+  EDITOR._pipePoints=[]; edPushHist(); edDraw(); edStatus(); toast('Трасса добавлена');
+}
+function edMirror(){
+  const r=edSelRoom(); if(!r) return;
+  if(r.poly){ const cx=roomCentroid(r)[0]; r.poly=r.poly.map(([x,y])=>[2*cx-x,y]); }
+  else { /* rect: just flip openings */ for(const op of (r.openings||[])){ op.side={left:'right',right:'left',top:'top',bottom:'bottom'}[op.side]||op.side; op.pos=100-(op.pos||50); } }
+  edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus();
+}
+function edScaleTool(){
+  const r=edSelRoom(); if(!r){toast('Выберите комнату','err');return;}
+  const f=parseFloat(prompt('Коэффициент масштабирования (например 1.5):'));
+  if(!f||isNaN(f)||f<=0) return;
+  if(r.poly){ const [cx,cy]=roomCentroid(r); r.poly=r.poly.map(([x,y])=>[cx+(x-cx)*f, cy+(y-cy)*f]); }
+  else { const cx=r.x+r.w/2, cy=r.y+r.h/2; r.w=Math.min(ST.plot.w,r.w*f); r.h=Math.min(ST.plot.d,r.h*f); r.x=Math.max(0,cx-r.w/2); r.y=Math.max(0,cy-r.h/2); }
+  edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus();
+}
+function edAlignMenu(){
+  const r=edSelRoom(); if(!r){toast('Выберите комнату','err');return;}
+  const bb=roomBBox(r);
+  const opts=['Левый край (X=0)','Правый край','Верхний край (Y=0)','Нижний край','Центр по X','Центр по Y'];
+  const idx=parseInt(prompt(opts.map((o,i)=>`${i+1}. ${o}`).join('\n')));
+  if(!idx||isNaN(idx)) return;
+  if(idx===1) r.x=0;
+  else if(idx===2) r.x=ST.plot.w-bb.w;
+  else if(idx===3) r.y=0;
+  else if(idx===4) r.y=ST.plot.d-bb.h;
+  else if(idx===5) r.x=(ST.plot.w-bb.w)/2;
+  else if(idx===6) r.y=(ST.plot.d-bb.h)/2;
+  edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus();
+}
+function edOffsetTool(){
+  const r=edSelRoom(); if(!r){toast('Выберите комнату','err');return;}
+  const d=parseFloat(prompt('Смещение стен, м (положительное — увеличить, отрицательное — уменьшить):'));
+  if(isNaN(d)) return;
+  if(r.poly){ const [cx,cy]=roomCentroid(r); const len=Math.hypot(r.poly[0][0]-cx,r.poly[0][1]-cy)||1; const f=(len+d)/len; r.poly=r.poly.map(([x,y])=>[cx+(x-cx)*f, cy+(y-cy)*f]); }
+  else { r.x=Math.max(0,r.x-d); r.y=Math.max(0,r.y-d); r.w=Math.max(1,r.w+d*2); r.h=Math.max(1,r.h+d*2); if(r.x+r.w>ST.plot.w) r.w=ST.plot.w-r.x; if(r.y+r.h>ST.plot.d) r.h=ST.plot.d-r.y; }
+  edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus();
+}
+function edToggleWarmFloor(){
+  const r=edSelRoom(); if(!r){toast('Выберите комнату','err');return;}
+  r.warmFloor=!r.warmFloor;
+  toast(r.warmFloor?'Тёплый пол включён':'Тёплый пол выключен');
+  edPushHist(); updateLivePanel(); edDraw(); erUpdateActive();
+}
+function edToggleAreaTags(){ EDITOR.showAreaTags=!EDITOR.showAreaTags; erUpdateActive(); edDraw(); }
+function edToggleHeatLabels(){ EDITOR.showHeatLabels=!EDITOR.showHeatLabels; erUpdateActive(); edDraw(); }
+function edRoomTypeMenu(){
+  const r=edSelRoom(); if(!r){toast('Выберите комнату','err');return;}
+  const list=ROOM_TYPES.map((t,i)=>`${i+1}. ${t.name} (+${t.t}°)`).join('\n');
+  const idx=parseInt(prompt('Выберите тип помещения:\n'+list));
+  if(!idx||isNaN(idx)||idx<1||idx>ROOM_TYPES.length) return;
+  const type=ROOM_TYPES[idx-1]; r.typeId=type.id; r.tInt=type.t;
+  edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus();
+}
+function edShowPerimeter(){
+  const r=edSelRoom();
+  if(!r){toast('Выберите комнату','err');return;}
+  const peri=roomEdges(r).reduce((s,e)=>s+Math.hypot(e.b[0]-e.a[0],e.b[1]-e.a[1]),0);
+  toast('Периметр: '+peri.toFixed(2)+' м');
+}
 
 /* ---- CONTEXT MENU ---- */
 function edCtxMenu(e){ e.preventDefault(); const cv=e.currentTarget, rect=cv.getBoundingClientRect();
