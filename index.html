@@ -798,6 +798,78 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .hist-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;border:1px solid rgba(140,165,210,.08);border-radius:.7rem;background:#0B0F1A;padding:.6rem .85rem;margin-bottom:.45rem;font-size:.82rem;cursor:pointer;transition:border-color .15s,background .15s}
 .hist-row:hover{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.05)}
 
+/* ═══════════════════════════════════════════════════
+   TELEGRAM-STYLE SETTINGS PANEL
+═══════════════════════════════════════════════════ */
+#settings-overlay .sec-body{padding:0;overflow:hidden;display:flex;flex-direction:column}
+#settings-content{width:100%;flex:1;display:flex;flex-direction:column;min-height:0}
+.tg-set-wrap{display:flex;width:100%;flex:1;min-height:0}
+.tg-set-sidebar{width:255px;flex-shrink:0;border-right:1px solid var(--aq-border);overflow-y:auto;background:var(--aq-bg2);display:flex;flex-direction:column}
+.tg-set-panel{flex:1;overflow-y:auto;min-width:0}
+@media(max-width:600px){
+  .tg-set-sidebar.tg-mob-hide{display:none!important}
+  .tg-set-panel.tg-mob-hide{display:none!important}
+  .tg-set-panel{display:none}
+}
+.tg-prf{padding:.9rem 1rem;display:flex;align-items:center;gap:.7rem;border-bottom:1px solid var(--aq-border);flex-shrink:0}
+.tg-ava{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#f97316);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em}
+.tg-prf-name{font-size:.86rem;font-weight:700;color:var(--aq-bright)}
+.tg-prf-sub{font-size:.69rem;color:var(--aq-muted);margin-top:1px}
+.tg-ni{display:flex;align-items:center;gap:.55rem;padding:.52rem .8rem;cursor:pointer;transition:background .1s;border-radius:.45rem;margin:0 .3rem .02rem}
+.tg-ni:hover{background:rgba(255,255,255,.05)}
+.tg-ni.on{background:rgba(245,158,11,.1)}
+.tg-ni.on .tg-ni-lbl{color:var(--aq-accent)}
+.tg-ni-ic{width:28px;height:28px;border-radius:.4rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.78rem}
+.tg-ni-lbl{flex:1;font-size:.82rem;font-weight:500;color:var(--aq-text)}
+.tg-ni-arr{opacity:.22;font-size:1rem}
+.tg-pan{padding:.9rem 1.1rem 2rem}
+.tg-pan-hd{font-size:.95rem;font-weight:700;color:var(--aq-bright);margin-bottom:.85rem;display:flex;align-items:center;gap:.3rem}
+.tg-pan-back{cursor:pointer;opacity:.45;padding:.1rem .35rem .1rem 0;display:none;font-size:1.1rem;transition:opacity .1s;background:none;border:none;color:var(--aq-text);flex-shrink:0}
+.tg-pan-back:hover{opacity:1}
+@media(max-width:600px){.tg-pan-back{display:inline-block}}
+.tg-blk{background:var(--aq-surface);border-radius:.72rem;overflow:hidden;border:1px solid var(--aq-border);margin-bottom:.72rem}
+.tg-blk-hd{font-size:.61rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--aq-muted);padding:.55rem .85rem .18rem}
+.tg-r{display:flex;align-items:center;gap:.65rem;padding:.6rem .85rem;border-bottom:1px solid var(--aq-border);min-height:46px;transition:background .1s}
+.tg-r:last-child{border-bottom:none}
+.tg-r.click,.tg-r.red{cursor:pointer}
+.tg-r.click:hover{background:var(--aq-inset)}
+.tg-r.red:hover{background:rgba(239,68,68,.07)}
+.tg-r-ic{width:27px;height:27px;border-radius:.38rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.78rem}
+.tg-r-bd{flex:1;min-width:0}
+.tg-r-tt{font-size:.82rem;font-weight:500;color:var(--aq-bright)}
+.tg-r-sb{font-size:.69rem;color:var(--aq-muted);margin-top:1px;line-height:1.3}
+.tg-r.red .tg-r-tt{color:#ef4444}
+.tg-r-ctrl{flex-shrink:0;display:flex;align-items:center}
+.tg-sw{position:relative;display:inline-flex;width:38px;height:21px;flex-shrink:0;cursor:pointer}
+.tg-sw input{opacity:0;width:0;height:0;position:absolute}
+.tg-sw-tr{position:absolute;inset:0;border-radius:999px;background:rgba(255,255,255,.13);transition:background .18s;border:1px solid rgba(255,255,255,.07)}
+.tg-sw input:checked+.tg-sw-tr{background:var(--aq-accent);border-color:transparent}
+.tg-sw-th{position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .18s cubic-bezier(.34,1.4,.64,1);box-shadow:0 1px 3px rgba(0,0,0,.3);pointer-events:none}
+.tg-sw input:checked~.tg-sw-th{transform:translateX(17px)}
+.tg-pills{display:flex;gap:.28rem;flex-wrap:wrap}
+.tg-p{padding:.25rem .6rem;border-radius:999px;border:1px solid var(--aq-border2);font-size:.71rem;cursor:pointer;transition:all .12s;color:var(--aq-muted);background:transparent}
+.tg-p.on{border-color:var(--aq-accent);color:var(--aq-accent);background:rgba(245,158,11,.12);font-weight:600}
+.tg-cdots{display:flex;gap:.38rem;flex-wrap:wrap}
+.tg-cd{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .12s;flex-shrink:0}
+.tg-cd.on{border-color:#fff}
+.tg-cd:hover:not(.on){transform:scale(1.1)}
+.tg-rng{-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:rgba(255,255,255,.14);outline:none;cursor:pointer;width:105px;accent-color:var(--aq-accent)}
+.tg-rng::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--aq-accent);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg-sel{background:var(--aq-surface2);border:1px solid var(--aq-border);border-radius:.42rem;padding:.26rem .5rem;color:var(--aq-text);font-size:.76rem;cursor:pointer;outline:none;max-width:145px}
+.tg-sel:focus{border-color:var(--aq-accent)}
+.tg-sbar{height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:.45rem}
+.tg-sbar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--aq-accent),#f97316);transition:width .4s}
+.tg-info{font-size:.69rem;color:var(--aq-muted);padding:.32rem .85rem .5rem;line-height:1.45}
+/* Accessibility utility classes */
+.compact-mode .tg-blk{margin-bottom:.45rem}
+.compact-mode .tg-r{min-height:38px;padding:.42rem .85rem}
+.large-targets button,.large-targets a,.large-targets select,.large-targets input[type=button]{min-height:48px!important}
+.enhanced-focus :focus-visible{outline:3px solid var(--aq-accent)!important;outline-offset:2px!important}
+.no-blur .sec-top{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.high-contrast .tg-r-tt{color:#fff!important}
+.high-contrast .tg-r-sb{color:rgba(255,255,255,.72)!important}
+.big-cursor,.big-cursor *{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 4l8 24 4-8 8 4z' fill='white' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E") 4 4,auto!important}
+
 /* ══════════════════════════════════════════════
    COPY / SCREENSHOT PROTECTION (Фаза 4)
 ══════════════════════════════════════════════ */
@@ -890,6 +962,35 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .eclass-row.active{transform:scaleX(1.035);box-shadow:0 0 10px rgba(245,158,11,.18)}
 .season-panel{background:rgba(7,9,15,.6);border:1px solid rgba(140,165,210,.1);border-radius:1.25rem;padding:1rem .75rem .75rem;margin-bottom:1.5rem}
 #season-chart{display:block;width:100%}
+/* ════ 3D THERMAL VIEW ════ */
+#view3d-outer{border-radius:1rem;overflow:hidden;border:1px solid rgba(140,165,210,.12);background:#07090F;margin-bottom:20px;position:relative}
+#view3d-container{width:100%;cursor:grab}
+#view3d-container:active{cursor:grabbing}
+#view3d-container canvas{display:block!important}
+#view3d-tip{position:absolute;display:none;background:rgba(11,15,26,.96);border:1px solid rgba(245,158,11,.32);color:#ECF0FA;font-size:11px;line-height:1.5;padding:6px 11px;border-radius:9px;pointer-events:none;z-index:20;white-space:nowrap;font-family:'JetBrains Mono',monospace;backdrop-filter:blur(10px)}
+/* ════ DONUT CHART ════ */
+.heat-donut-wrap{display:flex;gap:14px;align-items:center;background:rgba(17,24,39,.5);border:1px solid rgba(140,165,210,.08);border-radius:12px;padding:14px;margin-bottom:12px}
+.heat-donut-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.hd-row{display:flex;align-items:center;gap:6px;font-size:11px}
+.hd-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.hd-name{color:#8FA3C0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd-pct{color:#ECF0FA;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700}
+.hd-w{color:#4E6080;font-size:10px}
+/* ════ ROOM CARDS ════ */
+.room-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:16px}
+.room-card{background:rgba(17,24,39,.6);border:1px solid rgba(140,165,210,.1);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;transition:border-color .2s,transform .2s}
+.room-card:hover{border-color:rgba(245,158,11,.32);transform:translateY(-2px)}
+.room-card-name{font-size:.68rem;color:#8FA3C0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-card-kw{font-size:1.15rem;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1.1}
+.room-card-kw span{font-size:.6rem;font-weight:600;color:rgba(245,158,11,.7);margin-left:2px}
+.room-card-bar{background:rgba(140,165,210,.1);border-radius:2px;height:3px;overflow:hidden}
+.room-card-bar-inner{height:3px;border-radius:2px;transition:width .6s ease}
+.room-card-meta{font-size:.62rem;color:#4E6080}
+[data-theme="light"] #view3d-outer{background:#1a1a2e}
+[data-theme="light"] .room-card{background:rgba(255,255,255,.85);border-color:rgba(30,60,120,.12)}
+[data-theme="light"] .heat-donut-wrap{background:rgba(248,245,240,.8);border-color:rgba(30,60,120,.1)}
+[data-theme="light"] .hd-name{color:#4a5568}
+[data-theme="light"] .hd-w{color:#718096}
 </style>
 </head>
 <body class="bg-w950">
@@ -927,7 +1028,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
   </nav>
 
   <div id="hero-content" class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-20 pt-8 text-center">
-    <p class="mb-4 text-xs font-semibold uppercase tracking-[.2em] text-amber/80">Отопление · Сантехника · Фергана</p>
+    <p class="mb-4 text-xs font-semibold uppercase tracking-[.2em] text-amber/80" data-i18n="tagline">Отопление · Сантехника · Фергана</p>
     <h1 class="max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-cream sm:text-5xl lg:text-6xl" data-i18n-html="hero-h1">
       Теплопотери всего дома<br>
       <span class="thermal-text">за один расчёт</span>
@@ -1064,47 +1165,47 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
   <div class="mx-auto max-w-3xl px-4 sm:px-6">
     <div class="exp-tab-hdr">
       <div class="flex-1">
-        <p class="text-xs font-semibold uppercase tracking-widest text-amber/70">Вопросы и ответы</p>
-        <h3 class="mt-1 text-xl font-extrabold tracking-tight text-cream">Частые вопросы о теплопотерях</h3>
+        <p class="text-xs font-semibold uppercase tracking-widest text-amber/70" data-i18n="faq-tag">Вопросы и ответы</p>
+        <h3 class="mt-1 text-xl font-extrabold tracking-tight text-cream" data-i18n="faq-title">Частые вопросы о теплопотерях</h3>
       </div>
       <svg class="exp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
     </div>
     <div class="exp-tab-body">
     <details class="faq">
-      <summary>Что вводить в поле температуры?</summary>
-      <div class="faq-body">Ничего вводить не нужно — температура подставляется автоматически, когда вы выбираете город. Это <b>расчётная зимняя температура</b> (параметр Б по КМК 2.01.01-94, табл. 4) — наиболее холодная пятидневка обеспеченностью 0.92. Для Ферганы это −14 °C. Отопление рассчитывают именно на такой худший случай.</div>
+      <summary data-i18n="faq-q-1">Что вводить в поле температуры?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-1">Ничего вводить не нужно — температура подставляется автоматически, когда вы выбираете город. Это <b>расчётная зимняя температура</b> (параметр Б по КМК 2.01.01-94, табл. 4) — наиболее холодная пятидневка обеспеченностью 0.92. Для Ферганы это −14 °C. Отопление рассчитывают именно на такой худший случай.</div>
     </details>
     <details class="faq">
-      <summary>Почему у моего дома теплопотери больше, чем у соседа?</summary>
-      <div class="faq-body">Даже у одинаковых по площади домов потери отличаются из-за: <b>материала и толщины стен</b> (R), <b>качества окон</b>, <b>количества наружных стен</b> (угловая комната теряет больше), <b>этажности</b> (потери через пол и крышу), <b>ориентации</b> (северные стены холоднее) и <b>высоты потолков</b>. Наш калькулятор учитывает всё это покомнатно.</div>
+      <summary data-i18n="faq-q-2">Почему у моего дома теплопотери больше, чем у соседа?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-2">Даже у одинаковых по площади домов потери отличаются из-за: <b>материала и толщины стен</b> (R), <b>качества окон</b>, <b>количества наружных стен</b> (угловая комната теряет больше), <b>этажности</b> (потери через пол и крышу), <b>ориентации</b> (северные стены холоднее) и <b>высоты потолков</b>. Наш калькулятор учитывает всё это покомнатно.</div>
     </details>
     <details class="faq">
-      <summary>Как материал стен влияет на расчёт?</summary>
-      <div class="faq-body">Ключевой показатель — <b>R (теплосопротивление)</b>. Чем выше R, тем меньше потери. Кирпич 380 мм имеет R ≈ 0.64, а тот же кирпич с 100 мм минваты — уже R ≈ 2.86, то есть потери через стену падают в несколько раз. На шаге результата есть таблица «Как материал стен влияет на результат» — можно сравнить варианты в кВт.</div>
+      <summary data-i18n="faq-q-3">Как материал стен влияет на расчёт?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-3">Ключевой показатель — <b>R (теплосопротивление)</b>. Чем выше R, тем меньше потери. Кирпич 380 мм имеет R ≈ 0.64, а тот же кирпич с 100 мм минваты — уже R ≈ 2.86, то есть потери через стену падают в несколько раз. На шаге результата есть таблица «Как материал стен влияет на результат» — можно сравнить варианты в кВт.</div>
     </details>
     <details class="faq">
-      <summary>Окна какого качества нужны для дома в Фергане?</summary>
-      <div class="faq-body">Минимум — <b>ПВХ 2-камерный стеклопакет</b> (R ≈ 0.32). Для экономии на отоплении лучше <b>3-камерный</b> (R ≈ 0.55) или <b>аргон + Low-E</b> (R ≈ 0.68). Окна — одно из самых слабых мест: через одинарное остекление (R ≈ 0.18) теряется в 3–4 раза больше тепла, чем через хороший стеклопакет.</div>
+      <summary data-i18n="faq-q-4">Окна какого качества нужны для дома в Фергане?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-4">Минимум — <b>ПВХ 2-камерный стеклопакет</b> (R ≈ 0.32). Для экономии на отоплении лучше <b>3-камерный</b> (R ≈ 0.55) или <b>аргон + Low-E</b> (R ≈ 0.68). Окна — одно из самых слабых мест: через одинарное остекление (R ≈ 0.18) теряется в 3–4 раза больше тепла, чем через хороший стеклопакет.</div>
     </details>
     <details class="faq">
-      <summary>На что повлияет +5 см утеплителя?</summary>
-      <div class="faq-body">50 мм минеральной ваты (λ ≈ 0.045) добавляют к стене примерно <b>+1.1 к R</b>. Например, кирпич 380 (R 0.64) с 50 мм ваты становится R ≈ 1.75 — теплопотери стены снижаются почти втрое. Проверить эффект на своём объекте можно в таблице сравнения материалов или добавив свой вариант в «Мастерской».</div>
+      <summary data-i18n="faq-q-5">На что повлияет +5 см утеплителя?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-5">50 мм минеральной ваты (λ ≈ 0.045) добавляют к стене примерно <b>+1.1 к R</b>. Например, кирпич 380 (R 0.64) с 50 мм ваты становится R ≈ 1.75 — теплопотери стены снижаются почти втрое. Проверить эффект на своём объекте можно в таблице сравнения материалов или добавив свой вариант в «Мастерской».</div>
     </details>
     <details class="faq">
-      <summary>Какой котёл выбрать — настенный или напольный?</summary>
-      <div class="faq-body">Для большинства домов и квартир до ~35 кВт хватает <b>настенного газового котла</b> — он компактный и дешевле. <b>Напольный</b> берут при большой мощности, для каскада или когда нужен высокий ресурс и большой объём ГВС. В результате расчёта мы подсказываем тип под вашу мощность; точную модель подберём из наличия.</div>
+      <summary data-i18n="faq-q-6">Какой котёл выбрать — настенный или напольный?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-6">Для большинства домов и квартир до ~35 кВт хватает <b>настенного газового котла</b> — он компактный и дешевле. <b>Напольный</b> берут при большой мощности, для каскада или когда нужен высокий ресурс и большой объём ГВС. В результате расчёта мы подсказываем тип под вашу мощность; точную модель подберём из наличия.</div>
     </details>
     <details class="faq">
-      <summary>Сколько секций радиатора нужно на комнату?</summary>
-      <div class="faq-body">Зависит не от площади «на глаз», а от теплопотерь конкретной комнаты. Мы считаем их отдельно: при ~150 Вт на секцию биметалла (режим 90/70) и запасе 15%. На низкотемпературном режиме (75/65, 55/45) секция отдаёт меньше — секций нужно больше, это учитывается выбором режима на шаге «Материалы». В таблице «По этажам и комнатам» видно число секций для каждого помещения — угловая комната с окнами на север потребует больше, чем внутренняя.</div>
+      <summary data-i18n="faq-q-7">Сколько секций радиатора нужно на комнату?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-7">Зависит не от площади «на глаз», а от теплопотерь конкретной комнаты. Мы считаем их отдельно: при ~150 Вт на секцию биметалла (режим 90/70) и запасе 15%. На низкотемпературном режиме (75/65, 55/45) секция отдаёт меньше — секций нужно больше, это учитывается выбором режима на шаге «Материалы». В таблице «По этажам и комнатам» видно число секций для каждого помещения — угловая комната с окнами на север потребует больше, чем внутренняя.</div>
     </details>
     <details class="faq">
-      <summary>Нужен ли тёплый пол?</summary>
-      <div class="faq-body">Тёплый пол — это комфорт и более равномерный прогрев, особенно в ванной и на первом этаже. На теплопотери он почти не влияет (потери считаются по ограждениям), но позволяет работать котлу на более низкой температуре и экономить. Если планируете тёплый пол — скажите специалисту, подберём оборудование с учётом этого.</div>
+      <summary data-i18n="faq-q-8">Нужен ли тёплый пол?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-8">Тёплый пол — это комфорт и более равномерный прогрев, особенно в ванной и на первом этаже. На теплопотери он почти не влияет (потери считаются по ограждениям), но позволяет работать котлу на более низкой температуре и экономить. Если планируете тёплый пол — скажите специалисту, подберём оборудование с учётом этого.</div>
     </details>
     <details class="faq">
-      <summary>Насколько точен этот расчёт?</summary>
-      <div class="faq-body">Расчёт инженерный, по КМК 2.01.04-18 (строительная теплотехника) и КМК 2.01.01-94 (климатология): <b>Q = (ΔT/R)·S·n·(1+Σβ)</b> для каждой ограждающей конструкции плюс инфильтрация. R конструкций, коэффициенты n, ориентация и зональный пол по грунту взяты из официальных таблиц. Для проекта «под ключ» наш специалист уточнит детали (мостики холода, реальная воздухопроницаемость, ГВС) — это бесплатно.</div>
+      <summary data-i18n="faq-q-9">Насколько точен этот расчёт?</summary>
+      <div class="faq-body" data-i18n-html="faq-a-9">Расчёт инженерный, по КМК 2.01.04-18 (строительная теплотехника) и КМК 2.01.01-94 (климатология): <b>Q = (ΔT/R)·S·n·(1+Σβ)</b> для каждой ограждающей конструкции плюс инфильтрация. R конструкций, коэффициенты n, ориентация и зональный пол по грунту взяты из официальных таблиц. Для проекта «под ключ» наш специалист уточнит детали (мостики холода, реальная воздухопроницаемость, ГВС) — это бесплатно.</div>
     </details>
     </div><!-- /exp-tab-body -->
   </div>
@@ -1117,7 +1218,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
       <div>
         <p class="font-extrabold text-cream text-lg">Aquality <span class="text-amber">|</span> WaterPro</p>
         <p class="mt-1 text-xs text-muted">г. Фергана, ул. Мустакиллик 42</p>
-        <p class="mt-0.5 text-xs text-muted">Пн–Сб 9:00–18:00</p>
+        <p class="mt-0.5 text-xs text-muted" data-i18n="hours">Пн–Сб 9:00–18:00</p>
         <p class="mt-3 text-xs text-muted/50">© 2025 Aquality | WaterPro</p>
       </div>
       <!-- Телефоны -->
@@ -1205,23 +1306,23 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     <button onclick="closeAdmin()" class="ed-ico" title="Закрыть">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <span class="ed-title">Панель <span>администратора</span></span>
+    <span class="ed-title" data-i18n="admin">Панель администратора</span>
     <span class="text-xs text-muted ml-2" id="admin-current-user"></span>
   </div>
   <div id="admin-body">
     <div id="admin-sidebar">
-      <p class="text-[10px] font-semibold uppercase tracking-widest text-muted/60 px-2 mb-2 mt-1">Навигация</p>
+      <p class="text-[10px] font-semibold uppercase tracking-widest text-muted/60 px-2 mb-2 mt-1" data-i18n="adm-nav-lbl">Навигация</p>
       <div class="adm-nav active" id="adm-nav-dashboard" onclick="adminPage('dashboard')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Дашборд
+        <span data-i18n="adm-dashboard">Дашборд</span>
       </div>
       <div class="adm-nav" id="adm-nav-users" onclick="adminPage('users')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Пользователи
+        <span data-i18n="adm-users">Пользователи</span>
       </div>
       <div class="adm-nav" id="adm-nav-leads" onclick="adminPage('leads')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Заявки
+        <span data-i18n="adm-leads">Заявки</span>
         <span id="adm-leads-badge" class="ml-auto"></span>
       </div>
     </div>
@@ -1237,7 +1338,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     <button onclick="closeProfile()" class="ed-ico" title="Закрыть">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <span class="ed-title">Мой <span>профиль</span></span>
+    <span class="ed-title" data-i18n="profile">Мой профиль</span>
   </div>
   <div class="sec-body">
     <div class="mx-auto" style="max-width:520px">
@@ -1252,7 +1353,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     <button onclick="closeMyCalcs()" class="ed-ico" title="Закрыть">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <span class="ed-title">Мои <span>расчёты</span></span>
+    <span class="ed-title" data-i18n="my-calcs">Мои расчёты</span>
   </div>
   <div class="sec-body">
     <div class="mx-auto" style="max-width:640px">
@@ -1278,12 +1379,10 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     <button onclick="closeSettings()" class="ed-ico" title="Закрыть">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <span class="ed-title">Настройки <span>расчёта</span></span>
+    <span class="ed-title" data-i18n="nav-settings">Настройки расчёта</span>
   </div>
   <div class="sec-body" data-lenis-prevent>
-    <div class="mx-auto" style="max-width:520px">
-      <div id="settings-content"></div>
-    </div>
+    <div id="settings-content"></div>
   </div>
 </div>
 
@@ -1293,7 +1392,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     <button onclick="closeWorkshopSec()" class="ed-ico" title="Закрыть">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <span class="ed-title">Мастерская</span>
+    <span class="ed-title" data-i18n="nav-workshop">Мастерская</span>
   </div>
   <div class="sec-body">
     <div class="mx-auto" style="max-width:560px">
@@ -2052,12 +2151,12 @@ function _pfDeleteAccount(){
 }
 function _calcBadges(u, events, projs){
   const badges = [];
-  if(projs >= 1) badges.push({icon:'🏗️',name:'Первый расчёт',desc:'Создан первый расчёт'});
-  if(projs >= 5) badges.push({icon:'⚡',name:'Опытный',desc:'Создано 5+ расчётов'});
-  if(projs >= 20) badges.push({icon:'🔥',name:'Эксперт',desc:'Создано 20+ расчётов'});
-  if(events.filter(e=>e.type==='lead_sent').length >= 1) badges.push({icon:'📞',name:'Заявка',desc:'Отправил заявку специалисту'});
-  if(u.role==='owner') badges.push({icon:'👑',name:'Владелец',desc:'Владелец магазина'});
-  if(u.role==='admin') badges.push({icon:'🛡️',name:'Администратор',desc:'Администратор системы'});
+  if(projs >= 1) badges.push({icon:'🏗️',name:t('badge-first'),desc:t('badge-first-d')});
+  if(projs >= 5) badges.push({icon:'⚡',name:t('badge-skilled'),desc:t('badge-skilled-d')});
+  if(projs >= 20) badges.push({icon:'🔥',name:t('badge-expert'),desc:t('badge-expert-d')});
+  if(events.filter(e=>e.type==='lead_sent').length >= 1) badges.push({icon:'📞',name:t('badge-lead'),desc:t('badge-lead-d')});
+  if(u.role==='owner') badges.push({icon:'👑',name:t('badge-owner'),desc:t('badge-owner-d')});
+  if(u.role==='admin') badges.push({icon:'🛡️',name:t('badge-admin'),desc:t('badge-admin-d')});
   return badges;
 }
 async function doSaveProfile(btn){
@@ -2145,179 +2244,573 @@ function _saveAppSetting(key, val){
   localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(s));
 }
 
+/* ════════════════════════════════════════════════════════════
+   TELEGRAM-STYLE SETTINGS — 40+ рабочих функций
+════════════════════════════════════════════════════════════ */
+const _TG_CATS=[
+  {id:'appearance',ic:'🎨',bg:'#3b82f6',lbl:'Внешний вид'},
+  {id:'notifications',ic:'🔔',bg:'#f59e0b',lbl:'Уведомления'},
+  {id:'calculation',ic:'🧮',bg:'#22c55e',lbl:'Расчёт'},
+  {id:'privacy',ic:'🔒',bg:'#8b5cf6',lbl:'Приватность'},
+  {id:'accessibility',ic:'♿',bg:'#06b6d4',lbl:'Доступность'},
+  {id:'hotkeys',ic:'⌨️',bg:'#64748b',lbl:'Горячие клавиши'},
+  {id:'navigator',ic:'🧭',bg:'#ec4899',lbl:'Быстрый переход'},
+  {id:'data',ic:'💾',bg:'#f97316',lbl:'Данные'},
+  {id:'about',ic:'ℹ️',bg:'#6b7280',lbl:'О приложении'},
+];
+
 function openSettings(){
   _openSec('settings-overlay',()=>{
-    const s = _getAppSettings();
-    const theme = localStorage.getItem('aq-theme')||'dark';
-    const lang = localStorage.getItem('aq_lang')||'ru';
-    const units = s.units||'metric';
-    const fontSize = s.fontSize||'normal';
-    const anim = s.anim || _nanoIntensity || 'full';
-    const autosave = s.autosave !== false;
-    const exportFmt = s.exportFmt||'pdf';
-    const currency = s.currency||'uzs';
-    const decimals = s.decimals !== undefined ? s.decimals : 2;
-    const accent = s.accent||'amber';
-    const sounds = s.sounds === true;
-    const notifs = s.notifs !== false;
-
-    const HEAT_LABELS={1:'55/45 °C (тёплый пол)',2:'70/55 °C (низкотемп.)',3:'80/60 °C (стандарт)',4:'90/70 °C (высокотемп.)'};
-    const ATTIC_LABELS={1:'Тёплый чердак / плоская кровля',2:'Холодный чердак'};
-
+    const u=authCurrentUser()||{full_name:'Гость'};
     document.getElementById('settings-content').innerHTML=`
-    <!-- 1. Appearance -->
-    <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-4">${t('st-sec-appearance')}</p>
-      <div class="space-y-4">
-        <!-- Тема -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('settings-theme')}</p><p class="text-xs text-muted mt-0.5">${t('settings-theme-sub')}</p></div>
-          <div class="flex gap-1">
-            ${['dark','light','auto'].map(m=>`<button onclick="applyTheme('${m}');document.querySelectorAll('.aq-thm-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')" class="aq-thm-btn lg-btn-sec text-xs px-2.5 py-1.5 ${theme===m?'active':''}" style="${theme===m?'border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.14);color:#f59e0b':''}">
-              ${{'dark':t('theme-dark'),'light':t('theme-light'),'auto':t('theme-auto')}[m]||m}</button>`).join('')}
+      <div class="tg-set-wrap">
+        <div class="tg-set-sidebar" id="tg-sb">
+          <div class="tg-prf">
+            <div class="tg-ava">${(u.full_name||'A').substring(0,2).toUpperCase()}</div>
+            <div><p class="tg-prf-name">${u.full_name||'Пользователь'}</p><p class="tg-prf-sub">Aquality WaterPro · Фергана</p></div>
+          </div>
+          <div style="padding:.4rem 0 .6rem">
+            ${_TG_CATS.map(c=>`<div class="tg-ni" id="tg-ni-${c.id}" onclick="tgCat('${c.id}')">
+              <div class="tg-ni-ic" style="background:${c.bg}20;color:${c.bg}">${c.ic}</div>
+              <span class="tg-ni-lbl">${c.lbl}</span><span class="tg-ni-arr">›</span>
+            </div>`).join('')}
           </div>
         </div>
-        <!-- Язык -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('settings-lang')}</p></div>
-          <div class="flex gap-1">
-            ${['ru','uz','en'].map(l=>`<button onclick="setLang('${l}')" class="lg-btn-sec text-xs px-3 py-1.5" style="${lang===l?'border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.14);color:#f59e0b':''}">
-              ${{ru:t('lang-ru')||'Русский',uz:t('lang-uz')||"O'zbek",en:t('lang-en')||'English'}[l]}</button>`).join('')}
-          </div>
-        </div>
-        <!-- Размер шрифта -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('settings-font')}</p><p class="text-xs text-muted mt-0.5">${t('settings-font-sub')}</p></div>
-          <select class="wi" style="max-width:130px" onchange="_saveAppSetting('fontSize',this.value);_applyFontSize(this.value)">
-            <option value="small" ${fontSize==='small'?'selected':''}>${t('font-small')}</option>
-            <option value="normal" ${fontSize==='normal'?'selected':''}>${t('font-normal')}</option>
-            <option value="large" ${fontSize==='large'?'selected':''}>${t('font-large')}</option>
-          </select>
-        </div>
-        <!-- Акцентный цвет -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('settings-accent')}</p></div>
-          <div class="flex gap-1.5 items-center">
-            ${[['amber','#f59e0b'],['blue','#3b82f6'],['green','#22c55e'],['rose','#f43f5e'],['violet','#8b5cf6']].map(([n,c])=>`
-              <button onclick="_applyAccent('${n}');_saveAppSetting('accent','${n}')" title="${n}" style="width:22px;height:22px;border-radius:50%;background:${c};border:2px solid ${accent===n?'#fff':'transparent'};transition:border-color .15s"></button>`).join('')}
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- 2. Animations -->
-    <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-4">${t('st-sec-anim')}</p>
-      <div class="flex gap-2">
-        ${[["off",t('anim-off')||'Выкл'],["light",t('anim-light')||'Лёгкая'],["full",t('anim-full')||'Полная']].map(([v,l])=>`
-          <button onclick="_saveAppSetting('anim','${v}');_nanoIntensity='${v}';document.querySelectorAll('.aq-anim-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')" class="aq-anim-btn flex-1 py-2 rounded-lg text-sm transition-all ${anim===v?'text-amber':'text-muted'}" style="${anim===v?'background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.4)':'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)'}">
-          ${l}</button>`).join('')}
-      </div>
-      <p class="text-xs text-muted mt-2">${t('st-anim-desc')}</p>
-    </div>
-    <!-- 3. Calculation -->
-    <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-4">${t('st-sec-calc')}</p>
-      <div class="space-y-3">
-        <!-- Units -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-units-lbl')}</p></div>
-          <div class="flex gap-1">
-            ${[["metric",'st-units-m'],["imperial",'st-units-i']].map(([v,k])=>`
-              <button onclick="_saveAppSetting('units','${v}');toast(t('st-units-lbl')+': '+t('${k}'),'ok')" class="lg-btn-sec text-xs px-2.5 py-1.5 ${units===v?'active':''}" style="${units===v?'border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.14);color:#f59e0b':''}">${t(k)}</button>`).join('')}
-          </div>
-        </div>
-        <!-- Default region -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-region-lbl')}</p><p class="text-xs text-muted mt-0.5">${ST.cityName||t('st-region-none')}</p></div>
-          <button onclick="ST.step=1;renderProgress();renderStep();scrollToEl('calculator');closeSettings()" class="lg-btn-sec text-xs px-3 py-1.5">${t('st-change-btn')}</button>
-        </div>
-        <!-- Decimals -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-decimals-lbl')}</p></div>
-          <select class="wi" style="max-width:90px" onchange="_saveAppSetting('decimals',+this.value)">
-            ${[0,1,2,3].map(d=>`<option value="${d}" ${decimals==d?'selected':''}>${d}</option>`).join('')}
-          </select>
-        </div>
-        <!-- Auto-save -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-autosave-lbl')}</p><p class="text-xs text-muted mt-0.5">${t('st-autosave-sub')}</p></div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" ${autosave?'checked':''} class="sr-only peer" onchange="_saveAppSetting('autosave',this.checked)">
-            <div class="w-10 h-5 rounded-full peer bg-w800 peer-checked:bg-amber/70 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-cream after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
-          </label>
-        </div>
-        <!-- Export format -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-export-lbl')}</p></div>
-          <select class="wi" style="max-width:110px" onchange="_saveAppSetting('exportFmt',this.value)">
-            <option value="pdf" ${exportFmt==='pdf'?'selected':''}>PDF</option>
-            <option value="excel" ${exportFmt==='excel'?'selected':''}>Excel</option>
-          </select>
-        </div>
-        <!-- Currency -->
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-currency-lbl')}</p></div>
-          <select class="wi" style="max-width:110px" onchange="_saveAppSetting('currency',this.value)">
-            <option value="uzs" ${currency==='uzs'?'selected':''}>UZS</option>
-            <option value="usd" ${currency==='usd'?'selected':''}>USD ($)</option>
-            <option value="rub" ${currency==='rub'?'selected':''}>RUB (₽)</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <!-- 4. Sound & Notifications -->
-    <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-4">${t('st-sec-sound')}</p>
-      <div class="space-y-3">
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-notifs-lbl')}</p><p class="text-xs text-muted mt-0.5">${t('st-notifs-sub')}</p></div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" ${notifs?'checked':''} class="sr-only peer" onchange="_saveAppSetting('notifs',this.checked)">
-            <div class="w-10 h-5 rounded-full peer bg-w800 peer-checked:bg-amber/70 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-cream after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
-          </label>
-        </div>
-        <div class="flex items-center justify-between gap-3">
-          <div><p class="text-sm font-semibold text-cream">${t('st-sounds-lbl')}</p><p class="text-xs text-muted mt-0.5">${t('st-sounds-sub')}</p></div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" ${sounds?'checked':''} class="sr-only peer" onchange="_saveAppSetting('sounds',this.checked);_soundsEnabled=this.checked">
-            <div class="w-10 h-5 rounded-full peer bg-w800 peer-checked:bg-amber/70 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-cream after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
-          </label>
-        </div>
-      </div>
-    </div>
-    <!-- 5. Quick jump -->
-    <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-3">${t('st-sec-jump')}</p>
-      <div class="space-y-2">
-        <button onclick="ST.step=1;renderProgress();renderStep();scrollToEl('calculator');closeSettings()" class="lg-btn-sec w-full py-2 text-sm">${t('st-jump-s1')}</button>
-        <button onclick="ST.step=2;renderProgress();renderStep();scrollToEl('calculator');closeSettings()" class="lg-btn-sec w-full py-2 text-sm">${t('st-jump-s2')}</button>
-        <button onclick="ST.step=5;renderProgress();renderStep();scrollToEl('calculator');closeSettings()" class="lg-btn-sec w-full py-2 text-sm">${t('st-jump-s5')}</button>
-      </div>
-    </div>
-    <!-- 6. Hotkeys -->
-    <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-3">${t('st-sec-hotkeys')}</p>
-      <div class="space-y-1.5 text-xs">
-        ${[['Escape','hk-close'],['→ Shift+Enter','hk-next'],['← Alt+←','hk-back'],['Ctrl+Z','hk-undo'],['Ctrl+Y','hk-redo'],['Del','hk-delete'],['Space','hk-pan'],['V','hk-select'],['W','hk-wall'],['R','hk-room'],['D','hk-door'],['N','hk-window']].map(([k,dk])=>`
-          <div class="flex items-center justify-between gap-2 py-0.5">
-            <span class="text-muted">${t(dk)}</span>
-            <kbd class="hk">${k}</kbd>
-          </div>`).join('')}
-      </div>
-    </div>
-    <!-- 7. Data & reset -->
-    <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-4">${t('st-sec-data')}</p>
-      <div class="space-y-2">
-        <button onclick="_clearCalcCache()" class="lg-btn-sec w-full py-2 text-sm">${t('st-clear-cache')}</button>
-        <button onclick="_resetSettings()" class="lg-btn-sec w-full py-2 text-sm text-red-400 hover:border-red-400/50">${t('st-reset-settings')}</button>
-      </div>
-      <p class="text-xs text-muted mt-3">${t('st-data-desc')}</p>
-    </div>`;
+        <div class="tg-set-panel" id="tg-pn"><div class="tg-pan" id="tg-pb"></div></div>
+      </div>`;
+    tgCat('appearance');
   });
   _startSettingsAnim();
 }
 function closeSettings(){ _stopSettingsAnim(); _closeSec('settings-overlay'); }
+
+/* ──── Навигация по категориям ──── */
+window.tgCat=function(id){
+  _TG_CATS.forEach(c=>{const el=document.getElementById('tg-ni-'+c.id);if(el)el.classList.toggle('on',c.id===id);});
+  if(window.innerWidth<=600){
+    const sb=document.getElementById('tg-sb'),pn=document.getElementById('tg-pn');
+    if(sb)sb.classList.add('tg-mob-hide');
+    if(pn){pn.classList.remove('tg-mob-hide');pn.style.display='block';}
+  }
+  const pb=document.getElementById('tg-pb');
+  if(!pb)return;
+  const fns={appearance:_tgAppearance,notifications:_tgNotifs,calculation:_tgCalc,
+    privacy:_tgPrivacy,accessibility:_tgA11y,hotkeys:_tgHotkeys,
+    navigator:_tgNavigator,data:_tgData,about:_tgAbout};
+  pb.innerHTML=(fns[id]||_tgAppearance)();
+};
+window.tgBack=function(){
+  const sb=document.getElementById('tg-sb'),pn=document.getElementById('tg-pn');
+  if(sb)sb.classList.remove('tg-mob-hide');
+  if(pn){pn.classList.add('tg-mob-hide');pn.style.display='';}
+};
+
+/* ──── Хелперы ──── */
+function _tgG(k,def){const s=_getAppSettings();return s[k]!==undefined?s[k]:def;}
+function _tgSw(k,def,extra){
+  const c=_tgG(k,def);
+  return `<label class="tg-sw"><input type="checkbox" ${c?'checked':''} onchange="_saveAppSetting('${k}',this.checked);${extra||''}"><span class="tg-sw-tr"></span><span class="tg-sw-th"></span></label>`;
+}
+function _tgPills(k,opts,def,extra){
+  const cur=_tgG(k,def);
+  return `<div class="tg-pills">${opts.map(([v,l])=>`<button class="tg-p${cur===v?' on':''}" onclick="_saveAppSetting('${k}','${v}');this.closest('.tg-pills').querySelectorAll('.tg-p').forEach(b=>b.classList.remove('on'));this.classList.add('on');${extra||''}">${l}</button>`).join('')}</div>`;
+}
+function _tgR(ic,bg,tt,sb,ctrl,cls=''){
+  return `<div class="tg-r ${cls}"><div class="tg-r-ic" style="background:${bg}20;color:${bg}">${ic}</div><div class="tg-r-bd"><p class="tg-r-tt">${tt}</p>${sb?`<p class="tg-r-sb">${sb}</p>`:''}</div>${ctrl?`<div class="tg-r-ctrl">${ctrl}</div>`:'</div>'}</div>`;
+}
+const _tgHd=(lbl)=>`<div class="tg-pan-hd"><button class="tg-pan-back" onclick="tgBack()">‹</button>${lbl}</div>`;
+
+/* ──── 1. Внешний вид ──── */
+function _tgAppearance(){
+  const s=_getAppSettings();
+  const theme=localStorage.getItem('aq-theme')||'dark';
+  const lang=localStorage.getItem('aq_lang')||'ru';
+  const accent=s.accent||'amber';
+  const fs=s.fontSize||'normal';
+  const anim=s.anim||_nanoIntensity||'full';
+  const animSpd=s.animSpeed||1;
+  const wallpaper=s.wallpaper||'none';
+  const ACCENTS=[['amber','#f59e0b'],['blue','#3b82f6'],['green','#22c55e'],['rose','#f43f5e'],['violet','#8b5cf6'],['cyan','#06b6d4'],['pink','#ec4899']];
+  return `${_tgHd('🎨 Внешний вид')}
+  <div class="tg-blk"><div class="tg-blk-hd">Тема и язык</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">🌙</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Тема оформления</p><p class="tg-r-sb">Влияет на весь интерфейс</p></div>
+      <div class="tg-r-ctrl"><div class="tg-pills">${['dark','light','auto'].map(m=>`<button class="tg-p${theme===m?' on':''}" onclick="applyTheme('${m}');this.closest('.tg-pills').querySelectorAll('.tg-p').forEach(b=>b.classList.remove('on'));this.classList.add('on')">${{dark:'Тёмная',light:'Светлая',auto:'Авто'}[m]}</button>`).join('')}</div></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">🌐</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Язык интерфейса</p></div>
+      <div class="tg-r-ctrl"><div class="tg-pills">${['ru','uz','en'].map(l=>`<button class="tg-p${lang===l?' on':''}" onclick="setLang('${l}');this.closest('.tg-pills').querySelectorAll('.tg-p').forEach(b=>b.classList.remove('on'));this.classList.add('on')">${{ru:'RU',uz:'UZ',en:'EN'}[l]}</button>`).join('')}</div></div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Акцентный цвет</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#8b5cf620;color:#8b5cf6">🎨</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Основной цвет</p><p class="tg-r-sb">Кнопки, ссылки, активные элементы</p></div>
+      <div class="tg-r-ctrl"><div class="tg-cdots">${ACCENTS.map(([n,c])=>`<span class="tg-cd${accent===n?' on':''}" onclick="_applyAccent('${n}');_saveAppSetting('accent','${n}');this.closest('.tg-cdots').querySelectorAll('.tg-cd').forEach(d=>d.classList.remove('on'));this.classList.add('on')" style="background:${c}" title="${n}"></span>`).join('')}</div></div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Типографика</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">🔤</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Размер текста</p><p class="tg-r-sb">Базовый размер шрифта</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('fontSize',this.value);_applyFontSize(this.value)">
+        <option value="small" ${fs==='small'?'selected':''}>Мелкий</option>
+        <option value="normal" ${fs==='normal'?'selected':''}>Обычный</option>
+        <option value="large" ${fs==='large'?'selected':''}>Крупный</option>
+      </select></div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Интерфейс</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#06b6d420;color:#06b6d4">📱</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Компактный режим</p><p class="tg-r-sb">Уменьшить отступы элементов</p></div>
+      <div class="tg-r-ctrl">${_tgSw('compact',false,'document.body.classList.toggle(\'compact-mode\',this.checked);')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#ef444420;color:#ef4444">⚡</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Высокий контраст</p><p class="tg-r-sb">Усилить читаемость текста</p></div>
+      <div class="tg-r-ctrl">${_tgSw('highContrast',false,'document.documentElement.classList.toggle(\'high-contrast\',this.checked);')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#06b6d420;color:#06b6d4">🌀</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Размытие фона (backdrop blur)</p><p class="tg-r-sb">Стеклянный эффект на панелях</p></div>
+      <div class="tg-r-ctrl">${_tgSw('bgBlur',true,'document.documentElement.classList.toggle(\'no-blur\',!this.checked);')}</div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Анимации</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#ec489920;color:#ec4899">✨</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Интенсивность</p></div>
+      <div class="tg-r-ctrl">${_tgPills('anim',[['off','Выкл'],['light','Лёгкие'],['full','Полные']],anim,'_nanoIntensity=v;')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f9731620;color:#f97316">🎬</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Скорость анимаций</p><p id="tg-spd-lbl" class="tg-r-sb">× ${animSpd.toFixed(1)}</p></div>
+      <div class="tg-r-ctrl"><input type="range" class="tg-rng" min="0.5" max="2" step="0.1" value="${animSpd}" oninput="document.getElementById('tg-spd-lbl').textContent='× '+parseFloat(this.value).toFixed(1);_saveAppSetting('animSpeed',+this.value)"></div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Фон</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#64748b20;color:#9ca3af">🖼️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Фоновый узор</p><p class="tg-r-sb">Декоративный паттерн</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('wallpaper',this.value);_tgApplyWallpaper(this.value)">
+        <option value="none" ${wallpaper==='none'?'selected':''}>Без узора</option>
+        <option value="dots" ${wallpaper==='dots'?'selected':''}>Точки</option>
+        <option value="grid" ${wallpaper==='grid'?'selected':''}>Сетка</option>
+        <option value="thermal" ${wallpaper==='thermal'?'selected':''}>Тепловые волны</option>
+        <option value="circuit" ${wallpaper==='circuit'?'selected':''}>Схема труб</option>
+      </select></div>
+    </div>
+  </div>`;
+}
+
+/* ──── 2. Уведомления ──── */
+function _tgNotifs(){
+  const s=_getAppSettings();
+  const toastDur=s.toastDur||4000;
+  return `${_tgHd('🔔 Уведомления')}
+  <div class="tg-blk"><div class="tg-blk-hd">Основные</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">🔔</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Уведомления приложения</p><p class="tg-r-sb">Подсказки и информационные тосты</p></div>
+      <div class="tg-r-ctrl">${_tgSw('notifs',true,'')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">🔊</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Звуковые эффекты</p><p class="tg-r-sb">Звуки действий и результатов</p></div>
+      <div class="tg-r-ctrl">${_tgSw('sounds',false,'_soundsEnabled=this.checked;')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">✅</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Звук завершения расчёта</p><p class="tg-r-sb">Сигнал когда расчёт готов</p></div>
+      <div class="tg-r-ctrl">${_tgSw('calcCompleteSound',true,'')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#8b5cf620;color:#8b5cf6">⚠️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Звук ошибки</p><p class="tg-r-sb">Сигнал при ошибках валидации</p></div>
+      <div class="tg-r-ctrl">${_tgSw('errorSound',true,'')}</div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Всплывающие сообщения</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#8b5cf620;color:#8b5cf6">📍</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Позиция уведомлений</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('toastPos',this.value);_tgApplyToastPos(this.value)">
+        <option value="bottom-right" ${(s.toastPos||'bottom-right')==='bottom-right'?'selected':''}>Снизу справа</option>
+        <option value="bottom-center" ${s.toastPos==='bottom-center'?'selected':''}>Снизу по центру</option>
+        <option value="top-right" ${s.toastPos==='top-right'?'selected':''}>Сверху справа</option>
+        <option value="top-center" ${s.toastPos==='top-center'?'selected':''}>Сверху по центру</option>
+      </select></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f9731620;color:#f97316">⏱️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Время показа</p><p id="tg-td-lbl" class="tg-r-sb">${toastDur/1000} сек.</p></div>
+      <div class="tg-r-ctrl"><input type="range" class="tg-rng" min="1000" max="10000" step="1000" value="${toastDur}" oninput="document.getElementById('tg-td-lbl').textContent=(this.value/1000)+'сек.';_saveAppSetting('toastDur',+this.value)"></div>
+    </div>
+  </div>`;
+}
+
+/* ──── 3. Расчёт ──── */
+function _tgCalc(){
+  const s=_getAppSettings();
+  const units=s.units||'metric';
+  const dec=s.decimals!==undefined?s.decimals:2;
+  const currency=s.currency||'uzs';
+  const exportFmt=s.exportFmt||'pdf';
+  const calcStd=s.calcStd||'kmk';
+  const heatingType=s.heatingType||'radiators';
+  const sf=s.safeFactor||1.1;
+  const eff=s.boilerEff!==undefined?s.boilerEff:90;
+  const pipeMat=s.pipeMat||'steel';
+  return `${_tgHd('🧮 Расчёт')}
+  <div class="tg-blk"><div class="tg-blk-hd">Единицы и формат</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">📏</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Система единиц</p></div>
+      <div class="tg-r-ctrl">${_tgPills('units',[['metric','Метрич.'],['imperial','Имп.']],units,'toast(\'Единицы: \'+v,\'ok\');')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">🔢</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Знаки после запятой</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" style="max-width:75px" onchange="_saveAppSetting('decimals',+this.value)">
+        ${[0,1,2,3].map(d=>`<option ${dec==d?'selected':''}>${d}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#8b5cf620;color:#8b5cf6">💱</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Валюта</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('currency',this.value)">
+        <option value="uzs" ${currency==='uzs'?'selected':''}>UZS (so'm)</option>
+        <option value="usd" ${currency==='usd'?'selected':''}>USD ($)</option>
+        <option value="eur" ${currency==='eur'?'selected':''}>EUR (€)</option>
+        <option value="rub" ${currency==='rub'?'selected':''}>RUB (₽)</option>
+        <option value="kzt" ${currency==='kzt'?'selected':''}>KZT (₸)</option>
+      </select></div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Нормативная база</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">📐</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Стандарт расчёта</p><p class="tg-r-sb">Применяемые коэффициенты</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('calcStd',this.value);toast('Стандарт: '+this.value,'ok')">
+        <option value="kmk" ${calcStd==='kmk'?'selected':''}>КМК 2.01.04-18</option>
+        <option value="snip" ${calcStd==='snip'?'selected':''}>СНиП 2.04.05-91</option>
+        <option value="en" ${calcStd==='en'?'selected':''}>EN 12831 (EU)</option>
+        <option value="ashrae" ${calcStd==='ashrae'?'selected':''}>ASHRAE (US)</option>
+      </select></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#ef444420;color:#ef4444">♨️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Тип системы отопления</p><p class="tg-r-sb">Влияет на мощность</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('heatingType',this.value)">
+        <option value="radiators" ${heatingType==='radiators'?'selected':''}>Радиаторы</option>
+        <option value="underfloor" ${heatingType==='underfloor'?'selected':''}>Тёплый пол</option>
+        <option value="ceiling" ${heatingType==='ceiling'?'selected':''}>Потолочное</option>
+        <option value="fancoil" ${heatingType==='fancoil'?'selected':''}>Фанкойлы</option>
+      </select></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#06b6d420;color:#06b6d4">🔧</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Материал труб</p><p class="tg-r-sb">По умолчанию для новых систем</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('pipeMat',this.value)">
+        <option value="steel" ${pipeMat==='steel'?'selected':''}>Сталь</option>
+        <option value="copper" ${pipeMat==='copper'?'selected':''}>Медь</option>
+        <option value="pex" ${pipeMat==='pex'?'selected':''}>PEX</option>
+        <option value="polyprop" ${pipeMat==='polyprop'?'selected':''}>Полипропилен</option>
+      </select></div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Коэффициенты</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f9731620;color:#f97316">🛡️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Коэффициент запаса</p><p id="tg-sf-lbl" class="tg-r-sb">× ${sf.toFixed(2)}</p></div>
+      <div class="tg-r-ctrl"><input type="range" class="tg-rng" min="1.0" max="1.5" step="0.05" value="${sf}" oninput="document.getElementById('tg-sf-lbl').textContent='× '+parseFloat(this.value).toFixed(2);_saveAppSetting('safeFactor',+this.value)"></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">⚡</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">КПД котла</p><p id="tg-eff-lbl" class="tg-r-sb">${eff}%</p></div>
+      <div class="tg-r-ctrl"><input type="range" class="tg-rng" min="70" max="100" step="1" value="${eff}" oninput="document.getElementById('tg-eff-lbl').textContent=this.value+'%';_saveAppSetting('boilerEff',+this.value)"></div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Сохранение и экспорт</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">💾</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Автосохранение</p><p class="tg-r-sb">Сохранять черновик автоматически</p></div>
+      <div class="tg-r-ctrl">${_tgSw('autosave',true,'')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#6b728020;color:#9ca3af">📄</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Формат экспорта</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('exportFmt',this.value)">
+        <option value="pdf" ${exportFmt==='pdf'?'selected':''}>PDF</option>
+        <option value="excel" ${exportFmt==='excel'?'selected':''}>Excel (.xlsx)</option>
+        <option value="word" ${exportFmt==='word'?'selected':''}>Word (.docx)</option>
+        <option value="json" ${exportFmt==='json'?'selected':''}>JSON</option>
+        <option value="csv" ${exportFmt==='csv'?'selected':''}>CSV</option>
+      </select></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">📊</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Отображение формул</p><p class="tg-r-sb">Уровень детализации в результатах</p></div>
+      <div class="tg-r-ctrl">${_tgPills('formulaDetail',[['simple','Сжато'],['full','Полно']],s.formulaDetail||'simple','')}</div>
+    </div>
+  </div>`;
+}
+
+/* ──── 4. Приватность ──── */
+function _tgPrivacy(){
+  const s=_getAppSettings();
+  const autoLogout=s.autoLogout||0;
+  return `${_tgHd('🔒 Приватность')}
+  <div class="tg-blk"><div class="tg-blk-hd">История и логи</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#8b5cf620;color:#8b5cf6">📋</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Сохранять историю расчётов</p><p class="tg-r-sb">Расчёты доступны в «Мои расчёты»</p></div>
+      <div class="tg-r-ctrl">${_tgSw('saveHistory',true,'')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">📊</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Журнал действий</p><p class="tg-r-sb">Логировать действия пользователя</p></div>
+      <div class="tg-r-ctrl">${_tgSw('activityLog',false,'')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">⏰</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Автовыход</p><p class="tg-r-sb">Выйти через ${autoLogout?autoLogout+' мин.':'не выходить'}</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('autoLogout',+this.value)">
+        <option value="0" ${!autoLogout?'selected':''}>Отключено</option>
+        <option value="15" ${autoLogout==15?'selected':''}>15 мин.</option>
+        <option value="30" ${autoLogout==30?'selected':''}>30 мин.</option>
+        <option value="60" ${autoLogout==60?'selected':''}>1 час</option>
+        <option value="120" ${autoLogout==120?'selected':''}>2 часа</option>
+      </select></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#ec489920;color:#ec4899">🛡️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Защита результатов от копирования</p><p class="tg-r-sb">Ограничить выделение текста в отчёте</p></div>
+      <div class="tg-r-ctrl">${_tgSw('copyProtect',true,'')}</div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Ваши данные</div>
+    <div class="tg-r click" onclick="_tgExportData()"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">📤</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Экспортировать все данные</p><p class="tg-r-sb">Скачать резервную копию (.json)</p></div><span style="opacity:.25">›</span>
+    </div>
+    <div class="tg-r click" onclick="_tgImportData()"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">📥</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Импортировать данные</p><p class="tg-r-sb">Восстановить из резервной копии</p></div><span style="opacity:.25">›</span>
+    </div>
+  </div>`;
+}
+
+/* ──── 5. Доступность ──── */
+function _tgA11y(){
+  const s=_getAppSettings();
+  return `${_tgHd('♿ Доступность')}
+  <div class="tg-blk"><div class="tg-blk-hd">Движение</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#06b6d420;color:#06b6d4">🎭</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Уменьшить движение</p><p class="tg-r-sb">Отключить анимации (accessibility)</p></div>
+      <div class="tg-r-ctrl">${_tgSw('reducedMotion',false,'if(this.checked){_nanoIntensity=\'off\';_saveAppSetting(\'anim\',\'off\');}')}</div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Зрение</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">🎨</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Режим для дальтоников</p><p class="tg-r-sb">Адаптация цветовой схемы</p></div>
+      <div class="tg-r-ctrl"><select class="tg-sel" onchange="_saveAppSetting('colorBlind',this.value);_tgApplyColorBlind(this.value)">
+        <option value="none" ${(s.colorBlind||'none')==='none'?'selected':''}>Обычный</option>
+        <option value="deuteranopia" ${s.colorBlind==='deuteranopia'?'selected':''}>Дейтеранопия</option>
+        <option value="protanopia" ${s.colorBlind==='protanopia'?'selected':''}>Протанопия</option>
+        <option value="tritanopia" ${s.colorBlind==='tritanopia'?'selected':''}>Тританопия</option>
+      </select></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">🖱️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Увеличенные кнопки</p><p class="tg-r-sb">Минимум 48px для всех элементов</p></div>
+      <div class="tg-r-ctrl">${_tgSw('largeTgts',false,'document.body.classList.toggle(\'large-targets\',this.checked);')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#8b5cf620;color:#8b5cf6">🔍</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Индикатор фокуса</p><p class="tg-r-sb">Яркая рамка на активном элементе</p></div>
+      <div class="tg-r-ctrl">${_tgSw('focusIndicator',true,'document.documentElement.classList.toggle(\'enhanced-focus\',this.checked);')}</div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#ec489920;color:#ec4899">👆</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Увеличенный курсор</p><p class="tg-r-sb">Крупный указатель мыши</p></div>
+      <div class="tg-r-ctrl">${_tgSw('bigCursor',false,'document.documentElement.classList.toggle(\'big-cursor\',this.checked);')}</div>
+    </div>
+  </div>`;
+}
+
+/* ──── 6. Горячие клавиши ──── */
+function _tgHotkeys(){
+  const HKS=[['Escape','Закрыть панель / отмена'],['Shift+Enter','Следующий шаг'],
+    ['Alt+←','Предыдущий шаг'],['Ctrl+Z','Отменить действие'],['Ctrl+Y','Повторить'],
+    ['Del','Удалить выбранный элемент'],['Space','Режим перемещения (pan)'],
+    ['V','Инструмент: выделение'],['W','Инструмент: стена'],['R','Инструмент: комната'],
+    ['D','Инструмент: дверь'],['N','Инструмент: окно'],
+    ['Ctrl+S','Сохранить расчёт'],['Ctrl+P','Печать / экспорт PDF'],
+    ['Ctrl+A','Выбрать всё на чертеже'],['?','Открыть справку']];
+  return `${_tgHd('⌨️ Горячие клавиши')}
+  <div class="tg-blk">
+    ${HKS.map(([k,d])=>`<div class="tg-r"><div class="tg-r-bd"><p class="tg-r-tt">${d}</p></div><div class="tg-r-ctrl"><kbd class="hk">${k}</kbd></div></div>`).join('')}
+  </div>
+  <div class="tg-info">Клавиши активны в режиме 2D-редактора (инструменты рисования).</div>`;
+}
+
+/* ──── 7. Быстрый переход ──── */
+function _tgNavigator(){
+  return `${_tgHd('🧭 Быстрый переход')}
+  <div class="tg-blk"><div class="tg-blk-hd">Шаги расчёта</div>
+    ${[[1,'Шаг 1 — Выбор города'],[2,'Шаг 2 — Параметры здания'],[3,'Шаг 3 — Комнаты'],[5,'Шаг 5 — Результаты']].map(([step,lbl])=>`
+    <div class="tg-r click" onclick="ST.step=${step};renderProgress();renderStep();scrollToEl('calculator');closeSettings()">
+      <div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">→</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">${lbl}</p></div><span style="opacity:.25">›</span>
+    </div>`).join('')}
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Регион</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">📍</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Текущий город</p><p class="tg-r-sb">${window.ST?.cityName||'Не выбран'}</p></div>
+      <button class="tg-p" onclick="ST.step=1;renderProgress();renderStep();scrollToEl('calculator');closeSettings()">Изменить</button>
+    </div>
+  </div>`;
+}
+
+/* ──── 8. Данные ──── */
+function _tgData(){
+  const s=_getAppSettings();
+  let storBytes=0;
+  try{for(let k in localStorage)storBytes+=(localStorage.getItem(k)||'').length*2;}catch(e){}
+  const storKb=(storBytes/1024).toFixed(1);
+  const storPct=Math.min(storBytes/(5*1024*1024)*100,100).toFixed(0);
+  return `${_tgHd('💾 Данные')}
+  <div class="tg-blk"><div class="tg-blk-hd">Хранилище браузера</div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f9731620;color:#f97316">📊</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Использовано: ${storKb} КБ из ~5120 КБ</p>
+        <div class="tg-sbar"><div class="tg-sbar-fill" style="width:${storPct}%"></div></div>
+      </div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">🤖</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Автоочистка кэша</p><p class="tg-r-sb">Удалять устаревшие расчёты</p></div>
+      <div class="tg-r-ctrl">${_tgSw('autoClearCache',false,'')}</div>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Резервные копии</div>
+    <div class="tg-r click" onclick="_tgBackupSettings()"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">💼</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Резервная копия настроек</p><p class="tg-r-sb">Скачать файл конфигурации</p></div><span style="opacity:.25">›</span>
+    </div>
+    <div class="tg-r click" onclick="_tgRestoreSettings()"><div class="tg-r-ic" style="background:#8b5cf620;color:#8b5cf6">🔄</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Восстановить настройки</p><p class="tg-r-sb">Загрузить из файла конфигурации</p></div><span style="opacity:.25">›</span>
+    </div>
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">Очистка</div>
+    <div class="tg-r red" onclick="_clearCalcCache()"><div class="tg-r-ic" style="background:#ef444420;color:#ef4444">🗑️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Очистить кэш расчётов</p><p class="tg-r-sb">Удалить сохранённые черновики</p></div>
+    </div>
+    <div class="tg-r red" onclick="_resetSettings()"><div class="tg-r-ic" style="background:#ef444420;color:#ef4444">⚠️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Сбросить все настройки</p><p class="tg-r-sb">Вернуть к заводским значениям</p></div>
+    </div>
+  </div>`;
+}
+
+/* ──── 9. О приложении ──── */
+function _tgAbout(){
+  return `${_tgHd('ℹ️ О приложении')}
+  <div class="tg-blk">
+    <div class="tg-r"><div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">🌡️</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Aquality WaterPro</p><p class="tg-r-sb">Расчёт теплопотерь · Фергана</p></div>
+      <span class="tg-r-sb" style="flex-shrink:0;white-space:nowrap">v2.1.0</span>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#22c55e20;color:#22c55e">📋</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Нормативная база</p><p class="tg-r-sb">КМК 2.01.04-18 · СП 50.13330.2012</p></div>
+    </div>
+    <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">📅</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Дата сборки</p><p class="tg-r-sb">Июнь 2026</p></div>
+    </div>
+  </div>
+  <div class="tg-blk">
+    <div class="tg-r click" onclick="_tgShowChangelog()"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">📰</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Что нового</p><p class="tg-r-sb">История изменений</p></div><span style="opacity:.25">›</span>
+    </div>
+    <div class="tg-r click" onclick="_tgSendFeedback()"><div class="tg-r-ic" style="background:#ec489920;color:#ec4899">💌</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Обратная связь</p><p class="tg-r-sb">Написать разработчику</p></div><span style="opacity:.25">›</span>
+    </div>
+    <div class="tg-r click" onclick="_tgShowLicenses()"><div class="tg-r-ic" style="background:#64748b20;color:#9ca3af">📜</div>
+      <div class="tg-r-bd"><p class="tg-r-tt">Лицензии</p><p class="tg-r-sb">Открытые компоненты</p></div><span style="opacity:.25">›</span>
+    </div>
+  </div>
+  <div class="tg-info">Разработано для инженеров по теплоснабжению. Бесплатный инструмент.</div>`;
+}
+
+/* ──── Реализация новых функций ──── */
+window._tgApplyWallpaper=function(type){
+  let el=document.getElementById('aq-wallpaper');
+  if(!el){el=document.createElement('style');el.id='aq-wallpaper';document.head.appendChild(el);}
+  const p={
+    dots:`body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--aq-muted) 1px,transparent 0);background-size:26px 26px;opacity:.035;pointer-events:none;z-index:0}`,
+    grid:`body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--aq-border) 1px,transparent 0),linear-gradient(90deg,var(--aq-border) 1px,transparent 0);background-size:34px 34px;pointer-events:none;z-index:0;opacity:.5}`,
+    thermal:`body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 80%,rgba(245,158,11,.07),transparent),radial-gradient(ellipse 60% 40% at 80% 20%,rgba(239,68,68,.05),transparent),radial-gradient(ellipse 50% 60% at 50% 50%,rgba(6,182,212,.04),transparent);pointer-events:none;z-index:0}`,
+    circuit:`body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 30px,rgba(245,158,11,.04) 30px,rgba(245,158,11,.04) 31px),repeating-linear-gradient(90deg,transparent,transparent 30px,rgba(245,158,11,.04) 30px,rgba(245,158,11,.04) 31px);pointer-events:none;z-index:0}`,
+    none:''
+  };
+  el.textContent=p[type]||'';
+  toast('Паттерн: '+(type==='none'?'без узора':type),'ok');
+};
+window._tgApplyToastPos=function(pos){
+  let el=document.getElementById('aq-toast-pos');
+  if(!el){el=document.createElement('style');el.id='aq-toast-pos';document.head.appendChild(el);}
+  const m={'bottom-right':'bottom:1.2rem;right:1.2rem;left:auto;top:auto','bottom-center':'bottom:1.2rem;left:50%;transform:translateX(-50%);top:auto','top-right':'top:1.2rem;right:1.2rem;left:auto;bottom:auto','top-center':'top:1.2rem;left:50%;transform:translateX(-50%);bottom:auto'};
+  el.textContent=m[pos]?`#toast-container,#toast{${m[pos]}!important}`:'';
+  toast('Позиция тостов: '+pos,'ok');
+};
+window._tgApplyColorBlind=function(mode){
+  let el=document.getElementById('aq-cb');
+  if(!el){el=document.createElement('style');el.id='aq-cb';document.head.appendChild(el);}
+  const f={deuteranopia:'saturate(.6) hue-rotate(-20deg)',protanopia:'saturate(.7) hue-rotate(15deg)',tritanopia:'saturate(.8) hue-rotate(170deg)',none:''};
+  el.textContent=f[mode]?`html{filter:${f[mode]}}`:'';
+  toast('Режим зрения: '+(mode==='none'?'обычный':mode),'ok');
+};
+window._tgExportData=function(){
+  try{
+    const d={};for(let k in localStorage){if(k.startsWith('aq'))d[k]=localStorage.getItem(k);}
+    const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(b),download:'aquality-backup-'+new Date().toISOString().slice(0,10)+'.json'});
+    a.click();URL.revokeObjectURL(a.href);
+    toast('Данные экспортированы ✓','ok');
+  }catch(e){toast('Ошибка экспорта','err');}
+};
+window._tgImportData=function(){
+  const inp=Object.assign(document.createElement('input'),{type:'file',accept:'.json'});
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        if(!confirm('Импортировать данные? Текущие настройки будут перезаписаны.'))return;
+        Object.entries(d).forEach(([k,v])=>localStorage.setItem(k,v));
+        toast('Данные импортированы. Перезагрузите страницу.','ok');
+      }catch(e){toast('Неверный формат файла','err');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+};
+window._tgBackupSettings=function(){
+  try{
+    const d={settings:_getAppSettings(),theme:localStorage.getItem('aq-theme'),lang:localStorage.getItem('aq_lang')};
+    const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(b),download:'aquality-settings-'+new Date().toISOString().slice(0,10)+'.json'});
+    a.click();URL.revokeObjectURL(a.href);
+    toast('Настройки экспортированы ✓','ok');
+  }catch(e){toast('Ошибка','err');}
+};
+window._tgRestoreSettings=function(){
+  const inp=Object.assign(document.createElement('input'),{type:'file',accept:'.json'});
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        if(!confirm('Восстановить настройки из файла?'))return;
+        if(d.settings)localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(d.settings));
+        if(d.theme){localStorage.setItem('aq-theme',d.theme);applyTheme(d.theme,true);}
+        if(d.lang){localStorage.setItem('aq_lang',d.lang);setLang(d.lang);}
+        toast('Настройки восстановлены ✓','ok');
+        tgCat('appearance');
+      }catch(e){toast('Неверный формат файла','err');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+};
+window._tgShowChangelog=function(){
+  const pb=document.getElementById('tg-pb');if(!pb)return;
+  pb.innerHTML=`<div class="tg-pan-hd" style="cursor:pointer" onclick="tgCat('about')">‹ Что нового</div>
+  <div class="tg-blk"><div class="tg-blk-hd">v2.1.0 — Июнь 2026</div>
+    ${['Telegram-стиль настроек (40+ функций)','Тепловой анализ FLIR + EU Energy Class','Сезонный график теплопотерь','Система анимаций NanoFX','Офлайн-режим без CDN'].map(i=>`<div class="tg-r"><div class="tg-r-bd"><p class="tg-r-tt" style="color:#22c55e">✓ ${i}</p></div></div>`).join('')}
+  </div>
+  <div class="tg-blk"><div class="tg-blk-hd">v2.0.0 — Май 2026</div>
+    ${['Supabase бэкенд + авторизация','Профиль и «Мои расчёты»','Мастерская материалов','Многоязычность RU/UZ/EN','3D мини-редактор (Three.js)'].map(i=>`<div class="tg-r"><div class="tg-r-bd"><p class="tg-r-tt" style="color:#22c55e">✓ ${i}</p></div></div>`).join('')}
+  </div>`;
+};
+window._tgSendFeedback=function(){
+  toast('📧 support@aquality.uz · aquality.uz/feedback','ok',6000);
+};
+window._tgShowLicenses=function(){
+  const pb=document.getElementById('tg-pb');if(!pb)return;
+  const LIBS=[['Tailwind CSS','MIT','tailwindcss.com'],['GSAP 3.12','Standard (free)','greensock.com'],['Lenis','MIT','lenis.darkroom.engineering'],['Three.js r128','MIT','threejs.org'],['Supabase JS','Apache 2.0','supabase.com']];
+  pb.innerHTML=`<div class="tg-pan-hd" style="cursor:pointer" onclick="tgCat('about')">‹ Лицензии</div>
+  <div class="tg-blk">
+    ${LIBS.map(([n,l,u])=>`<div class="tg-r"><div class="tg-r-bd"><p class="tg-r-tt">${n}</p><p class="tg-r-sb">${l} · ${u}</p></div></div>`).join('')}
+  </div>
+  <div class="tg-info">Все сторонние компоненты используются в соответствии с их лицензиями.</div>`;
+};
 
 /* ════ SETTINGS BACKGROUND ANIMATION — heat convection + water flow ════ */
 (function(){
@@ -2919,27 +3412,27 @@ async function adminDashboard(){
   const byType=CLIENT_TYPES.map(t=>({...t,count:users.filter(u=>u.clientType===t.id).length}));
   const totalProj=users.reduce((s,u)=>s+(u.projects||[]).length,0);
   return `
-  <h2 class="text-xl font-extrabold text-cream mb-6">Дашборд</h2>
+  <h2 class="text-xl font-extrabold text-cream mb-6">${t('adm-dashboard')}</h2>
   <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-8">
-    <div class="adm-stat"><p class="text-3xl font-extrabold text-cream mb-1">${total}</p><p class="text-xs text-muted">Пользователей</p></div>
-    <div class="adm-stat"><p class="text-3xl font-extrabold text-amber mb-1">${admins}</p><p class="text-xs text-muted">Администраторов</p></div>
-    <div class="adm-stat"><p class="text-3xl font-extrabold text-cream mb-1">${totalProj}</p><p class="text-xs text-muted">Проектов</p></div>
-    <div class="adm-stat"><p class="text-3xl font-extrabold text-cream mb-1">${users.filter(u=>u.createdAt&&new Date(u.createdAt)>new Date(Date.now()-7*86400000)).length}</p><p class="text-xs text-muted">За 7 дней</p></div>
+    <div class="adm-stat"><p class="text-3xl font-extrabold text-cream mb-1">${total}</p><p class="text-xs text-muted">${t('adm-stat-users')}</p></div>
+    <div class="adm-stat"><p class="text-3xl font-extrabold text-amber mb-1">${admins}</p><p class="text-xs text-muted">${t('adm-stat-admins')}</p></div>
+    <div class="adm-stat"><p class="text-3xl font-extrabold text-cream mb-1">${totalProj}</p><p class="text-xs text-muted">${t('adm-stat-projs')}</p></div>
+    <div class="adm-stat"><p class="text-3xl font-extrabold text-cream mb-1">${users.filter(u=>u.createdAt&&new Date(u.createdAt)>new Date(Date.now()-7*86400000)).length}</p><p class="text-xs text-muted">${t('adm-stat-week')}</p></div>
   </div>
-  <h3 class="text-sm font-bold text-cream mb-3">По типам клиентов</h3>
+  <h3 class="text-sm font-bold text-cream mb-3">${t('adm-by-type')}</h3>
   <div class="grid grid-cols-3 gap-3 mb-8">
-    ${byType.map(t=>`<div class="adm-stat"><p class="text-2xl font-extrabold text-cream mb-1">${t.count}</p><p class="text-xs text-muted">${t.label}</p></div>`).join('')}
+    ${byType.map(bt=>`<div class="adm-stat"><p class="text-2xl font-extrabold text-cream mb-1">${bt.count}</p><p class="text-xs text-muted">${bt.label}</p></div>`).join('')}
   </div>
-  <h3 class="text-sm font-bold text-cream mb-3">Воронка расчётов</h3>
+  <h3 class="text-sm font-bold text-cream mb-3">${t('adm-funnel')}</h3>
   <div class="space-y-1.5 mb-6">${
-    [['step_1','Шаг 1 пройден (Город)'],['step_2','Шаг 2 пройден (Участок)'],['step_3','Шаг 3 пройден (Этажи)'],['step_4','Шаг 4 пройден (Планировка)'],['step_5','Шаг 5 пройден (Материалы)'],['calc_complete','Расчёт завершён (Шаг 6)'],['lead_sent','Заявка отправлена (WhatsApp)']].map(([k,lbl])=>{
+    [['step_1','ev-step1'],['step_2','ev-step2'],['step_3','ev-step3'],['step_4','ev-step4'],['step_5','ev-step5'],['calc_complete','ev-calc'],['lead_sent','ev-lead']].map(([k,tk])=>{
       const n=getEventCount(k), top=getEventCount('step_1')||1, pct=Math.round((n/top)*100);
-      return `<div class="flex items-center gap-3"><span class="text-xs text-muted w-48 flex-shrink-0">${lbl}</span><div class="flex-1 rounded-full h-2 overflow-hidden" style="background:rgba(255,255,255,.06)"><div class="h-2 rounded-full" style="width:${Math.min(pct,100)}%;background:rgba(245,158,11,.7)"></div></div><span class="text-xs font-bold text-cream w-10 text-right">${n}</span></div>`;
+      return `<div class="flex items-center gap-3"><span class="text-xs text-muted w-48 flex-shrink-0">${t(tk)}</span><div class="flex-1 rounded-full h-2 overflow-hidden" style="background:rgba(255,255,255,.06)"><div class="h-2 rounded-full" style="width:${Math.min(pct,100)}%;background:rgba(245,158,11,.7)"></div></div><span class="text-xs font-bold text-cream w-10 text-right">${n}</span></div>`;
     }).join('')
   }</div>
   <div class="flex items-center justify-between mb-3">
-    <h3 class="text-sm font-bold text-cream">Последние регистрации</h3>
-    <button class="text-xs text-muted hover:text-red-400 transition-colors" onclick="if(confirm('Сбросить статистику воронки?')){clearEvents();adminPage('dashboard');}">Сбросить статистику</button>
+    <h3 class="text-sm font-bold text-cream">${t('adm-recent')}</h3>
+    <button class="text-xs text-muted hover:text-red-400 transition-colors" onclick="if(confirm(t('adm-reset-confirm'))){clearEvents();adminPage('dashboard');}">${t('adm-reset-stats')}</button>
   </div>
   ${[...users].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).map(u=>adminUserRow(u)).join('')}`;
 }
@@ -2948,7 +3441,7 @@ async function adminUsers(){
   const users=await aqFetchProfiles();
   return `
   <div class="flex items-center justify-between mb-5">
-    <h2 class="text-xl font-extrabold text-cream">Пользователи</h2>
+    <h2 class="text-xl font-extrabold text-cream">${t('adm-user-title')}</h2>
     <span class="text-xs text-muted">${users.length} аккаунтов</span>
   </div>
   ${!SB_CONFIGURED?`<!-- Owner row (legacy offline mode) -->
@@ -2958,14 +3451,14 @@ async function adminUsers(){
       <p class="text-xs text-muted">Владелец сайта — системный аккаунт</p>
     </div>
   </div>`:''}
-  ${users.length===0?'<p class="text-muted text-sm mt-6 text-center">Нет зарегистрированных пользователей</p>':
+  ${users.length===0?`<p class="text-muted text-sm mt-6 text-center">${t('admin-no-users')}</p>`:
     [...users].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map(u=>adminUserRow(u,true)).join('')}`;
 }
 
 function adminUserRow(u,clickable){
   const ct=CLIENT_TYPES.find(t=>t.id===u.clientType)||{label:'—'};
   const date=u.createdAt?new Date(u.createdAt).toLocaleDateString('ru-RU'):'—';
-  const badge=u.role==='owner'?'<span class="adm-badge owner">Владелец</span>':u.role==='admin'?'<span class="adm-badge admin">Админ</span>':'<span class="adm-badge user">Клиент</span>';
+  const badge=u.role==='owner'?`<span class="adm-badge owner">${t('role-owner-badge')}</span>`:u.role==='admin'?`<span class="adm-badge admin">${t('role-admin-badge')}</span>`:`<span class="adm-badge user">${t('role-client-badge')}</span>`;
   const clickAttrs = clickable ? ` role="button" tabindex="0" onclick="adminPage('user:${u.id}')"` : '';
   return `<div class="adm-ucard${clickAttrs}">
     <div class="flex items-center justify-between gap-2">
@@ -2973,7 +3466,7 @@ function adminUserRow(u,clickable){
         <div class="flex items-center gap-2 mb-0.5"><span class="font-semibold text-cream text-sm">${u.login}</span>${badge}</div>
         <p class="text-xs text-muted">${ct.label} · ${u.city||'—'} · ${date}</p>
       </div>
-      <div class="text-xs text-right text-muted"><p>${u.phone}</p><p>${(u.projects||[]).length} проект(ов)</p></div>
+      <div class="text-xs text-right text-muted"><p>${u.phone}</p><p>${(u.projects||[]).length} ${t('projects-count')}</p></div>
     </div>
   </div>`;
 }
@@ -3013,7 +3506,7 @@ async function adminUserProfile(uid){
     <div class="adm-stat text-left"><p class="text-xs text-muted mb-0.5">Расчётов</p><p class="font-semibold text-cream text-sm">${projCount}</p></div>
   </div>
   ${canToggleAdmin?`<div class="mb-6 flex gap-2">
-    ${!isAdmin?`<button onclick="adminSetRole('${u.id}','admin')" class="lg-btn px-5 py-2 text-sm">Назначить администратором</button>`:`<button onclick="adminSetRole('${u.id}','user')" class="lg-btn-sec px-5 py-2 text-sm">Снять права администратора</button>`}
+    ${!isAdmin?`<button onclick="adminSetRole('${u.id}','admin')" class="lg-btn px-5 py-2 text-sm">${t('admin-assign')}</button>`:`<button onclick="adminSetRole('${u.id}','user')" class="lg-btn-sec px-5 py-2 text-sm">${t('admin-remove')}</button>`}
   </div>`:''}
   ${SB_CONFIGURED?`<p class="text-xs text-muted mb-6">Роль пользователя меняется в Supabase: <span class="mono">update profiles set role='admin' where id='${u.id}';</span></p>`:''}
   <h3 class="text-sm font-bold text-cream mb-3">Расчёты пользователя</h3>
@@ -3050,18 +3543,18 @@ async function adminLeads(){
   const badge=document.getElementById('adm-leads-badge');
   if(badge&&leads.length){ badge.innerHTML=`<span class="adm-badge user ml-1" style="padding:.1rem .4rem">${leads.length}</span>`; }
   if(!leads.length) return `
-  <h2 class="text-xl font-extrabold text-cream mb-6">Заявки</h2>
+  <h2 class="text-xl font-extrabold text-cream mb-6">${t('adm-leads-title')}</h2>
   <div class="adm-stat text-center py-10">
-    <p class="text-muted text-sm">Заявок пока нет. Когда пользователь нажмёт «Написать в WhatsApp» — заявка появится здесь.</p>
+    <p class="text-muted text-sm">${t('adm-leads-empty')}</p>
   </div>`;
   return `
   <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
-    <h2 class="text-xl font-extrabold text-cream">Заявки <span class="text-amber">(${leads.length})</span></h2>
-    ${SB_CONFIGURED?'':`<button onclick="if(confirm('Удалить все заявки?')){saveLeads([]);adminPage('leads')}" class="text-xs text-muted hover:text-ember transition-colors">Очистить</button>`}
+    <h2 class="text-xl font-extrabold text-cream">${t('adm-leads-title')} <span class="text-amber">(${leads.length})</span></h2>
+    ${SB_CONFIGURED?'':`<button onclick="if(confirm(t('adm-leads-clear-confirm'))){saveLeads([]);adminPage('leads')}" class="text-xs text-muted hover:text-ember transition-colors">${t('adm-leads-clear')}</button>`}
   </div>
   ${leads.map(l=>{
     const d=new Date(l.createdAt);
-    const dateStr=d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const dateStr=d.toLocaleDateString(_lang==='ru'?'ru-RU':_lang==='uz'?'uz-UZ':'en-US',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     return `<div class="adm-ucard">
       <div class="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -3147,8 +3640,8 @@ const GLOSS = {
   homog:'Коэффициент теплотехнической однородности r₀ — учитывает мостики холода через швы кладки, перемычки и стыки. Показанное R — уже приведённое (номинальное × r₀). Кирпич r₀≈0.87, газоблок r₀≈0.90, панель r₀≈0.83, каркас r₀≈0.88.'
 };
 function tip(key){
-  const t=(GLOSS[key]||key).replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-  return `<span class="tip" onclick="this.classList.toggle('open');event.stopPropagation();">?<span class="tipbox">${t}</span></span>`;
+  const txt=(t('gloss-'+key)||GLOSS[key]||key).replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+  return `<span class="tip" onclick="this.classList.toggle('open');event.stopPropagation();">?<span class="tipbox">${txt}</span></span>`;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -3755,6 +4248,52 @@ const _i18n = {
     'live-city-lbl':'Город:','live-plot-lbl':'Участок:','live-north-lbl':'Север:',
     'dir-top-text':'вверху','dir-right-text':'справа','dir-bottom-text':'внизу','dir-left-text':'слева',
     'boiler-hint':'Котёл (запас 25%)','area-hint':'Площадь объекта','rooms-hint':'Комнат всего',
+    'tagline':'Отопление · Сантехника · Фергана',
+    'faq-tag':'Вопросы и ответы','faq-title':'Частые вопросы о теплопотерях',
+    'faq-q-1':'Что вводить в поле температуры?',
+    'faq-a-1':'Ничего вводить не нужно — температура подставляется автоматически, когда вы выбираете город. Это <b>расчётная зимняя температура</b> (параметр Б по КМК 2.01.01-94, табл. 4) — наиболее холодная пятидневка обеспеченностью 0.92. Для Ферганы это −14 °C. Отопление рассчитывают именно на такой худший случай.',
+    'faq-q-2':'Почему у моего дома теплопотери больше, чем у соседа?',
+    'faq-a-2':'Даже у одинаковых по площади домов потери отличаются из-за: <b>материала и толщины стен</b> (R), <b>качества окон</b>, <b>количества наружных стен</b> (угловая комната теряет больше), <b>этажности</b> (потери через пол и крышу), <b>ориентации</b> (северные стены холоднее) и <b>высоты потолков</b>. Наш калькулятор учитывает всё это покомнатно.',
+    'faq-q-3':'Как материал стен влияет на расчёт?',
+    'faq-a-3':'Ключевой показатель — <b>R (теплосопротивление)</b>. Чем выше R, тем меньше потери. Кирпич 380 мм имеет R ≈ 0.64, а тот же кирпич с 100 мм минваты — уже R ≈ 2.86, то есть потери через стену падают в несколько раз. На шаге результата есть таблица «Как материал стен влияет на результат» — можно сравнить варианты в кВт.',
+    'faq-q-4':'Окна какого качества нужны для дома в Фергане?',
+    'faq-a-4':'Минимум — <b>ПВХ 2-камерный стеклопакет</b> (R ≈ 0.32). Для экономии на отоплении лучше <b>3-камерный</b> (R ≈ 0.55) или <b>аргон + Low-E</b> (R ≈ 0.68). Окна — одно из самых слабых мест: через одинарное остекление (R ≈ 0.18) теряется в 3–4 раза больше тепла, чем через хороший стеклопакет.',
+    'faq-q-5':'На что повлияет +5 см утеплителя?',
+    'faq-a-5':'50 мм минеральной ваты (λ ≈ 0.045) добавляют к стене примерно <b>+1.1 к R</b>. Например, кирпич 380 (R 0.64) с 50 мм ваты становится R ≈ 1.75 — теплопотери стены снижаются почти втрое. Проверить эффект на своём объекте можно в таблице сравнения материалов или добавив свой вариант в «Мастерской».',
+    'faq-q-6':'Какой котёл выбрать — настенный или напольный?',
+    'faq-a-6':'Для большинства домов и квартир до ~35 кВт хватает <b>настенного газового котла</b> — он компактный и дешевле. <b>Напольный</b> берут при большой мощности, для каскада или когда нужен высокий ресурс и большой объём ГВС. В результате расчёта мы подсказываем тип под вашу мощность; точную модель подберём из наличия.',
+    'faq-q-7':'Сколько секций радиатора нужно на комнату?',
+    'faq-a-7':'Зависит не от площади «на глаз», а от теплопотерь конкретной комнаты. Мы считаем их отдельно: при ~150 Вт на секцию биметалла (режим 90/70) и запасе 15%. На низкотемпературном режиме (75/65, 55/45) секция отдаёт меньше — секций нужно больше, это учитывается выбором режима на шаге «Материалы». В таблице «По этажам и комнатам» видно число секций для каждого помещения.',
+    'faq-q-8':'Нужен ли тёплый пол?',
+    'faq-a-8':'Тёплый пол — это комфорт и более равномерный прогрев, особенно в ванной и на первом этаже. На теплопотери он почти не влияет (потери считаются по ограждениям), но позволяет работать котлу на более низкой температуре и экономить. Если планируете тёплый пол — скажите специалисту, подберём оборудование с учётом этого.',
+    'faq-q-9':'Насколько точен этот расчёт?',
+    'faq-a-9':'Расчёт инженерный, по КМК 2.01.04-18 (строительная теплотехника) и КМК 2.01.01-94 (климатология): <b>Q = (ΔT/R)·S·n·(1+Σβ)</b> для каждой ограждающей конструкции плюс инфильтрация. R конструкций, коэффициенты n, ориентация и зональный пол по грунту взяты из официальных таблиц. Для проекта «под ключ» наш специалист уточнит детали — это бесплатно.',
+    'hours':'Пн–Сб 9:00–18:00',
+    'nav-settings':'Настройки расчёта','nav-workshop':'Мастерская',
+    'role-owner-badge':'Владелец','role-admin-badge':'Админ','role-client-badge':'Клиент',
+    'projects-count':'проект(ов)','admin-no-users':'Нет зарегистрированных пользователей',
+    'admin-assign':'Назначить администратором','admin-remove':'Снять права администратора',
+    'badge-first':'Первый расчёт','badge-first-d':'Создан первый расчёт',
+    'badge-skilled':'Опытный','badge-skilled-d':'Создано 5+ расчётов',
+    'badge-expert':'Эксперт','badge-expert-d':'Создано 20+ расчётов',
+    'badge-lead':'Заявка','badge-lead-d':'Отправил заявку специалисту',
+    'badge-owner':'Владелец','badge-owner-d':'Владелец магазина',
+    'badge-admin':'Администратор','badge-admin-d':'Администратор системы',
+    'ev-step1':'Шаг 1 пройден (Город)','ev-step2':'Шаг 2 пройден (Участок)',
+    'ev-step3':'Шаг 3 пройден (Этажи)','ev-step4':'Шаг 4 пройден (Планировка)',
+    'ev-step5':'Шаг 5 пройден (Материалы)','ev-calc':'Расчёт завершён (Шаг 6)',
+    'ev-lead':'Заявка отправлена (WhatsApp)',
+    'gloss-tloss':'Теплопотери — сколько тепла (в кВт) уходит из дома наружу в самый холодный день. Чем больше, тем мощнее нужно отопление.',
+    'gloss-r':'R — полное сопротивление теплопередаче (м²·°C/Вт). Чем выше R, тем теплее и меньше потери.',
+    'gloss-infil':'Инфильтрация — потери на нагрев холодного воздуха, который проникает через щели и окна. Зависит от герметичности: новый дом ≈ 0.4 объёма/час, обычный ≈ 0.7, старый ≈ 1.2.',
+    'gloss-beta':'Надбавка на ориентацию: северные и восточные стены холоднее, к их потерям добавляется 5–10%. Южные стены — без надбавки.',
+    'gloss-n':'Коэффициент n — доля потерь через пол/потолок к неотапливаемым зонам. 1.0 — на улицу, 0.9 — холодный чердак, 0.6 — холодный подвал.',
+    'gloss-text':'Расчётная зимняя температура (параметр Б) — самая холодная пятидневка для города. Подставляется автоматически при выборе города.',
+    'gloss-boiler':'Запас 25%: котёл берут мощнее расчёта, чтобы быстро прогревать дом в морозы и иметь резерв на горячую воду.',
+    'gloss-sections':'Кол-во секций радиатора: при ~150 Вт на секцию (биметалл, режим 90/70) и запасе 15%.',
+    'gloss-regime':'Температурный режим системы (подача/обратка). При низкотемпературном режиме радиатор отдаёт меньше тепла, поэтому секций нужно больше.',
+    'gloss-tint':'Внутренняя температура — нормативная для типа помещения (жилая +20°, ванная +25°, склад +10° и т.д.).',
+    'gloss-homog':'Коэффициент теплотехнической однородности r₀ — учитывает мостики холода через швы кладки, перемычки и стыки.',
     'hero-h1':'Теплопотери всего дома<br><span class="thermal-text">за один расчёт</span>',
     'hero-sub':'Нарисуйте планировку, добавьте этажи и материалы — посчитаем теплопотери всего объекта, подберём котёл и радиаторы по каждой комнате',
     'hero-cta-start':'Начать расчёт →','hero-cta-call':'Позвонить специалисту','hero-scroll':'прокрутите',
@@ -3804,6 +4343,13 @@ const _i18n = {
     'pf-actions':'Действия','pf-logout':'Выйти из аккаунта','pf-delete-account':'Удалить аккаунт',
     'pf-activity':'Последняя активность','pf-activity-empty':'Активность появится после первого расчёта',
     'pf-no-addresses':'Нет сохранённых адресов',
+    'adm-nav-lbl':'Навигация','adm-dashboard':'Дашборд','adm-users':'Пользователи','adm-leads':'Заявки',
+    'adm-stat-users':'Пользователей','adm-stat-admins':'Администраторов','adm-stat-projs':'Проектов','adm-stat-week':'За 7 дней',
+    'adm-by-type':'По типам клиентов','adm-funnel':'Воронка расчётов','adm-recent':'Последние регистрации',
+    'adm-reset-stats':'Сбросить статистику','adm-reset-confirm':'Сбросить статистику воронки?',
+    'adm-leads-title':'Заявки','adm-leads-empty':'Заявок пока нет. Когда пользователь нажмёт «Написать в WhatsApp» — заявка появится здесь.',
+    'adm-leads-clear':'Очистить','adm-leads-clear-confirm':'Удалить все заявки?',
+    'adm-user-title':'Пользователи',
     'footer-phones':'Телефоны','footer-social':'Соцсети','footer-help':'Помощь',
     'hint-1':'Выберите город','hint-2':'Укажите размеры участка','hint-3':'Добавьте хотя бы один этаж',
     'hint-4':'Нарисуйте хотя бы одну комнату','hint-5':'Выберите стены, пол и потолок',
@@ -4146,6 +4692,52 @@ const _i18n = {
     'live-city-lbl':'Shahar:','live-plot-lbl':'Maydon:','live-north-lbl':'Shimol:',
     'dir-top-text':'yuqorida','dir-right-text':'o\'ngda','dir-bottom-text':'pastda','dir-left-text':'chapda',
     "boiler-hint":"Qozon (+25%)","area-hint":"Ob'ekt maydoni",'rooms-hint':'Xonalar soni',
+    "tagline":"Isitish · Sanitariya · Farg'ona",
+    "faq-tag":"Savol-javoblar","faq-title":"Issiqlik yo'qotishlari haqida tez-tez beriladigan savollar",
+    "faq-q-1":"Harorat maydoniga nima kiritish kerak?",
+    "faq-a-1":"Hech narsa kiritish shart emas — harorat shahar tanlanganida avtomatik qo'yiladi. Bu <b>hisoblash qishki harorat</b> (KMK 2.01.01-94, jadval 4-B parametri) — 0.92 ta'minot bilan eng sovuq besh kunlik. Farg'ona uchun bu −14 °C.",
+    "faq-q-2":"Nima uchun mening uyim qo'shninikidan ko'proq issiqlik yo'qotadi?",
+    "faq-a-2":"Bir xil maydonli uylarda ham yo'qotishlar farq qiladi: <b>devor materiali va qalinligi</b> (R), <b>deraza sifati</b>, <b>tashqi devorlar soni</b> (burchak xona ko'proq yo'qotadi), <b>qavatlilik</b>, <b>yo'nalish</b> (shimoliy devorlar sovuqroq) va <b>shift balandligi</b>. Kalkulyatorimiz bularni xona bo'yicha hisobga oladi.",
+    "faq-q-3":"Devor materiali hisob-kitobga qanday ta'sir qiladi?",
+    "faq-a-3":"Asosiy ko'rsatkich — <b>R (issiqlik qarshiligi)</b>. R qanchalik yuqori bo'lsa, yo'qotishlar shunchalik kam. G'isht 380 mm R ≈ 0.64, 100 mm mineral paxta bilan esa R ≈ 2.86 — devor orqali yo'qotishlar bir necha marta kamayadi.",
+    "faq-q-4":"Farg'ona uchun qanday deraza kerak?",
+    "faq-a-4":"Minimum — <b>PVC 2 kamerali oyna paketi</b> (R ≈ 0.32). Tejash uchun <b>3 kamerali</b> (R ≈ 0.55) yoki <b>argon + Low-E</b> (R ≈ 0.68) yaxshiroq. Oddiy shishadan (R ≈ 0.18) 3–4 marta ko'proq issiqlik yo'qoladi.",
+    "faq-q-5":"+5 sm izolyatsiya nima o'zgartiradi?",
+    "faq-a-5":"50 mm mineral paxta (λ ≈ 0.045) devorga taxminan <b>+1.1 R</b> qo'shadi. Masalan, g'isht 380 (R 0.64) 50 mm paxta bilan R ≈ 1.75 bo'ladi — devor yo'qotishlari deyarli uch marta kamayadi.",
+    "faq-q-6":"Qaysi qozon tanlash kerak — devorga osiladigan yoki polga qo'yiladigan?",
+    "faq-a-6":"Ko'pgina uylar uchun ~35 kVt gacha <b>devorga osiladigan gaz qozoni</b> yetarli — u ixcham va arzonroq. <b>Pol qozoni</b> katta quvvat, kaskad yoki ko'p issiq suv kerak bo'lganda tanlanadi.",
+    "faq-q-7":"Xonaga nechta radiator sektsiyasi kerak?",
+    "faq-a-7":"Bu ko'zga ko'rinarli maydondan emas, balki xonaning issiqlik yo'qotishiga bog'liq. Biz har bir xona uchun alohida hisoblaymiz: biometall sektsiyasi uchun ~150 Vt (rejim 90/70) va 15% zaxira bilan.",
+    "faq-q-8":"Issiq pol kerakmi?",
+    "faq-a-8":"Issiq pol — bu qulaylik va bir tekis isitish, ayniqsa hammom va birinchi qavatda. U issiqlik yo'qotishiga deyarli ta'sir qilmaydi, lekin qozonni past haroratda ishlashiga imkon beradi va tejaydi.",
+    "faq-q-9":"Bu hisob-kitob qanchalik aniq?",
+    "faq-a-9":"Hisob-kitob KMK 2.01.04-18 va KMK 2.01.01-94 bo'yicha muhandislik usulida amalga oshiriladi: <b>Q = (ΔT/R)·S·n·(1+Σβ)</b>. Loyiha uchun mutaxassisimiz bepul tafsilotlarni aniqlashtiradi.",
+    "hours":"Du–Sha 9:00–18:00",
+    "nav-settings":"Hisoblash sozlamalari","nav-workshop":"Ustaxona",
+    "role-owner-badge":"Egasi","role-admin-badge":"Admin","role-client-badge":"Mijoz",
+    "projects-count":"loyiha","admin-no-users":"Ro'yxatdan o'tgan foydalanuvchilar yo'q",
+    "admin-assign":"Administrator tayinlash","admin-remove":"Administrator huquqini olib qo'yish",
+    "badge-first":"Birinchi hisob-kitob","badge-first-d":"Birinchi hisob-kitob yaratildi",
+    "badge-skilled":"Tajribali","badge-skilled-d":"5+ hisob-kitob yaratildi",
+    "badge-expert":"Ekspert","badge-expert-d":"20+ hisob-kitob yaratildi",
+    "badge-lead":"Ariza","badge-lead-d":"Mutaxassisga ariza yuborildi",
+    "badge-owner":"Egasi","badge-owner-d":"Do'kon egasi",
+    "badge-admin":"Administrator","badge-admin-d":"Tizim administratori",
+    "ev-step1":"1-qadam o'tildi (Shahar)","ev-step2":"2-qadam o'tildi (Maydon)",
+    "ev-step3":"3-qadam o'tildi (Qavatlar)","ev-step4":"4-qadam o'tildi (Rejalashtirish)",
+    "ev-step5":"5-qadam o'tildi (Materiallar)","ev-calc":"Hisob-kitob yakunlandi (6-qadam)",
+    "ev-lead":"Ariza yuborildi (WhatsApp)",
+    "gloss-tloss":"Issiqlik yo'qotishi — uydan eng sovuq kunda tashqariga chiqadigan issiqlik miqdori (kVt). Qanchalik ko'p bo'lsa, isitish shunchalik kuchli bo'lishi kerak.",
+    "gloss-r":"R — issiqlik uzatishga to'liq qarshilik (m²·°C/Vt). R qanchalik yuqori bo'lsa, u qadar issiq va yo'qotishlar kamligi.",
+    "gloss-infil":"Infiltratsiya — tirqishlar va derazalar orqali kiradigan sovuq havoni isitishga sarflanadigan issiqlik. Yangi uy ≈ 0.4 h⁻¹, oddiy ≈ 0.7, eski ≈ 1.2.",
+    "gloss-beta":"Yo'nalish ustamasi: shimoliy va sharqiy devorlar sovuqroq, ularning yo'qotishiga 5–10% qo'shiladi. Janubiy devorlar — ustamasiz.",
+    "gloss-n":"n koeffitsienti — isitilmaydigan zonalarga qavat/shift orqali yo'qotishlar ulushi. 1.0 — to'g'ridan-to'g'ri ko'chaga, 0.9 — sovuq cherdak, 0.6 — sovuq yerto'la.",
+    "gloss-text":"Hisoblash qishki harorat (B parametri) — shahar uchun eng sovuq besh kunlik. Shahar tanlanganida avtomatik qo'yiladi.",
+    "gloss-boiler":"25% zaxira: qozon hisob-kitobdan kuchliroq olinadi, muzlamas sovuqda tezroq isitish va issiq suv uchun.",
+    "gloss-sections":"Radiator sektsiyalari soni: biometall uchun ~150 Vt/sektsiya (rejim 90/70) va 15% zaxira bilan.",
+    "gloss-regime":"Tizim harorat rejimi (uzatish/qaytish). Past harorat rejimida radiator kamroq issiqlik beradi, shuning uchun ko'proq sektsiya kerak.",
+    "gloss-tint":"Ichki harorat — xona turi uchun normativ (turar joy +20°, hammom +25°, ombor +10° va h.k.).",
+    "gloss-homog":"r₀ — issiqlik bir jinslilik koeffitsienti. G'isht r₀≈0.87, gaz blok r₀≈0.90, panel r₀≈0.83.",
     "hero-h1":"Butun uy issiqlik yo'qotishi<br><span class=\"thermal-text\">bir hisob-kitobda</span>",
     "hero-sub":"Rejani chizing, qavatlar va materiallar qo'shing — butun ob'ekt bo'yicha issiqlik yo'qotishini hisoblaymiz, qozon va radiatorlarni tanlashga yordam beramiz",
     "hero-cta-start":"Hisob-kitobni boshlash →","hero-cta-call":"Mutaxassisga qo'ng'iroq","hero-scroll":"aylantiring",
@@ -4195,6 +4787,13 @@ const _i18n = {
     "pf-actions":"Harakatlar","pf-logout":"Akkauntdan chiqish","pf-delete-account":"Akkauntni o'chirish",
     "pf-activity":"So'nggi faollik","pf-activity-empty":"Faollik birinchi hisob-kitobdan keyin paydo bo'ladi",
     "pf-no-addresses":"Saqlangan manzillar yo'q",
+    "adm-nav-lbl":"Navigatsiya","adm-dashboard":"Boshqaruv paneli","adm-users":"Foydalanuvchilar","adm-leads":"Arizalar",
+    "adm-stat-users":"Foydalanuvchi","adm-stat-admins":"Administrator","adm-stat-projs":"Loyiha","adm-stat-week":"7 kunda",
+    "adm-by-type":"Mijoz turlari bo'yicha","adm-funnel":"Hisob-kitob voronkasi","adm-recent":"So'nggi ro'yxatdan o'tishlar",
+    "adm-reset-stats":"Statistikani tiklash","adm-reset-confirm":"Voronka statistikasini tiklash?",
+    "adm-leads-title":"Arizalar","adm-leads-empty":"Hozircha ariza yo'q. Foydalanuvchi «WhatsApp'ga yozish» tugmasini bosganda — ariza shu yerda ko'rinadi.",
+    "adm-leads-clear":"Tozalash","adm-leads-clear-confirm":"Barcha arizalar o'chirilsinmi?",
+    "adm-user-title":"Foydalanuvchilar",
     "footer-phones":"Telefonlar","footer-social":"Ijtimoiy tarmoqlar","footer-help":"Yordam",
     'hint-1':'Shaharni tanlang','hint-2':"Maydon o'lchamlarini kiriting",'hint-3':"Kamida bitta qavat qo'shing",
     'hint-4':'Kamida bitta xona chizing','hint-5':"Devor, pol va shiftni tanlang",
@@ -4537,6 +5136,52 @@ const _i18n = {
     'live-city-lbl':'City:','live-plot-lbl':'Plot:','live-north-lbl':'North:',
     'dir-top-text':'top','dir-right-text':'right','dir-bottom-text':'bottom','dir-left-text':'left',
     'boiler-hint':'Boiler (+25%)','area-hint':'Building area','rooms-hint':'Total rooms',
+    'tagline':'Heating · Plumbing · Fergana',
+    'faq-tag':'FAQ','faq-title':'Common questions about heat loss',
+    'faq-q-1':'What do I enter in the temperature field?',
+    'faq-a-1':'Nothing — the temperature is filled in automatically when you select a city. This is the <b>design winter temperature</b> (parameter B per KMK 2.01.01-94, Table 4) — the coldest 5-day period at 0.92 probability. For Fergana that is −14 °C.',
+    'faq-q-2':'Why does my house lose more heat than my neighbour\'s?',
+    'faq-a-2':'Even houses with the same floor area differ because of: <b>wall material and thickness</b> (R), <b>window quality</b>, <b>number of exterior walls</b> (corner rooms lose more), <b>number of storeys</b> (losses through floor and roof), <b>orientation</b> (north walls are colder), and <b>ceiling height</b>. Our calculator accounts for all of this room by room.',
+    'faq-q-3':'How does wall material affect the calculation?',
+    'faq-a-3':'The key parameter is <b>R (thermal resistance)</b>. The higher the R, the lower the losses. Brick 380 mm has R ≈ 0.64; the same brick with 100 mm mineral wool reaches R ≈ 2.86 — wall losses drop several times.',
+    'faq-q-4':'What window quality is needed for a Fergana home?',
+    'faq-a-4':'Minimum — <b>PVC 2-chamber double-glazed unit</b> (R ≈ 0.32). For savings, choose <b>3-chamber</b> (R ≈ 0.55) or <b>argon + Low-E</b> (R ≈ 0.68). Single glazing (R ≈ 0.18) loses 3–4× more heat than a good sealed unit.',
+    'faq-q-5':'What difference does +5 cm of insulation make?',
+    'faq-a-5':'50 mm of mineral wool (λ ≈ 0.045) adds roughly <b>+1.1 to R</b>. For example, brick 380 (R 0.64) with 50 mm wool becomes R ≈ 1.75 — wall losses drop almost three times.',
+    'faq-q-6':'Which boiler — wall-hung or floor-standing?',
+    'faq-a-6':'For most homes up to ~35 kW a <b>wall-hung gas boiler</b> is enough — it is compact and cheaper. A <b>floor-standing</b> model is chosen for high power, cascade setups, or a large DHW demand.',
+    'faq-q-7':'How many radiator sections does a room need?',
+    'faq-a-7':'It depends on the room\'s actual heat loss, not the floor area. We calculate each room separately: ~150 W per bimetal section (mode 90/70) with a 15% margin.',
+    'faq-q-8':'Is underfloor heating worth it?',
+    'faq-a-8':'Underfloor heating provides comfort and even warmth, especially in bathrooms and on the ground floor. It barely affects heat-loss figures but lets the boiler run at lower temperatures and saves energy.',
+    'faq-q-9':'How accurate is this calculation?',
+    'faq-a-9':'It is an engineering calculation per KMK 2.01.04-18 and KMK 2.01.01-94: <b>Q = (ΔT/R)·S·n·(1+Σβ)</b> for each building element plus infiltration. For a turn-key project our specialist will clarify the details — free of charge.',
+    'hours':'Mon–Sat 9:00–18:00',
+    'nav-settings':'Calculation settings','nav-workshop':'Workshop',
+    'role-owner-badge':'Owner','role-admin-badge':'Admin','role-client-badge':'Client',
+    'projects-count':'project(s)','admin-no-users':'No registered users',
+    'admin-assign':'Make administrator','admin-remove':'Remove administrator rights',
+    'badge-first':'First calculation','badge-first-d':'First calculation created',
+    'badge-skilled':'Experienced','badge-skilled-d':'5+ calculations created',
+    'badge-expert':'Expert','badge-expert-d':'20+ calculations created',
+    'badge-lead':'Request sent','badge-lead-d':'Sent request to specialist',
+    'badge-owner':'Owner','badge-owner-d':'Shop owner',
+    'badge-admin':'Administrator','badge-admin-d':'System administrator',
+    'ev-step1':'Step 1 done (City)','ev-step2':'Step 2 done (Plot)',
+    'ev-step3':'Step 3 done (Floors)','ev-step4':'Step 4 done (Layout)',
+    'ev-step5':'Step 5 done (Materials)','ev-calc':'Calculation complete (Step 6)',
+    'ev-lead':'Request sent (WhatsApp)',
+    'gloss-tloss':'Heat loss — how much heat (kW) leaves the building on the coldest day. The higher it is, the more powerful the heating needs to be.',
+    'gloss-r':'R — total thermal resistance (m²·°C/W). The higher the R, the warmer and less heat is lost.',
+    'gloss-infil':'Infiltration — heat spent warming cold air that enters through cracks and windows. New house ≈ 0.4 ACH, average ≈ 0.7, old leaky ≈ 1.2.',
+    'gloss-beta':'Orientation surcharge: north and east walls are colder, their losses increase by 5–10%. South walls — no surcharge.',
+    'gloss-n':'n coefficient — fraction of losses through floor/ceiling to unheated zones. 1.0 — directly to outside, 0.9 — cold attic, 0.6 — cold basement.',
+    'gloss-text':'Design winter temperature (parameter B) — the coldest 5-day period for the city. Filled in automatically when a city is selected.',
+    'gloss-boiler':'25% margin: the boiler is oversized to heat up quickly in frost and to have hot water reserve.',
+    'gloss-sections':'Number of radiator sections: ~150 W per section (bimetal, mode 90/70) with 15% margin.',
+    'gloss-regime':'System temperature mode (supply/return). At low-temperature mode the radiator delivers less heat, so more sections are needed.',
+    'gloss-tint':'Indoor temperature — standard for the room type (living +20°, bathroom +25°, warehouse +10°, etc.).',
+    'gloss-homog':'Thermal homogeneity coefficient r₀ — accounts for thermal bridges at joints. Brick r₀≈0.87, aerated block r₀≈0.90, panel r₀≈0.83.',
     'hero-h1':'Whole-House Heat Loss<br><span class="thermal-text">in one calculation</span>',
     'hero-sub':'Draw the floor plan, add floors and materials — we will calculate the heat loss of the entire building and select the boiler and radiators for each room',
     'hero-cta-start':'Start Calculation →','hero-cta-call':'Call a Specialist','hero-scroll':'scroll',
@@ -4586,6 +5231,13 @@ const _i18n = {
     'pf-actions':'Actions','pf-logout':'Log out','pf-delete-account':'Delete account',
     'pf-activity':'Recent activity','pf-activity-empty':'Activity will appear after your first calculation',
     'pf-no-addresses':'No saved addresses',
+    'adm-nav-lbl':'Navigation','adm-dashboard':'Dashboard','adm-users':'Users','adm-leads':'Requests',
+    'adm-stat-users':'Users','adm-stat-admins':'Admins','adm-stat-projs':'Projects','adm-stat-week':'Last 7 days',
+    'adm-by-type':'By client type','adm-funnel':'Calculation funnel','adm-recent':'Recent registrations',
+    'adm-reset-stats':'Reset statistics','adm-reset-confirm':'Reset funnel statistics?',
+    'adm-leads-title':'Requests','adm-leads-empty':'No requests yet. When a user clicks "Write to WhatsApp" — a request will appear here.',
+    'adm-leads-clear':'Clear','adm-leads-clear-confirm':'Delete all requests?',
+    'adm-user-title':'Users',
     'footer-phones':'Phones','footer-social':'Social','footer-help':'Help',
     'hint-1':'Select a city','hint-2':'Enter plot dimensions','hint-3':'Add at least one floor',
     'hint-4':'Draw at least one room','hint-5':'Select walls, floor and ceiling',
@@ -5001,7 +5653,7 @@ let STEP_TITLES = [t('step-1'),t('step-2'),t('step-3'),t('step-4'),t('step-5'),t
 const BETA_ORIENT = {N:0.10, NE:0.10, E:0.10, SE:0.05, S:0.0, SW:0.0, W:0.05, NW:0.10};
 const R_PARTITION = 0.45;          // приведённое R внутренней перегородки (½ кирпича оштукатуренная)
 const CORNER_SURCHARGE = 0.05;     // +5% на угловые помещения (2+ наружных стены) — СНиП
-const WALL_HOMOG_DEFAULT = 1.0;    // коэф. однородности; 1.0 = как в исходной таблице КМК (без снижения)
+const WALL_HOMOG_DEFAULT = 0.85;   // коэф. однородности; мостики холода (швы раствора, перемычки) по СП 50.13330.2012 прил. В
 const FLOOR_ZONE_R = [2.1, 4.3, 8.6, 14.2]; // R грунта по зонам (Староверов, ч.I, гл.8.2, стр.35) — неутепл. пол на грунте
 const AIRTIGHT = {                 // воздухообмен ACH (1/ч) по герметичности объекта
   new:    {ach:0.4, name:'Новый / герметичный',  nameUz:'Yangi / germetik',   nameEn:'New / Airtight',
@@ -5031,10 +5683,19 @@ const ATTIC = {                    // коэф. n для потолка верх
 function atticN(){ return (ATTIC[ST.attic]||ATTIC.closed).n; }
 function airtightAch(){ return (AIRTIGHT[ST.airtight]||AIRTIGHT.normal).ach; }
 function heatRegime(){ return HEAT_REGIMES.find(r=>r.id===ST.heatRegime)||HEAT_REGIMES[0]; }
-/* Вт на секцию при текущем температурном напоре радиатора относительно комнаты */
+/* Вт на секцию — логарифмический ΔT (LMTD) по EN 442 */
+function _lmtd(tin, tout, tr){
+  const a=tin-tr, b=tout-tr;
+  if(a<=0||b<=0) return Math.max(a,b,1);
+  if(Math.abs(a-b)<0.5) return (a+b)/2;
+  return (a-b)/Math.log(a/b);
+}
 function sectionWatt(tInt){
-  const dt = Math.max(5, heatRegime().tm - tInt);
-  return SECTION_W_NOMINAL * Math.pow(dt/SECTION_DT_NOMINAL, 1.3);
+  const r=heatRegime();
+  const parts=r.id.split('/').map(Number);
+  const tin=parts[0]||80, tout=parts[1]||60;
+  const dt=_lmtd(tin,tout,tInt);
+  return SECTION_W_NOMINAL * Math.pow(Math.max(dt,1)/SECTION_DT_NOMINAL, 1.3);
 }
 const DIR_ORDER = ['N','E','S','W'];
 const SIDE_INDEX = {top:0, right:1, bottom:2, left:3};
@@ -5269,9 +5930,9 @@ function computeObject(){
   let totalW=0, totalArea=0, totalSections=0, roomCount=0;
   const byType = {wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
   const fres = [];
-  // basement at ground temperature -6°C (underground)
+  // basement temperature from ST.basement.tExt (configurable, default -6°C)
   if(ST.basement && ST.basement.rooms && ST.basement.rooms.length){
-    const bs=ST.basement, bsTExt=-6;
+    const bs=ST.basement, bsTExt=bs.tExt!=null?bs.tExt:-6;
     let bW=0, bArea=0, bSec=0; const brres=[];
     for(const room of bs.rooms){
       const r=computeRoom(room,bs,0,0,bsTExt,bs.rooms);
@@ -5301,6 +5962,13 @@ function computeObject(){
   };
 }
 
+/* Нормируемое R стены по ГСОП (КМК 2.01.04-18 табл.4, Узбекистан Z_oto≈155 суток) */
+function getReqWallR(tExt){
+  const gsop=(18-tExt)*155;
+  if(gsop<4000) return 1.5;
+  if(gsop<6000) return 2.0;
+  return 2.5;
+}
 function roomTypeName(id){ const r=ROOM_TYPES.find(x=>x.id===id); if(!r) return t('mr-room'); return _pick(r,'name','nameUz','nameEn'); }
 function roomTypeTemp(id){ const r=ROOM_TYPES.find(x=>x.id===id); return r?r.t:20; }
 
@@ -5319,7 +5987,7 @@ const ST = {
   activeFloorId:null,
   mat:{ wallId:'brick_380', windowId:'double_glazing_pvc', doorId:'door_metal_insulated', floorId:'floor_xps50', ceilingId:'ceil_i100' },
   airtight:'normal', heatRegime:'90/70', attic:'closed',
-  basement: null,
+  basement: null, tExtManual:null,
 };
 
 function initFloors(){
@@ -5408,7 +6076,7 @@ function renderProgress(){
 function totalRooms(){ return ST.floors.reduce((s,f)=>s+f.rooms.length,0); }
 function canProceed(){
   switch(ST.step){
-    case 1: return !!ST.cityId;
+    case 1: return !!ST.cityId || ST.tExtManual!=null;
     case 2: return ST.plot.w>0 && ST.plot.d>0;
     case 3: return ST.floors.length>0;
     case 4: return totalRooms()>0;
@@ -5524,12 +6192,35 @@ function s1(){
       <p class="text-xs text-muted mt-0.5">${c.region}</p>
       <p class="mono text-sm font-bold text-amber mt-1">${c.t}°C</p>
     </button>`).join('')}
+  </div>
+  <div class="mt-3 rounded-xl border border-sand/10 bg-w800/30 p-3">
+    <label class="flex items-center gap-2.5 cursor-pointer select-none">
+      <input type="checkbox" class="accent-amber" id="cb-manual-t" onchange="toggleManualTExt(this.checked)" ${ST.tExtManual!=null?'checked':''}>
+      <span class="text-sm text-cream">Задать расчётную температуру вручную</span>
+    </label>
+    <div id="manual-t-row" class="mt-2 flex items-center gap-2" style="display:${ST.tExtManual!=null?'flex':'none'}">
+      <span class="text-xs text-muted flex-shrink-0">t °C</span>
+      <input type="number" id="manual-t-val" class="wi w-24 py-2 text-sm text-center" min="-35" max="-5" step="1" value="${ST.tExtManual!=null?ST.tExtManual:(ST.tExt||-14)}" oninput="setManualTExt(+this.value)">
+      <span class="text-xs text-muted">КМК 2.01.01-94 парам. Б</span>
+    </div>
   </div>`;
 }
 function selectCity(id){
   const c=CITIES.find(x=>x.id===id); if(!c) return;
-  ST.cityId=c.id; ST.cityName=c.name; ST.tExt=c.t;
+  ST.cityId=c.id; ST.cityName=c.name; ST.tExt=c.t; ST.tExtManual=null;
   document.querySelectorAll('#step-panel .sel-card').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')===`selectCity('${id}')`));
+  updateNavHint(); updateLivePanel();
+}
+function toggleManualTExt(on){
+  if(on){ ST.tExtManual=ST.tExt||(-14); ST.tExt=ST.tExtManual; }
+  else{ ST.tExtManual=null; if(ST.cityId){ const c=CITIES.find(x=>x.id===ST.cityId); if(c) ST.tExt=c.t; } }
+  const row=document.getElementById('manual-t-row');
+  if(row) row.style.display=on?'flex':'none';
+  updateNavHint(); updateLivePanel();
+}
+function setManualTExt(v){
+  if(!isFinite(v)) return;
+  v=Math.max(-35,Math.min(-5,v)); ST.tExtManual=v; ST.tExt=v;
   updateNavHint(); updateLivePanel();
 }
 
@@ -5624,6 +6315,7 @@ function s3(){
       <div class="flex items-center gap-1.5"><span class="text-xs text-muted whitespace-nowrap">H, м</span>
         <input class="wi w-20 py-2 text-sm" type="number" min="1.8" max="4" step="0.1" value="${ST.basement.height}" oninput="ST.basement.height=Math.max(1.8,parseFloat(this.value)||2.5);updateLivePanel()">
       </div>
+      <select class="wi py-1.5 text-sm" style="min-width:122px" title="Расчётная температура подвала" onchange="ST.basement.tExt=+this.value;updateLivePanel()"><option value="10" ${ST.basement.tExt===10?'selected':''}>Отапл. +10°C</option><option value="2" ${ST.basement.tExt===2?'selected':''}>Полу +2°C</option><option value="-3" ${ST.basement.tExt===-3?'selected':''}>Холод. −3°C</option><option value="-6" ${(ST.basement.tExt??-6)===-6?'selected':''}>Неотапл. −6°C</option></select>
       <span class="chip text-xs text-blue-300">${t('basement-text')}</span>
       <button onclick="removeBasement()" class="flex-shrink-0 text-muted hover:text-ember transition-colors">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
@@ -8428,6 +9120,7 @@ function deleteCustom(cat,id){
 function s6(){
   const res=computeObject();
   if(!res||res.roomCount===0){ return `<p class="text-muted py-8 text-center">${t('hint-4')}</p>`; }
+  window._calcRes=res;
   const TYPE={wall:t('col-component-wall')||'Стены',window:t('col-component-win')||'Окна',door:t('col-component-door')||'Двери',floor:t('col-component-floor')||'Пол',ceiling:t('col-component-ceil')||'Потолок',infil:t('col-component-infil')||'Инфильтрация'};
   const ip=interpret(res);
   const cost=costEstimate(res.totalKw);
@@ -8448,6 +9141,7 @@ function s6(){
     updatePayback();
   },40);
   setTimeout(()=>initThermalSuite(res),80);
+  setTimeout(()=>drawHeatDonut(res),180);
 
   const byTypeRows=Object.entries(res.byType).filter(([k,v])=>v>0).map(([k,v])=>`
     <tr><td class="text-sand">${TYPE[k]||k}</td><td class="r mono text-cream">${Math.round(v)}</td><td class="r mono text-muted">${((v/res.totalW)*100).toFixed(1)}%</td></tr>`).join('');
@@ -8457,6 +9151,11 @@ function s6(){
     ${f.rooms.map(r=>`<tr><td class="pl-6 text-muted">${r.name}</td><td class="r mono text-muted">${r.area.toFixed(1)} м²</td><td class="r mono text-cream">${r.qKw.toFixed(2)} кВт</td><td class="r mono text-amber">${r.sections}</td></tr>`).join('')}
   `).join('');
 
+  const _wallP=findPreset('walls',ST.mat.wallId);
+  const _wallReff=_wallP?(_wallP.r*(_wallP.homog!=null?_wallP.homog:WALL_HOMOG_DEFAULT)):0;
+  const _wallRreq=getReqWallR(ST.tExt||0);
+  const _wallOk=_wallReff>=_wallRreq;
+  const normHtml=_wallP?`<div class="mt-3 rounded-xl border ${_wallOk?'border-green-500/30 bg-green-900/15':'border-amber/35 bg-amber/8'} p-3 flex items-start gap-2.5"><span class="flex-shrink-0 text-base">${_wallOk?'✅':'⚠️'}</span><div><p class="text-sm font-semibold ${_wallOk?'text-green-400':'text-amber'}">${_wallOk?'Стена соответствует норме КМК':'Стена ниже нормы КМК 2.01.04-18'}</p><p class="text-xs text-muted mt-0.5">${_wallP.name}: R = ${_wallReff.toFixed(2)} м²·°C/Вт${_wallOk?', норма ≥ '+_wallRreq.toFixed(1)+' ✓':' — требуется ≥ '+_wallRreq.toFixed(1)+' (ГСОП '+Math.round((18-(ST.tExt||0))*155)+'). Рекомендуем добавить утеплитель.'}</p></div></div>`:'';
   setTimeout(()=>attachResultProtection(),60);
   return `<div id="result-area" class="no-copy" oncontextmenu="resultCopyWarn(event)" oncopy="resultCopyWarn(event)">
   <div class="flex items-center justify-between gap-3 mb-1">
@@ -8493,7 +9192,24 @@ function s6(){
     <p class="mt-2 text-sm leading-relaxed text-muted">Удельные потери — <b style="color:${ip.qcolor}">${ip.perM2.toFixed(0)} Вт/м²</b> (${ip.quality}). Для сравнения: типовая утеплённая квартира ≈ 50–70 Вт/м². Это <b class="text-cream">${ip.ratio}%</b> от мощности средней квартиры (3 кВт).</p>
   </div>
 
+  ${normHtml}
+
   ${thermalSuiteHTML(res)}
+
+  <div class="flex items-center justify-between gap-3 mb-2 mt-2">
+    <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/70">3D-визуализация здания</p>
+    <button id="btn3d" type="button" onclick="toggle3DView()" class="px-3 py-1.5 rounded-xl text-xs font-bold border border-amber/30 text-amber hover:bg-amber/10 transition-colors">Показать 3D здание</button>
+  </div>
+  <div id="view3d-outer" style="display:none">
+    <div id="view3d-container"></div>
+    <div id="view3d-tip"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:rgba(7,9,15,.7);border-top:1px solid rgba(140,165,210,.08)">
+      <span style="font-size:10px;color:#4E6080">Вращение: мышь · Масштаб: колесо · Тепло: синий→красный</span>
+      <span style="font-size:10px;color:#4E6080;font-family:'JetBrains Mono',monospace">THREE.js r128</span>
+    </div>
+  </div>
+
+  ${roomCardsHTML(res)}
 
   <h4 class="font-semibold text-cream mb-3">${t('result-floors-h4')}</h4>
   <div class="overflow-x-auto rounded-2xl border border-sand/10 mb-8">
@@ -8954,6 +9670,10 @@ function thermalSuiteHTML(res){
     </div>
     ${heatmap}
     ${eclassHTML(res)}
+    <div class="heat-donut-wrap">
+      <canvas id="heat-donut-cv" style="flex-shrink:0"></canvas>
+      <div class="heat-donut-legend" id="heat-donut-leg"></div>
+    </div>
     <div class="season-panel">
       <p style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4e6080;margin-bottom:.6rem">Расчётная тепловая нагрузка по месяцам · климат Ферганской обл.</p>
       <canvas id="season-chart"></canvas>
@@ -9029,7 +9749,7 @@ function serializeState(){
   const obj={c:ST.cityId,p:[ST.plot.w,ST.plot.d],n:ST.northSide,a:ST.airtight,hr:ST.heatRegime,at:ST.attic,
     m:[ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId],
     f:ST.floors.map(_serFloor)};
-  if(ST.basement) obj.bs=_serFloor(ST.basement);
+  if(ST.basement){ obj.bs=_serFloor(ST.basement); obj.bs.bt=ST.basement.tExt!=null?ST.basement.tExt:-6; }
   return obj;
 }
 function loadState(o){
@@ -9047,7 +9767,7 @@ function loadState(o){
     return room;
   })}));
   if(!ST.floors.length) initFloors(); else ST.activeFloorId=ST.floors[0].id;
-  if(o.bs){ const fl=o.bs; ST.basement={id:uid('bs'),name:fl.n,height:fl.h,isBasement:true,tExt:-6,rooms:(fl.r||[]).map(rm=>{
+  if(o.bs){ const fl=o.bs; ST.basement={id:uid('bs'),name:fl.n,height:fl.h,isBasement:true,tExt:fl.bt!=null?fl.bt:-6,rooms:(fl.r||[]).map(rm=>{
     const room={id:uid('rm'),typeId:rm[0],x:rm[1],y:rm[2],w:rm[3],h:rm[4],name:rm[5]||'',tInt:roomTypeTemp(rm[0]),
       openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null}))};
     if(rm[7]){ room.poly=rm[7]; const b=roomBBox(room); room.x=b.x; room.y=b.y; room.w=b.w; room.h=b.h; }
@@ -9308,6 +10028,257 @@ function sendWhatsApp(){
       <p class="text-sm text-muted mb-6">Сообщение с расчётом готово — нажмите «Отправить».</p>
       <button onclick="closeModal()" class="lg-btn px-8 py-3 text-sm">Готово</button>
     </div>`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ROOM HEAT CARDS
+════════════════════════════════════════════════════════════ */
+function roomCardsHTML(res){
+  const allRooms=[];
+  res.floors.forEach(f=>f.rooms.forEach(r=>allRooms.push({...r,floorName:f.name})));
+  if(!allRooms.length) return '';
+  const maxKw=Math.max(...allRooms.map(r=>r.qKw),0.001);
+  const cards=allRooms.map(r=>{
+    const ratio=r.qKw/maxKw;
+    const h=Math.round(240-ratio*200);
+    const color=`hsl(${h},85%,60%)`;
+    const pct=Math.round(ratio*100);
+    return `<div class="room-card">
+      <div class="room-card-name" title="${r.name}">${r.name}</div>
+      <div class="room-card-kw" style="color:${color}">${r.qKw.toFixed(2)}<span>кВт</span></div>
+      <div class="room-card-bar"><div class="room-card-bar-inner" style="width:${pct}%;background:${color}"></div></div>
+      <div class="room-card-meta">${r.area.toFixed(1)} м² · ${r.sections} сек</div>
+    </div>`;
+  }).join('');
+  return `<div>
+    <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/70 mb-2 mt-1">Карточки комнат — теплопотери</p>
+    <div class="room-cards-grid">${cards}</div>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   HEAT LOSS DONUT CHART
+════════════════════════════════════════════════════════════ */
+function drawHeatDonut(res){
+  const cv=document.getElementById('heat-donut-cv');
+  const leg=document.getElementById('heat-donut-leg');
+  if(!cv||!leg) return;
+  const SIZE=120; cv.width=SIZE; cv.height=SIZE;
+  cv.style.width=SIZE+'px'; cv.style.height=SIZE+'px';
+  const ctx=cv.getContext('2d');
+  const TYPE_NAMES={wall:'Стены',window:'Окна',door:'Двери',floor:'Пол',ceiling:'Потолок',infil:'Инфильтрация'};
+  const COLORS={wall:'#3b82f6',window:'#22d3ee',door:'#a3e635',floor:'#f59e0b',ceiling:'#fb923c',infil:'#e879f9'};
+  const entries=Object.entries(res.byType).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const total=entries.reduce((s,[,v])=>s+v,0)||1;
+  const CX=SIZE/2,CY=SIZE/2,R=SIZE/2-7,IR=R*.58;
+  const segments=entries.map(([k,v])=>({k,v,color:COLORS[k]||'#8FA3C0',angle:(v/total)*Math.PI*2}));
+  const t0=performance.now();
+  function frame(now){
+    const p=Math.min((now-t0)/700,1);
+    ctx.clearRect(0,0,SIZE,SIZE);
+    ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2);
+    ctx.arc(CX,CY,IR,Math.PI*2,0,true);
+    ctx.fillStyle='rgba(140,165,210,.05)'; ctx.fill();
+    let a=-Math.PI/2;
+    segments.forEach(seg=>{
+      const end=a+seg.angle*p;
+      ctx.beginPath(); ctx.moveTo(CX,CY);
+      ctx.arc(CX,CY,R,a,end);
+      ctx.arc(CX,CY,IR,end,a,true);
+      ctx.closePath(); ctx.fillStyle=seg.color; ctx.fill();
+      ctx.strokeStyle='rgba(7,9,15,.9)'; ctx.lineWidth=1.5; ctx.stroke();
+      a=end;
+    });
+    ctx.fillStyle='#ECF0FA'; ctx.font='bold 11px "JetBrains Mono",monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText((res.totalKw*p).toFixed(1),CX,CY-6);
+    ctx.fillStyle='#4E6080'; ctx.font='8px sans-serif';
+    ctx.fillText('кВт',CX,CY+6);
+    if(p<1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  leg.innerHTML=segments.map(seg=>`
+    <div class="hd-row">
+      <div class="hd-dot" style="background:${seg.color}"></div>
+      <span class="hd-name">${TYPE_NAMES[seg.k]||seg.k}</span>
+      <span class="hd-pct">${((seg.v/total)*100).toFixed(0)}%</span>
+      <span class="hd-w">&nbsp;${Math.round(seg.v)}Вт</span>
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   3D THERMAL BUILDING VIEW (Three.js r128)
+════════════════════════════════════════════════════════════ */
+const _v3d={raf:0,renderer:null,scene:null,camera:null,controls:null,tip:null,objs:[]};
+
+function _v3dColor(ratio){
+  const r=Math.min(1,ratio*2), g=ratio<0.5?ratio*2:2-ratio*2, b=Math.max(0,1-ratio*2);
+  return (Math.round(r*255)<<16)|(Math.round(g*255)<<8)|Math.round(b*255);
+}
+
+function _v3dDestroy(){
+  cancelAnimationFrame(_v3d.raf);
+  if(_v3d.renderer){_v3d.renderer.dispose();_v3d.renderer=null;}
+  if(_v3d.controls){_v3d.controls.dispose();_v3d.controls=null;}
+  _v3d.scene=null; _v3d.camera=null; _v3d.objs=[];
+  const c=document.getElementById('view3d-container');
+  if(c) c.innerHTML='';
+}
+
+function init3DView(){
+  if(typeof THREE==='undefined') return;
+  _v3dDestroy();
+  const res=window._calcRes; if(!res) return;
+  const container=document.getElementById('view3d-container');
+  if(!container) return;
+
+  // Heat lookup
+  const heatMap={};
+  let maxW=0.001;
+  res.floors.forEach(f=>f.rooms.forEach(r=>{heatMap[r.id]=r.qW||0; if(r.qW>maxW)maxW=r.qW;}));
+
+  // Geometry lookup from ST.floors
+  const stFloorMap={};
+  ST.floors.forEach(f=>{
+    stFloorMap[f.id]={height:parseFloat(f.height)||2.7,rooms:{}};
+    f.rooms.forEach(r=>{stFloorMap[f.id].rooms[r.id]=r;});
+  });
+
+  // Bounding box for auto-scale
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  ST.floors.forEach(f=>f.rooms.forEach(r=>{
+    if(r.x==null||!r.w) return;
+    minX=Math.min(minX,r.x); maxX=Math.max(maxX,r.x+r.w);
+    minY=Math.min(minY,r.y); maxY=Math.max(maxY,r.y+(r.h||r.w));
+  }));
+  const hasGeo=isFinite(minX);
+  const bboxW=hasGeo?(maxX-minX)||1:1, bboxH=hasGeo?(maxY-minY)||1:1;
+  const SCALE=hasGeo?18/Math.max(bboxW,bboxH):1;
+
+  const W=container.clientWidth||320;
+  const H=Math.max(220,Math.round(W*0.52));
+  container.style.height=H+'px';
+
+  _v3d.scene=new THREE.Scene();
+  _v3d.scene.background=new THREE.Color(0x07090F);
+  _v3d.scene.fog=new THREE.Fog(0x07090F,35,80);
+
+  _v3d.camera=new THREE.PerspectiveCamera(45,W/H,0.1,200);
+  _v3d.camera.position.set(14,11,14);
+
+  _v3d.renderer=new THREE.WebGLRenderer({antialias:true});
+  _v3d.renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  _v3d.renderer.setSize(W,H);
+  _v3d.renderer.shadowMap.enabled=true;
+  _v3d.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  container.appendChild(_v3d.renderer.domElement);
+
+  // Lights
+  _v3d.scene.add(new THREE.AmbientLight(0x334466,0.8));
+  const sun=new THREE.DirectionalLight(0xffd6a0,1.1);
+  sun.position.set(10,20,8); sun.castShadow=true;
+  sun.shadow.mapSize.set(1024,1024);
+  _v3d.scene.add(sun);
+  const fill=new THREE.DirectionalLight(0x6688cc,0.35);
+  fill.position.set(-8,5,-5); _v3d.scene.add(fill);
+
+  // Ground grid
+  const grid=new THREE.GridHelper(36,18,0x1a2540,0x0f1620);
+  grid.position.y=-0.01; _v3d.scene.add(grid);
+  const gm=new THREE.Mesh(new THREE.PlaneGeometry(36,36),new THREE.MeshPhongMaterial({color:0x070b12,transparent:true,opacity:.85}));
+  gm.rotation.x=-Math.PI/2; gm.receiveShadow=true; _v3d.scene.add(gm);
+
+  _v3d.objs=[];
+  let yOff=0;
+
+  if(hasGeo){
+    res.floors.forEach(fl=>{
+      const stFl=stFloorMap[fl.id]||{height:2.7,rooms:{}};
+      const flH=stFl.height;
+      fl.rooms.forEach(r=>{
+        const sr=stFl.rooms[r.id];
+        if(!sr||sr.x==null||!sr.w) return;
+        const rw=sr.w*SCALE, rd=(sr.h||sr.w)*SCALE, rh=flH;
+        const rx=((sr.x+sr.w/2)-minX-bboxW/2)*SCALE;
+        const rz=((sr.y+(sr.h||sr.w)/2)-minY-bboxH/2)*SCALE;
+        const ry=yOff+rh/2;
+        const ratio=(heatMap[r.id]||0)/maxW;
+        const geo=new THREE.BoxGeometry(rw-.06,rh-.06,rd-.06);
+        const mat=new THREE.MeshPhongMaterial({color:_v3dColor(ratio),transparent:true,opacity:.83,shininess:25});
+        const mesh=new THREE.Mesh(geo,mat);
+        mesh.position.set(rx,ry,rz); mesh.castShadow=true; mesh.receiveShadow=true;
+        mesh.userData={name:r.name,kw:r.qKw,w:Math.round(r.qW||0),area:r.area,sections:r.sections,ratio};
+        _v3d.scene.add(mesh); _v3d.objs.push(mesh);
+        // Window strip on front face
+        const ws=new THREE.Mesh(
+          new THREE.BoxGeometry(rw*.65,.04,0.03),
+          new THREE.MeshPhongMaterial({color:0x22d3ee,transparent:true,opacity:.55,shininess:90})
+        );
+        ws.position.set(rx,yOff+flH*.6,rz-rd/2+.02);
+        _v3d.scene.add(ws);
+      });
+      yOff+=flH;
+    });
+  } else {
+    // Placeholder box when no floor plan drawn
+    const ph=new THREE.Mesh(new THREE.BoxGeometry(6,3,4),new THREE.MeshPhongMaterial({color:0x1e3a5f,transparent:true,opacity:.7}));
+    ph.position.y=1.5; ph.castShadow=true; _v3d.scene.add(ph);
+  }
+
+  // OrbitControls
+  if(typeof THREE.OrbitControls!=='undefined'){
+    _v3d.controls=new THREE.OrbitControls(_v3d.camera,_v3d.renderer.domElement);
+    _v3d.controls.enableDamping=true; _v3d.controls.dampingFactor=0.09;
+    _v3d.controls.minDistance=4; _v3d.controls.maxDistance=55;
+    _v3d.controls.maxPolarAngle=Math.PI*.47;
+  }
+
+  // Hover tooltip
+  const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
+  _v3d.tip=document.getElementById('view3d-tip');
+  function onMove(e){
+    const rect=container.getBoundingClientRect();
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    mouse.x=((cx-rect.left)/W)*2-1;
+    mouse.y=-((cy-rect.top)/H)*2+1;
+    ray.setFromCamera(mouse,_v3d.camera);
+    const hits=ray.intersectObjects(_v3d.objs);
+    if(hits.length&&_v3d.tip){
+      const d=hits[0].object.userData;
+      const h=Math.round(240-d.ratio*200);
+      const q=d.ratio<.3?'низкие':d.ratio<.65?'средние':'высокие';
+      _v3d.tip.style.display='block';
+      _v3d.tip.style.left=(cx-rect.left+14)+'px';
+      _v3d.tip.style.top=(cy-rect.top-10)+'px';
+      _v3d.tip.innerHTML=`<b>${d.name}</b><br>${d.kw.toFixed(2)} кВт · ${d.w} Вт<br>${d.area.toFixed(1)} м² · ${d.sections} сек<br><span style="color:hsl(${h},85%,60%)">${q} потери</span>`;
+    } else if(_v3d.tip) _v3d.tip.style.display='none';
+  }
+  container.addEventListener('mousemove',onMove);
+  container.addEventListener('touchmove',onMove,{passive:true});
+  container.addEventListener('mouseleave',()=>{if(_v3d.tip)_v3d.tip.style.display='none';});
+
+  function loop(){
+    _v3d.raf=requestAnimationFrame(loop);
+    if(_v3d.controls) _v3d.controls.update();
+    _v3d.renderer.render(_v3d.scene,_v3d.camera);
+  }
+  loop();
+}
+
+function toggle3DView(){
+  const outer=document.getElementById('view3d-outer');
+  const btn=document.getElementById('btn3d');
+  if(!outer) return;
+  if(outer.style.display==='none'){
+    outer.style.display='';
+    if(btn) btn.textContent='Скрыть 3D-вид';
+    setTimeout(init3DView,60);
+  } else {
+    outer.style.display='none';
+    _v3dDestroy();
+    if(btn) btn.textContent='Показать 3D здание';
+  }
 }
 
 /* ════════════════════════════════════════════════════════════
