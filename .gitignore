@@ -1,0 +1,16 @@
+# System
+.DS_Store
+.Rhistory
+
+# Backups
+*.i18n_bak
+*.bak
+
+# Runtime / databases
+ruvector.db
+
+# Claude Code internals
+.claude/
+.claude-flow/
+.agents/
+.swarm/

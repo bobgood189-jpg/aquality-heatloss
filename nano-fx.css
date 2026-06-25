@@ -1,0 +1,65 @@
+/* ============================================================================
+   NanoFX — nano-tech materialization animation system
+   Warm "heat" palette (brand: Aquality | WaterPro).
+   Tokens, shared canvas, armed/hidden states, reduced-motion degradation.
+   Colour is fully driven by these CSS variables — override them to retheme.
+   ========================================================================== */
+
+:root{
+  --nano-core:   #ECF0FA;  /* cool white-hot core       */
+  --nano-gold:   #FCD34D;  /* thermal peak gold         */
+  --nano-accent: #f59e0b;  /* amber (thermal warm)      */
+  --nano-deep:   #EF4444;  /* thermal hot (critical)    */
+  --nano-edge:   #FBBF24;  /* bright thermal edge       */
+}
+
+/* One shared full-viewport overlay. Above content + modals, never blocks input. */
+#nano-canvas{
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  z-index:9990;
+  contain:strict;
+}
+
+/* "Armed" = hidden, applied ONLY by JS. No script ⇒ nothing is ever hidden,
+   so the site is always readable even if NanoFX fails to load. */
+.nano-armed{ opacity:0; }
+/* While assembling we also stop the element repainting its own box-shadow etc.
+   to keep the front crisp; restored on finish. */
+.nano-running{ will-change:opacity, transform, clip-path; }
+
+/* Per-glyph text materialization */
+.nano-text-wrap{ white-space:pre-wrap; }
+.nano-glyph{
+  display:inline-block;
+  opacity:0;
+  will-change:transform, opacity, filter;
+  transform:translateZ(0);
+}
+
+/* CTA hover shimmer hook (particles drawn on the shared canvas; this just
+   marks elements the engine should track for hover emission). */
+.nano-cta{ position:relative; }
+
+/* ---- Accessibility: reduced motion -------------------------------------- */
+@media (prefers-reduced-motion: reduce){
+  #nano-canvas{ display:none !important; }
+  /* Content must always be visible; degrade to a plain, fast fade. */
+  .nano-armed{
+    animation:nano-fade .26s ease-out both;
+    opacity:1 !important;
+  }
+  .nano-glyph{
+    animation:nano-fade .24s ease-out both;
+    opacity:1 !important;
+    filter:none !important;
+    transform:none !important;
+  }
+}
+@keyframes nano-fade{ from{opacity:0} to{opacity:1} }
+
+/* Safety net: if JS hangs, reveal everything after the watchdog window so
+   content can never get stuck hidden. */
+@keyframes nano-failsafe{ to{opacity:1} }
+.nano-armed{ animation:nano-failsafe .01s linear 5s forwards; }
