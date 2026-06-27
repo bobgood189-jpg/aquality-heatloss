@@ -986,6 +986,23 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .room-card-bar{background:rgba(140,165,210,.1);border-radius:2px;height:3px;overflow:hidden}
 .room-card-bar-inner{height:3px;border-radius:2px;transition:width .6s ease}
 .room-card-meta{font-size:.62rem;color:#4E6080}
+.room-li-wrap{display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto}
+.room-li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:11px;border:1px solid rgba(140,165,210,.1);background:rgba(17,24,39,.5);cursor:pointer;transition:border-color .18s,background-color .18s}
+.room-li:hover{border-color:rgba(245,158,11,.34);background:rgba(245,158,11,.06)}
+.room-li.sel{border-color:#f59e0b;background:rgba(245,158,11,.12);box-shadow:0 0 0 1px rgba(245,158,11,.25) inset}
+.room-li-sw{flex:none;width:11px;height:11px;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.25) inset}
+.room-li-idx{flex:none;width:18px;font-size:.62rem;font-weight:700;color:#4E6080;text-align:center;font-family:'JetBrains Mono',monospace}
+.room-li-name{flex:1 1 auto;min-width:0;font-size:.8rem;font-weight:600;color:#E6EDF8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-li-dims{flex:none;font-size:.7rem;color:#8FA3C0}
+.room-li-area{flex:none;font-size:.7rem;color:#C5D0E8;font-weight:600}
+.room-li-temp{flex:none;font-size:.7rem;color:#f59e0b;font-weight:600}
+.room-li-del{flex:none;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;color:#5b6b86;background:transparent;border:none;cursor:pointer;transition:color .18s,background-color .18s}
+.room-li-del:hover{color:#ef4444;background:rgba(239,68,68,.12)}
+.room-li-del svg{width:14px;height:14px}
+@media(max-width:560px){.room-li-dims{display:none}}
+[data-theme="light"] .room-li{background:rgba(255,255,255,.85);border-color:rgba(30,60,120,.12)}
+[data-theme="light"] .room-li-name{color:#1e293b}
+[data-theme="light"] .room-li-area{color:#334155}
 [data-theme="light"] #view3d-outer{background:#1a1a2e}
 [data-theme="light"] .room-card{background:rgba(255,255,255,.85);border-color:rgba(30,60,120,.12)}
 [data-theme="light"] .heat-donut-wrap{background:rgba(248,245,240,.8);border-color:rgba(30,60,120,.1)}
@@ -4670,6 +4687,7 @@ const _i18n = {
     'rre-room-label':'Комната','rre-rooms-count':'Комнат на этаже:',
     'rre-no-room-hint':'Нажмите «Рисовать» и протяните прямоугольник на участке, либо «Выбрать / двигать» и кликните комнату.',
     'rre-area-lbl':'Площадь','rre-tint-lbl':'t внутр.',
+    'rre-list-title':'Список комнат','rre-list-empty':'Пока нет комнат — нарисуйте первую на плане.','mr-room-del':'Удалить',
     'rre-openings-label':'Окна и двери (наружные стены)','rre-no-ext-walls':'У комнаты нет наружных стен — окна не нужны.',
     'op-w-lbl':'Ш,м','op-h-lbl':'В,м','op-count-lbl':'Кол','op-pos-lbl':'Где на стене',
     'mr-mfr-model-ph':'Своё название модели (необязательно)',
@@ -5112,6 +5130,7 @@ const _i18n = {
     // renderRoomEdit
     "rre-no-room":"Tanlangan xona yo'q",'rre-room-type-label':'Xona turi',
     'rre-room-label':'Xona',"rre-rooms-count":"Qavatdagi xonalar:",
+    "rre-list-title":"Xonalar ro'yxati","rre-list-empty":"Hozircha xona yo'q — rejada birinchisini chizing.","mr-room-del":"O'chirish",
     "rre-no-room-hint":"«Chizish» tugmasini bosib, maydonchada to'rtburchak torting yoki «Tanlash» tugmasi bilan xonani tanlang.",
     "rre-area-lbl":"Maydon","rre-tint-lbl":"t ichki",
     "rre-openings-label":"Derazalar va eshiklar (tashqi devorlar)","rre-no-ext-walls":"Xonada tashqi devor yo'q — deraza kerak emas.",
@@ -5576,6 +5595,7 @@ const _i18n = {
     'rre-room-label':'Room','rre-rooms-count':'Rooms on floor:',
     'rre-no-room-hint':'Click "Draw" and drag a rectangle on the plot, or click "Select / move" to click a room.',
     'rre-area-lbl':'Area','rre-tint-lbl':'Int. temp.',
+    'rre-list-title':'Room list','rre-list-empty':'No rooms yet — draw the first one on the plan.','mr-room-del':'Delete',
     'rre-openings-label':'Windows & Doors (exterior walls)','rre-no-ext-walls':'No exterior walls — no windows needed.',
     'op-w-lbl':'W,m','op-h-lbl':'H,m','op-count-lbl':'Qty','op-pos-lbl':'Position on wall',
     'mr-mfr-model-ph':'Custom model name (optional)',
@@ -6406,6 +6426,7 @@ function s4(){
     <div id="plan-wrap"><canvas id="plan-canvas"></canvas></div>
     <div id="room-edit"></div>
   </div>
+  <div id="room-list" class="mt-5"></div>
   <p class="mt-3 text-xs text-muted">${t('step4-hint')}</p>`;
 }
 function switchFloor(id){ ST.activeFloorId=id; PLAN.selectedId=null; renderFloorTabs(); drawPlan(); renderRoomEdit(); }
@@ -6547,7 +6568,7 @@ function planUp(e){
   if(PLAN.drawing){
     const d=PLAN.drawing; const x=Math.min(d.x0,d.x1),y=Math.min(d.y0,d.y1),w=Math.abs(d.x1-d.x0),h=Math.abs(d.y1-d.y0);
     PLAN.drawing=null;
-    if(w>=1&&h>=1){ const room=makeRoom(x,y,w,h); PLAN.selectedId=room.id; renderFloorTabs(); renderRoomEdit(); }
+    if(w>0&&h>0){ const room=makeRoom(x,y,w,h); PLAN.selectedId=room.id; renderFloorTabs(); renderRoomEdit(); }
     drawPlan(); updateLivePanel(); updateNavHint();
   }
   if(PLAN.dragging){ PLAN.dragging=null; drawPlan(); updateLivePanel(); renderRoomEdit(); }
@@ -6598,7 +6619,7 @@ const TOOL_CATEGORIES=[
 const TOOL_REGISTRY=[
   /* ─── DRAW ─── */
   {id:'draw',  label:'Прямоугольник',category:'draw',  defaultHotkey:'DR',
-   description:'Нарисовать прямоугольную комнату — зажмите ЛКМ и потяните.',
+   description:'Нарисовать прямоугольную комнату — зажмите ЛКМ и потяните. Shift = ортогональный режим. Snap к углам соседних комнат.',
    icon:'<rect x="3" y="3" width="18" height="18" rx="2"/>',cursor:'crosshair',isToggle:false,
    action:()=>setEdTool('draw')},
   {id:'poly',  label:'Полигон',      category:'draw',  defaultHotkey:'PL',
@@ -7290,7 +7311,8 @@ const EDITOR = { open:false, tool:'select', scale:40, baseScale:40, offX:0, offY
   _measure:null, _hkbuf:'', _hktime:0, _linePt:null, _arcPts:[], _circlePt:null,
   _pipePoints:[], showAreaTags:false, showHeatLabels:false,
   _hkbuf_mod:'', _hkbuf_mod_time:0,
-  _gridLineCount:0, _sectionCount:0, _levelCount:0 };
+  _gridLineCount:0, _sectionCount:0, _levelCount:0,
+  _snapPos:null, _snapType:'grid', _ortho:false };
 
 const exToPx=(m)=>m*EDITOR.scale+EDITOR.offX;
 const eyToPx=(m)=>m*EDITOR.scale+EDITOR.offY;
@@ -7299,6 +7321,147 @@ const pxToEy=(p)=>(p-EDITOR.offY)/EDITOR.scale;
 const eSnap=(m)=>EDITOR.snap?Math.round(m/EDITOR.gridStep)*EDITOR.gridStep:Math.round(m*100)/100;
 const edClampX=(m)=>Math.max(0,Math.min(ST.plot.w,m));
 const edClampY=(m)=>Math.max(0,Math.min(ST.plot.d,m));
+
+/* Smart snap: grid + existing room corners/midpoints */
+function edGetSnap(mx, my){
+  if(!EDITOR.snap) return {x:Math.round(mx*100)/100, y:Math.round(my*100)/100, type:'free'};
+  const th = 14/EDITOR.scale;
+  const rooms = activeFloor().rooms;
+  let best = th, bx = null, by = null, btype = 'grid';
+  for(const r of rooms){
+    const verts = roomVerts(r);
+    for(const [vx,vy] of verts){
+      const d = Math.hypot(mx-vx, my-vy);
+      if(d < best){ best=d; bx=vx; by=vy; btype='corner'; }
+    }
+    // midpoints of edges
+    for(let i=0;i<verts.length;i++){
+      const a=verts[i], b=verts[(i+1)%verts.length];
+      const mx2=(a[0]+b[0])/2, my2=(a[1]+b[1])/2;
+      const d=Math.hypot(mx-mx2,my-my2);
+      if(d<best){ best=d; bx=mx2; by=my2; btype='mid'; }
+    }
+  }
+  // boundary corners
+  for(const [vx,vy] of [[0,0],[ST.plot.w,0],[ST.plot.w,ST.plot.d],[0,ST.plot.d]]){
+    const d=Math.hypot(mx-vx,my-vy);
+    if(d<best){ best=d; bx=vx; by=vy; btype='corner'; }
+  }
+  return { x: bx!=null ? bx : eSnap(mx), y: by!=null ? by : eSnap(my), type: btype };
+}
+
+/* Ruler drawing on top/left edges */
+function edDrawRulers(ctx, W, H){
+  if(EDITOR._export) return;
+  const RS = 20;
+  ctx.save();
+  ctx.fillStyle = 'rgba(8,10,18,0.9)';
+  ctx.fillRect(0,0,W,RS);
+  ctx.fillRect(0,0,RS,H);
+  ctx.fillStyle = 'rgba(50,60,85,0.8)';
+  ctx.fillRect(RS,RS-1,W-RS,1);
+  ctx.fillRect(RS-1,RS,1,H-RS);
+
+  const mPx = EDITOR.scale;
+  let step = 1;
+  if(mPx < 10) step = 5;
+  else if(mPx < 22) step = 2;
+  else if(mPx > 130) step = 0.5;
+
+  ctx.font = '600 8px JetBrains Mono,monospace';
+
+  // X ruler
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  const x0 = Math.floor(pxToEx(RS)/step)*step;
+  for(let m=x0; m<=ST.plot.w+step; m=+(m+step).toFixed(6)){
+    const px=exToPx(m); if(px<RS||px>W+2) continue;
+    const isMaj = Math.abs(Math.round(m/step)%5)===0;
+    ctx.fillStyle=`rgba(154,134,117,${isMaj?0.65:0.28})`;
+    ctx.fillRect(Math.round(px),RS-(isMaj?10:5),1,(isMaj?10:5));
+    if(isMaj && px>RS+12 && px<W-12){
+      ctx.fillStyle='rgba(154,134,117,0.8)';
+      ctx.fillText(m+'',Math.round(px),2);
+    }
+  }
+
+  // Y ruler
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  const y0 = Math.floor(pxToEy(RS)/step)*step;
+  for(let m=y0; m<=ST.plot.d+step; m=+(m+step).toFixed(6)){
+    const py=eyToPx(m); if(py<RS||py>H+2) continue;
+    const isMaj = Math.abs(Math.round(m/step)%5)===0;
+    ctx.fillStyle=`rgba(154,134,117,${isMaj?0.65:0.28})`;
+    ctx.fillRect(RS-(isMaj?10:5),Math.round(py),(isMaj?10:5),1);
+    if(isMaj && py>RS+12 && py<H-12){
+      ctx.save();
+      ctx.fillStyle='rgba(154,134,117,0.8)';
+      ctx.translate(9,Math.round(py));
+      ctx.rotate(-Math.PI/2);
+      ctx.textAlign='center';
+      ctx.fillText(m+'',0,0);
+      ctx.restore();
+    }
+  }
+
+  // Cursor cross-hair on rulers
+  if(EDITOR.cur){
+    const [mc,nc]=EDITOR.cur;
+    const cpx=exToPx(mc), cpy=eyToPx(nc);
+    ctx.fillStyle='rgba(245,158,11,0.75)';
+    if(cpx>RS&&cpx<W){ ctx.fillRect(cpx-0.5,RS-9,1,9); }
+    if(cpy>RS&&cpy<H){ ctx.fillRect(RS-9,cpy-0.5,9,1); }
+  }
+
+  // Corner square (top-left)
+  ctx.fillStyle='rgba(10,12,20,1)';
+  ctx.fillRect(0,0,RS,RS);
+
+  ctx.restore();
+}
+
+/* Draw snap indicator at EDITOR._snapPos */
+function edDrawSnapIndicator(ctx){
+  if(!EDITOR._snapPos||EDITOR._export||!EDITOR.cur) return;
+  const [sx,sy]=EDITOR._snapPos;
+  const [px,py]=[exToPx(sx),eyToPx(sy)];
+  const tp=EDITOR._snapType;
+  ctx.save();
+  if(tp==='corner'){
+    ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.5;
+    ctx.strokeRect(px-5.5,py-5.5,11,11);
+    ctx.fillStyle='rgba(245,158,11,0.18)'; ctx.fillRect(px-5.5,py-5.5,11,11);
+    // label
+    if(EDITOR.scale>30){
+      ctx.fillStyle='rgba(245,158,11,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText('⌐ УГЛУ',px+8,py-3);
+    }
+  } else if(tp==='mid'){
+    ctx.fillStyle='#7dd3fc';
+    ctx.beginPath(); ctx.moveTo(px,py-6); ctx.lineTo(px+5.5,py+4); ctx.lineTo(px-5.5,py+4); ctx.closePath(); ctx.fill();
+    if(EDITOR.scale>30){
+      ctx.fillStyle='rgba(125,211,252,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillText('MID',px+8,py-3);
+    }
+  } else {
+    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(px-5,py); ctx.lineTo(px+5,py); ctx.moveTo(px,py-5); ctx.lineTo(px,py+5); ctx.stroke();
+  }
+  // Show snapped coordinates near cursor
+  if(EDITOR.tool==='draw'||EDITOR.tool==='poly'||EDITOR.tool==='select'){
+    const W=EDITOR.cssW,H=EDITOR.cssH;
+    const label=`${sx.toFixed(2)}, ${sy.toFixed(2)} м`;
+    ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='top';
+    const tw=ctx.measureText(label).width;
+    let lx=px+14, ly=py+10;
+    if(lx+tw+8>W) lx=px-tw-16;
+    if(ly+18>H) ly=py-22;
+    ctx.fillStyle='rgba(10,12,20,0.82)'; ctx.fillRect(lx-3,ly-2,tw+6,16);
+    ctx.fillStyle='rgba(200,215,240,0.9)'; ctx.fillText(label,lx,ly);
+  }
+  ctx.restore();
+}
 
 function _svg(p){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">${p}</svg>`; }
 
@@ -7472,11 +7635,11 @@ function edResizeCanvas(){
 }
 function edFit(){
   edResizeCanvas();
-  const pad=52;
+  const pad=52, rulerOff=24;
   const sx=(EDITOR.cssW-pad*2)/ST.plot.w, sy=(EDITOR.cssH-pad*2)/ST.plot.d;
   EDITOR.scale=Math.max(6, Math.min(200, Math.min(sx,sy))); EDITOR.baseScale=EDITOR.scale;
-  EDITOR.offX=(EDITOR.cssW-ST.plot.w*EDITOR.scale)/2;
-  EDITOR.offY=(EDITOR.cssH-ST.plot.d*EDITOR.scale)/2;
+  EDITOR.offX=Math.max(rulerOff+8, (EDITOR.cssW-ST.plot.w*EDITOR.scale)/2);
+  EDITOR.offY=Math.max(rulerOff+8, (EDITOR.cssH-ST.plot.d*EDITOR.scale)/2);
 }
 function edZoom(factor, cx, cy){
   if(cx==null){ cx=EDITOR.cssW/2; cy=EDITOR.cssH/2; }
@@ -7524,9 +7687,46 @@ function edDraw(){
   }
   if(EDITOR.draw){
     const d=EDITOR.draw; const x=Math.min(d.x0,d.x1),y=Math.min(d.y0,d.y1),w=Math.abs(d.x1-d.x0),h=Math.abs(d.y1-d.y0);
-    ctx.fillStyle='rgba(245,158,11,.15)'; ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
-    ctx.fillRect(exToPx(x),eyToPx(y),w*EDITOR.scale,h*EDITOR.scale); ctx.strokeRect(exToPx(x),eyToPx(y),w*EDITOR.scale,h*EDITOR.scale); ctx.setLineDash([]);
-    ctx.fillStyle='#ffd27a'; ctx.font='600 11px JetBrains Mono,monospace'; ctx.fillText(`${w.toFixed(1)}×${h.toFixed(1)} м`, exToPx(x+w/2), eyToPx(y+h/2));
+    const dpx=exToPx(x),dpy=eyToPx(y),dpw=w*EDITOR.scale,dph=h*EDITOR.scale;
+    // Fill + dashed border
+    ctx.fillStyle='rgba(245,158,11,.12)'; ctx.strokeStyle='rgba(245,158,11,.9)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.fillRect(dpx,dpy,dpw,dph); ctx.strokeRect(dpx,dpy,dpw,dph); ctx.setLineDash([]);
+    // Snap dots at corners
+    ctx.fillStyle='#f59e0b';
+    for(const [cx2,cy2] of [[dpx,dpy],[dpx+dpw,dpy],[dpx+dpw,dpy+dph],[dpx,dpy+dph]]){
+      ctx.beginPath(); ctx.arc(cx2,cy2,3.5,0,Math.PI*2); ctx.fill();
+    }
+    // Top dimension line (width)
+    if(w>0.1 && dpw>50){
+      const off=16;
+      ctx.strokeStyle='rgba(255,210,122,.75)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(dpx,dpy-off); ctx.lineTo(dpx+dpw,dpy-off); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(dpx,dpy-off-5); ctx.lineTo(dpx,dpy-off+5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(dpx+dpw,dpy-off-5); ctx.lineTo(dpx+dpw,dpy-off+5); ctx.stroke();
+      const wlbl=w.toFixed(2)+' м'; ctx.font='700 11px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      const ww=ctx.measureText(wlbl).width;
+      ctx.fillStyle='rgba(12,14,22,.85)'; ctx.fillRect(dpx+dpw/2-ww/2-4,dpy-off-8,ww+8,16);
+      ctx.fillStyle='#ffd27a'; ctx.fillText(wlbl,dpx+dpw/2,dpy-off);
+    }
+    // Left dimension line (height)
+    if(h>0.1 && dph>40){
+      const off=16;
+      ctx.strokeStyle='rgba(255,210,122,.75)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(dpx-off,dpy); ctx.lineTo(dpx-off,dpy+dph); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(dpx-off-5,dpy); ctx.lineTo(dpx-off+5,dpy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(dpx-off-5,dpy+dph); ctx.lineTo(dpx-off+5,dpy+dph); ctx.stroke();
+      const hlbl=h.toFixed(2)+' м'; ctx.font='700 11px JetBrains Mono,monospace';
+      const hw=ctx.measureText(hlbl).width;
+      ctx.save(); ctx.translate(dpx-off,dpy+dph/2); ctx.rotate(-Math.PI/2);
+      ctx.fillStyle='rgba(12,14,22,.85)'; ctx.fillRect(-hw/2-4,-8,hw+8,16);
+      ctx.fillStyle='#ffd27a'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(hlbl,0,0);
+      ctx.restore();
+    }
+    // Area label in center
+    if(w>0.3 && h>0.3 && dpw>70 && dph>36){
+      ctx.fillStyle='rgba(255,210,122,.88)'; ctx.font='600 11px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(`${(w*h).toFixed(1)} м²`,dpx+dpw/2,dpy+dph/2);
+    }
   }
   if(EDITOR.polyPts.length){
     const pts=EDITOR.polyPts.map(([x,y])=>[exToPx(x),eyToPx(y)]);
@@ -7542,22 +7742,45 @@ function edDraw(){
   if(EDITOR.showDims) edDrawOverallDims(ctx);
   const sel=f.rooms.find(r=>r.id===EDITOR.selId);
   if(sel && !EDITOR._export){ edDrawSelDims(ctx,sel); edDrawHandles(ctx,sel); edDrawOpeningHandles(ctx,sel); }
+  edDrawSnapIndicator(ctx);
+  edDrawRulers(ctx,W,H);
 }
 function edDrawRoom(ctx,room,rooms,sel){
   const vp=roomVerts(room).map(([x,y])=>[exToPx(x),eyToPx(y)]);
   ctx.beginPath(); vp.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath();
   ctx.fillStyle=roomColor(room.typeId)+(sel?'0.34)':'0.16)'); ctx.fill();
   ctx.strokeStyle=sel?'#f59e0b':'rgba(217,199,180,.3)'; ctx.lineWidth=sel?2:1.1; ctx.stroke();
+  // External walls: draw as filled wall band (Revit-style double line)
+  const WALL_T = Math.max(2, Math.min(8, EDITOR.scale * 0.18)); // wall thickness in px, scales with zoom
   ctx.lineCap='round';
   for(const s of roomExtSegs(room,rooms)){
-    ctx.strokeStyle='#f59e0b'; ctx.lineWidth=4; ctx.beginPath();
-    ctx.moveTo(exToPx(s.a[0]),eyToPx(s.a[1])); ctx.lineTo(exToPx(s.b[0]),eyToPx(s.b[1])); ctx.stroke();
-    if(EDITOR.showDims && EDITOR.scale>16 && s.len>0.4){
-      const dx=s.b[0]-s.a[0], dy=s.b[1]-s.a[1], L=Math.hypot(dx,dy)||1; let nx=-dy/L, ny=dx/L;
-      const tmx=(s.a[0]+s.b[0])/2, tmy=(s.a[1]+s.b[1])/2;
-      if(pointInRoom(tmx+nx*0.05, tmy+ny*0.05, room)){ nx=-nx; ny=-ny; }
-      ctx.save(); ctx.fillStyle='rgba(255,210,122,.85)'; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(s.len.toFixed(1), exToPx(tmx)+nx*12, eyToPx(tmy)+ny*12); ctx.restore();
+    const ax=exToPx(s.a[0]),ay=eyToPx(s.a[1]),bx=exToPx(s.b[0]),by=eyToPx(s.b[1]);
+    const dx=s.b[0]-s.a[0], dy=s.b[1]-s.a[1], L=Math.hypot(dx,dy)||1;
+    let nx=-dy/L, ny=dx/L;
+    const tmx=(s.a[0]+s.b[0])/2, tmy=(s.a[1]+s.b[1])/2;
+    if(pointInRoom(tmx+nx*0.05, tmy+ny*0.05, room)){ nx=-nx; ny=-ny; }
+    // Draw filled wall band outside the room
+    const nxp=nx*WALL_T, nyp=ny*WALL_T;
+    ctx.beginPath();
+    ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
+    ctx.lineTo(bx+nxp,by+nyp); ctx.lineTo(ax+nxp,ay+nyp);
+    ctx.closePath();
+    ctx.fillStyle='rgba(245,158,11,0.28)'; ctx.fill();
+    // Inner (room edge) line
+    ctx.strokeStyle='rgba(245,158,11,0.9)'; ctx.lineWidth=1.8; ctx.beginPath();
+    ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+    // Outer face line
+    ctx.strokeStyle='rgba(245,158,11,0.7)'; ctx.lineWidth=1.2; ctx.beginPath();
+    ctx.moveTo(ax+nxp,ay+nyp); ctx.lineTo(bx+nxp,by+nyp); ctx.stroke();
+    // Dimension label on external segment (always shown when scale sufficient)
+    if(EDITOR.scale>12 && s.len>0.3){
+      const lx=exToPx(tmx)+nx*WALL_T+nx*12, ly=eyToPx(tmy)+ny*WALL_T+ny*12;
+      ctx.save(); ctx.font='700 10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      const lbl=s.len.toFixed(2);
+      const tw=ctx.measureText(lbl).width;
+      ctx.fillStyle='rgba(12,14,22,.82)'; ctx.fillRect(lx-tw/2-3,ly-7,tw+6,14);
+      ctx.fillStyle='rgba(255,210,122,.95)'; ctx.fillText(lbl,lx,ly);
+      ctx.restore();
     }
   }
   ctx.lineCap='butt';
@@ -7678,9 +7901,15 @@ function edDown(e){
   const f=activeFloor();
   if(EDITOR.tool==='poly'){
     if(EDITOR.polyPts.length>=3){ const p0=EDITOR.polyPts[0]; if(Math.hypot(exToPx(p0[0])-sx, eyToPx(p0[1])-sy)<11){ edFinishPoly(); return; } }
-    EDITOR.polyPts.push([edClampX(eSnap(mx)), edClampY(eSnap(my))]); EDITOR.polyCur=[mx,my]; edDraw(); edStatus(); return;
+    const pSn=edGetSnap(mx,my); let ppx=pSn.x, ppy=pSn.y;
+    if(EDITOR._ortho && EDITOR.polyPts.length){ const last=EDITOR.polyPts[EDITOR.polyPts.length-1]; const ddx=Math.abs(mx-last[0]),ddy=Math.abs(my-last[1]); if(ddx>ddy) ppy=last[1]; else ppx=last[0]; }
+    EDITOR.polyPts.push([edClampX(ppx), edClampY(ppy)]); EDITOR.polyCur=[mx,my]; edDraw(); edStatus(); return;
   }
-  if(EDITOR.tool==='draw'){ EDITOR.draw={x0:edClampX(mx),y0:edClampY(my),x1:edClampX(mx),y1:edClampY(my)}; return; }
+  if(EDITOR.tool==='draw'){
+    const dSn=edGetSnap(mx,my);
+    const sx0=edClampX(dSn.x), sy0=edClampY(dSn.y);
+    EDITOR.draw={x0:sx0,y0:sy0,x1:sx0,y1:sy0}; return;
+  }
   /* ── New tool handlers ── */
   if(EDITOR.tool==='line'){
     const px=eSnap(mx), py=eSnap(my);
@@ -7833,9 +8062,28 @@ function edMove(e){
   const cv=e.currentTarget, rect=cv.getBoundingClientRect();
   const sx=e.clientX-rect.left, sy=e.clientY-rect.top, mx=pxToEx(sx), my=pxToEy(sy);
   EDITOR.cur=[mx,my];
-  if(EDITOR.tool==='poly'&&EDITOR.polyPts.length){ EDITOR.polyCur=[mx,my]; edSchedule(); edStatus(); return; }
+  // Always compute snap for hover indicator
+  const sn=edGetSnap(mx,my);
+  EDITOR._snapPos=[sn.x,sn.y]; EDITOR._snapType=sn.type;
+  if(EDITOR.tool==='poly'&&EDITOR.polyPts.length){
+    let px=sn.x, py=sn.y;
+    if(EDITOR._ortho && EDITOR.polyPts.length){
+      const last=EDITOR.polyPts[EDITOR.polyPts.length-1];
+      const dx=Math.abs(mx-last[0]), dy=Math.abs(my-last[1]);
+      if(dx>dy) py=last[1]; else px=last[0];
+    }
+    EDITOR.polyCur=[px,py]; edSchedule(); edStatus(); return;
+  }
   if(EDITOR.pan){ EDITOR.offX=EDITOR.pan.ox+(sx-EDITOR.pan.sx); EDITOR.offY=EDITOR.pan.oy+(sy-EDITOR.pan.sy); edSchedule(); edStatus(); return; }
-  if(EDITOR.draw){ EDITOR.draw.x1=edClampX(mx); EDITOR.draw.y1=edClampY(my); edSchedule(); edStatus(); return; }
+  if(EDITOR.draw){
+    let x1=edClampX(sn.x), y1=edClampY(sn.y);
+    if(EDITOR._ortho){
+      const dx=Math.abs(sn.x-EDITOR.draw.x0), dy=Math.abs(sn.y-EDITOR.draw.y0);
+      if(dx>dy) y1=EDITOR.draw.y0; else x1=EDITOR.draw.x0;
+    }
+    EDITOR.draw.x1=x1; EDITOR.draw.y1=y1;
+    edSchedule(); edStatus(); return;
+  }
   if(EDITOR.resize){ edDoResize(mx,my); edSchedule(); edStatus(); return; }
   if(EDITOR.opDrag){ edDoOpDrag(mx,my); edSchedule(); return; }
   if(EDITOR.drag){ edApplyDrag(mx,my); edSchedule(); edStatus(); return; }
@@ -7851,7 +8099,7 @@ function edUp(e){
   if(EDITOR.pan){ EDITOR.pan=null; cv.style.cursor=''; edHoverCursor(); }
   if(EDITOR.draw){ const d=EDITOR.draw; EDITOR.draw=null;
     const x=Math.min(d.x0,d.x1),y=Math.min(d.y0,d.y1),w=Math.abs(d.x1-d.x0),h=Math.abs(d.y1-d.y0);
-    if(w>=1&&h>=1){ const room={id:uid('rm'),name:'',typeId:'living_room',tInt:roomTypeTemp('living_room'),x:eSnap(x),y:eSnap(y),w:eSnap(w),h:eSnap(h),openings:[]}; activeFloor().rooms.push(room); EDITOR.selId=room.id; changed=true; } }
+    if(w>0&&h>0){ const room={id:uid('rm'),name:'',typeId:'living_room',tInt:roomTypeTemp('living_room'),x:eSnap(x),y:eSnap(y),w:eSnap(w),h:eSnap(h),openings:[]}; activeFloor().rooms.push(room); EDITOR.selId=room.id; changed=true; } }
   if(EDITOR.drag){ EDITOR.drag=null; changed=true; }
   if(EDITOR.resize){ EDITOR.resize=null; changed=true; }
   if(EDITOR.opDrag){ EDITOR.opDrag=null; changed=true; }
@@ -7944,10 +8192,10 @@ function edDoResize(mx,my){
   const xs=[0,ST.plot.w]; others.forEach(o=>xs.push(o.x,o.x+o.w));
   const ys=[0,ST.plot.d]; others.forEach(o=>ys.push(o.y,o.y+o.h));
   const sn=(v,arr,axis)=>{ let best=th,res=null; for(const c of arr){ const d=Math.abs(c-v); if(d<best){ best=d; res=c; } } if(res!=null){ EDITOR.guides.push(axis==='x'?{t:'v',x:res}:{t:'h',y:res}); return res; } return eSnap(v); };
-  if(hh.includes('w')){ L=Math.min(sn(edClampX(mx),xs,'x'), R-1); }
-  if(hh.includes('e')){ R=Math.max(sn(edClampX(mx),xs,'x'), L+1); }
-  if(hh.includes('n')){ T=Math.min(sn(edClampY(my),ys,'y'), B-1); }
-  if(hh.includes('s')){ B=Math.max(sn(edClampY(my),ys,'y'), T+1); }
+  if(hh.includes('w')){ L=Math.min(sn(edClampX(mx),xs,'x'), R-0.1); }
+  if(hh.includes('e')){ R=Math.max(sn(edClampX(mx),xs,'x'), L+0.1); }
+  if(hh.includes('n')){ T=Math.min(sn(edClampY(my),ys,'y'), B-0.1); }
+  if(hh.includes('s')){ B=Math.max(sn(edClampY(my),ys,'y'), T+0.1); }
   r.x=L; r.y=T; r.w=R-L; r.h=B-T;
 }
 function edDoOpDrag(mx,my){
@@ -8014,6 +8262,7 @@ function edKey(e){
   if(HOTKEYS._cap){ HOTKEYS.captureKey(e.key); e.preventDefault(); return; }
   const k=e.key, ctrl=e.ctrlKey||e.metaKey;
   if(k===' '){ EDITOR._space=true; edHoverCursor(); e.preventDefault(); return; }
+  if(k==='Shift'){ EDITOR._ortho=true; return; }
   if(ctrl&&(k==='z'||k==='Z')){ e.preventDefault(); e.shiftKey?edRedo():edUndo(); return; }
   if(ctrl&&(k==='y'||k==='Y')){ e.preventDefault(); edRedo(); return; }
   if(ctrl&&(k==='d'||k==='D')){ e.preventDefault(); edDuplicate(); return; }
@@ -8067,7 +8316,10 @@ function edKey(e){
     if(HOTKEYS.dispatch(EDITOR._hkbuf.slice(-1))){EDITOR._hkbuf='';return;}
   }
 }
-function edKeyUp(e){ if(e.key===' '){ EDITOR._space=false; edHoverCursor(); } }
+function edKeyUp(e){
+  if(e.key===' '){ EDITOR._space=false; edHoverCursor(); }
+  if(e.key==='Shift'){ EDITOR._ortho=false; }
+}
 function edDblClick(e){
   const cv=e.currentTarget, rect=cv.getBoundingClientRect();
   const mx=pxToEx(e.clientX-rect.left), my=pxToEy(e.clientY-rect.top);
@@ -8464,7 +8716,7 @@ function edOffsetTool(){
   const d=parseFloat(prompt('Смещение стен, м (положительное — увеличить, отрицательное — уменьшить):'));
   if(isNaN(d)) return;
   if(r.poly){ const [cx,cy]=roomCentroid(r); const len=Math.hypot(r.poly[0][0]-cx,r.poly[0][1]-cy)||1; const f=(len+d)/len; r.poly=r.poly.map(([x,y])=>[cx+(x-cx)*f, cy+(y-cy)*f]); }
-  else { r.x=Math.max(0,r.x-d); r.y=Math.max(0,r.y-d); r.w=Math.max(1,r.w+d*2); r.h=Math.max(1,r.h+d*2); if(r.x+r.w>ST.plot.w) r.w=ST.plot.w-r.x; if(r.y+r.h>ST.plot.d) r.h=ST.plot.d-r.y; }
+  else { r.x=Math.max(0,r.x-d); r.y=Math.max(0,r.y-d); r.w=Math.max(0.1,r.w+d*2); r.h=Math.max(0.1,r.h+d*2); if(r.x+r.w>ST.plot.w) r.w=ST.plot.w-r.x; if(r.y+r.h>ST.plot.d) r.h=ST.plot.d-r.y; }
   edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus();
 }
 function edToggleWarmFloor(){
@@ -8554,8 +8806,8 @@ function edProps(){
     : `<div class="grid grid-cols-2 gap-2 mb-2">
         <div><label class="text-[10px] text-muted">${t('mr-geom-x')}</label><input class="wi py-1.5 text-sm" type="number" step="0.5" min="0" value="${room.x}" onchange="edSetField('x',this.value)"></div>
         <div><label class="text-[10px] text-muted">${t('mr-geom-y')}</label><input class="wi py-1.5 text-sm" type="number" step="0.5" min="0" value="${room.y}" onchange="edSetField('y',this.value)"></div>
-        <div><label class="text-[10px] text-muted">${t('mr-geom-w')}</label><input class="wi py-1.5 text-sm" type="number" step="0.5" min="1" value="${room.w}" onchange="edSetField('w',this.value)"></div>
-        <div><label class="text-[10px] text-muted">${t('mr-geom-d')}</label><input class="wi py-1.5 text-sm" type="number" step="0.5" min="1" value="${room.h}" onchange="edSetField('h',this.value)"></div>
+        <div><label class="text-[10px] text-muted">${t('mr-geom-w')}</label><input class="wi py-1.5 text-sm" type="number" step="0.1" min="0.1" value="${room.w}" onchange="edSetField('w',this.value)"></div>
+        <div><label class="text-[10px] text-muted">${t('mr-geom-d')}</label><input class="wi py-1.5 text-sm" type="number" step="0.1" min="0.1" value="${room.h}" onchange="edSetField('h',this.value)"></div>
       </div>`;
   box.innerHTML=`<div class="flex items-center justify-between mb-3">
       <p class="font-bold text-cream">${room.poly?t('mr-shape'):t('mr-room')}</p>
@@ -8677,8 +8929,8 @@ function buildSlabPanel(f){
   </div>`;
 }
 function edSetField(field,val){ const r=edSelRoom(); if(!r) return; let v=parseFloat(val)||0;
-  if(field==='w'){ v=Math.max(1,Math.min(ST.plot.w,v)); r.w=v; r.x=Math.min(r.x,ST.plot.w-v); }
-  else if(field==='h'){ v=Math.max(1,Math.min(ST.plot.d,v)); r.h=v; r.y=Math.min(r.y,ST.plot.d-v); }
+  if(field==='w'){ v=Math.max(0.1,Math.min(ST.plot.w,v)); r.w=v; r.x=Math.min(r.x,ST.plot.w-v); }
+  else if(field==='h'){ v=Math.max(0.1,Math.min(ST.plot.d,v)); r.h=v; r.y=Math.min(r.y,ST.plot.d-v); }
   else if(field==='x'){ r.x=Math.max(0,Math.min(ST.plot.w-r.w,v)); }
   else if(field==='y'){ r.y=Math.max(0,Math.min(ST.plot.d-r.h,v)); }
   edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus(); }
@@ -8760,10 +9012,12 @@ function edStatus(){ const el=document.getElementById('ed-status'); if(!el) retu
   const res=busy?null:computeObject(); const fr=res&&res.floors?res.floors.find(x=>x.id===f.id):null; const sel=edSelRoom();
   const area=f.rooms.reduce((s,r)=>s+r.w*r.h,0);
   const cur=EDITOR.cur?`${EDITOR.cur[0].toFixed(2)} · ${EDITOR.cur[1].toFixed(2)} м`:'—';
-  el.innerHTML=`<span>${t('mr-st-cursor')} <b>${cur}</b></span><span>${t('mr-st-zoom')} <b>${Math.round(EDITOR.scale/EDITOR.baseScale*100)}%</b></span>`+
+  const snapTpLabel = EDITOR._snapType==='corner'?'⌐ угол':EDITOR._snapType==='mid'?'△ сред':'# сетка';
+  const orthoLbl = EDITOR._ortho?'<span style="color:#7dd3fc;font-weight:700">⊢ ОРТО</span>':'';
+  el.innerHTML=`<span>${t('mr-st-cursor')} <b>${cur}</b></span>${orthoLbl}<span>${t('mr-st-zoom')} <b>${Math.round(EDITOR.scale/EDITOR.baseScale*100)}%</b></span>`+
     `<span>${t('mr-st-floor')} <b>${f.rooms.length} ${t('mr-room-count-abbr')||t('mr-room-count')} · ${area.toFixed(1)} ${t('mr-unit-m')}²${fr?` · ${fr.qKw.toFixed(2)} кВт`:''}</b></span>`+
     (sel?`<span>${t('mr-st-sel')} <b>${(sel.name||roomTypeName(sel.typeId))} · ${sel.w.toFixed(1)}×${sel.h.toFixed(1)} ${t('mr-unit-m')}</b></span>`:'')+
-    `<span style="margin-left:auto;color:#6b5d4f">${t('mr-st-grid-lbl')} ${EDITOR.gridStep}${t('mr-unit-m')} · ${t('mr-st-snap-lbl')} ${EDITOR.snap?t('mr-snap-on'):t('mr-snap-off')}</span>`;
+    `<span style="margin-left:auto;color:#6b5d4f">${snapTpLabel} · сетка ${EDITOR.gridStep}м · ${EDITOR.snap?'snap ВКЛ':'snap ВЫКЛ'}</span>`;
 }
 
 function renderRoomEdit(){
@@ -8775,6 +9029,7 @@ function renderRoomEdit(){
       <p class="leading-relaxed">${t('rre-no-room-hint')}</p>
       <p class="mt-3 text-xs">${t('rre-rooms-count')} <span class="text-amber font-semibold">${f.rooms.length}</span></p>
     </div>`;
+    renderRoomList();
     return;
   }
   const extSides=['top','right','bottom','left'].filter(s=>externalLength(room,s,f.rooms)>0.01);
@@ -8794,8 +9049,8 @@ function renderRoomEdit(){
       <input class="wi py-2 text-sm" value="${room.name||''}" placeholder="${roomTypeName(room.typeId)}" oninput="setRoomName('${room.id}',this.value)">
     </div>
     <div class="grid grid-cols-2 gap-2">
-      <div><label class="block text-xs text-muted mb-1">${t('mr-geom-w')}</label><input class="wi py-2 text-sm" type="number" min="1" step="0.5" value="${room.w}" oninput="setRoomDim('${room.id}','w',this.value)"></div>
-      <div><label class="block text-xs text-muted mb-1">${t('mr-geom-d')}</label><input class="wi py-2 text-sm" type="number" min="1" step="0.5" value="${room.h}" oninput="setRoomDim('${room.id}','h',this.value)"></div>
+      <div><label class="block text-xs text-muted mb-1">${t('mr-geom-w')}</label><input class="wi py-2 text-sm" type="number" min="0.1" step="0.1" value="${room.w}" oninput="setRoomDim('${room.id}','w',this.value)"></div>
+      <div><label class="block text-xs text-muted mb-1">${t('mr-geom-d')}</label><input class="wi py-2 text-sm" type="number" min="0.1" step="0.1" value="${room.h}" oninput="setRoomDim('${room.id}','h',this.value)"></div>
     </div>
     <div class="rounded-lg bg-w800/60 p-2.5 text-xs text-muted">${t('rre-area-lbl')}: <span class="text-cream mono font-semibold">${(room.w*room.h).toFixed(1)} ${t('mr-unit-m')}²</span> · ${t('rre-tint-lbl')}: <span class="text-amber mono font-semibold">+${room.tInt}°C</span></div>
 
@@ -8809,6 +9064,40 @@ function renderRoomEdit(){
       </div>`:''}
     </div>
   </div>`;
+  renderRoomList();
+}
+function renderRoomList(){
+  const box=document.getElementById('room-list'); if(!box) return;
+  const f=activeFloor(); const rooms=(f&&f.rooms)||[];
+  const totalArea=rooms.reduce((s,r)=>s+roomArea(r),0);
+  const head=`<div class="flex items-center justify-between mb-2.5 flex-wrap gap-x-3 gap-y-1">
+      <p class="font-bold text-cream text-sm">${t('rre-list-title')}</p>
+      <span class="text-xs text-muted">${t('rre-rooms-count')} <span class="text-amber font-semibold">${rooms.length}</span>${rooms.length?` · ${t('rre-area-lbl')} <span class="text-cream mono font-semibold">${totalArea.toFixed(1)} ${t('mr-unit-m')}²</span>`:''}</span>
+    </div>`;
+  if(!rooms.length){
+    box.innerHTML=`<div class="rounded-2xl border border-sand/10 bg-w850 p-4">${head}<p class="text-xs text-muted">${t('rre-list-empty')}</p></div>`;
+    return;
+  }
+  const rows=rooms.map((r,i)=>{
+    const sel=r.id===PLAN.selectedId;
+    const nm=(r.name||roomTypeName(r.typeId)).replace(/</g,'&lt;');
+    const dims=`${(+r.w).toFixed(1)}×${(+r.h).toFixed(1)}`;
+    return `<div class="room-li${sel?' sel':''}" onclick="selectRoomFromList('${r.id}')">
+      <span class="room-li-sw" style="background:${roomColor(r.typeId)}1)"></span>
+      <span class="room-li-idx">${i+1}</span>
+      <span class="room-li-name">${nm}</span>
+      <span class="room-li-dims mono">${dims} ${t('mr-unit-m')}</span>
+      <span class="room-li-area mono">${roomArea(r).toFixed(1)} ${t('mr-unit-m')}²</span>
+      <span class="room-li-temp mono">+${r.tInt}°</span>
+      <button class="room-li-del" title="${t('mr-room-del')||'×'}" onclick="event.stopPropagation();deleteRoom('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+    </div>`;
+  }).join('');
+  box.innerHTML=`<div class="rounded-2xl border border-sand/10 bg-w850 p-4">${head}<div class="room-li-wrap">${rows}</div></div>`;
+}
+function selectRoomFromList(id){
+  PLAN.selectedId=id; setTool('select');
+  renderFloorTabs(); drawPlan(); renderRoomEdit(); updateLivePanel();
+  const box=document.getElementById('room-edit'); if(box&&window.innerWidth<1024) box.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function opRow(room,op,extSides){
   const pl=op.type==='window'?'windows':'doors';
@@ -8837,10 +9126,10 @@ function opRow(room,op,extSides){
 }
 function findRoom(id){ return activeFloor().rooms.find(r=>r.id===id); }
 function setRoomType(id,v){ const r=findRoom(id); if(r){ r.typeId=v; r.tInt=roomTypeTemp(v); } drawPlan(); renderRoomEdit(); updateLivePanel(); }
-function setRoomName(id,v){ const r=findRoom(id); if(r)r.name=v; drawPlan(); }
-function setRoomDim(id,k,v){ const r=findRoom(id); if(!r)return; r[k]=Math.max(1,parseFloat(v)||1);
+function setRoomName(id,v){ const r=findRoom(id); if(r)r.name=v; drawPlan(); renderRoomList(); }
+function setRoomDim(id,k,v){ const r=findRoom(id); if(!r)return; r[k]=Math.max(0.1,parseFloat(v)||0.1);
   if(r.x+r.w>ST.plot.w) r.w=ST.plot.w-r.x; if(r.y+r.h>ST.plot.d) r.h=ST.plot.d-r.y;
-  drawPlan(); updateLivePanel(); }
+  drawPlan(); updateLivePanel(); renderRoomList(); }
 function deleteRoom(id){ const f=activeFloor(); f.rooms=f.rooms.filter(r=>r.id!==id); PLAN.selectedId=null; renderFloorTabs(); drawPlan(); renderRoomEdit(); updateLivePanel(); updateNavHint(); }
 const POS_SPREAD=[50,25,75,15,85,40,60,10,90];
 function addOpening(roomId,type){
