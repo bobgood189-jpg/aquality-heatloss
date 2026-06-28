@@ -13980,91 +13980,23 @@ function initThermalFloorPlan(){
   const wrap=document.getElementById('tfp-wrap');
   if(!wrap) return;
   const rects=wrap.querySelectorAll('.tfp-room');
-  new IntersectionObserver((entries,io)=>{
+  const applyFills=()=>rects.forEach(r=>r.setAttribute('fill',r.getAttribute('data-col')||'#333'));
+  let done=false;
+  const io=new IntersectionObserver((entries)=>{
     entries.forEach(e=>{
-      if(!e.isIntersecting) return;
-      io.disconnect();
-      rects.forEach(r=>requestAnimationFrame(()=>r.setAttribute('fill',r.getAttribute('data-col'))));
+      if(!e.isIntersecting||done) return;
+      done=true; io.disconnect();
+      requestAnimationFrame(applyFills);
     });
-  },{threshold:.15}).observe(wrap);
+  },{threshold:.1,rootMargin:'0px 0px 200px 0px'});
+  io.observe(wrap);
+  // Fallback: apply if still not triggered after 3s (e.g. user never scrolls there)
+  setTimeout(()=>{ if(!done){done=true;io.disconnect();applyFills();} },3000);
 }
 
 /* ══════════════════════════════════════════════════════════
    DONUT CHART — куда уходит тепло
 ══════════════════════════════════════════════════════════ */
-function heatLossDonutHTML(res){
-  const CATS=[
-    {k:'infil',  name:'Инфильтрация', col:'#ef4444'},
-    {k:'wall',   name:'Стены',         col:'#f59e0b'},
-    {k:'floor',  name:'Пол',           col:'#34d399'},
-    {k:'ceiling',name:'Потолок',       col:'#f472b6'},
-    {k:'window', name:'Окна',          col:'#60a5fa'},
-    {k:'door',   name:'Двери',         col:'#a78bfa'},
-  ];
-  const total=res.totalW||1;
-  const CX=110,CY=110,R=72.5,SW=34;
-  const C=2*Math.PI*R;
-  let acc=0;
-  const segs=CATS.map(c=>{
-    const w=res.byType[c.k]||0;
-    if(!w) return null;
-    const pct=w/total;
-    const arc=(pct*C).toFixed(2);
-    const gap=((1-pct)*C).toFixed(2);
-    const off=-(acc*C).toFixed(2);
-    acc+=pct;
-    return {...c,w,pct,arc,gap,off};
-  }).filter(Boolean);
-  if(!segs.length) return '';
-  const biggest=segs.reduce((a,b)=>a.w>b.w?a:b,segs[0]);
-  const circles=segs.map((s,i)=>`
-    <circle class="dn-seg" cx="${CX}" cy="${CY}" r="${R}"
-      fill="none" stroke="${s.col}" stroke-width="${SW}"
-      stroke-dasharray="0 ${C.toFixed(2)}"
-      data-da="${s.arc} ${s.gap}"
-      stroke-dashoffset="${s.off}"
-      transform="rotate(-90 ${CX} ${CY})"
-      style="transition:stroke-dasharray ${0.6+i*0.12}s cubic-bezier(.4,0,.2,1) ${i*0.08}s"
-    />`).join('');
-  const legend=segs.map(s=>`
-    <div class="flex items-center gap-2.5 py-0.5">
-      <span style="width:11px;height:11px;border-radius:50%;background:${s.col};flex-shrink:0"></span>
-      <span class="text-xs text-sand flex-1">${s.name}</span>
-      <span class="text-xs mono font-semibold text-cream">${(s.pct*100).toFixed(1)}%</span>
-      <span class="text-xs text-muted">${Math.round(s.w)} Вт</span>
-    </div>`).join('');
-  return `<div id="heat-donut-wrap" class="info-card rounded-2xl border border-sand/10 bg-w850 p-5 mb-6">
-    <h4 class="font-semibold text-cream mb-4 text-sm uppercase tracking-wider opacity-70" style="font-size:11px">Распределение потерь</h4>
-    <div class="flex flex-col sm:flex-row items-center gap-6">
-      <div class="relative flex-shrink-0" style="width:220px;height:220px">
-        <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" style="width:220px;height:220px;overflow:visible">
-          <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="rgba(140,165,210,.07)" stroke-width="${SW}"/>
-          ${circles}
-          <text x="${CX}" y="${CY-10}" text-anchor="middle" fill="#8FA3C0" font-size="10" font-family="system-ui,sans-serif" font-weight="600">${biggest.name}</text>
-          <text x="${CX}" y="${CY+14}" text-anchor="middle" fill="${biggest.col}" font-size="26" font-weight="900" font-family="'JetBrains Mono',monospace">${(biggest.pct*100).toFixed(0)}%</text>
-          <text x="${CX}" y="${CY+28}" text-anchor="middle" fill="#4E6080" font-size="9" font-family="system-ui,sans-serif">от общих потерь</text>
-        </svg>
-      </div>
-      <div class="flex-1 w-full space-y-1">${legend}</div>
-    </div>
-  </div>`;
-}
-function initHeatLossDonut(){
-  const wrap=document.getElementById('heat-donut-wrap');
-  if(!wrap) return;
-  const segs=wrap.querySelectorAll('.dn-seg');
-  new IntersectionObserver((entries,io)=>{
-    entries.forEach(e=>{
-      if(!e.isIntersecting) return;
-      io.disconnect();
-      segs.forEach(s=>{
-        const da=s.getAttribute('data-da');
-        requestAnimationFrame(()=>s.setAttribute('stroke-dasharray',da));
-      });
-    });
-  },{threshold:.25}).observe(wrap);
-}
-
 function roomHeatBarsHTML(res){
   const flat=[];
   res.floors.forEach(f=>f.rooms.forEach(r=>flat.push({...r,floorName:f.name})));
