@@ -12130,6 +12130,33 @@ function s6(){
     </button>
     <button type="button" onclick="wizReset()" class="lg-btn-sec px-5 py-3.5 text-sm font-medium">Новый расчёт</button>
   </div>
+
+  <!-- FAQ accordion -->
+  <div class="mt-8 rounded-2xl border border-sand/10 bg-w850 overflow-hidden mb-4">
+    <div class="px-5 py-3 border-b border-sand/10">
+      <p class="text-xs font-semibold uppercase tracking-widest text-muted">Частые вопросы</p>
+    </div>
+    ${[
+      ['Почему котёл на 25% больше расчётного?',
+       'Запас на пиковые морозы, потери в трубопроводах и возможное расширение системы. КМК рекомендует коэффициент 1.25.'],
+      ['Что такое «инфильтрация» и почему она большая?',
+       'Неплотности в дверях, окнах и вентиляции пропускают холодный воздух. В типичном доме это 30–50% всех потерь. Уплотнители и регулируемые клапаны сократят нагрузку без стройки.'],
+      ['Можно ли уменьшить мощность котла?',
+       'Да — добавьте утепление стен или замените окна. Инструмент «Симулятор утепления» выше показывает конкретный эффект в кВт и срок окупаемости.'],
+      ['Откуда цены на топливо?',
+       'Тарифы Узбекистана ~2025 г.: газ 1 380 сум/м³, уголь 1 200 сум/кг, электричество 450 сум/кВт·ч. Дрова — рыночная цена по Фергане.'],
+      ['Как долго занимает монтаж системы?',
+       'Стандартный дом 100–250 м²: замер 1 день → КП 30 мин → поставка 7–14 дней → монтаж 3–5 дней → пуск-наладка 1 день. Итого: 2–3 недели с момента заявки.'],
+    ].map(([q,a],i)=>`
+    <details class="border-b border-sand/10 last:border-0 group" ${i===0?'open':''}>
+      <summary class="flex items-center justify-between gap-4 px-5 py-3.5 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
+        <span class="text-sm text-cream font-medium">${q}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="h-4 w-4 flex-shrink-0 text-muted transition-transform group-open:rotate-180"><polyline points="6 9 12 15 18 9"/></svg>
+      </summary>
+      <div class="px-5 pb-4 text-sm text-sand leading-relaxed">${a}</div>
+    </details>`).join('')}
+  </div>
+
   </div>`;  /* closes #result-area */
 }
 
