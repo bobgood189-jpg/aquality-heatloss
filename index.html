@@ -5551,10 +5551,19 @@ function updMatSearch(cat, q){
   if(el) el.innerHTML = renderMatCards(cat);
 }
 
+/* λ to show next to R: material λ for homogeneous walls, effective λ
+   (δ/(R−R_конв)) for composite walls; null where no thickness (windows/doors/
+   floors/ceilings keep R only). Mirrors the Telegram bot's engine.disp_lambda. */
+function dispLambda(p){
+  if(p.lambda!=null && p.lambda>0) return p.lambda;
+  if(p.thickness && p.r>WALL_ENVELOPE_R) return Math.round((p.thickness/1000)/(p.r-WALL_ENVELOPE_R)*1000)/1000;
+  return null;
+}
 function renderCard(p, fn, currentId, isWall, view){
   const homog = p.homog!=null ? p.homog : WALL_HOMOG_DEFAULT;
   const rEff  = isWall ? p.r*homog : null;
   const rDisp = rEff!=null ? rEff : p.r;
+  const lv    = dispLambda(p);
   const cat = fn==='selWall'?'walls':fn==='selWindow'?'windows':fn==='selDoor'?'doors':fn==='selFloor'?'floors':'ceilings';
   const menuBtn = `<button type="button" onclick="event.stopPropagation();pcardMenu(this,'${p.id}','${cat}',${p.r})" class="pcard-menu-btn" title="Опции">⋮</button>`;
   const activeCls = currentId===p.id?'active':'';
@@ -5566,7 +5575,7 @@ function renderCard(p, fn, currentId, isWall, view){
           <p class="font-medium text-cream text-xs leading-tight truncate">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber">★</span>':''}</p>
           ${p.desc?`<p class="text-[10px] text-muted truncate">${p.desc}</p>`:''}
         </div>
-        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20 flex-shrink-0">R ${rDisp.toFixed(2)}</span>
+        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20 flex-shrink-0">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
       </div>
     </div>`;
@@ -5575,7 +5584,7 @@ function renderCard(p, fn, currentId, isWall, view){
   if(view==='grid'){
     return `<div onclick="${fn}('${p.id}')" class="pcard pcard-grid text-left relative ${activeCls}" style="cursor:pointer">
       <div class="flex items-center justify-between gap-1 mb-1.5">
-        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20">R ${rDisp.toFixed(2)}</span>
+        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
       </div>
       <p class="font-semibold text-cream text-xs leading-snug">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber text-[9px] ml-0.5">★</span>':''}</p>
@@ -5598,7 +5607,7 @@ function renderCard(p, fn, currentId, isWall, view){
     </div>
     ${chips.length?`<div class="flex gap-1 mt-1 flex-wrap">${chips.join('')}</div>`:''}
     <p class="text-xs text-muted mt-1">${p.desc||''}</p>
-    ${(()=>{const lv=p.lambda!=null?p.lambda:(m=>(m?parseFloat(m[1]):null))((p.desc||'').match(/λ(\d+\.\d+)/));return lv!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">λ = ${lv} Вт/(м·°C)</p>`:''})()}
+    ${lv!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">λ = ${lv} Вт/(м·°C)</p>`:''}
     ${p.u!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">U = ${uVal} Вт/(м²·°C)</p>`:''}
     ${isWall&&p.homog!=null?`<p class="text-xs text-muted/60 mt-0.5 mono">номин. R ${p.r.toFixed(3)} × r₀ ${p.homog}</p>`:''}
     ${p.n!=null&&p.n!==1?`<p class="text-xs text-copper mt-1 mono">n = ${p.n}</p>`:''}
