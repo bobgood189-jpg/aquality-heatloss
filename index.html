@@ -544,6 +544,11 @@ body{font-family:'Manrope',sans-serif;margin:0;overflow-x:hidden}
 .sel-card{cursor:pointer;transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease,transform .2s ease;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 2px 8px rgba(0,0,0,.18);}
 .sel-card:hover{border-color:rgba(245,158,11,.4)!important;background:rgba(245,158,11,.07)!important;box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 4px 16px rgba(245,158,11,.1);transform:translateY(-1px);}
 .sel-card.active{border-color:#f59e0b!important;background:rgba(245,158,11,.11)!important;box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 0 20px rgba(245,158,11,.18)!important;}
+/* Блок «задать температуру вручную». Отступ сверху держим в статичном CSS, а не
+   на Tailwind-классе mt-3: панель шага вставляется динамически (в проде — ещё и
+   расшифровывается), и если runtime Tailwind не успел сгенерировать mt-3, блок
+   наезжал на последнюю карточку города. clear:both — страховка на случай float. */
+.manual-t-box{display:block;margin-top:1rem;clear:both;}
 
 /* Input */
 .wi{width:100%;border-radius:.75rem;border:1px solid rgba(140,165,210,.14);background:rgba(28,36,56,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:.7rem 1rem;color:#ECF0FA;font-family:'Manrope',sans-serif;font-size:.95rem;outline:none;transition:border-color .15s,box-shadow .15s;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 1px 3px rgba(0,0,0,.2) inset}
@@ -8633,7 +8638,7 @@ function s1(){
       <p class="mono text-sm font-bold text-amber mt-1">${c.t}°C</p>
     </button>`).join('')}
   </div>
-  <div class="mt-3 rounded-xl border border-sand/10 bg-w800/30 p-3">
+  <div class="manual-t-box rounded-xl border border-sand/10 bg-w800/30 p-3" style="margin-top:10px">
     <label class="flex items-center gap-2.5 cursor-pointer select-none">
       <input type="checkbox" class="accent-amber" id="cb-manual-t" onchange="toggleManualTExt(this.checked)" ${ST.tExtManual!=null?'checked':''}>
       <span class="text-sm text-cream">Задать расчётную температуру вручную</span>

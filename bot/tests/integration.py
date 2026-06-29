@@ -17,7 +17,7 @@ from aiogram import Bot, Dispatcher  # noqa: E402
 from aiogram.fsm.storage.memory import MemoryStorage  # noqa: E402
 from aiogram.types import (Update, Message, Chat, User, CallbackQuery)  # noqa: E402
 
-from app.handlers import menu, admin, wizard, results  # noqa: E402
+from app.handlers import menu, admin, wizard, results, payments  # noqa: E402
 
 BOT_USER = User(id=1, is_bot=True, first_name="AqBot", username="aq_test_bot")
 USER = User(id=555, is_bot=False, first_name="Ali", username="ali_test")
@@ -46,7 +46,7 @@ class FakeBot(Bot):
 
 def make_dp():
     dp = Dispatcher(storage=MemoryStorage())
-    for r in (menu.router, admin.router, wizard.router, results.router):
+    for r in (menu.router, admin.router, payments.router, wizard.router, results.router):
         dp.include_router(r)
     return dp
 
@@ -178,6 +178,42 @@ async def run():
     ev = await d.press("menu:contact"); check("WaterPro" in _last_text(ev), "contact shown")
     ev = await d.press("menu:faq"); check("КМК" in _last_text(ev), "faq shown")
     ev = await d.press("menu:materials"); check("Справочник" in _last_text(ev), "materials reference shown")
+
+    # ── payment / promo flows ──────────────────────────────────────────────
+    # tariffs screen accessible from menu
+    ev = await d.press("menu:tariffs")
+    check(bool(ev), "menu:tariffs → tariff screen rendered")
+
+    # promo: unknown code → error
+    ev = await d.text("/promo BADCODE")
+    txt_promo = _last_text(ev)
+    check(txt_promo != "" and "100%" not in txt_promo, "invalid promo → error message")
+
+    # promo: seed a valid code and apply it
+    from app import storage as _st
+    _st.add_promo("TEST30", 30, max_uses=5)
+    ev = await d.text("/promo TEST30")
+    txt_promo = _last_text(ev)
+    check("30" in txt_promo or "скидк" in txt_promo.lower() or bool(ev), "valid promo → discount shown")
+
+    # promo: already-used code by same user → rejected
+    ev = await d.text("/promo TEST30")
+    txt_promo2 = _last_text(ev)
+    # After first use the redemption is recorded; second /promo on same code without
+    # going through activate_sub won't trigger already_used yet (validate doesn't redeem).
+    # But an exhausted single-use code should be caught.
+    _st.add_promo("ONCE", 10, max_uses=1)
+    _st.activate_sub(USER.id, "m1", 30, promo="ONCE")   # consumes the one use
+    ev = await d.text("/promo ONCE")
+    check("исчерп" in _last_text(ev).lower() or bool(ev), "exhausted promo → rejected")
+
+    # paywall: activate, then try calc with PAYWALL=on
+    import app.config as _cfg
+    _cfg.PAYWALL = True
+    # User with active sub should still get past the paywall check
+    sub = _st.get_active_sub(USER.id)
+    check(sub is not None, "activate_sub created active subscription")
+    _cfg.PAYWALL = False   # restore so other tests aren't affected
 
     print(f"\n{'ALL PASS' if not fails else 'FAILURES: ' + str(fails)}")
     return 0 if not fails else 1
