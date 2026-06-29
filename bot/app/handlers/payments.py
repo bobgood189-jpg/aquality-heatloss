@@ -119,7 +119,8 @@ async def cmd_grant(message: Message):
     plan = parts[2]
     promo = parts[3] if len(parts) > 3 else None
     p = PLANS[plan]
-    price = p["price"] * (1 - (storage.validate_promo(promo, uid)["discount"] / 100)) if promo and storage.validate_promo(promo, uid)["ok"] else p["price"]
+    v = storage.validate_promo(promo, uid) if promo else {"ok": False, "discount": 0}
+    price = p["price"] * (1 - v["discount"] / 100) if v["ok"] else p["price"]
     expires = storage.activate_sub(uid, plan, p["days"], amount=price, promo=promo, source="manual")
     date = datetime.fromtimestamp(expires).strftime("%d.%m.%Y")
     await message.answer(f"✅ Подписка {plan} активирована для id{uid} до {date}.")
