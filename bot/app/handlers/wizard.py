@@ -1,4 +1,11 @@
-"""The calculation wizard: city → object params → materials → rooms → results."""
+"""The calculation wizard: city → object params → materials → rooms → results.
+
+Navigation: every screen is rendered through `_render`, which pushes a frame onto
+a per-user `nav` stack (FSM data). A single '◀️ Назад' button (callback nav:back)
+pops the stack and re-renders the previous screen — so a mis-tap is always
+recoverable. Each frame snapshots the material cursor (mat_idx) and the count of
+committed openings, so going back also rewinds those (no duplicate windows/doors).
+"""
 import re
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
@@ -10,7 +17,7 @@ from ..i18n import t, loc_name
 from ..presets import CITIES, ROOM_TYPES, BASE_PRESETS
 from ..states import Wizard
 from .. import keyboards as K
-from .util import get_lang
+from .util import get_lang, is_owner
 from .results import build_object, send_results
 
 router = Router()
@@ -37,14 +44,117 @@ def _dims(s):
     return w, h
 
 
+# ── navigation stack ───────────────────────────────────────────────────────
+async def _render(message, state, lang, step, push=True):
+    """Render one wizard screen, set its FSM state, and (optionally) push a nav frame.
+
+    A frame is {s: step, mi: mat_idx, ol: len(openings)} so nav:back can rewind
+    the material cursor and any committed openings together with the screen."""
+    if push:
+        data = await state.get_data()
+        draft = data.get("draft") or {}
+        nav = list(data.get("nav", []))
+        nav.append({"s": step, "mi": data.get("mat_idx", 0),
+                    "ol": len(draft.get("openings", []))})
+        await state.update_data(nav=nav)
+
+    if step == "city":
+        await state.set_state(Wizard.lang)
+        await message.answer(t("ask_city", lang), reply_markup=K.with_back(K.cities_kb(lang), lang))
+    elif step == "floors":
+        await state.set_state(Wizard.floors)
+        await message.answer(t("ask_floors", lang), reply_markup=K.with_back(K.floors_kb(lang), lang))
+    elif step == "height":
+        await state.set_state(Wizard.height)
+        await message.answer(t("ask_height", lang), reply_markup=K.back_only_kb(lang))
+    elif step == "attic":
+        await state.set_state(Wizard.attic)
+        await message.answer(t("ask_attic", lang), reply_markup=K.with_back(K.attic_kb(lang), lang))
+    elif step == "airtight":
+        await state.set_state(Wizard.airtight)
+        await message.answer(t("ask_airtight", lang), reply_markup=K.with_back(K.airtight_kb(lang), lang))
+    elif step == "regime":
+        await state.set_state(Wizard.regime)
+        await message.answer(t("ask_regime", lang), reply_markup=K.with_back(K.regime_kb(lang), lang))
+    elif step == "lambda":
+        await state.set_state(Wizard.lambda_mode)
+        await message.answer(t("ask_lambda", lang), reply_markup=K.with_back(K.lambda_kb(lang), lang))
+    elif step == "mat":
+        data = await state.get_data()
+        cat = MAT_SEQ[data["mat_idx"]]
+        await state.set_state(Wizard.mat)
+        await message.answer(t("ask_mat", lang, cat=t("mat_" + cat, lang)),
+                             reply_markup=K.with_back(K.mat_groups_kb(cat, lang), lang))
+    elif step == "rooms_menu":
+        await _rooms_menu(message, state, lang)
+    elif step == "room_type":
+        await state.set_state(Wizard.room_type)
+        await message.answer(t("ask_room_type", lang), reply_markup=K.with_back(K.room_types_kb(lang), lang))
+    elif step == "room_len":
+        await state.set_state(Wizard.room_len)
+        await message.answer(t("ask_room_len", lang), reply_markup=K.back_only_kb(lang))
+    elif step == "room_wid":
+        await state.set_state(Wizard.room_wid)
+        await message.answer(t("ask_room_wid", lang), reply_markup=K.back_only_kb(lang))
+    elif step == "room_walls":
+        data = await state.get_data()
+        sel = (data.get("draft") or {}).get("ext_dirs", [])
+        await state.set_state(Wizard.room_walls)
+        await message.answer(t("ask_ext_walls", lang), reply_markup=K.with_back(K.ext_walls_kb(lang, sel), lang))
+    elif step == "win_count":
+        await state.set_state(Wizard.win_count)
+        await message.answer(t("ask_windows", lang), reply_markup=K.with_back(K.count_kb("wincount", lang), lang))
+    elif step == "win_size":
+        await state.set_state(Wizard.win_size)
+        await message.answer(t("ask_win_size", lang), reply_markup=K.back_only_kb(lang))
+    elif step == "win_dir":
+        data = await state.get_data()
+        dirs = (data.get("draft") or {}).get("ext_dirs", [])
+        await state.set_state(Wizard.win_dir)
+        await message.answer(t("ask_win_dir", lang), reply_markup=K.with_back(K.opening_dir_kb(lang, dirs, "win"), lang))
+    elif step == "door_count":
+        await state.set_state(Wizard.door_count)
+        await message.answer(t("ask_doors", lang), reply_markup=K.with_back(K.count_kb("doorcount", lang), lang))
+    elif step == "door_size":
+        await state.set_state(Wizard.door_size)
+        await message.answer(t("ask_door_size", lang), reply_markup=K.back_only_kb(lang))
+    elif step == "door_dir":
+        data = await state.get_data()
+        dirs = (data.get("draft") or {}).get("ext_dirs", [])
+        await state.set_state(Wizard.door_dir)
+        await message.answer(t("ask_door_dir", lang), reply_markup=K.with_back(K.opening_dir_kb(lang, dirs, "door"), lang))
+    elif step == "door_beta":
+        await state.set_state(Wizard.door_beta)
+        await message.answer(t("ask_door_beta", lang), reply_markup=K.with_back(K.door_beta_kb(lang), lang))
+
+
+@router.callback_query(F.data == "nav:back")
+async def nav_back(cb: CallbackQuery, state: FSMContext):
+    lang = await get_lang(state, cb.from_user.id)
+    data = await state.get_data()
+    nav = list(data.get("nav", []))
+    if len(nav) < 2:                       # already at the first screen → main menu
+        await state.set_state(None)
+        from .menu import show_menu
+        await show_menu(cb.message, lang, is_owner(cb.from_user))
+        return await cb.answer()
+    nav.pop()                              # drop the current screen
+    prev = nav[-1]
+    draft = dict(data.get("draft") or {})
+    if "openings" in draft:                # rewind committed windows/doors
+        draft["openings"] = draft["openings"][:prev["ol"]]
+    await state.update_data(nav=nav, mat_idx=prev["mi"], draft=draft)
+    await _render(cb.message, state, lang, prev["s"], push=False)
+    await cb.answer()
+
+
 # ── entry ──
 @router.callback_query(F.data == "menu:calc")
 async def start_calc(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
-    await state.update_data(floors=[], cur_floor=0, mat={}, mat_idx=0, draft={})
+    await state.update_data(floors=[], cur_floor=0, mat={}, mat_idx=0, draft={}, nav=[])
     storage.log_event("calc_start")
-    await state.set_state(Wizard.lang)  # transient; city next
-    await cb.message.answer(t("ask_city", lang), reply_markup=K.cities_kb(lang))
+    await _render(cb.message, state, lang, "city")
     await cb.answer()
 
 
@@ -57,8 +167,7 @@ async def pick_city(cb: CallbackQuery, state: FSMContext):
         return await cb.answer()
     await state.update_data(cityName=city["name"], tExt=city["t"])
     await cb.message.edit_text(t("city_set", lang, city=city["name"], t=int(city["t"])))
-    await state.set_state(Wizard.floors)
-    await cb.message.answer(t("ask_floors", lang), reply_markup=K.floors_kb(lang))
+    await _render(cb.message, state, lang, "floors")
     await cb.answer()
 
 
@@ -67,8 +176,7 @@ async def pick_floors(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
     n = int(cb.data.split(":", 1)[1])
     await state.update_data(n_floors=n)
-    await state.set_state(Wizard.height)
-    await cb.message.answer(t("ask_height", lang))
+    await _render(cb.message, state, lang, "height")
     await cb.answer()
 
 
@@ -79,16 +187,14 @@ async def set_height(message: Message, state: FSMContext):
     if h is None or h <= 0 or h > 10:
         return await message.answer(t("invalid_number", lang))
     await state.update_data(height=h)
-    await state.set_state(Wizard.attic)
-    await message.answer(t("ask_attic", lang), reply_markup=K.attic_kb(lang))
+    await _render(message, state, lang, "attic")
 
 
 @router.callback_query(Wizard.attic, F.data.startswith("attic:"))
 async def set_attic(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
     await state.update_data(attic=cb.data.split(":", 1)[1])
-    await state.set_state(Wizard.airtight)
-    await cb.message.answer(t("ask_airtight", lang), reply_markup=K.airtight_kb(lang))
+    await _render(cb.message, state, lang, "airtight")
     await cb.answer()
 
 
@@ -96,8 +202,7 @@ async def set_attic(cb: CallbackQuery, state: FSMContext):
 async def set_air(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
     await state.update_data(airtight=cb.data.split(":", 1)[1])
-    await state.set_state(Wizard.regime)
-    await cb.message.answer(t("ask_regime", lang), reply_markup=K.regime_kb(lang))
+    await _render(cb.message, state, lang, "regime")
     await cb.answer()
 
 
@@ -105,8 +210,7 @@ async def set_air(cb: CallbackQuery, state: FSMContext):
 async def set_regime(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
     await state.update_data(heat_regime=cb.data.split(":", 1)[1])
-    await state.set_state(Wizard.lambda_mode)
-    await cb.message.answer(t("ask_lambda", lang), reply_markup=K.lambda_kb(lang))
+    await _render(cb.message, state, lang, "lambda")
     await cb.answer()
 
 
@@ -114,26 +218,18 @@ async def set_regime(cb: CallbackQuery, state: FSMContext):
 async def set_lambda(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
     await state.update_data(lambda_mode=cb.data.split(":", 1)[1], mat={}, mat_idx=0)
-    await state.set_state(Wizard.mat)
     await cb.message.answer(t("mat_intro", lang))
-    await _ask_material(cb.message, state, lang)
+    await _render(cb.message, state, lang, "mat")
     await cb.answer()
 
 
 # ── materials ──
-async def _ask_material(message, state, lang):
-    data = await state.get_data()
-    cat = MAT_SEQ[data["mat_idx"]]
-    await message.answer(t("ask_mat", lang, cat=t("mat_" + cat, lang)),
-                         reply_markup=K.mat_groups_kb(cat, lang))
-
-
 @router.callback_query(Wizard.mat, F.data.startswith("matgrp:"))
 async def mat_groups(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
     cat = cb.data.split(":", 1)[1]
     await cb.message.edit_text(t("ask_mat", lang, cat=t("mat_" + cat, lang)),
-                               reply_markup=K.mat_groups_kb(cat, lang))
+                               reply_markup=K.with_back(K.mat_groups_kb(cat, lang), lang))
     await cb.answer()
 
 
@@ -161,7 +257,7 @@ async def mat_pick(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(t("mat_set", lang, cat=t("mat_" + cat, lang),
                                  name=loc_name(p, lang), r=p.get("r")))
     if idx < len(MAT_SEQ):
-        await _ask_material(cb.message, state, lang)
+        await _render(cb.message, state, lang, "mat")
     else:
         await _start_rooms(cb.message, state, lang)
     await cb.answer()
@@ -174,7 +270,6 @@ async def _start_rooms(message, state, lang):
     if not floors:
         floors = [{"name": "1", "rooms": [], "height": data["height"]}]
     await state.update_data(floors=floors, cur_floor=0)
-    await state.set_state(Wizard.rooms_menu)
     await _rooms_menu(message, state, lang)
 
 
@@ -183,16 +278,19 @@ async def _rooms_menu(message, state, lang):
     cf = data["cur_floor"]
     floors = data["floors"]
     has_rooms = any(len(f["rooms"]) for f in floors)
+    # Reset the nav stack at this hub: each room is built fresh on top of it,
+    # and nav:back from here returns to the main menu.
+    await state.update_data(nav=[{"s": "rooms_menu", "mi": data.get("mat_idx", 0), "ol": 0}])
+    await state.set_state(Wizard.rooms_menu)
     await message.answer(t("rooms_intro", lang, floor=cf + 1),
-                         reply_markup=K.rooms_menu_kb(lang, cf, data["n_floors"], has_rooms))
+                         reply_markup=K.with_back(K.rooms_menu_kb(lang, cf, data["n_floors"], has_rooms), lang))
 
 
 @router.callback_query(Wizard.rooms_menu, F.data == "room:add")
 async def room_add(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
     await state.update_data(draft={"openings": [], "ext_dirs": []})
-    await state.set_state(Wizard.room_type)
-    await cb.message.answer(t("ask_room_type", lang), reply_markup=K.room_types_kb(lang))
+    await _render(cb.message, state, lang, "room_type")
     await cb.answer()
 
 
@@ -232,8 +330,7 @@ async def room_type(cb: CallbackQuery, state: FSMContext):
     draft = dict(data["draft"])
     draft.update(type_id=rid, name=loc_name(rt, lang), tInt=rt["t"])
     await state.update_data(draft=draft)
-    await state.set_state(Wizard.room_len)
-    await cb.message.answer(t("ask_room_len", lang))
+    await _render(cb.message, state, lang, "room_len")
     await cb.answer()
 
 
@@ -246,8 +343,7 @@ async def room_len(message: Message, state: FSMContext):
     data = await state.get_data()
     draft = dict(data["draft"]); draft["length"] = v
     await state.update_data(draft=draft)
-    await state.set_state(Wizard.room_wid)
-    await message.answer(t("ask_room_wid", lang))
+    await _render(message, state, lang, "room_wid")
 
 
 @router.message(Wizard.room_wid)
@@ -259,8 +355,7 @@ async def room_wid(message: Message, state: FSMContext):
     data = await state.get_data()
     draft = dict(data["draft"]); draft["width"] = v
     await state.update_data(draft=draft)
-    await state.set_state(Wizard.room_walls)
-    await message.answer(t("ask_ext_walls", lang), reply_markup=K.ext_walls_kb(lang, []))
+    await _render(message, state, lang, "room_walls")
 
 
 @router.callback_query(Wizard.room_walls, F.data.startswith("dir:"))
@@ -276,7 +371,7 @@ async def toggle_dir(cb: CallbackQuery, state: FSMContext):
         sel.append(d)
     draft["ext_dirs"] = sel
     await state.update_data(draft=draft)
-    await cb.message.edit_reply_markup(reply_markup=K.ext_walls_kb(lang, sel))
+    await cb.message.edit_reply_markup(reply_markup=K.with_back(K.ext_walls_kb(lang, sel), lang))
     await cb.answer()
 
 
@@ -296,8 +391,7 @@ async def ext_done(cb: CallbackQuery, state: FSMContext):
     draft["walls"] = walls
     await state.update_data(draft=draft)
     await cb.message.edit_text(t("ext_walls_set", lang, dirs=", ".join(sel)))
-    await state.set_state(Wizard.win_count)
-    await cb.message.answer(t("ask_windows", lang), reply_markup=K.count_kb("wincount", lang))
+    await _render(cb.message, state, lang, "win_count")
     await cb.answer()
 
 
@@ -309,10 +403,9 @@ async def win_count(cb: CallbackQuery, state: FSMContext):
     draft = dict(data["draft"]); draft["_win_n"] = n
     await state.update_data(draft=draft)
     if n == 0:
-        await _ask_doors(cb.message, state, lang)
+        await _render(cb.message, state, lang, "door_count")
     else:
-        await state.set_state(Wizard.win_size)
-        await cb.message.answer(t("ask_win_size", lang))
+        await _render(cb.message, state, lang, "win_size")
     await cb.answer()
 
 
@@ -329,8 +422,7 @@ async def win_size(message: Message, state: FSMContext):
     if len(dirs) == 1:
         await _store_windows(message, state, lang, dirs[0])
     else:
-        await state.set_state(Wizard.win_dir)
-        await message.answer(t("ask_win_dir", lang), reply_markup=K.opening_dir_kb(lang, dirs, "win"))
+        await _render(message, state, lang, "win_dir")
 
 
 @router.callback_query(Wizard.win_dir, F.data.startswith("windir:"))
@@ -347,12 +439,7 @@ async def _store_windows(message, state, lang, d):
     draft["openings"].append({"kind": "window", "w": draft["_win_w"], "h": draft["_win_h"],
                               "count": draft["_win_n"], "dir": d})
     await state.update_data(draft=draft)
-    await _ask_doors(message, state, lang)
-
-
-async def _ask_doors(message, state, lang):
-    await state.set_state(Wizard.door_count)
-    await message.answer(t("ask_doors", lang), reply_markup=K.count_kb("doorcount", lang))
+    await _render(message, state, lang, "door_count")
 
 
 @router.callback_query(Wizard.door_count, F.data.startswith("doorcount:"))
@@ -365,8 +452,7 @@ async def door_count(cb: CallbackQuery, state: FSMContext):
     if n == 0:
         await _finish_room(cb.message, state, lang)
     else:
-        await state.set_state(Wizard.door_size)
-        await cb.message.answer(t("ask_door_size", lang))
+        await _render(cb.message, state, lang, "door_size")
     await cb.answer()
 
 
@@ -383,11 +469,9 @@ async def door_size(message: Message, state: FSMContext):
     if len(dirs) == 1:
         draft["_door_dir"] = dirs[0]
         await state.update_data(draft=draft)
-        await state.set_state(Wizard.door_beta)
-        await message.answer(t("ask_door_beta", lang), reply_markup=K.door_beta_kb(lang))
+        await _render(message, state, lang, "door_beta")
     else:
-        await state.set_state(Wizard.door_dir)
-        await message.answer(t("ask_door_dir", lang), reply_markup=K.opening_dir_kb(lang, dirs, "door"))
+        await _render(message, state, lang, "door_dir")
 
 
 @router.callback_query(Wizard.door_dir, F.data.startswith("doordir:"))
@@ -397,8 +481,7 @@ async def door_dir(cb: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     draft = dict(data["draft"]); draft["_door_dir"] = d
     await state.update_data(draft=draft)
-    await state.set_state(Wizard.door_beta)
-    await cb.message.answer(t("ask_door_beta", lang), reply_markup=K.door_beta_kb(lang))
+    await _render(cb.message, state, lang, "door_beta")
     await cb.answer()
 
 
@@ -425,5 +508,4 @@ async def _finish_room(message, state, lang):
     await state.update_data(floors=floors, draft={})
     await message.answer(t("room_added", lang, name=room["name"],
                           l=round(room["length"], 1), w=round(room["width"], 1), n=total))
-    await state.set_state(Wizard.rooms_menu)
     await _rooms_menu(message, state, lang)

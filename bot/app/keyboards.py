@@ -24,6 +24,17 @@ def btn(text, data):
     return InlineKeyboardButton(text=text, callback_data=data)
 
 
+def with_back(markup, lang):
+    """Append a '◀️ Назад' row (callback nav:back) to an existing inline keyboard."""
+    rows = list(markup.inline_keyboard) + [[btn(t("back", lang), "nav:back")]]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def back_only_kb(lang):
+    """A lone '◀️ Назад' button — for text-input steps that have no other buttons."""
+    return kb([[btn(t("back", lang), "nav:back")]])
+
+
 # ── language ──
 def lang_kb():
     rows = [[btn(i18n.LANG_NAMES[l], f"lang:{l}")] for l in i18n.LANGS]

@@ -114,6 +114,10 @@ async def run():
     check("чердак" in _last_text(ev).lower(), "height → attic question")
     await d.press("attic:closed")
     await d.press("air:normal")
+    # Back button: from regime → back should return to the airtight question
+    ev = await d.press("nav:back")
+    check("герметич" in _last_text(ev).lower(), "nav:back regime→airtight")
+    await d.press("air:normal")            # re-advance
     await d.press("reg:90/70")
     ev = await d.press("lam:A")             # → materials (walls)
     check("Стены" in _last_text(ev) or "матери" in _last_text(ev).lower(), "lambda → materials(walls)")
