@@ -145,7 +145,8 @@ async def run():
     ev = await d.press("room:calc")
     txt = " ".join(t for _, t, _ in ev)
     check("Теплопотери" in txt, "calc → results rendered")
-    check("кВт" in txt and "секций" in txt, "results have kW + radiator sections")
+    check("кВт" in txt and ("█" in txt or "░" in txt), "results have kW + breakdown bars")
+    check("секций" not in txt and "Рекомендуемый котёл" not in txt, "equipment recommendations removed")
     # sanity: single 4×5×3 room all-ext ≈ pinned 4.2 kW (here with a window, a bit lower wall)
     import re
     m = re.search(r"Теплопотери:\s*<b>([\d.]+)", txt)

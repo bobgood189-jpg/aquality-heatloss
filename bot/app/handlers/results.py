@@ -38,9 +38,6 @@ def format_results(res, lang):
     total_w = res["totalW"]
     lines = [t("result_title", lang), ""]
     lines.append(t("res_totalkw", lang, kw=round(res["totalKw"], 2)))
-    boiler_kw = res["boilerKw"]
-    rec = E.recommend_boiler(boiler_kw)
-    lines.append(t("res_boiler", lang, kw=round(boiler_kw, 1)))
     lines.append(t("res_area", lang, area=round(res["totalArea"], 1),
                    rooms=res["roomCount"], floors=len(res["floors"])))
     if res["totalArea"] > 0:
@@ -53,12 +50,9 @@ def format_results(res, lang):
             continue
         frac = val / total_w if total_w else 0
         lines.append(f"  {t('comp_' + k, lang)}: {_bar(frac)} {round(val / 1000, 2)} кВт ({round(frac * 100)}%)")
-    lines.append("")
-    rad = E.aq_rad_model(res["totalSections"])
-    lines.append(t("res_sections", lang, n=res["totalSections"], model=rad["model"]))
-    lines.append(t("res_pipe", lang, pipe=E.recommend_pipe(boiler_kw)))
-    b = E.aq_boiler(rec)
-    lines.append(t("res_boiler_model", lang, model=b["model"], type=b["type"]))
+    # Equipment recommendations (boiler / radiators / pipe) intentionally omitted —
+    # see commit "remove equipment recommendations". Re-add res_boiler/res_sections/
+    # res_pipe/res_boiler_model lines here to restore.
     lines.append("")
     lines.append(t("res_fuel", lang))
     cost = E.cost_estimate(res["totalKw"])
