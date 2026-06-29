@@ -12,6 +12,15 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ── Security (клиентский слой) ─────────────────────────────────────────
+     CSP здесь намеренно прагматична: в приложении много inline-обработчиков
+     (onclick=) и Tailwind Play CDN (eval), поэтому 'unsafe-inline'/'unsafe-eval'
+     обязательны — это ограничивает ценность CSP, но всё же запрещает плагины
+     (object-src), сторонний base-uri и не-HTTPS источники. ЖЁСТКИЕ заголовки
+     (HSTS, X-Frame-Options, X-Content-Type-Options, frame-ancestors) задаются
+     на хостинге — см. файл `_headers` (Netlify) и заметку в SECURITY.md. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-src https:;">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Расчёт теплопотерь объекта — Aquality | WaterPro · Фергана</title>
 <meta name="description" content="Бесплатный инженерный расчёт теплопотерь по КМК 2.01.04-18. Нарисуйте план здания, укажите материалы — получите мощность котла и секции радиаторов по каждой комнате. г. Фергана.">
 <meta property="og:type" content="website">
@@ -61,7 +70,15 @@
 <script>
   window.AQ_CONFIG = {
     SUPABASE_URL: 'YOUR_SUPABASE_URL',
-    SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY'
+    SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
+    // Платный доступ (подписка). true/false — явно; не задано — авто:
+    // включается сам, когда настроен Supabase (чтобы офлайн-сайт не запереть).
+    // Схема БД: supabase/payment-schema.sql
+    PAYWALL: undefined,
+    // Контакты для оплаты (Telegram владельца) и реквизиты перевода.
+    PAY_TG: 'aqualityHL',
+    PAY_TG2: 'ibrokh1movv7',
+    PAY_REQUISITES: 'Карта для перевода: уточните у менеджера в Telegram'
   };
 </script>
 <!-- Supabase JS подгружается ДИНАМИЧЕСКИ и только если заданы ключи (см. loadSupabaseLib).
@@ -966,7 +983,8 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 /* ══════════════════════════════════════════════
    COPY / SCREENSHOT PROTECTION (Фаза 4)
 ══════════════════════════════════════════════ */
-.no-copy{user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;pointer-events:auto}
+.no-copy{user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-webkit-touch-callout:none;pointer-events:auto}
+.no-copy img{-webkit-user-drag:none;user-drag:none}
 #result-area{position:relative}
 #result-area::after{content:'🔒 Результат защищён от копирования';position:fixed;bottom:18px;right:18px;background:rgba(26,22,16,.9);border:1px solid rgba(245,158,11,.25);color:#9a8675;font-size:.65rem;padding:.3rem .6rem;border-radius:.5rem;pointer-events:none;opacity:0;transition:opacity .3s;z-index:9}
 #result-area.copy-warn::after{opacity:1}
@@ -1280,6 +1298,82 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .hero-trust-row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.4rem}
 .trust-badge{display:inline-flex;align-items:center;gap:.28rem;border-radius:999px;border:1px solid rgba(245,158,11,.2);background:rgba(245,158,11,.055);padding:.26rem .7rem;font-size:.66rem;font-weight:600;color:rgba(245,158,11,.82);letter-spacing:.02em}
 .gradient-divider{width:72px;height:3px;border-radius:2px;margin:1rem auto 0;background:linear-gradient(90deg,transparent,#f59e0b,transparent)}
+
+/* ══════════════════════════════════════════════
+   REVIEWS & COMMENTS  (.rv-*)
+══════════════════════════════════════════════ */
+.rv-wrap{max-width:780px;margin:0 auto}
+/* Summary header */
+.rv-summary{display:flex;align-items:center;gap:1.6rem;flex-wrap:wrap;border-radius:1.4rem;border:1px solid rgba(245,158,11,.17);background:linear-gradient(155deg,rgba(17,24,39,.85),rgba(11,15,26,.8));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1.4rem 1.7rem;margin-bottom:1.4rem;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 16px 50px rgba(0,0,0,.32)}
+.rv-avg{font-size:3rem;font-weight:800;font-family:'JetBrains Mono',monospace;background:linear-gradient(135deg,#f59e0b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:.95}
+.rv-avg-stars{color:#f59e0b;font-size:1.05rem;letter-spacing:3px;line-height:1}
+.rv-dist{flex:1;min-width:180px;display:flex;flex-direction:column;gap:.28rem}
+.rv-dist-row{display:flex;align-items:center;gap:.5rem;font-size:.7rem;color:#8FA3C0}
+.rv-dist-bar{flex:1;height:5px;border-radius:3px;background:rgba(140,165,210,.12);overflow:hidden}
+.rv-dist-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#f59e0b,#ff6b35);width:0;transition:width .7s cubic-bezier(.22,1,.36,1)}
+/* Form card */
+.rv-form{border-radius:1.3rem;border:1px solid rgba(140,165,210,.12);background:linear-gradient(155deg,rgba(17,24,39,.9),rgba(11,15,26,.86));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:1.4rem 1.5rem;margin-bottom:1.8rem;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 10px 36px rgba(0,0,0,.3)}
+.rv-star-input{display:inline-flex;gap:.3rem;cursor:pointer;user-select:none}
+.rv-star-input .rv-star{font-size:1.9rem;color:rgba(140,165,210,.22);transition:transform .14s cubic-bezier(.34,1.56,.64,1),color .14s;line-height:1}
+.rv-star-input .rv-star.on{color:#f59e0b;text-shadow:0 0 14px rgba(245,158,11,.4)}
+.rv-star-input .rv-star:hover{transform:scale(1.22)}
+.rv-star-label{font-size:.78rem;color:#f59e0b;font-weight:600;min-height:1.1em;transition:opacity .2s}
+.rv-char{font-size:.68rem;color:#4E6080;font-family:'JetBrains Mono',monospace}
+.rv-form-msg{font-size:.76rem;font-weight:600;margin-top:.1rem;min-height:1.1em;transition:opacity .2s}
+.rv-form-msg.err{color:#ff8a6b}
+.rv-form-msg.ok{color:#34d399}
+/* Review card */
+.rv-card{border-radius:1.2rem;border:1px solid rgba(140,165,210,.1);background:linear-gradient(155deg,rgba(17,24,39,.9),rgba(11,15,26,.86));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:1.15rem 1.3rem;margin-bottom:.9rem;transition:border-color .3s,transform .28s,box-shadow .3s;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 8px 28px rgba(0,0,0,.26);opacity:0;animation:rvIn .5s cubic-bezier(.22,1,.36,1) forwards}
+.rv-card:hover{border-color:rgba(245,158,11,.26);transform:translateY(-3px);box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 16px 44px rgba(0,0,0,.36),0 0 22px rgba(245,158,11,.05)}
+.rv-card.rv-new{animation:rvFlyIn .65s cubic-bezier(.34,1.4,.64,1) forwards;border-color:rgba(245,158,11,.4)}
+@keyframes rvIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes rvFlyIn{0%{opacity:0;transform:translateY(-24px) scale(.94)}55%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1)}}
+.rv-ava{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.92rem;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.28)}
+.rv-card-stars{color:#f59e0b;font-size:.72rem;letter-spacing:1px;white-space:nowrap}
+.rv-badge-own{font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.28);border-radius:999px;padding:.06rem .42rem}
+.rv-like{display:inline-flex;align-items:center;gap:.32rem;font-size:.76rem;color:#8FA3C0;border:1px solid rgba(140,165,210,.14);background:rgba(255,255,255,.03);border-radius:999px;padding:.24rem .65rem;cursor:pointer;transition:all .16s;user-select:none;font-family:inherit}
+.rv-like svg{width:13px;height:13px;transition:transform .16s}
+.rv-like:hover{border-color:rgba(245,158,11,.35);color:#f59e0b}
+.rv-like.liked{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.12);color:#f59e0b}
+.rv-like.liked svg{fill:#f59e0b}
+.rv-like.pop{animation:rvPop .34s cubic-bezier(.34,1.56,.64,1)}
+@keyframes rvPop{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
+.rv-empty{text-align:center;color:#4E6080;font-size:.85rem;padding:2rem 1rem}
+/* Light theme */
+[data-theme="light"] .rv-summary{background:rgba(255,255,255,.96)!important;border-color:rgba(217,119,6,.22)!important}
+[data-theme="light"] .rv-form{background:rgba(255,255,255,.95)!important;border-color:rgba(30,60,120,.12)!important}
+[data-theme="light"] .rv-card{background:rgba(255,255,255,.97)!important;border-color:rgba(30,60,120,.1)!important;box-shadow:0 4px 22px rgba(60,35,10,.08)!important}
+[data-theme="light"] .rv-card:hover{border-color:rgba(217,119,6,.3)!important}
+[data-theme="light"] .rv-star-input .rv-star{color:rgba(30,60,120,.2)}
+[data-theme="light"] .rv-like{background:rgba(240,245,255,.7);border-color:rgba(30,60,120,.13);color:#4a5568}
+
+/* ══════════════════════════════════════════════
+   PROFILE PANEL REDESIGN  (.pf-*)
+══════════════════════════════════════════════ */
+.pf-hero{position:relative;border-radius:1.4rem;overflow:hidden;padding:1.6rem 1.5rem 1.4rem;margin-bottom:1rem;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(255,107,53,.07) 52%,rgba(17,24,39,.55));border:1px solid rgba(245,158,11,.22);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 14px 44px rgba(0,0,0,.32);animation:rvIn .55s cubic-bezier(.22,1,.36,1) both}
+.pf-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0,rgba(245,158,11,.2),transparent 58%);pointer-events:none}
+.pf-hero>*{position:relative;z-index:1}
+.pf-avatar-lg{width:80px;height:80px;border-radius:1.4rem;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;background:linear-gradient(135deg,#f59e0b,#ff6b35);box-shadow:0 8px 24px rgba(245,158,11,.28),0 0 0 1px rgba(255,255,255,.1) inset;flex-shrink:0;transition:transform .2s}
+.pf-avatar-lg:hover{transform:scale(1.04)}
+.pf-avatar-lg img{width:100%;height:100%;object-fit:cover}
+.pf-avatar-init{font-size:1.9rem;font-weight:800;color:#fff;letter-spacing:-.02em}
+.pf-cam{position:absolute;bottom:-3px;right:-3px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#f59e0b;border:2px solid #0B0F1A;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.pf-meta-row{display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:#C5D0E8;opacity:.85;margin-top:.45rem}
+.pf-meta-row svg{flex-shrink:0;opacity:.7}
+.pf-prog-track{height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:.3rem}
+.pf-prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#f59e0b,#ff6b35);width:0;transition:width .8s cubic-bezier(.22,1,.36,1)}
+.pf-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-bottom:.9rem}
+.pf-stat{border-radius:1rem;text-align:center;padding:.85rem .4rem;border:1px solid rgba(140,165,210,.1);background:rgba(255,255,255,.03);opacity:0;animation:rvIn .5s cubic-bezier(.22,1,.36,1) forwards;transition:border-color .2s,transform .2s,background .2s}
+.pf-stat:hover{border-color:rgba(245,158,11,.3);transform:translateY(-2px);background:rgba(245,158,11,.05)}
+.pf-stat.accent{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.18)}
+.pf-stat-num{font-size:1.65rem;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1}
+.pf-stat-num.accent{color:#f59e0b}
+.pf-stat-lbl{font-size:.64rem;color:#4E6080;margin-top:.3rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+[data-theme="light"] .pf-hero{border-color:rgba(217,119,6,.28)}
+[data-theme="light"] .pf-meta-row{color:#1A2A4A}
+[data-theme="light"] .pf-stat{background:rgba(255,255,255,.7);border-color:rgba(30,60,120,.1)}
+[data-theme="light"] .pf-prog-track{background:rgba(30,60,120,.12)}
+
 /* ══════ Print styles ══════ */
 @media print{
   #scroll-progress,#sticky-results,nav,.lg-btn,.lg-btn-sec,#btn3d,#view3d-outer,button:not([data-print]){display:none!important}
@@ -1347,7 +1441,8 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 <div id="demo-banner">
   <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" class="flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
   <span class="text-sand">Демо-режим — результат показан без регистрации.</span>
-  <button onclick="openAuth('register')" class="ml-auto flex-shrink-0 text-xs font-bold text-amber hover:underline">Сохранить →</button>
+  <button onclick="openPaywall()" class="ml-auto flex-shrink-0 text-xs font-bold text-amber hover:underline">Тарифы</button>
+  <button onclick="openAuth('register')" class="flex-shrink-0 text-xs font-bold text-amber hover:underline">Сохранить →</button>
 </div>
 
 <!-- Full-page ambient thermal background canvas -->
@@ -1620,6 +1715,62 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
   </div>
 </section>
 
+<!-- ═══════ ОТЗЫВЫ И КОММЕНТАРИИ ═══════ -->
+<section id="reviews" class="bg-w900 pb-20 pt-4 sect-reveal">
+  <div class="rv-wrap px-4 sm:px-6">
+    <div class="text-center mb-9">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-amber/70" data-i18n="rv-tag">Отзывы и комментарии</p>
+      <h3 class="text-2xl font-extrabold tracking-tight text-cream sm:text-3xl" data-i18n-html="rv-title">Поделитесь <span style="background:linear-gradient(90deg,#f59e0b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">своим опытом</span></h3>
+      <p class="mt-3 text-sm text-muted max-w-xl mx-auto" data-i18n="rv-sub">Оцените сервис и оставьте комментарий — это помогает другим и нам становиться лучше.</p>
+      <div class="gradient-divider"></div>
+    </div>
+
+    <!-- Сводка -->
+    <div class="rv-summary">
+      <div class="text-center">
+        <div class="rv-avg" id="rv-avg">—</div>
+        <div class="rv-avg-stars" id="rv-avg-stars">★★★★★</div>
+        <div class="text-xs text-muted mt-1" id="rv-count">0</div>
+      </div>
+      <div class="rv-dist" id="rv-dist"></div>
+    </div>
+
+    <!-- Форма отзыва -->
+    <div class="rv-form">
+      <p class="text-base font-bold text-cream mb-3" data-i18n="rv-form-title">Оставить отзыв</p>
+      <div class="mb-3">
+        <label class="block text-xs font-semibold text-sand mb-1.5" data-i18n="rv-lbl-rating">Ваша оценка</label>
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="rv-star-input" id="rv-star-input" onmouseleave="rvResetStars()">
+            <span class="rv-star" data-v="1" onclick="rvSetStars(1)" onmouseenter="rvHoverStars(1)">★</span>
+            <span class="rv-star" data-v="2" onclick="rvSetStars(2)" onmouseenter="rvHoverStars(2)">★</span>
+            <span class="rv-star" data-v="3" onclick="rvSetStars(3)" onmouseenter="rvHoverStars(3)">★</span>
+            <span class="rv-star" data-v="4" onclick="rvSetStars(4)" onmouseenter="rvHoverStars(4)">★</span>
+            <span class="rv-star" data-v="5" onclick="rvSetStars(5)" onmouseenter="rvHoverStars(5)">★</span>
+          </div>
+          <span class="rv-star-label" id="rv-star-label"></span>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="block text-xs font-semibold text-sand mb-1.5" data-i18n="rv-lbl-name">Имя</label>
+        <input id="rv-name" class="wi" maxlength="40" data-i18n-ph="rv-ph-name" placeholder="Как вас зовут?">
+      </div>
+      <div class="mb-1">
+        <label class="block text-xs font-semibold text-sand mb-1.5" data-i18n="rv-lbl-text">Комментарий</label>
+        <textarea id="rv-text" class="wi" rows="3" maxlength="500" style="resize:vertical;min-height:84px" data-i18n-ph="rv-ph-text" placeholder="Расскажите о вашем опыте..." oninput="_rvCharCount()"></textarea>
+      </div>
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <p class="rv-form-msg" id="rv-form-msg"></p>
+        <span class="rv-char" id="rv-char">0/500</span>
+      </div>
+      <button onclick="rvSubmit()" class="lg-btn w-full py-2.5 text-sm" data-i18n="rv-submit">Опубликовать отзыв</button>
+    </div>
+
+    <!-- Лента отзывов -->
+    <div id="rv-feed"></div>
+  </div>
+</section>
+
 <!-- ═══════ OUTCOMES ═══════ -->
 <section class="bg-w900 pb-20 sect-reveal">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
@@ -1873,6 +2024,14 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
         <span data-i18n="adm-leads">Заявки</span>
         <span id="adm-leads-badge" class="ml-auto"></span>
       </div>
+      <div class="adm-nav" id="adm-nav-subs" onclick="adminPage('subs')" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <span>Подписки</span>
+      </div>
+      <div class="adm-nav" id="adm-nav-promos" onclick="adminPage('promos')" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>Промокоды</span>
+      </div>
     </div>
     <div id="admin-content">
       <!-- Injected by adminPage() -->
@@ -2026,7 +2185,7 @@ function aqMapUser(authUser, prof, projects){
 
 async function aqLoadSession(session){
   const c = sb();
-  if(!session || !session.user || !c){ _AQ.user = null; initAuthNav(); return; }
+  if(!session || !session.user || !c){ _AQ.user = null; _aqSub = null; initAuthNav(); return; }
   const u = session.user;
   let prof = null, projects = [];
   try{
@@ -2047,6 +2206,11 @@ async function aqLoadSession(session){
     projects = (data||[]).map(r=>({ id:r.id, label:r.name, createdAt:r.created_at,
       state:(r.payload && r.payload.state) || null }));
   }catch(e){ console.warn('[AQ] расчёты не загружены', e); }
+  try{
+    const { data:subs } = await c.from('subscriptions').select('*')
+      .eq('user_id', u.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);
+    _aqSub = (subs && subs[0]) ? subs[0] : null;
+  }catch(e){ _aqSub = null; }
   _AQ.user = aqMapUser(u, prof, projects);
   initAuthNav();
 }
@@ -2119,6 +2283,7 @@ async function aqSaveProfile(patch){
 async function aqSaveCalc(){
   const u = authCurrentUser();
   if(!u){ openAuth('login'); toast(t('toast-login-to-save'),'err'); return; }
+  if(PAYWALL_ON && !aqHasAccess()){ openPaywall(); return; }
   const res = computeObject();
   if(!res || !res.roomCount){ toast(t('toast-calc-first'),'err'); return; }
   const label = `${ST.cityName||'—'} · ${ST.floors.length} эт. · ${res.totalArea.toFixed(0)} м² · ${res.totalKw.toFixed(1)} кВт`;
@@ -2178,6 +2343,391 @@ async function aqMaybeMigrate(){
 }
 
 /* ════════════════════════════════════════════════════════════
+   PAYWALL / ПОДПИСКА (Фаза 1)
+   • Демо = быстрые расчёты (пресеты) без редактирования.
+   • Полный калькулятор (шаги 2–5), редактор чертежей, сохранение и PDF —
+     по активной подписке. Владелец/админ — всегда полный доступ.
+   • Оплата Фазы 1: вручную через Telegram, активация подписки в админ-панели.
+   • Промокоды (10/30/50/100 %) проверяются на сервере (RPC validate_promo).
+   ⚠️ Реальная защита прав — на бэкенде (Supabase RLS). Клиентский гейт лишь
+      закрывает UI; формулы расчёта всё равно уезжают в браузер.
+════════════════════════════════════════════════════════════ */
+const AQ_PLANS = [
+  { id:'m1',  months:1,  price:100000  },
+  { id:'m6',  months:6,  price:550000, popular:true },
+  { id:'m12', months:12, price:1000000 },
+];
+// Включён ли paywall: явный флаг приоритетнее; иначе авто (вкл. при Supabase).
+const PAYWALL_ON = (typeof AQ_CFG.PAYWALL === 'boolean') ? AQ_CFG.PAYWALL : SB_CONFIGURED;
+const PAY_TG  = (AQ_CFG.PAY_TG  || 'aqualityHL').replace(/^@/,'');
+const PAY_TG2 = (AQ_CFG.PAY_TG2 || 'ibrokh1movv7').replace(/^@/,'');
+const PAY_REQ = AQ_CFG.PAY_REQUISITES || '';
+const SUB_LOCAL_KEY   = 'aq_sub_v1';      // офлайн-кэш подписки (тест/владелец)
+const PROMO_LOCAL_KEY = 'aq_promos_v1';   // офлайн-список промокодов
+
+let _aqSub = null;                        // активная подписка из Supabase
+
+/* ── мини-i18n модуля (самодостаточно, без правки больших словарей) ── */
+const PAY_STR = {
+  ru:{ title:'Доступ к калькулятору', sub:'Демо открыто всем. Полный расчёт — по подписке.',
+    plan1:'1 месяц', plan6:'6 месяцев', plan12:'12 месяцев', popular:'Выгодно', perMonth:'/мес',
+    promoPh:'Промокод (если есть)', apply:'Применить', promoOk:'Скидка', promoInvalid:'Код недействителен',
+    promoExhausted:'Лимит кода исчерпан', promoUsed:'Вы уже применяли этот код', promoAuth:'Войдите, чтобы применить код',
+    payTg:'Оплатить через Telegram', total:'К оплате', refresh:'Я оплатил — обновить статус',
+    note:'После оплаты менеджер активирует подписку в течение рабочего дня.',
+    close:'Закрыть', loginFirst:'Сначала войдите или зарегистрируйтесь',
+    copied:'Детали заказа скопированы — вставьте в чат менеджеру',
+    active:'Подписка активна', until:'до', expired:'Подписка истекла', none:'Нет активной подписки',
+    lockTitle:'Доступно по подписке', lockBody:'Это демо-режим: редактирование данных и чертежей доступно только с активной подпиской.',
+    lockBtn:'Открыть тарифы', demoTag:'Демо', subBtn:'Подписка' },
+  uz:{ title:'Kalkulyatorga kirish', sub:'Demo hammaga ochiq. Toʻliq hisob — obuna orqali.',
+    plan1:'1 oy', plan6:'6 oy', plan12:'12 oy', popular:'Foydali', perMonth:'/oy',
+    promoPh:'Promokod (agar boʻlsa)', apply:'Qoʻllash', promoOk:'Chegirma', promoInvalid:'Kod notoʻgʻri',
+    promoExhausted:'Kod limiti tugagan', promoUsed:'Bu kodni allaqachon ishlatgansiz', promoAuth:'Kod uchun kiring',
+    payTg:'Telegram orqali toʻlash', total:'Toʻlovga', refresh:'Toʻladim — holatni yangilash',
+    note:'Toʻlovdan soʻng menejer obunani ish kuni davomida faollashtiradi.',
+    close:'Yopish', loginFirst:'Avval tizimga kiring yoki roʻyxatdan oʻting',
+    copied:'Buyurtma tafsilotlari nusxalandi — menejer chatiga joylang',
+    active:'Obuna faol', until:'gacha', expired:'Obuna tugagan', none:'Faol obuna yoʻq',
+    lockTitle:'Obuna orqali ochiladi', lockBody:'Bu demo: maʼlumot va chizmalarni tahrirlash faqat faol obuna bilan.',
+    lockBtn:'Tariflarni ochish', demoTag:'Demo', subBtn:'Obuna' },
+  en:{ title:'Calculator access', sub:'Demo is open to all. Full calculation requires a subscription.',
+    plan1:'1 month', plan6:'6 months', plan12:'12 months', popular:'Best value', perMonth:'/mo',
+    promoPh:'Promo code (if any)', apply:'Apply', promoOk:'Discount', promoInvalid:'Invalid code',
+    promoExhausted:'Code limit reached', promoUsed:'You already used this code', promoAuth:'Sign in to apply a code',
+    payTg:'Pay via Telegram', total:'Total', refresh:'I paid — refresh status',
+    note:'After payment a manager activates your subscription within a business day.',
+    close:'Close', loginFirst:'Please sign in or register first',
+    copied:'Order details copied — paste them into the manager chat',
+    active:'Subscription active', until:'until', expired:'Subscription expired', none:'No active subscription',
+    lockTitle:'Available with subscription', lockBody:'This is demo mode: editing data and drawings requires an active subscription.',
+    lockBtn:'View plans', demoTag:'Demo', subBtn:'Subscription' },
+};
+function pt(k){ return (PAY_STR[_lang]||PAY_STR.ru)[k] || PAY_STR.ru[k] || k; }
+function planName(id){ return pt(id==='m1'?'plan1':id==='m6'?'plan6':'plan12'); }
+function aqPlan(id){ return AQ_PLANS.find(p=>p.id===id); }
+function fmtSum(n){ try{ return new Intl.NumberFormat('ru-RU').format(Math.round(n))+' сум'; }catch(e){ return Math.round(n)+' сум'; } }
+
+/* ── состояние подписки ── */
+function _subActive(s){ return !!(s && s.status==='active' && (!s.expires_at || new Date(s.expires_at) > new Date())); }
+function aqSubscription(){
+  const u = authCurrentUser();
+  if(!u) return null;
+  if(u.role==='owner' || u.role==='admin') return { plan:'staff', status:'active', expires_at:null, staff:true };
+  if(_subActive(_aqSub)) return _aqSub;
+  if(!SB_CONFIGURED){
+    try{ const s=JSON.parse(localStorage.getItem(SUB_LOCAL_KEY)); if(s && s.user===u.id && _subActive(s)) return s; }catch(e){}
+  }
+  return null;
+}
+function aqHasAccess(){ return !PAYWALL_ON || !!aqSubscription(); }
+async function aqRefreshSub(){
+  const u = authCurrentUser();
+  if(!u || !SB_CONFIGURED){ return; }
+  const c = sb(); if(!c) return;
+  try{
+    const { data:subs } = await c.from('subscriptions').select('*')
+      .eq('user_id', u.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);
+    _aqSub = (subs && subs[0]) ? subs[0] : null;
+  }catch(e){}
+}
+
+/* ── промокоды ── */
+function aqPromosLocal(){ try{ const d=JSON.parse(localStorage.getItem(PROMO_LOCAL_KEY)); return Array.isArray(d)?d:[]; }catch(e){ return []; } }
+function aqPromosLocalSave(a){ try{ localStorage.setItem(PROMO_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
+async function aqValidatePromo(code){
+  code = String(code||'').trim().toUpperCase();
+  if(!code) return {ok:false, reason:'empty'};
+  if(SB_CONFIGURED){
+    const c=sb(); if(!c) return {ok:false, reason:'error'};
+    try{ const { data, error } = await c.rpc('validate_promo', { p_code: code });
+      if(error) return {ok:false, reason:'error'};
+      return data || {ok:false, reason:'error'};
+    }catch(e){ return {ok:false, reason:'error'}; }
+  }
+  const p = aqPromosLocal().find(x=>x.code===code && x.active!==false);
+  if(!p) return {ok:false, reason:'invalid'};
+  if(p.expires_at && new Date(p.expires_at)<new Date()) return {ok:false, reason:'invalid'};
+  if(p.max_uses!=null && (p.used_count||0)>=p.max_uses) return {ok:false, reason:'exhausted'};
+  return {ok:true, discount:p.discount};
+}
+function promoReasonMsg(r){
+  return r==='exhausted'?pt('promoExhausted'):r==='already_used'?pt('promoUsed'):r==='auth'?pt('promoAuth'):pt('promoInvalid');
+}
+
+/* ── paywall-модалка ── */
+let _payState = { plan:'m6', promo:null };
+function planFinalPrice(plan){ const base=aqPlan(plan).price; const d=_payState.promo?_payState.promo.discount:0; return Math.round(base*(1-d/100)); }
+function openPaywall(){
+  const u = authCurrentUser();
+  if(!u){ toast(pt('loginFirst'),'err'); setTimeout(()=>openAuth('login'),350); return; }
+  if(!document.getElementById('paywall-overlay')){
+    const ov=document.createElement('div'); ov.id='paywall-overlay'; ov.className='pw-ov';
+    ov.addEventListener('click', e=>{ if(e.target===ov) closePaywall(); });
+    document.body.appendChild(ov);
+  }
+  renderPaywall();
+  document.getElementById('paywall-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closePaywall(){ const o=document.getElementById('paywall-overlay'); if(o) o.classList.remove('open'); document.body.style.overflow=''; }
+function paySelectPlan(id){ _payState.plan=id; renderPaywall(); }
+async function payApplyPromo(){
+  const inp=document.getElementById('pw-promo-inp'); if(!inp) return;
+  const res=await aqValidatePromo(inp.value);
+  const msg=document.getElementById('pw-promo-msg');
+  if(res.ok){ _payState.promo={ code:inp.value.trim().toUpperCase(), discount:res.discount };
+    if(msg){ msg.textContent=`${pt('promoOk')} −${res.discount}%`; msg.className='pw-promo-msg ok'; }
+  } else { _payState.promo=null;
+    if(msg){ msg.textContent=promoReasonMsg(res.reason); msg.className='pw-promo-msg err'; }
+  }
+  renderPaywall(true);
+}
+function payViaTelegram(){
+  const u=authCurrentUser(); if(!u){ toast(pt('loginFirst'),'err'); return; }
+  const plan=_payState.plan, price=planFinalPrice(plan);
+  const promo=_payState.promo?(' · промокод '+_payState.promo.code+' (−'+_payState.promo.discount+'%)'):'';
+  const who=u.email||u.login||u.name||'—';
+  const msg=`Здравствуйте! Хочу оформить подписку Aquality: ${planName(plan)} — ${fmtSum(price)}${promo}. Аккаунт: ${who}.`;
+  try{ navigator.clipboard && navigator.clipboard.writeText(msg); }catch(e){}
+  toast(pt('copied'));
+  window.open('https://t.me/'+PAY_TG, '_blank');
+}
+async function payRefresh(){ await aqRefreshSub(); renderPaywall(); initAuthNav(); if(aqHasAccess()){ closePaywall(); toast(pt('active')); if(typeof renderStep==='function'&&ST&&ST.step) renderStep(); } }
+
+function subStatusHTML(){
+  const s=aqSubscription();
+  if(s&&s.staff) return `<div class="pw-status ok">★ ${pt('active')}</div>`;
+  if(s){ const u=s.expires_at?(' · '+pt('until')+' '+new Date(s.expires_at).toLocaleDateString('ru-RU')):''; return `<div class="pw-status ok">✓ ${pt('active')}${u}</div>`; }
+  return `<div class="pw-status">${pt('none')}</div>`;
+}
+function renderPaywall(promoOnly){
+  const ov=document.getElementById('paywall-overlay'); if(!ov) return;
+  if(promoOnly){ // только пересчёт цен/итога без сброса фокуса промо-инпута
+    AQ_PLANS.forEach(p=>{ const el=document.getElementById('pw-price-'+p.id); if(el){ const d=_payState.promo?_payState.promo.discount:0; el.innerHTML = d?`<s>${fmtSum(p.price)}</s> ${fmtSum(Math.round(p.price*(1-d/100)))}`:fmtSum(p.price); } });
+    const tot=document.getElementById('pw-total'); if(tot) tot.textContent=fmtSum(planFinalPrice(_payState.plan));
+    return;
+  }
+  const d=_payState.promo?_payState.promo.discount:0;
+  const cards=AQ_PLANS.map(p=>{
+    const sel=_payState.plan===p.id;
+    const perMo=Math.round((d?p.price*(1-d/100):p.price)/p.months);
+    const priceHtml=d?`<s>${fmtSum(p.price)}</s> ${fmtSum(Math.round(p.price*(1-d/100)))}`:fmtSum(p.price);
+    return `<button class="pw-card${sel?' sel':''}" onclick="paySelectPlan('${p.id}')">
+      ${p.popular?`<span class="pw-badge">${pt('popular')}</span>`:''}
+      <div class="pw-card-name">${planName(p.id)}</div>
+      <div class="pw-card-price" id="pw-price-${p.id}">${priceHtml}</div>
+      <div class="pw-card-permo">${fmtSum(perMo)} ${pt('perMonth')}</div>
+    </button>`;
+  }).join('');
+  ov.innerHTML=`<div class="pw-modal" role="dialog" aria-modal="true" aria-label="${pt('title')}">
+    <button class="pw-x" onclick="closePaywall()" aria-label="${pt('close')}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <h2 class="pw-title">${pt('title')}</h2>
+    <p class="pw-sub">${pt('sub')}</p>
+    ${subStatusHTML()}
+    <div class="pw-cards">${cards}</div>
+    <div class="pw-promo">
+      <input id="pw-promo-inp" class="pw-promo-inp" type="text" placeholder="${pt('promoPh')}" value="${_payState.promo?_payState.promo.code:''}" autocomplete="off">
+      <button class="pw-promo-btn" onclick="payApplyPromo()">${pt('apply')}</button>
+    </div>
+    <div id="pw-promo-msg" class="pw-promo-msg ${_payState.promo?'ok':''}">${_payState.promo?(pt('promoOk')+' −'+_payState.promo.discount+'%'):''}</div>
+    <div class="pw-total-row"><span>${pt('total')}</span><b id="pw-total">${fmtSum(planFinalPrice(_payState.plan))}</b></div>
+    <button class="pw-pay" onclick="payViaTelegram()">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+      ${pt('payTg')}</button>
+    <button class="pw-refresh" onclick="payRefresh()">${pt('refresh')}</button>
+    <p class="pw-note">${pt('note')}${PAY_REQ?'<br>'+PAY_REQ:''}</p>
+  </div>`;
+}
+
+/* ── HTML-заглушка для запертых шагов калькулятора (2–5) ── */
+function aqLockedStepHTML(){
+  return `<div class="pw-lock">
+    <div class="pw-lock-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="34" height="34"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h3 class="pw-lock-title">${pt('lockTitle')}</h3>
+    <p class="pw-lock-body">${pt('lockBody')}</p>
+    <button class="lg-btn px-6 py-2.5 text-sm" onclick="openPaywall()">${pt('lockBtn')}</button>
+  </div>`;
+}
+
+/* ── CSS модуля (инжектируется один раз) ── */
+(function injectPaywallCSS(){
+  if(document.getElementById('paywall-css')) return;
+  const css=`
+  .pw-ov{position:fixed;inset:0;z-index:10000;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px;background:rgba(4,6,12,.72);backdrop-filter:blur(8px)}
+  .pw-ov.open{display:flex}
+  .pw-modal{position:relative;width:100%;max-width:460px;margin:auto;background:#0B0F1A;border:1px solid rgba(140,165,210,.16);border-radius:20px;padding:26px 22px 22px;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pwIn .22s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pwIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.pw-modal{animation:none}}
+  .pw-x{position:absolute;top:14px;right:14px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;color:#9aa7c0;background:rgba(255,255,255,.04);border:1px solid rgba(140,165,210,.12);cursor:pointer;transition:.15s}
+  .pw-x:hover{color:#E6EDF8;background:rgba(255,255,255,.08)}
+  .pw-title{font-size:19px;font-weight:800;color:#E6EDF8;margin:0 30px 4px 0}
+  .pw-sub{font-size:12.5px;color:#9aa7c0;margin-bottom:14px;line-height:1.5}
+  .pw-status{font-size:12px;color:#9aa7c0;background:rgba(255,255,255,.04);border:1px solid rgba(140,165,210,.12);border-radius:10px;padding:8px 12px;margin-bottom:16px}
+  .pw-status.ok{color:#34d399;border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.08)}
+  .pw-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:16px}
+  .pw-card{position:relative;text-align:center;background:rgba(255,255,255,.03);border:1.5px solid rgba(140,165,210,.14);border-radius:14px;padding:14px 8px 12px;cursor:pointer;transition:.15s;color:#E6EDF8}
+  .pw-card:hover{border-color:rgba(245,158,11,.5)}
+  .pw-card.sel{border-color:#f59e0b;background:rgba(245,158,11,.1);box-shadow:0 0 0 3px rgba(245,158,11,.12)}
+  .pw-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#0B0F1A;background:#f59e0b;border-radius:20px;padding:2px 8px;white-space:nowrap}
+  .pw-card-name{font-size:12px;font-weight:700;color:#cdd7ea;margin-bottom:6px}
+  .pw-card-price{font-size:13.5px;font-weight:800;color:#E6EDF8;line-height:1.3;font-variant-numeric:tabular-nums}
+  .pw-card-price s{display:block;font-size:10.5px;font-weight:500;color:#6b7894}
+  .pw-card-permo{font-size:10px;color:#9aa7c0;margin-top:4px;font-variant-numeric:tabular-nums}
+  .pw-promo{display:flex;gap:8px;margin-bottom:6px}
+  .pw-promo-inp{flex:1;min-width:0;background:rgba(255,255,255,.04);border:1px solid rgba(140,165,210,.16);border-radius:10px;padding:11px 13px;color:#E6EDF8;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+  .pw-promo-inp:focus{outline:none;border-color:rgba(245,158,11,.55)}
+  .pw-promo-inp::placeholder{text-transform:none;letter-spacing:normal;color:#6b7894}
+  .pw-promo-btn{flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(140,165,210,.16);border-radius:10px;padding:0 16px;color:#cdd7ea;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+  .pw-promo-btn:hover{background:rgba(255,255,255,.1);color:#E6EDF8}
+  .pw-promo-msg{min-height:16px;font-size:11.5px;margin-bottom:12px}
+  .pw-promo-msg.ok{color:#34d399}
+  .pw-promo-msg.err{color:#f87171}
+  .pw-total-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid rgba(140,165,210,.12);margin-bottom:14px}
+  .pw-total-row span{font-size:13px;color:#9aa7c0}
+  .pw-total-row b{font-size:19px;font-weight:800;color:#f59e0b;font-variant-numeric:tabular-nums}
+  .pw-pay{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#f59e0b;color:#0B0F1A;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;transition:.15s;margin-bottom:8px}
+  .pw-pay:hover{background:#fbb12e;transform:translateY(-1px)}
+  .pw-refresh{width:100%;background:transparent;border:1px solid rgba(140,165,210,.16);border-radius:11px;padding:10px;color:#9aa7c0;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s}
+  .pw-refresh:hover{color:#E6EDF8;border-color:rgba(140,165,210,.3)}
+  .pw-note{font-size:11px;color:#7c89a3;line-height:1.5;margin-top:12px;text-align:center}
+  .pw-lock{text-align:center;padding:38px 20px;border:1.5px dashed rgba(245,158,11,.3);border-radius:18px;background:rgba(245,158,11,.04)}
+  .pw-lock-ic{width:64px;height:64px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(245,158,11,.12);color:#f59e0b}
+  .pw-lock-title{font-size:17px;font-weight:800;color:#E6EDF8;margin-bottom:8px}
+  .pw-lock-body{font-size:13px;color:#9aa7c0;line-height:1.6;max-width:340px;margin:0 auto 18px}
+  .pw-demo-tag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.28);border-radius:20px;padding:3px 10px}
+  @media (max-width:420px){.pw-card-price{font-size:12px}.pw-card-name{font-size:11px}}`;
+  const st=document.createElement('style'); st.id='paywall-css'; st.textContent=css; document.head.appendChild(st);
+})();
+
+/* ════════════════════════════════════════════════════════════
+   AQSec — криптопримитивы на нативном Web Crypto API (без зависимостей).
+   Назначение:
+     • хэширование паролей  — PBKDF2-SHA256 + соль (необратимо);
+     • шифрование данных    — AES-256-GCM, ключ выводится через PBKDF2;
+     • вспомогательные base64 / random.
+   Все методы async (SubtleCrypto). Деградирует мягко, если crypto.subtle
+   недоступен (старый браузер / file:// в части движков) — см. _hasSubtle.
+════════════════════════════════════════════════════════════ */
+const AQSec = (() => {
+  const PBKDF2_ITER = 150000;          // итераций PBKDF2 (баланс «безопасность/UX» для клиента)
+  const enc = new TextEncoder();
+  const subtle = (typeof crypto !== 'undefined' && crypto.subtle) ? crypto.subtle : null;
+  const hasSubtle = !!subtle;
+
+  const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const fromB64 = (str) => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+  const randomBytes = (n) => { const a = new Uint8Array(n); (crypto.getRandomValues ? crypto.getRandomValues(a) : a.fill(0)); return a; };
+
+  async function _pbkdf2(password, saltBytes, iter, lenBits) {
+    const baseKey = await subtle.importKey('raw', enc.encode(String(password)), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await subtle.deriveBits(
+      { name: 'PBKDF2', salt: saltBytes, iterations: iter, hash: 'SHA-256' }, baseKey, lenBits));
+  }
+
+  // Хэш пароля → самодостаточная запись {v,alg,iter,salt,hash}. Необратима.
+  async function hashPassword(password, opts) {
+    if (!hasSubtle) return { v: 0, alg: 'fallback', hash: btoa(encodeURIComponent(password) + '|aq2') };
+    const iter = (opts && opts.iter) || PBKDF2_ITER;
+    const salt = (opts && opts.salt) ? fromB64(opts.salt) : randomBytes(16);
+    const hash = await _pbkdf2(password, salt, iter, 256);
+    return { v: 1, alg: 'PBKDF2-SHA256', iter, salt: b64(salt), hash: b64(hash) };
+  }
+
+  // Постоянное по времени сравнение хэшей (минимизирует timing-leak).
+  function _constEq(a, b) {
+    if (a.length !== b.length) return false;
+    let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0;
+  }
+
+  // Проверка пароля против записи hashPassword(). Поддерживает fallback v:0.
+  async function verifyPassword(password, rec) {
+    if (!rec) return false;
+    if (rec.v === 0 || rec.alg === 'fallback') return _constEq(btoa(encodeURIComponent(password) + '|aq2'), rec.hash || '');
+    if (!hasSubtle) return false;
+    const cand = await hashPassword(password, { iter: rec.iter, salt: rec.salt });
+    return _constEq(cand.hash, rec.hash);
+  }
+
+  // Вывести AES-GCM ключ из пароля+соли (PBKDF2). Возвращает CryptoKey.
+  async function deriveKey(password, saltBytes, iter) {
+    const baseKey = await subtle.importKey('raw', enc.encode(String(password)), 'PBKDF2', false, ['deriveKey']);
+    return subtle.deriveKey(
+      { name: 'PBKDF2', salt: saltBytes, iterations: iter || PBKDF2_ITER, hash: 'SHA-256' },
+      baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+
+  // Зашифровать JS-объект ключом deriveKey() → компактная строка-конверт.
+  async function encryptJSON(obj, key) {
+    const iv = randomBytes(12);
+    const ct = await subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)));
+    return 'AQE1.' + b64(iv) + '.' + b64(ct);
+  }
+  async function decryptJSON(blob, key) {
+    if (typeof blob !== 'string' || blob.indexOf('AQE1.') !== 0) throw new Error('not-encrypted');
+    const [, ivB, ctB] = blob.split('.');
+    const pt = await subtle.decrypt({ name: 'AES-GCM', iv: fromB64(ivB) }, key, fromB64(ctB));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  const isEncrypted = (v) => typeof v === 'string' && v.indexOf('AQE1.') === 0;
+
+  return { hasSubtle, hashPassword, verifyPassword, deriveKey, encryptJSON, decryptJSON,
+           isEncrypted, randomBytes, b64, fromB64, PBKDF2_ITER, _fromB64: fromB64 };
+})();
+
+/* ════════════════════════════════════════════════════════════
+   AQVault — прозрачное шифрование чувствительных полей localStorage
+   (AES-256-GCM). Паттерн: «расшифровать-в-память + асинхронно-сохранить»,
+   чтобы синхронные вызовы (loadLeads/saveLeads и т.п.) не пришлось менять.
+   Ключ выводится PBKDF2 из per-device секрета (aq_dk_v1).
+   ⚠️ ЧЕСТНО: ключ лежит на устройстве → защита от «случайно увидел plaintext
+   в localStorage / в бэкапе-экспорте / другой скрипт прочитал», но НЕ от того,
+   кто открыл исходник и извлёк ключ. Для заявок это оправданно: их пишет
+   анонимный посетитель (пароля нет), поэтому password-ключ невозможен.
+   Данные за паролем пользователя — отдельная история (см. отчёт).
+════════════════════════════════════════════════════════════ */
+const AQVault = (() => {
+  const DK_KEY = 'aq_dk_v1';
+  const FIXED_SALT = AQSec.fromB64('YXF2YXVsdC1zYWx0LXYx'); // секрет случайный → фикс.соль допустима
+  let _keyP = null;
+  const _cache  = Object.create(null);  // localKey → расшифрованная строка | null
+  const _loaded = Object.create(null);  // localKey → true после первой загрузки
+
+  function _deviceSecret(){
+    let s; try{ s = localStorage.getItem(DK_KEY); }catch(e){}
+    if(!s){ s = AQSec.b64(AQSec.randomBytes(32)); try{ localStorage.setItem(DK_KEY, s); }catch(e){} }
+    return s;
+  }
+  function _key(){ if(!_keyP) _keyP = AQSec.deriveKey(_deviceSecret(), FIXED_SALT, 100000); return _keyP; }
+
+  async function load(localKey){
+    let raw; try{ raw = localStorage.getItem(localKey); }catch(e){ raw=null; }
+    if(raw == null){ _cache[localKey]=null; _loaded[localKey]=true; return null; }
+    if(AQSec.isEncrypted(raw)){
+      if(AQSec.hasSubtle){ try{ _cache[localKey]=JSON.stringify(await AQSec.decryptJSON(raw, await _key())); }catch(e){ _cache[localKey]=null; } }
+      else _cache[localKey]=null;
+    } else {
+      _cache[localKey]=raw; // legacy plaintext → принять и перешифровать
+      if(AQSec.hasSubtle){ try{ const e=await AQSec.encryptJSON(JSON.parse(raw), await _key()); localStorage.setItem(localKey,e); }catch(e){} }
+    }
+    _loaded[localKey]=true; return _cache[localKey];
+  }
+  function getSync(localKey){ return _loaded[localKey] ? _cache[localKey] : undefined; }
+  function isLoaded(localKey){ return !!_loaded[localKey]; }
+  function setSync(localKey, str){
+    _cache[localKey]=str; _loaded[localKey]=true;
+    if(!AQSec.hasSubtle){ try{ localStorage.setItem(localKey, str); }catch(e){} return; }
+    _key().then(k=>AQSec.encryptJSON(JSON.parse(str), k))
+          .then(enc=>{ try{ localStorage.setItem(localKey, enc); }catch(e){} })
+          .catch(()=>{ try{ localStorage.setItem(localKey, str); }catch(e){} });
+  }
+  return { load, getSync, isLoaded, setSync };
+})();
+
+/* ════════════════════════════════════════════════════════════
    AUTH MODULE (Фаза 1-3)
    localStorage-путь — теперь это ОФЛАЙН-FALLBACK (когда Supabase не настроен).
    Когда SB_CONFIGURED=true, активен только путь Supabase (одна точка правды).
@@ -2186,7 +2736,11 @@ const AUTH_USERS_KEY = 'aq_users_v3';
 const AUTH_SESSION_KEY = 'aq_session_v3';
 
 const OWNER_LOGIN = 'Hasanboy.admin';
-const OWNER_PASS  = atob('UC5tYXhtdWQ3NA=='); // obfuscated; move to env/backend for real security
+/* Пароль владельца БОЛЬШЕ НЕ хранится в коде (даже в base64).
+   Здесь лежит только необратимая PBKDF2-SHA256 запись (соль+хэш, 150k итераций).
+   По ней нельзя восстановить пароль — только проверить введённый.
+   Сменить пароль: см. scripts/encrypt.js → подкоманда owner-hash (или README). */
+const OWNER_CRED = {"v":1,"alg":"PBKDF2-SHA256","iter":150000,"salt":"cPlEBY6MKQy5UhJqtoaWbg==","hash":"L84sQiQEwAEa/WdZNadWlvKLEsDadtlrLsGWnfNFtZo="};
 
 const CLIENT_TYPES = [
   {id:'client', label:'Простой клиент',  labelUz:'Oddiy mijoz',     labelEn:'Regular Client',
@@ -2211,9 +2765,48 @@ function authLoadUsers(){
   return [];
 }
 function authSaveUsers(users){ try{ localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users)); }catch(e){} }
-function authGetSession(){ try{ return localStorage.getItem(AUTH_SESSION_KEY)||null; }catch(e){ return null; } }
-function authSetSession(id){ try{ localStorage.setItem(AUTH_SESSION_KEY, id||''); }catch(e){} }
+/* Сессия = токен со СРОКОМ ИСТЕЧЕНИЯ, а не «залогинен=true».
+   Формат: {id, t:случайный-токен, exp:timestamp}. По истечении — авто-очистка.
+   ⚠️ Честно: на чистом клиенте любую сессию можно подделать через DevTools —
+   срок и токен лишь поднимают планку; реальная защита прав = бэкенд (Supabase). */
+const AUTH_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 дней
+function authGetSession(){
+  try{
+    const raw = localStorage.getItem(AUTH_SESSION_KEY); if(!raw) return null;
+    if(raw.charAt(0) !== '{'){ authSetSession(raw); return raw; } // миграция старого формата (голый id)
+    const s = JSON.parse(raw);
+    if(!s || !s.id) return null;
+    if(s.exp && Date.now() > s.exp){ authClearSession(); return null; } // протух
+    return s.id;
+  }catch(e){ return null; }
+}
+function authSetSession(id){
+  try{
+    if(!id){ localStorage.removeItem(AUTH_SESSION_KEY); return; }
+    const tok = AQSec.b64(AQSec.randomBytes(16));
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ id, t: tok, exp: Date.now() + AUTH_SESSION_TTL_MS }));
+  }catch(e){}
+}
 function authClearSession(){ try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){} }
+
+/* ── Анти-перебор: лимит попыток + растущая задержка ──
+   До 5 неудач — без блокировки; затем экспоненциальная задержка (2с→…, потолок 5 мин).
+   Состояние держим в localStorage, чтобы перезагрузка страницы не сбрасывала лок. */
+const AUTH_THROTTLE_KEY = 'aq_login_throttle_v1';
+function _authThrottle(){ try{ const d=JSON.parse(localStorage.getItem(AUTH_THROTTLE_KEY)); return (d&&typeof d==='object')?d:{}; }catch(e){ return {}; } }
+function _authThrottleSave(o){ try{ localStorage.setItem(AUTH_THROTTLE_KEY, JSON.stringify(o)); }catch(e){} }
+function authThrottleCheck(login){
+  const key=String(login||'').toLowerCase(); const rec=_authThrottle()[key];
+  if(rec && rec.until && Date.now()<rec.until) return {locked:true, wait:Math.ceil((rec.until-Date.now())/1000)};
+  return {locked:false};
+}
+function authThrottleFail(login){
+  const key=String(login||'').toLowerCase(); const o=_authThrottle();
+  const rec=o[key]||{n:0,until:0}; rec.n=(rec.n||0)+1;
+  if(rec.n>=5){ const pow=Math.min(rec.n-4,8); rec.until=Date.now()+Math.min(2000*Math.pow(2,pow-1), 5*60*1000); }
+  o[key]=rec; _authThrottleSave(o); return rec;
+}
+function authThrottleReset(login){ const key=String(login||'').toLowerCase(); const o=_authThrottle(); if(o[key]){ delete o[key]; _authThrottleSave(o); } }
 
 /* Хранилище данных владельца в офлайн-режиме (профиль + сохранённые расчёты).
    Владелец — синтетический аккаунт (__owner__), его нет в aq_users_v3,
@@ -2241,40 +2834,67 @@ function _legacyCurrentUser(){
   return u||null;
 }
 
-/* Simple deterministic hash — not cryptographic, but removes plaintext from storage.
-   For real security migrate to Supabase Auth or similar backend. */
-function _hashPass(p){ return btoa(encodeURIComponent(p)+'|aq2'); }
+/* Старый обратимый «хэш» (base64) — оставлен ТОЛЬКО чтобы распознать и
+   мигрировать старые записи на PBKDF2. Для новых паролей НЕ используется. */
+function _legacyHashPass(p){ return btoa(encodeURIComponent(p)+'|aq2'); }
 
-function authLogin(login, pass){
-  if(login===OWNER_LOGIN && pass===OWNER_PASS){ authSetSession('__owner__'); return {ok:true}; }
+function _authLockedMsg(wait){
+  return (_lang==='uz') ? ('Juda ko‘p urinish. '+wait+' s kuting.')
+       : (_lang==='en') ? ('Too many attempts. Wait '+wait+'s.')
+       : ('Слишком много попыток. Подождите '+wait+' с.');
+}
+
+async function authLogin(login, pass){
+  // 0) анти-перебор
+  const th = authThrottleCheck(login);
+  if(th.locked) return {ok:false, err:_authLockedMsg(th.wait), locked:true, wait:th.wait};
+
+  // 1) владелец — проверка по необратимой PBKDF2-записи (пароль в коде отсутствует)
+  if(login===OWNER_LOGIN){
+    const ok = await AQSec.verifyPassword(pass, OWNER_CRED);
+    if(ok){ authThrottleReset(login); authSetSession('__owner__'); return {ok:true}; }
+    authThrottleFail(login); return {ok:false, err:'Неверный пароль'};
+  }
+
+  // 2) обычные пользователи
   const users = authLoadUsers();
   const u = users.find(u=>u.login.toLowerCase()===login.toLowerCase());
-  if(!u) return {ok:false, err:'Пользователь не найден'};
-  const hashed = _hashPass(pass);
-  if(u.password_hash){
-    if(u.password_hash !== hashed) return {ok:false, err:'Неверный пароль'};
-  } else {
-    // legacy plaintext — verify then migrate
-    if(u.password !== pass) return {ok:false, err:'Неверный пароль'};
-    u.password_hash = hashed; delete u.password;
-    const all = authLoadUsers(); const idx = all.findIndex(x=>x.id===u.id);
-    if(idx>=0){ all[idx]=u; authSaveUsers(all); }
+  if(!u){ authThrottleFail(login); return {ok:false, err:'Пользователь не найден'}; }
+
+  let ok=false, needUpgrade=false;
+  if(u.pwd && typeof u.pwd==='object'){            // новый формат (PBKDF2)
+    ok = await AQSec.verifyPassword(pass, u.pwd);
+  } else if(u.password_hash){                       // старый base64-«хэш» → апгрейд
+    ok = (u.password_hash === _legacyHashPass(pass)); needUpgrade = ok;
+  } else if(u.password!=null){                      // legacy plaintext → апгрейд
+    ok = (u.password === pass); needUpgrade = ok;
   }
+  if(!ok){ authThrottleFail(login); return {ok:false, err:'Неверный пароль'}; }
+
+  if(needUpgrade){
+    try{
+      u.pwd = await AQSec.hashPassword(pass);
+      delete u.password; delete u.password_hash;
+      const all=authLoadUsers(); const idx=all.findIndex(x=>x.id===u.id);
+      if(idx>=0){ all[idx]=u; authSaveUsers(all); }
+    }catch(e){}
+  }
+  authThrottleReset(login);
   authSetSession(u.id);
   return {ok:true};
 }
 
-function authRegister(data){
+async function authRegister(data){
   if(!data.login||data.login.length<3) return {ok:false,err:'Логин минимум 3 символа'};
   if(!data.password||data.password.length<4) return {ok:false,err:'Пароль минимум 4 символа'};
   if(!data.phone||data.phone.length<7) return {ok:false,err:'Укажите номер телефона'};
   if(!data.clientType) return {ok:false,err:'Выберите тип клиента'};
-  if(data.login===OWNER_LOGIN) return {ok:false,err:'Этот логин зарезервирован'};
+  if(data.login.toLowerCase()===OWNER_LOGIN.toLowerCase()) return {ok:false,err:'Этот логин зарезервирован'};
   const users = authLoadUsers();
   if(users.some(u=>u.login.toLowerCase()===data.login.toLowerCase())) return {ok:false,err:'Логин уже занят'};
   const user = {
     id:'u'+Date.now()+Math.random().toString(36).slice(2,6),
-    login:data.login.trim(), password_hash:_hashPass(data.password),
+    login:data.login.trim(), pwd:await AQSec.hashPassword(data.password),
     phone:data.phone.trim(), phone2:(data.phone2||'').trim(),
     email:(data.email||'').trim(), city:(data.city||'').trim(),
     clientType:data.clientType, role:'user',
@@ -2409,7 +3029,9 @@ async function doLogin(){
     closeAuth(); toast(t('toast-welcome'));
     return;
   }
-  const r=authLogin(login,pass);
+  const btn=event&&event.target; if(btn) btn.disabled=true;
+  const r=await authLogin(login,pass);
+  if(btn) btn.disabled=false;
   if(!r.ok){ showAuthErr(r.err); return; }
   closeAuth(); initAuthNav();
   toast(t('welcome-back')+login+' ✓');
@@ -2429,7 +3051,9 @@ async function doRegister(){
     toast(t(r.needsConfirm?'toast-account-confirm':'toast-account-ok'));
     return;
   }
-  const r=authRegister(data);
+  const btn=event&&event.target; if(btn) btn.disabled=true;
+  const r=await authRegister(data);
+  if(btn) btn.disabled=false;
   if(!r.ok){ showAuthErr(r.err); return; }
   closeAuth(); initAuthNav();
   toast(t('toast-account-ok'));
@@ -2541,51 +3165,61 @@ function openProfile(){
     const _evRaw = JSON.parse(localStorage.getItem('aq_events_v1')||'[]');
     const events = Array.isArray(_evRaw) ? _evRaw : Object.entries(_evRaw).flatMap(([type,n])=>Array.from({length:n},()=>({type})));
     const badges = _calcBadges(u, events, projs);
-    const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}) : '—';
+    const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString(_lang==='ru'?'ru-RU':_lang==='uz'?'uz-UZ':'en-US',{day:'numeric',month:'long',year:'numeric'}) : '—';
+    const pfFields=[u.name||u.login,u.phone,u.email,u.company,u.city,avatar];
+    const pfDone=pfFields.filter(Boolean).length, pfPct=Math.round(pfDone/pfFields.length*100);
 
     document.getElementById('profile-content').innerHTML=`
-    <!-- Аватар + базовая инфо -->
-    <div class="sec-card">
-      <div class="flex items-center gap-4 mb-4">
-        <div class="relative flex-shrink-0" style="width:68px;height:68px">
-          <div id="pf-avatar-wrap" class="w-full h-full rounded-2xl overflow-hidden flex items-center justify-center cursor-pointer" style="background:rgba(245,158,11,.15)" onclick="document.getElementById('pf-avatar-input').click()" title="Нажмите для смены фото">
-            ${avatar ? `<img src="${avatar}" class="w-full h-full object-cover">` : `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" class="h-8 w-8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`}
+    <!-- HERO: аватар + базовая инфо -->
+    <div class="pf-hero">
+      <div class="flex items-center gap-4">
+        <div class="relative flex-shrink-0" style="width:80px;height:80px">
+          <div id="pf-avatar-wrap" class="pf-avatar-lg" onclick="document.getElementById('pf-avatar-input').click()" title="${t('toast-avatar-ok')}">
+            ${avatar ? `<img src="${avatar}">` : `<span class="pf-avatar-init">${_rvEsc(_rvInitials(u.name||u.login))}</span>`}
           </div>
-          <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer" style="background:#f59e0b" onclick="document.getElementById('pf-avatar-input').click()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" class="h-3 w-3"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <div class="pf-cam" onclick="document.getElementById('pf-avatar-input').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" style="width:13px;height:13px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           </div>
           <input type="file" id="pf-avatar-input" accept="image/*" style="display:none" onchange="_pfAvatarChange(event,'${u.id}')">
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-lg font-extrabold text-cream truncate">${u.name||u.login}</p>
-          <span class="adm-badge ${u.role==='owner'?'owner':u.role==='admin'?'admin':'user'}">${roleLabel}</span>
-          ${ct?`<p class="text-xs text-muted mt-1">${ct.label}</p>`:''}
+          <p class="text-xl font-extrabold text-cream truncate" style="line-height:1.15">${_rvEsc(u.name||u.login)}</p>
+          <div class="flex items-center gap-2 flex-wrap" style="margin-top:.35rem">
+            <span class="adm-badge ${u.role==='owner'?'owner':u.role==='admin'?'admin':'user'}">${roleLabel}</span>
+            ${ct?`<span class="text-xs text-muted">${ct.label}</span>`:''}
+          </div>
+          ${u.email?`<div class="pf-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg><span class="truncate">${_rvEsc(u.email)}</span></div>`:''}
+          <div class="pf-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${t('pf-registered')}: ${joinDate}</div>
         </div>
       </div>
-      ${u.email?`<div class="flex items-center gap-2 text-xs text-muted py-1.5 border-t border-sand/8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5 flex-shrink-0"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>${u.email}</div>`:''}
-      <div class="flex items-center gap-2 text-xs text-muted py-1.5 border-t border-sand/8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5 flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Зарегистрирован: ${joinDate}</div>
+      <div style="margin-top:1.1rem">
+        <div class="flex items-center justify-between" style="font-size:.7rem;color:#C5D0E8;opacity:.85;margin-bottom:.15rem">
+          <span>${t('pf-completeness')}</span><span class="mono font-bold" style="color:#f59e0b">${pfPct}%</span>
+        </div>
+        <div class="pf-prog-track"><div class="pf-prog-fill" id="pf-prog-fill" data-w="${pfPct}%"></div></div>
+      </div>
     </div>
     <!-- Статистика -->
     <div class="sec-card">
-      <p class="text-base font-bold text-cream mb-3">Статистика</p>
-      <div class="grid grid-cols-3 gap-3 mb-3">
-        <div class="rounded-xl text-center py-3" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15)">
-          <p class="text-2xl font-extrabold text-amber mono">${projs}</p>
-          <p class="text-xs text-muted mt-1">Расчётов</p>
+      <p class="text-base font-bold text-cream mb-3">${t('pf-stats-title')}</p>
+      <div class="pf-stat-grid">
+        <div class="pf-stat accent" style="animation-delay:.05s">
+          <p class="pf-stat-num accent">${projs}</p>
+          <p class="pf-stat-lbl">${t('pf-stat-calcs')}</p>
         </div>
-        <div class="rounded-xl text-center py-3" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)">
-          <p class="text-2xl font-extrabold text-cream mono">${events.filter(e=>e.type==='calc_complete').length||0}</p>
-          <p class="text-xs text-muted mt-1">Завершено</p>
+        <div class="pf-stat" style="animation-delay:.12s">
+          <p class="pf-stat-num text-cream">${events.filter(e=>e.type==='calc_complete').length||0}</p>
+          <p class="pf-stat-lbl">${t('pf-stat-done')}</p>
         </div>
-        <div class="rounded-xl text-center py-3" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)">
-          <p class="text-2xl font-extrabold text-cream mono">${events.filter(e=>e.type==='lead_sent').length||0}</p>
-          <p class="text-xs text-muted mt-1">Заявок</p>
+        <div class="pf-stat" style="animation-delay:.19s">
+          <p class="pf-stat-num text-cream">${events.filter(e=>e.type==='lead_sent').length||0}</p>
+          <p class="pf-stat-lbl">${t('pf-stat-leads')}</p>
         </div>
       </div>
       <!-- Бейджи -->
-      ${badges.length ? `<p class="text-xs font-semibold text-muted uppercase tracking-widest mb-2">Достижения</p>
+      ${badges.length ? `<p class="text-xs font-semibold text-muted uppercase tracking-widest mb-2">${t('pf-achievements')}</p>
         <div class="flex flex-wrap gap-2">
-          ${badges.map(b=>`<span class="chip" title="${b.desc}">${b.icon} ${b.name}</span>`).join('')}
+          ${badges.map(b=>`<span class="chip" title="${(b.desc||'').replace(/"/g,'&quot;')}">${b.icon} ${b.name}</span>`).join('')}
         </div>` : ''}
     </div>
     <!-- Редактирование профиля -->
@@ -2624,8 +3258,8 @@ function openProfile(){
     <!-- Сохранённые адреса объектов -->
     <div class="sec-card">
       <div class="flex items-center justify-between mb-3">
-        <p class="text-base font-bold text-cream">Адреса объектов</p>
-        <button onclick="_pfAddAddress('${u.id}')" class="lg-btn-sec text-xs px-3 py-1.5">+ Добавить</button>
+        <p class="text-base font-bold text-cream">${t('pf-addresses')}</p>
+        <button onclick="_pfAddAddress('${u.id}')" class="lg-btn-sec text-xs px-3 py-1.5">+ ${t('pf-add')}</button>
       </div>
       <div id="pf-addresses">
         ${addresses.length ? addresses.map((a,i)=>`
@@ -2667,6 +3301,7 @@ function openProfile(){
         </button>
       </div>
     </div>`;
+    requestAnimationFrame(()=>{ const pf=document.getElementById('pf-prog-fill'); if(pf) pf.style.width=pf.dataset.w; });
   });
 }
 function closeProfile(){ _closeSec('profile-overlay'); }
@@ -2684,7 +3319,7 @@ function _pfAvatarChange(e, userId){
   reader.readAsDataURL(f);
 }
 function _pfAddAddress(userId){
-  const a = prompt('Адрес объекта:'); if(!a?.trim()) return;
+  const a = prompt(t('pf-prompt-address')); if(!a?.trim()) return;
   const arr = JSON.parse(localStorage.getItem('aq_addresses_'+userId)||'[]');
   arr.push(a.trim()); localStorage.setItem('aq_addresses_'+userId, JSON.stringify(arr));
   toast(t('toast-address-ok'));
@@ -4595,7 +5230,7 @@ function _applyShadow(s){
 }
 function _clearCalcCache(){
   const keys = Object.keys(localStorage).filter(k=>k.startsWith('aq_')||k.startsWith('AQ_'));
-  const keep = ['aq-theme','aq-lang','aq_app_settings_v1','aq_users_v3','aq_owner_v1','aq_migrated_v1'];
+  const keep = ['aq-theme','aq-lang','aq_app_settings_v1','aq_users_v3','aq_owner_v1','aq_migrated_v1','aq_dk_v1'];
   keys.filter(k=>!keep.includes(k)).forEach(k=>localStorage.removeItem(k));
   toast(t('toast-cache-cleared'));
 }
@@ -4658,7 +5293,122 @@ async function adminPage(page){
   if(page==='dashboard') c.innerHTML=await adminDashboard();
   else if(page==='users') c.innerHTML=await adminUsers();
   else if(page==='leads') c.innerHTML=await adminLeads();
+  else if(page==='subs') c.innerHTML=await adminSubs();
+  else if(page==='promos') c.innerHTML=await adminPromos();
   else if(page.startsWith('user:')) c.innerHTML=await adminUserProfile(page.slice(5));
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN · ПОДПИСКИ — ручная активация (Фаза 1) + список активных
+════════════════════════════════════════════════════════════ */
+async function adminSubs(){
+  if(!SB_CONFIGURED){
+    return `<h2 class="text-xl font-extrabold text-cream mb-4">Подписки</h2>
+    <div class="adm-stat text-left"><p class="text-sm text-muted">Управление подписками доступно при подключённом Supabase (см. <span class="mono">supabase/payment-schema.sql</span>). Сейчас сайт в офлайн-режиме.</p></div>`;
+  }
+  const users=await aqFetchProfiles();
+  let subs=[];
+  try{ const { data }=await sb().from('subscriptions').select('*').order('expires_at',{ascending:false}); subs=data||[]; }catch(e){}
+  const now=Date.now();
+  const active=subs.filter(s=>s.status==='active' && (!s.expires_at || new Date(s.expires_at)>now));
+  const byUser={}; users.forEach(u=>byUser[u.id]=u);
+  const planLbl={m1:'1 мес',m6:'6 мес',m12:'12 мес'};
+  const opts=users.map(u=>`<option value="${u.id}">${(u.login||u.email||'—').replace(/"/g,'')}</option>`).join('');
+  return `
+  <h2 class="text-xl font-extrabold text-cream mb-5">Подписки</h2>
+  <div class="adm-stat text-left mb-6" style="padding:16px">
+    <p class="text-xs font-bold text-cream mb-3">Активировать подписку (после оплаты)</p>
+    <div class="grid gap-2" style="grid-template-columns:1fr">
+      <select id="subact-user" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal">${opts}</select>
+      <div class="grid grid-cols-3 gap-2">
+        <select id="subact-plan" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal"><option value="m1">1 месяц</option><option value="m6" selected>6 месяцев</option><option value="m12">12 месяцев</option></select>
+        <input id="subact-promo" class="pw-promo-inp" placeholder="Промокод (необяз.)">
+        <button class="lg-btn px-4 py-2 text-sm" onclick="adminActivateSub()">Активировать</button>
+      </div>
+    </div>
+  </div>
+  <h3 class="text-sm font-bold text-cream mb-3">Активные подписки · ${active.length}</h3>
+  ${active.length===0?'<p class="text-xs text-muted">Нет активных подписок</p>':
+    active.map(s=>{ const u=byUser[s.user_id]; const exp=s.expires_at?new Date(s.expires_at).toLocaleDateString('ru-RU'):'∞';
+      return `<div class="adm-ucard"><div class="flex items-center justify-between gap-2">
+        <div><div class="font-semibold text-cream text-sm mb-0.5">${u?(u.login||u.email):s.user_id.slice(0,8)}</div>
+        <p class="text-xs text-muted">${planLbl[s.plan]||s.plan} · до ${exp}${s.promo_code?' · промо '+s.promo_code:''} · ${s.source||'manual'}</p></div>
+        <button class="text-xs text-red-400 hover:underline" onclick="adminCancelSub('${s.id}')">Отменить</button>
+      </div></div>`; }).join('')}`;
+}
+async function adminActivateSub(){
+  const uid=document.getElementById('subact-user')?.value;
+  const plan=document.getElementById('subact-plan')?.value;
+  const promo=document.getElementById('subact-promo')?.value||null;
+  if(!uid||!plan) return;
+  const price=aqPlan(plan)?aqPlan(plan).price:null;
+  try{
+    const { error }=await sb().rpc('admin_activate_sub',{ p_user:uid, p_plan:plan, p_amount:price, p_promo:promo, p_source:'manual' });
+    if(error){ toast('Ошибка: '+error.message,'err'); return; }
+    toast('Подписка активирована'); adminPage('subs');
+  }catch(e){ toast('Ошибка активации','err'); }
+}
+async function adminCancelSub(id){
+  if(!confirm('Отменить эту подписку?')) return;
+  try{ const { error }=await sb().from('subscriptions').update({status:'canceled'}).eq('id',id);
+    if(error){ toast('Ошибка','err'); return; } toast('Отменено'); adminPage('subs');
+  }catch(e){ toast('Ошибка','err'); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN · ПРОМОКОДЫ — создание/отзыв (скидка 10/30/50/100 %)
+════════════════════════════════════════════════════════════ */
+async function adminPromos(){
+  let promos=[];
+  if(SB_CONFIGURED){ try{ const { data }=await sb().from('promo_codes').select('*').order('created_at',{ascending:false}); promos=data||[]; }catch(e){} }
+  else { promos=aqPromosLocal(); }
+  return `
+  <h2 class="text-xl font-extrabold text-cream mb-5">Промокоды</h2>
+  <div class="adm-stat text-left mb-6" style="padding:16px">
+    <p class="text-xs font-bold text-cream mb-3">Создать промокод</p>
+    <div class="grid grid-cols-2 gap-2 mb-2">
+      <input id="promo-code" class="pw-promo-inp" placeholder="КОД">
+      <select id="promo-disc" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal"><option value="10">−10%</option><option value="30">−30%</option><option value="50">−50%</option><option value="100">−100% (бесплатно)</option></select>
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+      <input id="promo-max" class="pw-promo-inp" type="number" min="1" placeholder="Лимит (пусто=∞)" style="text-transform:none;letter-spacing:normal">
+      <input id="promo-exp" class="pw-promo-inp" type="date" style="text-transform:none;letter-spacing:normal">
+      <button class="lg-btn px-4 py-2 text-sm" onclick="adminCreatePromo()">Создать</button>
+    </div>
+    ${!SB_CONFIGURED?'<p class="text-[11px] text-muted mt-2">Офлайн-режим: коды хранятся в этом браузере. Для общих кодов подключите Supabase.</p>':''}
+  </div>
+  <h3 class="text-sm font-bold text-cream mb-3">Коды · ${promos.length}</h3>
+  ${promos.length===0?'<p class="text-xs text-muted">Пока нет промокодов</p>':
+    promos.map(p=>{ const exp=p.expires_at?new Date(p.expires_at).toLocaleDateString('ru-RU'):'∞';
+      const lim=p.max_uses!=null?`${p.used_count||0}/${p.max_uses}`:`${p.used_count||0}/∞`;
+      const off=p.active===false;
+      return `<div class="adm-ucard" style="${off?'opacity:.5':''}"><div class="flex items-center justify-between gap-2">
+        <div><div class="font-semibold text-cream text-sm mb-0.5">${p.code} <span class="adm-badge admin">−${p.discount}%</span></div>
+        <p class="text-xs text-muted">использований ${lim} · до ${exp}${off?' · выключен':''}</p></div>
+        <button class="text-xs text-red-400 hover:underline" onclick="adminDeletePromo('${p.code}')">Удалить</button>
+      </div></div>`; }).join('')}`;
+}
+async function adminCreatePromo(){
+  const code=(document.getElementById('promo-code')?.value||'').trim().toUpperCase();
+  const discount=parseInt(document.getElementById('promo-disc')?.value,10);
+  const maxV=document.getElementById('promo-max')?.value;
+  const expV=document.getElementById('promo-exp')?.value;
+  if(!code){ toast('Введите код','err'); return; }
+  if(![10,30,50,100].includes(discount)){ toast('Неверная скидка','err'); return; }
+  const row={ code, discount, max_uses:maxV?parseInt(maxV,10):null, expires_at:expV?new Date(expV).toISOString():null, active:true };
+  if(SB_CONFIGURED){
+    try{ const { error }=await sb().from('promo_codes').upsert(row); if(error){ toast('Ошибка: '+error.message,'err'); return; } }
+    catch(e){ toast('Ошибка','err'); return; }
+  } else {
+    const list=aqPromosLocal().filter(x=>x.code!==code); list.unshift({...row, used_count:0}); aqPromosLocalSave(list);
+  }
+  toast('Промокод создан'); adminPage('promos');
+}
+async function adminDeletePromo(code){
+  if(!confirm('Удалить промокод '+code+'?')) return;
+  if(SB_CONFIGURED){ try{ const { error }=await sb().from('promo_codes').delete().eq('code',code); if(error){ toast('Ошибка','err'); return; } }catch(e){ toast('Ошибка','err'); return; } }
+  else { aqPromosLocalSave(aqPromosLocal().filter(x=>x.code!==code)); }
+  toast('Удалено'); adminPage('promos');
 }
 
 /* Загрузка пользователей: Supabase (профили) или localStorage-fallback. */
@@ -4853,8 +5603,20 @@ async function adminLeads(){
    LEADS MODULE — сохраняем заявки из WhatsApp-формы в localStorage
 ════════════════════════════════════════════════════════════ */
 const LEADS_KEY = 'aq_leads_v1';
-function loadLeads(){ try{ const d=JSON.parse(localStorage.getItem(LEADS_KEY)); return Array.isArray(d)?d:[]; }catch(e){ return []; } }
-function saveLeads(arr){ try{ localStorage.setItem(LEADS_KEY,JSON.stringify(arr)); }catch(e){} }
+/* Заявки шифруются на диске через AQVault (AES-GCM). Доступ остаётся
+   синхронным благодаря кэшу: bootstrap ниже расшифровывает их при старте. */
+function loadLeads(){
+  try{
+    const c = AQVault.getSync(LEADS_KEY);
+    if(c !== undefined){ if(c==null) return []; const d=JSON.parse(c); return Array.isArray(d)?d:[]; }
+    // кэш ещё не готов: читаем напрямую, но НЕ парсим шифртекст (иначе потеряли бы историю)
+    const raw = localStorage.getItem(LEADS_KEY);
+    if(raw==null || AQSec.isEncrypted(raw)) return [];
+    const d=JSON.parse(raw); return Array.isArray(d)?d:[];
+  }catch(e){ return []; }
+}
+function saveLeads(arr){ try{ AQVault.setSync(LEADS_KEY, JSON.stringify(Array.isArray(arr)?arr:[])); }catch(e){} }
+AQVault.load(LEADS_KEY); // bootstrap: расшифровать заявки в кэш как можно раньше
 function saveLead(data){
   const arr=loadLeads();
   arr.unshift({id:'l'+Date.now(), ...data, createdAt:new Date().toISOString()});
@@ -5551,10 +6313,19 @@ function updMatSearch(cat, q){
   if(el) el.innerHTML = renderMatCards(cat);
 }
 
+/* λ to show next to R: material λ for homogeneous walls, effective λ
+   (δ/(R−R_конв)) for composite walls; null where no thickness (windows/doors/
+   floors/ceilings keep R only). Mirrors the Telegram bot's engine.disp_lambda. */
+function dispLambda(p){
+  if(p.lambda!=null && p.lambda>0) return p.lambda;
+  if(p.thickness && p.r>WALL_ENVELOPE_R) return Math.round((p.thickness/1000)/(p.r-WALL_ENVELOPE_R)*1000)/1000;
+  return null;
+}
 function renderCard(p, fn, currentId, isWall, view){
   const homog = p.homog!=null ? p.homog : WALL_HOMOG_DEFAULT;
   const rEff  = isWall ? p.r*homog : null;
   const rDisp = rEff!=null ? rEff : p.r;
+  const lv    = dispLambda(p);
   const cat = fn==='selWall'?'walls':fn==='selWindow'?'windows':fn==='selDoor'?'doors':fn==='selFloor'?'floors':'ceilings';
   const menuBtn = `<button type="button" onclick="event.stopPropagation();pcardMenu(this,'${p.id}','${cat}',${p.r})" class="pcard-menu-btn" title="Опции">⋮</button>`;
   const activeCls = currentId===p.id?'active':'';
@@ -5566,7 +6337,7 @@ function renderCard(p, fn, currentId, isWall, view){
           <p class="font-medium text-cream text-xs leading-tight truncate">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber">★</span>':''}</p>
           ${p.desc?`<p class="text-[10px] text-muted truncate">${p.desc}</p>`:''}
         </div>
-        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20 flex-shrink-0">R ${rDisp.toFixed(2)}</span>
+        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20 flex-shrink-0">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
       </div>
     </div>`;
@@ -5575,7 +6346,7 @@ function renderCard(p, fn, currentId, isWall, view){
   if(view==='grid'){
     return `<div onclick="${fn}('${p.id}')" class="pcard pcard-grid text-left relative ${activeCls}" style="cursor:pointer">
       <div class="flex items-center justify-between gap-1 mb-1.5">
-        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20">R ${rDisp.toFixed(2)}</span>
+        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
       </div>
       <p class="font-semibold text-cream text-xs leading-snug">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber text-[9px] ml-0.5">★</span>':''}</p>
@@ -5598,7 +6369,7 @@ function renderCard(p, fn, currentId, isWall, view){
     </div>
     ${chips.length?`<div class="flex gap-1 mt-1 flex-wrap">${chips.join('')}</div>`:''}
     <p class="text-xs text-muted mt-1">${p.desc||''}</p>
-    ${(()=>{const lv=p.lambda!=null?p.lambda:(m=>(m?parseFloat(m[1]):null))((p.desc||'').match(/λ(\d+\.\d+)/));return lv!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">λ = ${lv} Вт/(м·°C)</p>`:''})()}
+    ${lv!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">λ = ${lv} Вт/(м·°C)</p>`:''}
     ${p.u!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">U = ${uVal} Вт/(м²·°C)</p>`:''}
     ${isWall&&p.homog!=null?`<p class="text-xs text-muted/60 mt-0.5 mono">номин. R ${p.r.toFixed(3)} × r₀ ${p.homog}</p>`:''}
     ${p.n!=null&&p.n!==1?`<p class="text-xs text-copper mt-1 mono">n = ${p.n}</p>`:''}
@@ -5749,6 +6520,16 @@ const _i18n = {
   ru:{
     'login':'Войти','register':'Регистрация','logout':'Выйти',
     'profile':'Мой профиль','my-calcs':'Мои расчёты','admin':'Панель администратора',
+    // ── Reviews & comments ──
+    'rv-tag':'Отзывы и комментарии','rv-title':'Поделитесь <span style="background:linear-gradient(90deg,#f59e0b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">своим опытом</span>','rv-sub':'Оцените сервис и оставьте комментарий — это помогает другим и нам становиться лучше.',
+    'rv-form-title':'Оставить отзыв','rv-lbl-rating':'Ваша оценка','rv-lbl-name':'Имя','rv-ph-name':'Как вас зовут?','rv-lbl-text':'Комментарий','rv-ph-text':'Расскажите о вашем опыте...','rv-submit':'Опубликовать отзыв',
+    'rv-count-label':'отзывов','rv-count-one':'отзыв','rv-you':'Вы','rv-helpful':'Полезно','rv-empty':'Пока нет отзывов — станьте первым!',
+    'rv-thanks':'Спасибо за ваш отзыв!','rv-toast':'Отзыв опубликован ✓',
+    'rv-err-name':'Введите имя (минимум 2 символа)','rv-err-short':'Комментарий слишком короткий (минимум 10 символов)','rv-err-long':'Комментарий слишком длинный (максимум 500)',
+    'rv-just-now':'только что','rv-hours-ago':'ч назад','rv-yesterday':'вчера','rv-days-ago':'дн. назад',
+    'rv-star-1':'Плохо','rv-star-2':'Так себе','rv-star-3':'Нормально','rv-star-4':'Хорошо','rv-star-5':'Отлично!',
+    // ── Profile (redesign) ──
+    'pf-stats-title':'Статистика','pf-stat-calcs':'Расчётов','pf-stat-done':'Завершено','pf-stat-leads':'Заявок','pf-achievements':'Достижения','pf-addresses':'Адреса объектов','pf-add':'Добавить','pf-registered':'Регистрация','pf-completeness':'Заполненность профиля','pf-prompt-address':'Адрес объекта:',
     'next':'Далее','back':'Назад','calculate':'Рассчитать','new-calc':'Новый расчёт',
     'login-title':'Вход в аккаунт','register-title':'Создать аккаунт',
     'no-account':'Нет аккаунта?','have-account':'Уже есть аккаунт?',
@@ -6197,6 +6978,16 @@ const _i18n = {
   uz:{
     'login':'Kirish','register':"Ro'yxatdan o'tish",'logout':'Chiqish',
     'profile':'Mening profilim','my-calcs':'Hisob-kitoblarim','admin':'Boshqaruv paneli',
+    // ── Sharhlar va izohlar ──
+    'rv-tag':'Sharhlar va izohlar','rv-title':'<span style="background:linear-gradient(90deg,#f59e0b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Tajribangiz</span> bilan ulashing','rv-sub':'Xizmatni baholang va izoh qoldiring — bu boshqalarga va bizga yaxshilanishga yordam beradi.',
+    'rv-form-title':'Sharh qoldirish','rv-lbl-rating':'Bahoyingiz','rv-lbl-name':'Ism','rv-ph-name':'Ismingiz nima?','rv-lbl-text':'Izoh','rv-ph-text':'Tajribangiz haqida gapiring...','rv-submit':'Sharhni eʼlon qilish',
+    'rv-count-label':'ta sharh','rv-count-one':'ta sharh','rv-you':'Siz','rv-helpful':'Foydali','rv-empty':'Hozircha sharhlar yo‘q — birinchi bo‘ling!',
+    'rv-thanks':'Sharhingiz uchun rahmat!','rv-toast':'Sharh eʼlon qilindi ✓',
+    'rv-err-name':'Ismni kiriting (kamida 2 belgi)','rv-err-short':'Izoh juda qisqa (kamida 10 belgi)','rv-err-long':'Izoh juda uzun (eng ko‘pi 500)',
+    'rv-just-now':'hozirgina','rv-hours-ago':'soat oldin','rv-yesterday':'kecha','rv-days-ago':'kun oldin',
+    'rv-star-1':'Yomon','rv-star-2':'O‘rtacha','rv-star-3':'Yaxshi','rv-star-4':'Juda yaxshi','rv-star-5':'Aʼlo!',
+    // ── Profil (yangilangan) ──
+    'pf-stats-title':'Statistika','pf-stat-calcs':'Hisoblar','pf-stat-done':'Tugallandi','pf-stat-leads':'Soʻrovlar','pf-achievements':'Yutuqlar','pf-addresses':'Obyekt manzillari','pf-add':'Qo‘shish','pf-registered':'Ro‘yxatdan o‘tgan','pf-completeness':'Profil to‘ldirilishi','pf-prompt-address':'Obyekt manzili:',
     'next':'Keyingisi','back':'Ortga','calculate':'Hisoblash','new-calc':'Yangi hisob',
     'login-title':'Hisobga kirish','register-title':'Hisob yaratish',
     "no-account":"Hisob yo'qmi?",'have-account':'Hisob bormi?',
@@ -6645,6 +7436,16 @@ const _i18n = {
   en:{
     'login':'Log In','register':'Sign Up','logout':'Log Out',
     'profile':'My Profile','my-calcs':'My Calculations','admin':'Admin Panel',
+    // ── Reviews & comments ──
+    'rv-tag':'Reviews & comments','rv-title':'Share <span style="background:linear-gradient(90deg,#f59e0b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">your experience</span>','rv-sub':'Rate the service and leave a comment — it helps others and helps us improve.',
+    'rv-form-title':'Leave a review','rv-lbl-rating':'Your rating','rv-lbl-name':'Name','rv-ph-name':'What is your name?','rv-lbl-text':'Comment','rv-ph-text':'Tell us about your experience...','rv-submit':'Publish review',
+    'rv-count-label':'reviews','rv-count-one':'review','rv-you':'You','rv-helpful':'Helpful','rv-empty':'No reviews yet — be the first!',
+    'rv-thanks':'Thanks for your review!','rv-toast':'Review published ✓',
+    'rv-err-name':'Enter a name (at least 2 characters)','rv-err-short':'Comment is too short (at least 10 characters)','rv-err-long':'Comment is too long (max 500)',
+    'rv-just-now':'just now','rv-hours-ago':'h ago','rv-yesterday':'yesterday','rv-days-ago':'d ago',
+    'rv-star-1':'Poor','rv-star-2':'Fair','rv-star-3':'Okay','rv-star-4':'Good','rv-star-5':'Excellent!',
+    // ── Profile (redesign) ──
+    'pf-stats-title':'Statistics','pf-stat-calcs':'Calculations','pf-stat-done':'Completed','pf-stat-leads':'Requests','pf-achievements':'Achievements','pf-addresses':'Object addresses','pf-add':'Add','pf-registered':'Registered','pf-completeness':'Profile completeness','pf-prompt-address':'Object address:',
     'next':'Next','back':'Back','calculate':'Calculate','new-calc':'New Calculation',
     'login-title':'Sign In','register-title':'Create Account',
     'no-account':'No account?','have-account':'Already have an account?',
@@ -7118,6 +7919,11 @@ function applyLang(){
   document.querySelectorAll('[data-i18n-html]').forEach(el=>{
     const v=t(el.dataset.i18nHtml); if(v) el.innerHTML=v;
   });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const v=t(el.dataset.i18nPh); if(v) el.placeholder=v;
+  });
+  // re-render reviews so JS-built cards switch language
+  try{ if(document.getElementById('rv-feed')){ renderReviews(); _rvPaintStars(_rvStars); } }catch(e){}
   // update 3-pill nav switcher active state
   ['ru','uz','en'].forEach(l=>{
     const b=document.getElementById('lb-'+l);
@@ -7130,6 +7936,7 @@ function applyLang(){
   // re-render open overlays so their text switches immediately
   if(document.getElementById('settings-content')?.children.length) openSettings();
   if(document.getElementById('auth-body')?.children.length) renderAuthBody();
+  if(document.getElementById('profile-overlay')?.classList.contains('open')) openProfile();
   if(typeof window._orbRelabel==='function') window._orbRelabel();
   // rebuild Mini-Revit UI if open
   if(typeof EDITOR!=='undefined' && EDITOR.open){
@@ -7765,6 +8572,9 @@ function wizBack(){ if(ST.step<=1) return; ST.step--; renderProgress(); transiti
 ════════════════════════════════════════════════════════════ */
 function renderStep(){
   const p=document.getElementById('step-panel'); if(!p) return;
+  // Демо-гейт: шаги 2–5 (ввод своего объекта + материалы) — только по подписке.
+  // Шаг 1 (город+пресеты) и шаг 6 (результат демо) остаются открыты.
+  if(PAYWALL_ON && !aqHasAccess() && ST.step>=2 && ST.step<=5){ p.innerHTML=aqLockedStepHTML(); return; }
   const renders=[null,s1,s2,s3,s4,s5,s6];
   p.innerHTML=renders[ST.step]?renders[ST.step]():'';
   if(ST.step===2) requestAnimationFrame(drawCompass);
@@ -9247,6 +10057,7 @@ function edDrawSnapIndicator(ctx){
 function _svg(p){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">${p}</svg>`; }
 
 function openEditor(){
+  if(PAYWALL_ON && !aqHasAccess()){ openPaywall(); return; }
   HOTKEYS.load();
   EDITOR.open=true; EDITOR.selId=null;
   document.body.style.overflow='hidden';
@@ -12325,15 +13136,33 @@ function resultCopyWarn(e){
 }
 function attachResultProtection(){
   const el=document.getElementById('result-area'); if(!el) return;
-  el.addEventListener('copy', resultCopyWarn, true);
-  el.addEventListener('cut',  resultCopyWarn, true);
-  document.addEventListener('keydown',(e)=>{
-    if(!document.getElementById('result-area')) return;
-    const ctrl=e.ctrlKey||e.metaKey;
-    if(ctrl&&(e.key==='c'||e.key==='a'||e.key==='p'||e.key==='s'||e.key==='x')){
-      resultCopyWarn(e); }
-    if(e.key==='PrintScreen'||e.key==='F12'){ resultCopyWarn(e); }
-  },true);
+  // Скоуп-защиты вешаем один раз на элемент (флаг _aqProt — без утечки хендлеров).
+  if(!el._aqProt){
+    el._aqProt=true;
+    el.addEventListener('copy',        resultCopyWarn, true);
+    el.addEventListener('cut',         resultCopyWarn, true);
+    el.addEventListener('contextmenu', resultCopyWarn, true);
+    el.addEventListener('selectstart', resultCopyWarn, true);
+    el.addEventListener('dragstart',   resultCopyWarn, true);
+  }
+  // Глобальный keydown — РОВНО один раз на документ (раньше вешался на каждый
+  // рендер результата → утечка слушателей + перехват хоткеев редактора плана).
+  if(!attachResultProtection._kd){
+    attachResultProtection._kd=true;
+    document.addEventListener('keydown',(e)=>{
+      const ra=document.getElementById('result-area'); if(!ra) return;
+      const ctrl=e.ctrlKey||e.metaKey;
+      // Снимок/печать/сохранение/исходник всего экрана — блокируем, пока виден результат.
+      if(e.key==='PrintScreen'||e.key==='F12'||(ctrl&&(e.key==='p'||e.key==='s'||e.key==='u'))){ resultCopyWarn(e); return; }
+      // Копирование/выделение блокируем ТОЛЬКО для результата и НЕ мешаем вводу/редактору плана.
+      if(ctrl&&(e.key==='c'||e.key==='a'||e.key==='x')){
+        const ae=document.activeElement, tag=ae&&ae.tagName;
+        if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(ae&&ae.isContentEditable)) return;
+        const sel=window.getSelection&&window.getSelection();
+        if(e.key==='a' || (sel&&sel.anchorNode&&ra.contains(sel.anchorNode))) resultCopyWarn(e);
+      }
+    },true);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -13308,6 +14137,7 @@ function toggle3DView(){
    PDF
 ════════════════════════════════════════════════════════════ */
 function printReport(){
+  if(PAYWALL_ON && !aqHasAccess()){ openPaywall(); return; }
   const res=computeObject();
   if(!res||res.roomCount===0){ alert('Сначала добавьте комнаты и материалы.'); return; }
   const date=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
@@ -15252,8 +16082,136 @@ function initHvizBars(){
   obs.observe(sec);
 }
 
+/* ══════════════════════════════════════════════
+   REVIEWS & COMMENTS
+══════════════════════════════════════════════ */
+var AQ_REVIEWS_KEY='aq_reviews';
+var AQ_REVIEW_LIKES_KEY='aq_review_likes';
+var _rvStars=5;
+function _rvEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function _rvGrads(){return['linear-gradient(135deg,#f59e0b,#ff6b35)','linear-gradient(135deg,#7C3AED,#2563EB)','linear-gradient(135deg,#10b981,#0ea5e9)','linear-gradient(135deg,#8b5cf6,#d946ef)','linear-gradient(135deg,#06b6d4,#3b82f6)','linear-gradient(135deg,#ef4444,#f59e0b)'];}
+function _rvGrad(seed){var s=String(seed||''),h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;var g=_rvGrads();return g[h%g.length];}
+function _rvInitials(name){var p=String(name||'?').trim().split(/\s+/);var a=(p[0]||'')[0]||'';var b=p.length>1?(p[p.length-1][0]||''):'';return (a+b).toUpperCase()||'?';}
+function _rvStarStr(n){n=Math.max(0,Math.min(5,Math.round(n||0)));return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n);}
+function _rvSeed(){
+  var now=Date.now(),D=86400000;
+  return [
+    {id:'seed1',name:'Баходир Турсунов',city:'Фергана',stars:5,text:'Очень удобно — нарисовал план дома, выбрал материалы и сразу получил мощность котла и число секций радиаторов. Всё совпало с тем, что потом сказал монтажник. Рекомендую!',ts:now-2*D,likes:17,own:false},
+    {id:'seed2',name:'Нилуфар Саидова',city:'Андижан',stars:5,text:'Не знала, какой котёл выбрать. Расчёт показал, что через старые окна уходит почти треть тепла. Поменяли окна — и взяли котёл меньшей мощности. Спасибо за понятные цифры.',ts:now-6*D,likes:9,own:false},
+    {id:'seed3',name:'Азиз Рахимов',city:'Наманган',stars:4,text:'Пользовался при постройке дома. Удобно, что считает по каждому этажу отдельно. Хотелось бы ещё экспорт в PDF покрасивее, но в целом отличный инструмент.',ts:now-13*D,likes:5,own:false},
+    {id:'seed4',name:'Дильноза К.',city:'Коканд',stars:5,text:'Сделала расчёт за 10 минут без инженера. Менеджер потом только уточнил детали. Очень помогло с бюджетом на отопление.',ts:now-21*D,likes:4,own:false}
+  ];
+}
+function _rvLoad(){try{var a=JSON.parse(localStorage.getItem(AQ_REVIEWS_KEY)||'null');if(!Array.isArray(a)||!a.length){a=_rvSeed();_rvSave(a);}return a;}catch(e){return _rvSeed();}}
+function _rvSave(a){try{localStorage.setItem(AQ_REVIEWS_KEY,JSON.stringify(a));}catch(e){}}
+function _rvLikes(){try{var a=JSON.parse(localStorage.getItem(AQ_REVIEW_LIKES_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function _rvTimeAgo(ts){
+  var diff=Date.now()-ts,d=Math.floor(diff/86400000);
+  if(d<=0){var h=Math.floor(diff/3600000);if(h<=0)return t('rv-just-now');return h+' '+t('rv-hours-ago');}
+  if(d===1)return t('rv-yesterday');
+  if(d<30)return d+' '+t('rv-days-ago');
+  return new Date(ts).toLocaleDateString(_lang==='ru'?'ru-RU':_lang==='uz'?'uz-UZ':'en-US',{day:'numeric',month:'short',year:'numeric'});
+}
+function _rvCharCount(){var el=document.getElementById('rv-text'),c=document.getElementById('rv-char');if(!el||!c)return;c.textContent=el.value.length+'/500';c.style.color=el.value.length>480?'#ff8a6b':'';}
+function _rvPaintStars(n){
+  var els=document.querySelectorAll('#rv-star-input .rv-star');
+  els.forEach(function(el,i){el.classList.toggle('on',i<n);});
+  var lbl=document.getElementById('rv-star-label');
+  if(lbl)lbl.textContent=n?(t('rv-star-'+n)||''):'';
+}
+function rvSetStars(n){_rvStars=n;_rvPaintStars(n);}
+function rvHoverStars(n){_rvPaintStars(n);}
+function rvResetStars(){_rvPaintStars(_rvStars);}
+function renderReviews(newId){
+  var feed=document.getElementById('rv-feed');if(!feed)return;
+  var list=_rvLoad().slice().sort(function(a,b){return b.ts-a.ts;});
+  var likes=_rvLikes();
+  var n=list.length;
+  var avg=n?list.reduce(function(s,r){return s+(r.stars||0);},0)/n:0;
+  var avgEl=document.getElementById('rv-avg');if(avgEl)avgEl.textContent=n?avg.toFixed(1):'—';
+  var sEl=document.getElementById('rv-avg-stars');if(sEl)sEl.textContent=_rvStarStr(avg);
+  var cEl=document.getElementById('rv-count');if(cEl)cEl.textContent=n+' '+t(n===1?'rv-count-one':'rv-count-label');
+  // distribution
+  var dist=document.getElementById('rv-dist');
+  if(dist){
+    var buckets=[0,0,0,0,0];list.forEach(function(r){var k=Math.max(1,Math.min(5,Math.round(r.stars||0)));buckets[k-1]++;});
+    var rows='';
+    for(var st=5;st>=1;st--){var pct=n?Math.round(buckets[st-1]/n*100):0;
+      rows+='<div class="rv-dist-row"><span style="width:10px">'+st+'</span><span style="color:#f59e0b">★</span><span class="rv-dist-bar"><span class="rv-dist-fill" data-w="'+pct+'%"></span></span><span class="mono" style="width:30px;text-align:right">'+pct+'%</span></div>';
+    }
+    dist.innerHTML=rows;
+    requestAnimationFrame(function(){dist.querySelectorAll('.rv-dist-fill').forEach(function(f){f.style.width=f.dataset.w;});});
+  }
+  feed.innerHTML=n?list.map(function(r,i){
+    var liked=likes.indexOf(r.id)>=0;
+    var delay=r.id===newId?0:Math.min(i*55,420);
+    return '<div class="rv-card'+(r.id===newId?' rv-new':'')+'" style="animation-delay:'+delay+'ms">'+
+      '<div class="flex items-start gap-3">'+
+        '<div class="rv-ava" style="background:'+_rvGrad(r.name)+'">'+_rvEsc(_rvInitials(r.name))+'</div>'+
+        '<div class="flex-1 min-w-0">'+
+          '<div class="flex items-center gap-2 flex-wrap">'+
+            '<span class="font-bold text-cream text-sm truncate">'+_rvEsc(r.name)+'</span>'+
+            (r.own?'<span class="rv-badge-own">'+t('rv-you')+'</span>':'')+
+            (r.city?'<span class="text-xs text-muted">· '+_rvEsc(r.city)+'</span>':'')+
+            '<span class="rv-card-stars ml-auto">'+_rvStarStr(r.stars)+'</span>'+
+          '</div>'+
+          '<div style="font-size:11px;color:rgba(78,96,128,.85);margin-top:2px">'+_rvEsc(_rvTimeAgo(r.ts))+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<p class="text-sm text-sand leading-relaxed" style="margin-top:.65rem">'+_rvEsc(r.text)+'</p>'+
+      '<div class="flex items-center gap-2" style="margin-top:.8rem">'+
+        '<button class="rv-like'+(liked?' liked':'')+'" onclick="rvLike(\''+r.id+'\',this)" aria-label="'+t('rv-helpful')+'">'+
+          '<svg viewBox="0 0 24 24" fill="'+(liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>'+
+          '<span>'+(r.likes||0)+'</span></button>'+
+        '<span class="text-xs text-muted/60">'+t('rv-helpful')+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join(''):'<div class="rv-empty">'+t('rv-empty')+'</div>';
+}
+function rvLike(id,btn){
+  var likes=_rvLikes(),list=_rvLoad();
+  var r=null;for(var i=0;i<list.length;i++){if(list[i].id===id){r=list[i];break;}}
+  if(!r)return;
+  var idx=likes.indexOf(id);
+  if(idx>=0){likes.splice(idx,1);r.likes=Math.max(0,(r.likes||0)-1);btn.classList.remove('liked');}
+  else{likes.push(id);r.likes=(r.likes||0)+1;btn.classList.add('liked');}
+  try{localStorage.setItem(AQ_REVIEW_LIKES_KEY,JSON.stringify(likes));}catch(e){}
+  _rvSave(list);
+  var sp=btn.querySelector('span');if(sp)sp.textContent=r.likes;
+  var svg=btn.querySelector('svg');if(svg)svg.setAttribute('fill',idx>=0?'none':'currentColor');
+  btn.classList.remove('pop');void btn.offsetWidth;btn.classList.add('pop');
+}
+function rvSubmit(){
+  var nameEl=document.getElementById('rv-name'),textEl=document.getElementById('rv-text'),msg=document.getElementById('rv-form-msg');
+  if(!nameEl||!textEl)return;
+  var name=(nameEl.value||'').trim(),text=(textEl.value||'').trim();
+  function err(m){if(msg){msg.textContent=m;msg.className='rv-form-msg err';}}
+  if(name.length<2){err(t('rv-err-name'));nameEl.focus();return;}
+  if(text.length<10){err(t('rv-err-short'));textEl.focus();return;}
+  if(text.length>500){err(t('rv-err-long'));return;}
+  var u=(typeof authCurrentUser==='function')?authCurrentUser():null;
+  var review={id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name,city:(u&&u.city)||'',stars:_rvStars,text:text,ts:Date.now(),likes:0,own:true};
+  var list=_rvLoad();list.unshift(review);_rvSave(list);
+  textEl.value='';_rvCharCount();
+  if(msg){msg.textContent=t('rv-thanks');msg.className='rv-form-msg ok';}
+  _rvStars=5;_rvPaintStars(5);
+  renderReviews(review.id);
+  setTimeout(function(){var c=document.querySelector('.rv-card.rv-new');if(c)c.scrollIntoView({behavior:'smooth',block:'center'});},140);
+  if(typeof toast==='function')toast(t('rv-toast'));
+  try{if(typeof trackEvent==='function')trackEvent('review_posted');}catch(e){}
+}
+function initReviews(){
+  renderReviews();
+  _rvPaintStars(_rvStars);
+  var u=(typeof authCurrentUser==='function')?authCurrentUser():null;
+  var nameEl=document.getElementById('rv-name');
+  if(nameEl&&u&&!nameEl.value)nameEl.value=u.name||u.login||'';
+  _rvCharCount();
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   try{renderTestimonials();}catch(e){}
+  try{initReviews();}catch(e){}
   try{qeUpdate();}catch(e){}
   try{initHvizBars();}catch(e){}
   try{
