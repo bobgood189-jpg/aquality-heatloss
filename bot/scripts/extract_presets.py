@@ -45,6 +45,16 @@ def parse_preset_line(ln):
     m = re.search(r"group:'([^']*)'", ln)
     if m:
         out["group"] = m.group(1)
+    # λ (homogeneous materials) + thickness (walls) → let the UI show λ next to R.
+    m = re.search(r"lambda:([0-9.]+)", ln)   # lambda:null (composites) is skipped
+    if m:
+        out["lambda"] = float(m.group(1))
+    m = re.search(r"thickness:([0-9]+)", ln)
+    if m:
+        out["thickness"] = int(m.group(1))
+    m = re.search(r"\bu:([0-9.]+)", ln)       # U-value for windows/doors
+    if m:
+        out["u"] = float(m.group(1))
     m = re.search(r"\bn:([0-9.]+)", ln)
     if m:
         out["n"] = float(m.group(1))

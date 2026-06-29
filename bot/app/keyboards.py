@@ -125,10 +125,15 @@ def mat_items_kb(cat, group_idx, page, lang):
     total = len(items)
     chunk = items[page * PAGE:(page + 1) * PAGE]
     rows = []
+    from .engine import disp_lambda
     for p in chunk:
         r = p.get("r")
-        label = f"{loc_name(p, lang)} · R{r}"
-        rows.append([btn(label[:60], f"mat:{cat}:{p['id']}")])
+        lam = disp_lambda(p)
+        tail = f" · R{r}" + (f" · λ{lam}" if lam else "")
+        # keep the name readable: trim the name, not the R/λ figures
+        name = loc_name(p, lang)
+        label = (name[:60 - len(tail)] + tail) if len(name) + len(tail) > 60 else name + tail
+        rows.append([btn(label, f"mat:{cat}:{p['id']}")])
     nav = []
     if page > 0:
         nav.append(btn("◀️", f"matpg:{cat}:{group_idx}:{page - 1}"))

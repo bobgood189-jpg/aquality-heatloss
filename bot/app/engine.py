@@ -100,6 +100,20 @@ def find_preset(cat, pid):
     return None
 
 
+def disp_lambda(p):
+    """λ [Вт/(м·°C)] to show next to R. For homogeneous walls it's the stored
+    material λ; for composite walls it's the effective λ derived from thickness
+    and R (δ/(R−R_конв)). None when not applicable — windows/doors/floors/
+    ceilings carry no thickness, so they keep R only."""
+    lam = p.get("lambda")
+    if lam:
+        return lam
+    th, r = p.get("thickness"), p.get("r")
+    if th and r and r > WALL_ENVELOPE_R:
+        return round((th / 1000.0) / (r - WALL_ENVELOPE_R), 3)
+    return None
+
+
 def cls_of(s):
     s = (s or "").lower()
     if re.search(r"(вата|минват|базальт|эковат|\beps\b|\bxps\b|пенопол|ппу|пеноплекс|перлит|керамзит\b|каркас|пенофол|сип|\bsip\b|пир|\bpir\b)", s):

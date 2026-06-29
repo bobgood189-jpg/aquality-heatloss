@@ -109,7 +109,12 @@ async def menu_materials(cb: CallbackQuery, state: FSMContext):
         items = BASE_PRESETS[cat]
         total += len(items)
         rng = [p.get("r") for p in items if p.get("r") is not None]
-        lines.append(f"• <b>{t(key, lang)}</b>: {len(items)} шт., R = {min(rng)}…{max(rng)} м²·°C/Вт")
+        line = f"• <b>{t(key, lang)}</b>: {len(items)} шт., R = {min(rng)}…{max(rng)} м²·°C/Вт"
+        lams = [E.disp_lambda(p) for p in items]
+        lams = [x for x in lams if x]
+        if lams:
+            line += f", λ = {min(lams)}…{max(lams)} Вт/(м·°C)"
+        lines.append(line)
     lines.append(f"\nВсего {total} готовых конструкций (KMK 2.01.04-18). "
                  f"Выбор материалов — внутри расчёта.")
     await cb.message.answer("\n".join(lines), reply_markup=K.back_menu_kb(lang))
