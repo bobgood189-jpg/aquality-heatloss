@@ -2237,6 +2237,7 @@ async function aqLoadSession(session){
     _aqSub = (subs && subs[0]) ? subs[0] : null;
   }catch(e){ _aqSub = null; }
   _AQ.user = aqMapUser(u, prof, projects);
+  aqCheckSubExpiry();
   initAuthNav();
 }
 
@@ -2286,6 +2287,25 @@ async function sbSignIn(email, password){
     return {ok:false, err:m};
   }
   await aqLoadSession(data.session);
+  return {ok:true};
+}
+async function sbSendOtp(email){
+  const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
+  const {error}=await c.auth.signInWithOtp({email,options:{shouldCreateUser:false}});
+  if(error){
+    const m=/user not found|no user/i.test(error.message)?t('forgot-err-user-not-found')
+      :/invalid email/i.test(error.message)?t('auth-err-email-invalid')
+      :error.message;
+    return {ok:false,err:m};
+  }
+  return {ok:true};
+}
+async function sbVerifyOtpAndReset(email,otp,newPass){
+  const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
+  const {data,error}=await c.auth.verifyOtp({email,token:otp,type:'email'});
+  if(error) return {ok:false,err:t('forgot-err-otp-invalid')};
+  const {error:ue}=await c.auth.updateUser({password:newPass});
+  if(ue) return {ok:false,err:ue.message};
   return {ok:true};
 }
 
@@ -2455,6 +2475,18 @@ async function aqRefreshSub(){
       .eq('user_id', u.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);
     _aqSub = (subs && subs[0]) ? subs[0] : null;
   }catch(e){}
+}
+function aqCheckSubExpiry(){
+  const sub=_aqSub;
+  if(!sub||!sub.expires_at||sub.staff) return;
+  const u=authCurrentUser(); if(!u||u.role==='owner'||u.role==='admin') return;
+  const now=new Date(), exp=new Date(sub.expires_at);
+  const daysLeft=Math.ceil((exp-now)/(1000*60*60*24));
+  if(daysLeft<=0){
+    setTimeout(()=>toast(t('sub-expired-msg'),'err'),600);
+  } else if(daysLeft<=3){
+    setTimeout(()=>toast(t('sub-expiry-warning').replace('%n%',daysLeft),'err'),600);
+  }
 }
 
 /* ── промокоды ── */
@@ -2977,6 +3009,8 @@ function authSaveProject(label){
 /* ── Auth Overlay UI ── */
 let _authTab='login';
 let _authClientType='client';
+let _forgotStep=1;
+let _forgotEmail='';
 
 function openAuth(tab){
   _closeDropdown();
@@ -2994,6 +3028,7 @@ function closeAuth(){
 function renderAuthBody(){
   const el=document.getElementById('auth-body'); if(!el) return;
   if(_authTab==='login') el.innerHTML=renderLoginForm();
+  else if(_authTab==='forgot'){ _forgotStep=1; el.innerHTML=renderForgotForm(); }
   else el.innerHTML=renderRegisterForm();
 }
 function authSwitchTab(t){ _authTab=t; renderAuthBody(); }
@@ -3013,6 +3048,7 @@ function renderLoginForm(){
   </div>
   <p id="auth-err" class="text-xs text-ember mt-2 hidden"></p>
   <button onclick="doLogin()" class="lg-btn w-full mt-4 py-3">${t('login')} →</button>
+  ${SB_CONFIGURED?`<p class="text-center text-xs text-muted mt-2"><button onclick="authSwitchTab('forgot')" class="text-amber hover:underline">${t('forgot-link')}</button></p>`:''}
   <p class="text-center text-xs text-muted mt-3">${t('auth-no-account')} <button onclick="authSwitchTab('register')" class="text-amber hover:underline">${t('auth-register-link')}</button></p>`;
 }
 
@@ -3038,8 +3074,8 @@ function renderRegisterForm(){
         <input id="ar-phone2" class="wi" placeholder="${t('auth-optional')}" type="tel"></div>
     </div>
     <div class="grid grid-cols-2 gap-2.5">
-      <div><label class="block text-xs font-semibold text-sand mb-1">Email ${SB_CONFIGURED?'<span class="text-ember">*</span>':''}</label>
-        <input id="ar-email" class="wi" placeholder="${SB_CONFIGURED?'you@example.com':t('auth-optional')}" type="email"></div>
+      <div><label class="block text-xs font-semibold text-sand mb-1">Email <span class="text-ember">*</span></label>
+        <input id="ar-email" class="wi" placeholder="you@example.com" type="email" autocomplete="email"></div>
       <div><label class="block text-xs font-semibold text-sand mb-1">${t('auth-lbl-city')}</label>
         <select id="ar-city" class="wi"><option value="">${t('select-placeholder')}</option>${cities.map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div>
     </div>
@@ -3094,6 +3130,10 @@ async function doRegister(){
     toast(t(r.needsConfirm?'toast-account-confirm':'toast-account-ok'));
     return;
   }
+  if(!data.login){ showAuthErr(t('auth-err-no-name')); return; }
+  if(!data.email){ showAuthErr(t('auth-err-no-email')); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)){ showAuthErr(t('auth-err-email-invalid')); return; }
+  if(!data.password||data.password.length<6){ showAuthErr(t('auth-err-pass-short')); return; }
   const btn=event&&event.target; if(btn) btn.disabled=true;
   const r=await authRegister(data);
   if(btn) btn.disabled=false;
@@ -3102,6 +3142,58 @@ async function doRegister(){
   toast(t('toast-account-ok'));
 }
 function showAuthErr(msg){ const e=document.getElementById('auth-err'); if(e){ e.textContent=msg; e.classList.remove('hidden'); } }
+
+function renderForgotForm(){
+  if(_forgotStep===2) return `
+  <button onclick="authSwitchTab('login')" class="flex items-center gap-1 text-xs text-muted hover:text-cream mb-4">← ${t('forgot-back')}</button>
+  <h2 class="text-xl font-extrabold text-cream mb-2">${t('forgot-title')}</h2>
+  <p class="text-xs text-muted mb-5">${t('forgot-step2-hint').replace('%email%',_forgotEmail)}</p>
+  <div class="space-y-3">
+    <div><label class="block text-xs font-semibold text-sand mb-1">${t('forgot-otp-lbl')}</label>
+      <input id="fp-otp" class="wi text-center text-xl tracking-widest" maxlength="6" placeholder="000000" inputmode="numeric" autocomplete="one-time-code"></div>
+    <div><label class="block text-xs font-semibold text-sand mb-1">${t('forgot-newpass-lbl')} <span class="text-ember">*</span></label>
+      <input id="fp-newpass" class="wi" type="password" placeholder="••••••" autocomplete="new-password"></div>
+  </div>
+  <p id="auth-err" class="text-xs text-ember mt-2 hidden"></p>
+  <button onclick="doForgotVerify()" class="lg-btn w-full mt-4 py-3">${t('forgot-confirm-btn')} →</button>
+  <p class="text-center text-xs text-muted mt-3"><button onclick="doForgotSend()" class="hover:underline text-muted">${t('forgot-resend')}</button></p>`;
+  return `
+  <button onclick="authSwitchTab('login')" class="flex items-center gap-1 text-xs text-muted hover:text-cream mb-4">← ${t('forgot-back')}</button>
+  <h2 class="text-xl font-extrabold text-cream mb-2">${t('forgot-title')}</h2>
+  <p class="text-xs text-muted mb-5">${t('forgot-step1-hint')}</p>
+  <div class="space-y-3">
+    <div><label class="block text-xs font-semibold text-sand mb-1">Email</label>
+      <input id="fp-email" class="wi" type="email" placeholder="you@example.com" autocomplete="email"></div>
+  </div>
+  <p id="auth-err" class="text-xs text-ember mt-2 hidden"></p>
+  <button onclick="doForgotSend()" class="lg-btn w-full mt-4 py-3">${t('forgot-send-btn')} →</button>`;
+}
+async function doForgotSend(){
+  const emailEl=document.getElementById('fp-email');
+  const email=(emailEl?emailEl.value:_forgotEmail||'').trim();
+  if(!email){ showAuthErr(t('auth-err-no-email')); return; }
+  if(!SB_CONFIGURED){ showAuthErr('Доступно только в онлайн-режиме'); return; }
+  const btn=event&&event.target; if(btn) btn.disabled=true;
+  const r=await sbSendOtp(email);
+  if(btn) btn.disabled=false;
+  if(!r.ok){ showAuthErr(r.err); return; }
+  _forgotEmail=email; _forgotStep=2;
+  const el=document.getElementById('auth-body'); if(el) el.innerHTML=renderForgotForm();
+}
+async function doForgotVerify(){
+  const otp=(document.getElementById('fp-otp')?.value||'').trim();
+  const newPass=document.getElementById('fp-newpass')?.value||'';
+  if(!otp||otp.length<6){ showAuthErr(t('forgot-err-otp-invalid')); return; }
+  if(!newPass||newPass.length<6){ showAuthErr(t('auth-err-pass-short')); return; }
+  const btn=event&&event.target; if(btn) btn.disabled=true;
+  const r=await sbVerifyOtpAndReset(_forgotEmail,otp,newPass);
+  if(btn) btn.disabled=false;
+  if(!r.ok){ showAuthErr(r.err); return; }
+  _forgotStep=1; _forgotEmail='';
+  closeAuth();
+  toast(t('forgot-success'));
+  initAuthNav();
+}
 
 /* ── Nav auth button ── */
 function initAuthNav(){
@@ -5461,7 +5553,9 @@ async function adminActivateSub(){
   try{
     const { error }=await sb().rpc('admin_activate_sub',{ p_user:uid, p_plan:plan, p_amount:price, p_promo:promo, p_source:'manual' });
     if(error){ toast('Ошибка: '+error.message,'err'); return; }
-    toast('Подписка активирована'); adminPage('subs');
+    toast('Подписка активирована');
+    try{ await sb().functions.invoke('notify-user',{body:{type:'subscription_activated',user_id:uid,plan,amount:price}}); }catch(e){}
+    adminPage('subs');
   }catch(e){ toast('Ошибка активации','err'); }
 }
 async function adminCancelSub(id){
@@ -7029,6 +7123,16 @@ const _i18n = {
     'auth-err-no-email':'Укажите email','auth-err-pass-short':'Пароль минимум 6 символов',
     'auth-err-no-phone':'Укажите номер телефона','auth-err-email-taken':'Этот email уже зарегистрирован',
     'auth-err-email-invalid':'Введите корректный email',
+    'forgot-link':'Забыли пароль?','forgot-title':'Восстановление пароля',
+    'forgot-step1-hint':'Введите email — вышлем 6-значный код подтверждения.',
+    'forgot-step2-hint':'Код отправлен на %email%. Введите его ниже.',
+    'forgot-send-btn':'Отправить код','forgot-otp-lbl':'Код из письма (6 цифр)',
+    'forgot-newpass-lbl':'Новый пароль','forgot-confirm-btn':'Изменить пароль',
+    'forgot-back':'Назад','forgot-resend':'Отправить код ещё раз',
+    'forgot-success':'Пароль изменён ✓ Войдите с новым паролем.',
+    'forgot-err-user-not-found':'Email не зарегистрирован','forgot-err-otp-invalid':'Неверный или просроченный код',
+    'sub-expiry-warning':'⚠ Подписка истекает через %n% дн. — продлите заранее.',
+    'sub-expired-msg':'❌ Срок подписки истёк — обновите подписку для доступа.',
     'toast-access-denied':'Доступ запрещён',
     'toast-avatar-ok':'Аватар обновлён ✓',
     'toast-address-ok':'Адрес добавлен ✓',
@@ -7487,6 +7591,16 @@ const _i18n = {
     "auth-err-no-email":"Emailni kiriting","auth-err-pass-short":"Parol kamida 6 ta belgi",
     "auth-err-no-phone":"Telefon raqamini kiriting","auth-err-email-taken":"Bu email allaqachon ro'yxatdan o'tgan",
     "auth-err-email-invalid":"To'g'ri email kiriting",
+    'forgot-link':"Parolni unutdingizmi?",'forgot-title':'Parolni tiklash',
+    'forgot-step1-hint':"Emailingizni kiriting — 6 xonali tasdiqlash kodi yuboramiz.",
+    'forgot-step2-hint':"%email% manziliga kod yuborildi. Quyida kiriting.",
+    'forgot-send-btn':'Kod yuborish','forgot-otp-lbl':'Xatdagi kod (6 raqam)',
+    'forgot-newpass-lbl':"Yangi parol",'forgot-confirm-btn':'Parolni o\'zgartirish',
+    'forgot-back':'Orqaga','forgot-resend':'Kodni qayta yuborish',
+    'forgot-success':"Parol o'zgartirildi ✓ Yangi parol bilan kiring.",
+    'forgot-err-user-not-found':"Bu email ro'yxatdan o'tmagan",'forgot-err-otp-invalid':"Noto'g'ri yoki eskirgan kod",
+    'sub-expiry-warning':'⚠ Obuna %n% kun ichida tugaydi — muddatidan oldin yangilang.',
+    'sub-expired-msg':"❌ Obuna muddati tugadi — kirish uchun obunani yangilang.",
     'toast-access-denied':'Kirish taqiqlangan',
     'toast-avatar-ok':'Avatar yangilandi ✓',
     "toast-address-ok":"Manzil qo'shildi ✓",
@@ -7963,6 +8077,16 @@ const _i18n = {
     'auth-err-no-email':'Enter email','auth-err-pass-short':'Password must be at least 6 characters',
     'auth-err-no-phone':'Enter phone number','auth-err-email-taken':'This email is already registered',
     'auth-err-email-invalid':'Enter a valid email',
+    'forgot-link':'Forgot password?','forgot-title':'Reset password',
+    'forgot-step1-hint':'Enter your email — we\'ll send a 6-digit confirmation code.',
+    'forgot-step2-hint':'Code sent to %email%. Enter it below.',
+    'forgot-send-btn':'Send code','forgot-otp-lbl':'Code from email (6 digits)',
+    'forgot-newpass-lbl':'New password','forgot-confirm-btn':'Change password',
+    'forgot-back':'Back','forgot-resend':'Resend code',
+    'forgot-success':'Password changed ✓ Sign in with your new password.',
+    'forgot-err-user-not-found':'Email not found','forgot-err-otp-invalid':'Invalid or expired code',
+    'sub-expiry-warning':'⚠ Subscription expires in %n% days — renew now.',
+    'sub-expired-msg':'❌ Your subscription has expired — renew to continue.',
     'toast-access-denied':'Access denied',
     'toast-avatar-ok':'Avatar updated ✓',
     'toast-address-ok':'Address added ✓',
