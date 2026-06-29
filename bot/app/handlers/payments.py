@@ -5,6 +5,7 @@
 командой /grant. Промокоды (10/30/50/100 %) проверяются командой /promo.
 """
 import time
+import math
 from datetime import datetime
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -39,12 +40,22 @@ def has_access(user):
     return storage.get_active_sub(user.id) is not None
 
 
+def _days_left(expires_ts):
+    return math.ceil((expires_ts - time.time()) / 86400)
+
+
 def _status_line(user, lang):
     sub = storage.get_active_sub(user.id)
     if not sub:
         return ""
     date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
-    return t("sub_active", lang, date=date)
+    days = _days_left(sub["expires_ts"])
+    base = t("sub_active", lang, date=date)
+    if days <= 1:
+        return f"⚠️ {base} — {t('sub_expires_tomorrow', lang)}"
+    if days <= 3:
+        return f"⚠️ {base} — {t('sub_expires_in', lang, n=days)}"
+    return f"✅ {base} ({t('sub_days_left', lang, n=days)})"
 
 
 def _plans_block(lang, disc=0):

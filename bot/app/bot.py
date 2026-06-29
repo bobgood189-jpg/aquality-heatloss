@@ -5,6 +5,8 @@
 """
 import asyncio
 import logging
+import math
+from datetime import datetime
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -13,10 +15,13 @@ from aiogram.types import BotCommand
 from .config import require_token
 from . import storage
 from .handlers import menu, admin, wizard, results, payments
+from .i18n import t
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("aquality-bot")
+
+_EXPIRY_CHECK_INTERVAL = 86400  # раз в сутки
 
 
 def _make_bot(token):
@@ -38,6 +43,47 @@ async def _set_commands(bot):
     ])
 
 
+async def _check_expiry_once(bot: Bot):
+    """Отправляет предупреждения пользователям с истекающими подписками."""
+    import time as _time
+    expiring = storage.get_expiring_subs(within_days=3)
+    for sub in expiring:
+        uid = sub["tg_user_id"]
+        lang = sub.get("lang") or "ru"
+        date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
+        days = math.ceil((sub["expires_ts"] - _time.time()) / 86400)
+        try:
+            if days <= 1:
+                msg = t("sub_expiry_tomorrow", lang, date=date)
+            else:
+                msg = t("sub_expiry_warn", lang, n=days, date=date)
+            await bot.send_message(uid, msg)
+            log.info("Expiry warning sent to %s (%d days)", uid, days)
+        except Exception as e:
+            log.warning("Could not warn %s: %s", uid, e)
+
+    expired = storage.get_expired_subs_unnotified()
+    for sub in expired:
+        uid = sub["tg_user_id"]
+        lang = sub.get("lang") or "ru"
+        try:
+            await bot.send_message(uid, t("sub_expired_warn", lang))
+            storage.cancel_sub(uid)
+            log.info("Expired notice sent to %s", uid)
+        except Exception as e:
+            log.warning("Could not notify expired %s: %s", uid, e)
+
+
+async def _expiry_loop(bot: Bot):
+    await asyncio.sleep(60)  # дать боту запуститься полностью
+    while True:
+        try:
+            await _check_expiry_once(bot)
+        except Exception as e:
+            log.error("Expiry check failed: %s", e)
+        await asyncio.sleep(_EXPIRY_CHECK_INTERVAL)
+
+
 async def main():
     token = require_token()
     storage.init_db()
@@ -51,6 +97,7 @@ async def main():
     await _set_commands(bot)
     me = await bot.get_me()
     log.info("Starting @%s (id=%s)", me.username, me.id)
+    asyncio.create_task(_expiry_loop(bot))
     # drop_pending_updates: on (re)start, ignore the backlog so old button taps
     # aren't replayed against stale callback-query ids.
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(),

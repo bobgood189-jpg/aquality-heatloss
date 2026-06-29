@@ -178,6 +178,32 @@ def list_active_subs(limit=50):
         return [dict(r) for r in rows]
 
 
+def get_expiring_subs(within_days=3):
+    """Активные подписки, истекающие в течение N дней (ещё не истекли)."""
+    now = int(time.time())
+    deadline = now + within_days * 86400
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT s.*, u.lang FROM subscriptions s "
+            "LEFT JOIN users u ON u.tg_user_id=s.tg_user_id "
+            "WHERE s.status='active' AND s.expires_ts>? AND s.expires_ts<=? "
+            "ORDER BY s.expires_ts ASC", (now, deadline)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def get_expired_subs_unnotified():
+    """Подписки, которые только что истекли (последние 25 часов, не отменённые)."""
+    now = int(time.time())
+    cutoff = now - 25 * 3600
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT s.*, u.lang FROM subscriptions s "
+            "LEFT JOIN users u ON u.tg_user_id=s.tg_user_id "
+            "WHERE s.status='active' AND s.expires_ts<=? AND s.expires_ts>=? "
+            "ORDER BY s.expires_ts DESC", (now, cutoff)).fetchall()
+        return [dict(r) for r in rows]
+
+
 # ── Промокоды ──────────────────────────────────────────────────────────────
 def validate_promo(code, tg_user_id):
     """Проверка кода для пользователя (не списывает). {ok, discount, reason}."""
