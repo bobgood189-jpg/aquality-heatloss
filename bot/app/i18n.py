@@ -33,6 +33,37 @@ STR = {
     "menu_faq": {"ru": "❓ Как считается?", "uz": "❓ Qanday hisoblanadi?", "en": "❓ How it works"},
     "menu_lang": {"ru": "🌐 Язык", "uz": "🌐 Til", "en": "🌐 Language"},
     "menu_lead": {"ru": "✍️ Оставить заявку", "uz": "✍️ Ariza qoldirish", "en": "✍️ Request a consult"},
+    # ── подписка / оплата ──
+    "menu_tariffs": {"ru": "💳 Подписка / Тарифы", "uz": "💳 Obuna / Tariflar", "en": "💳 Subscription / Plans"},
+    "plan_m1": {"ru": "1 месяц", "uz": "1 oy", "en": "1 month"},
+    "plan_m6": {"ru": "6 месяцев", "uz": "6 oy", "en": "6 months"},
+    "plan_m12": {"ru": "12 месяцев", "uz": "12 oy", "en": "12 months"},
+    "tariffs_title": {
+        "ru": "💳 <b>Доступ к расчёту</b>\n\nДемо открыто всем. Полный расчёт своего объекта — по подписке.{status}\n\n<b>Тарифы:</b>{plans}\n\n🎁 Есть промокод? Отправьте: <code>/promo КОД</code>{total}",
+        "uz": "💳 <b>Hisobga kirish</b>\n\nDemo hammaga ochiq. O'z obyektingizni to'liq hisoblash — obuna orqali.{status}\n\n<b>Tariflar:</b>{plans}\n\n🎁 Promokod bormi? Yuboring: <code>/promo KOD</code>{total}",
+        "en": "💳 <b>Calculation access</b>\n\nDemo is open to all. Full calculation of your own object requires a subscription.{status}\n\n<b>Plans:</b>{plans}\n\n🎁 Have a promo code? Send: <code>/promo CODE</code>{total}"},
+    "tariffs_pay": {"ru": "💬 Оплатить через Telegram", "uz": "💬 Telegram orqali to'lash", "en": "💬 Pay via Telegram"},
+    "sub_active": {"ru": "\n\n✅ Подписка активна до <b>{date}</b>.", "uz": "\n\n✅ Obuna <b>{date}</b> gacha faol.", "en": "\n\n✅ Subscription active until <b>{date}</b>."},
+    "sub_none": {"ru": "", "uz": "", "en": ""},
+    "promo_applied": {"ru": "🎁 Промокод <b>{code}</b> применён: скидка −{disc}%. К оплате за {plan}: <b>{price}</b>.",
+                      "uz": "🎁 <b>{code}</b> promokod qo'llandi: −{disc}% chegirma. {plan} uchun: <b>{price}</b>.",
+                      "en": "🎁 Promo <b>{code}</b> applied: −{disc}% off. {plan} total: <b>{price}</b>."},
+    "promo_bad": {"ru": "⚠️ Код недействителен.", "uz": "⚠️ Kod yaroqsiz.", "en": "⚠️ Invalid code."},
+    "promo_exhausted": {"ru": "⚠️ Лимит кода исчерпан.", "uz": "⚠️ Kod limiti tugagan.", "en": "⚠️ Code limit reached."},
+    "promo_used": {"ru": "⚠️ Вы уже применяли этот код.", "uz": "⚠️ Bu kodni allaqachon ishlatgansiz.", "en": "⚠️ You already used this code."},
+    "promo_usage": {"ru": "Использование: <code>/promo КОД</code>", "uz": "Foydalanish: <code>/promo KOD</code>", "en": "Usage: <code>/promo CODE</code>"},
+    "pay_locked": {
+        "ru": "🔒 <b>Полный расчёт — по подписке.</b>\n\nДемо доступно в меню бесплатно. Чтобы рассчитать свой объект, оформите подписку.",
+        "uz": "🔒 <b>To'liq hisob — obuna orqali.</b>\n\nDemo menyuda bepul. O'z obyektingizni hisoblash uchun obuna bo'ling.",
+        "en": "🔒 <b>Full calculation requires a subscription.</b>\n\nThe demo is free in the menu. To calculate your own object, subscribe."},
+    "pay_order": {
+        "ru": "Здравствуйте! Хочу оформить подписку Aquality: {plan} — {price}.{promo} Мой id: {uid}.",
+        "uz": "Salom! Aquality obunasini rasmiylashtirmoqchiman: {plan} — {price}.{promo} Mening id: {uid}.",
+        "en": "Hello! I'd like an Aquality subscription: {plan} — {price}.{promo} My id: {uid}."},
+    "pay_howto": {
+        "ru": "\n\n👉 Нажмите кнопку ниже, напишите менеджеру это сообщение (скопируйте текст выше). После оплаты доступ откроют в течение рабочего дня.",
+        "uz": "\n\n👉 Quyidagi tugmani bosing va menejerga yuqoridagi xabarni yuboring. To'lovdan so'ng kirish ish kuni davomida ochiladi.",
+        "en": "\n\n👉 Tap the button below and send the manager the message above. Access is granted within a business day after payment."},
     # ── city ──
     "ask_city": {"ru": "🏙 Выберите город (для расчётной зимней температуры, параметр Б):",
                  "uz": "🏙 Shaharni tanlang (qishki hisobiy harorat uchun, parametr B):",

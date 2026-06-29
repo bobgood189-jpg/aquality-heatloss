@@ -19,6 +19,7 @@ from ..states import Wizard
 from .. import keyboards as K
 from .util import get_lang, is_owner
 from .results import build_object, send_results
+from .payments import has_access, show_tariffs
 
 router = Router()
 
@@ -152,6 +153,10 @@ async def nav_back(cb: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "menu:calc")
 async def start_calc(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
+    if not has_access(cb.from_user):
+        await cb.message.answer(t("pay_locked", lang))
+        await show_tariffs(cb.message, state, cb.from_user, lang)
+        return await cb.answer()
     await state.update_data(floors=[], cur_floor=0, mat={}, mat_idx=0, draft={}, nav=[])
     storage.log_event("calc_start")
     await _render(cb.message, state, lang, "city")

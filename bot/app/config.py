@@ -35,6 +35,22 @@ OWNER_ID = int(os.getenv("OWNER_ID", "0") or "0")
 # Where the SQLite DB lives (mount a volume here in production for persistence).
 DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "aquality_bot.db"))
 
+# ── Платный доступ (подписка) ──────────────────────────────────────────────
+# Выключено по умолчанию: полный расчёт доступен всем. Включить, когда готовы
+# принимать оплату и активировать подписки: PAYWALL=1 в bot/.env.
+PAYWALL = os.getenv("PAYWALL", "0").strip().lower() in ("1", "true", "yes", "on")
+
+# Тарифы: id → (месяцы, цена в сумах, дней доступа).
+PLANS = {
+    "m1":  {"months": 1,  "price": 100000,  "days": 30},
+    "m6":  {"months": 6,  "price": 550000,  "days": 182},
+    "m12": {"months": 12, "price": 1000000, "days": 365},
+}
+
+# Telegram владельца для оплаты (без @) + реквизиты перевода.
+PAY_TG = os.getenv("PAY_TG", "aqualityHL").lstrip("@")
+PAY_REQUISITES = os.getenv("PAY_REQUISITES", "").strip()
+
 # Business contact details (mirrors CONTACT in index.html).
 CONTACT = {
     "whatsapp": "998772941555",

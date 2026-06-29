@@ -42,15 +42,26 @@ def lang_kb():
 
 
 # ── main menu ──
-def menu_kb(lang, is_owner=False):
+def menu_kb(lang, is_owner=False, paywall=False):
     rows = [
         [btn(t("menu_calc", lang), "menu:calc")],
         [btn(t("menu_demo", lang), "menu:demo")],
+    ]
+    if paywall:
+        rows.append([btn(t("menu_tariffs", lang), "menu:tariffs")])
+    rows += [
         [btn(t("menu_materials", lang), "menu:materials"), btn(t("menu_faq", lang), "menu:faq")],
         [btn(t("menu_contact", lang), "menu:contact"), btn(t("menu_lang", lang), "menu:lang")],
     ]
     if is_owner:
         rows.append([btn("👑 Админ-панель", "menu:admin")])
+    return kb(rows)
+
+
+# ── tariffs / paywall ──
+def tariffs_kb(lang, pay_tg):
+    rows = [[InlineKeyboardButton(text=t("tariffs_pay", lang), url=f"https://t.me/{pay_tg}")]]
+    rows.append([btn(t("menu", lang), "menu:home")])
     return kb(rows)
 
 

@@ -12,7 +12,7 @@ from aiogram.types import BotCommand
 
 from .config import require_token
 from . import storage
-from .handlers import menu, admin, wizard, results
+from .handlers import menu, admin, wizard, results, payments
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -45,6 +45,7 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(menu.router)
     dp.include_router(admin.router)
+    dp.include_router(payments.router)
     dp.include_router(wizard.router)
     dp.include_router(results.router)
     await _set_commands(bot)

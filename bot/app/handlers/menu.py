@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 
 from .. import engine as E
 from .. import storage
-from ..config import CONTACT
+from ..config import CONTACT, PAYWALL
 from ..i18n import t, loc_name, LANG_NAMES
 from ..presets import BASE_PRESETS
 from .. import keyboards as K
@@ -17,7 +17,7 @@ router = Router()
 
 
 async def show_menu(message, lang, owner=False):
-    await message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, owner),
+    await message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, owner, PAYWALL),
                          disable_web_page_preview=True)
 
 
@@ -63,7 +63,7 @@ async def set_lang(cb: CallbackQuery, state: FSMContext):
         return await cb.answer()
     storage.set_user_lang(cb.from_user.id, lang)
     await state.update_data(lang=lang)
-    await cb.message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, is_owner(cb.from_user)),
+    await cb.message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, is_owner(cb.from_user), PAYWALL),
                             disable_web_page_preview=True)
     await cb.answer()
 
