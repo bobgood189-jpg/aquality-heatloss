@@ -1,0 +1,22 @@
+# ════════════════════════════════════════════════════════════════════════
+# Security headers для статического хостинга.
+# Netlify и Cloudflare Pages читают этот файл автоматически (положите его
+# в корень публикуемой папки). GitHub Pages этот файл НЕ поддерживает —
+# там работает только <meta>-CSP внутри index.html (см. SECURITY.md).
+# ════════════════════════════════════════════════════════════════════════
+
+/*
+  # Принудительный HTTPS на год (после первого визита). Включайте, только когда
+  # уверены, что сайт навсегда на HTTPS — откат на HTTP станет недоступен.
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  # Запрет встраивания в <iframe> (анти-clickjacking).
+  X-Frame-Options: DENY
+  # Запрет MIME-sniffing.
+  X-Content-Type-Options: nosniff
+  # Не утекать полный URL в Referer на сторонние сайты.
+  Referrer-Policy: strict-origin-when-cross-origin
+  # Отключить ненужные браузерные API.
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  # Та же CSP, что и в <meta>, плюс frame-ancestors (его можно задать только заголовком).
+  Content-Security-Policy: default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-src https:; frame-ancestors 'none'
