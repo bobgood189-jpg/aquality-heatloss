@@ -562,6 +562,10 @@ select.wi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .pcard.active{border-color:#f59e0b!important;background:rgba(245,158,11,.1)!important;box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 0 18px rgba(245,158,11,.2)!important;}
 .pcard-compact{padding:.38rem .6rem!important;border-radius:.5rem!important;}
 .pcard-grid{padding:.55rem .65rem!important;border-radius:.7rem!important;}
+.pcard .ht-check{display:none;color:#f59e0b;flex-shrink:0}
+.pcard.active .ht-check{display:block}
+.pcard .ht-uncheck{display:block;flex-shrink:0;color:var(--aq-muted,#4E6080)}
+.pcard.active .ht-uncheck{display:none}
 
 .step-panel{will-change:transform,opacity}
 
@@ -724,6 +728,8 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:60;background:#111827;border:1px solid rgba(245,158,11,.4);color:#ECF0FA;padding:.7rem 1.1rem;border-radius:.8rem;font-size:.85rem;font-weight:600;box-shadow:0 12px 36px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.err{border-color:#ff6b35;background:#2a1410}
+#toast.toast-badge{border-radius:999px;padding:.4rem .9rem;font-size:.78rem;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+#toast.toast-minimal{background:rgba(17,24,39,.78);border:none;box-shadow:none;font-size:.8rem;padding:.45rem .9rem;border-radius:.5rem}
 
 /* Help accordion (per step) */
 .help{border:1px solid rgba(245,158,11,.18);border-radius:.8rem;background:rgba(245,158,11,.04);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);margin-bottom:1.25rem;overflow:hidden;box-shadow:0 1px 0 rgba(255,210,122,.06) inset,0 2px 8px rgba(0,0,0,.15);}
@@ -1297,6 +1303,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .wa-pulse-2{animation-delay:1.4s}
 @keyframes wa-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.65);opacity:0}}
 @media(max-width:550px){#floating-wa{bottom:1.2rem;right:1.2rem;padding:.85rem;border-radius:50%}.wa-label{display:none}}
+.sec-overlay.open~#floating-wa,body:has(.sec-overlay.open) #floating-wa{opacity:0;pointer-events:none;transform:scale(.8)}
 /* ══════════════════════════════════════════════
    HERO TRUST BADGES + GRADIENT DIVIDER
 ══════════════════════════════════════════════ */
@@ -1480,6 +1487,10 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
       <button onclick="showKbHelp()" class="lg-btn-sec px-2.5 py-1.5" aria-label="Горячие клавиши" title="Горячие клавиши (?)" style="border-radius:100px;min-width:36px;font-size:14px;font-weight:700">?</button>
       <button onclick="openSettings()" class="lg-btn-sec px-2.5 py-1.5" aria-label="Настройки / Sozlamalar" data-i18n-title="settings_btn" style="border-radius:100px;min-width:36px" title="Настройки">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button id="aq-nav-sub" onclick="openPaywall()" title="Купить подписку">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1l3.09 6.26L22 8.27l-5 4.87 1.18 6.88L12 16.77l-6.18 3.25L7 13.14 2 8.27l6.91-1.01L12 1z"/></svg>
+        <span class="aq-sub-label">Подписка</span>
       </button>
       <div id="nav-auth-wrap">
         <!-- Injected by initAuthNav() -->
@@ -1979,8 +1990,14 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
   <span class="wa-label">WhatsApp</span>
 </a>
 
+<!-- Плавающая кнопка «Купить подписку» — видна на всём сайте -->
+<button id="floating-sub" onclick="openPaywall()" aria-label="Купить подписку">
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1l3.09 6.26L22 8.27l-5 4.87 1.18 6.88L12 16.77l-6.18 3.25L7 13.14 2 8.27l6.91-1.01L12 1z"/></svg>
+  <span class="aq-buy-label">Купить подписку</span>
+</button>
+
 <!-- ═══════ MODAL ═══════ -->
-<div id="modal-backdrop" onclick="if(event.target===this)closeModal()">
+<div id="modal-backdrop" onclick="if(event.target===this)closeModal()" data-lenis-prevent>
   <div id="modal-card">
     <button onclick="closeModal()" class="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-w800 hover:text-cream z-10">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1993,7 +2010,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 <div id="ed-root" class="ed-root"></div>
 
 <!-- ═══════ AUTH OVERLAY ═══════ -->
-<div id="auth-overlay">
+<div id="auth-overlay" data-lenis-prevent>
   <div id="auth-card">
     <div class="flex items-center justify-center gap-2 mb-6">
       <span class="text-xl font-extrabold text-cream">Aquality</span>
@@ -2014,7 +2031,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     <span class="text-xs text-muted ml-2" id="admin-current-user"></span>
   </div>
   <div id="admin-body">
-    <div id="admin-sidebar">
+    <div id="admin-sidebar" data-lenis-prevent>
       <p class="text-[10px] font-semibold uppercase tracking-widest text-muted/60 px-2 mb-2 mt-1" data-i18n="adm-nav-lbl">Навигация</p>
       <div class="adm-nav active" id="adm-nav-dashboard" onclick="adminPage('dashboard')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -2038,7 +2055,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
         <span>Промокоды</span>
       </div>
     </div>
-    <div id="admin-content">
+    <div id="admin-content" data-lenis-prevent>
       <!-- Injected by adminPage() -->
     </div>
   </div>
@@ -2052,7 +2069,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     </button>
     <span class="ed-title" data-i18n="profile">Мой профиль</span>
   </div>
-  <div class="sec-body">
+  <div class="sec-body" data-lenis-prevent>
     <div class="mx-auto" style="max-width:520px">
       <div id="profile-content"></div>
     </div>
@@ -2067,7 +2084,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     </button>
     <span class="ed-title" data-i18n="my-calcs">Мои расчёты</span>
   </div>
-  <div class="sec-body">
+  <div class="sec-body" data-lenis-prevent>
     <div class="mx-auto" style="max-width:640px">
       <div id="myCalcs-content"></div>
     </div>
@@ -2106,7 +2123,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     </button>
     <span class="ed-title" data-i18n="nav-workshop">Мастерская</span>
   </div>
-  <div class="sec-body">
+  <div class="sec-body" data-lenis-prevent>
     <div class="mx-auto" style="max-width:560px">
       <div id="workshop-sec-content"></div>
     </div>
@@ -2384,7 +2401,7 @@ const PAY_STR = {
     copied:'Детали заказа скопированы — вставьте в чат менеджеру',
     active:'Подписка активна', until:'до', expired:'Подписка истекла', none:'Нет активной подписки',
     lockTitle:'Доступно по подписке', lockBody:'Это демо-режим: редактирование данных и чертежей доступно только с активной подпиской.',
-    lockBtn:'Открыть тарифы', demoTag:'Демо', subBtn:'Подписка' },
+    lockBtn:'Открыть тарифы', demoTag:'Демо', subBtn:'Подписка', buyBtn:'Купить подписку' },
   uz:{ title:'Kalkulyatorga kirish', sub:'Demo hammaga ochiq. Toʻliq hisob — obuna orqali.',
     plan1:'1 oy', plan6:'6 oy', plan12:'12 oy', popular:'Foydali', perMonth:'/oy',
     promoPh:'Promokod (agar boʻlsa)', apply:'Qoʻllash', promoOk:'Chegirma', promoInvalid:'Kod notoʻgʻri',
@@ -2395,7 +2412,7 @@ const PAY_STR = {
     copied:'Buyurtma tafsilotlari nusxalandi — menejer chatiga joylang',
     active:'Obuna faol', until:'gacha', expired:'Obuna tugagan', none:'Faol obuna yoʻq',
     lockTitle:'Obuna orqali ochiladi', lockBody:'Bu demo: maʼlumot va chizmalarni tahrirlash faqat faol obuna bilan.',
-    lockBtn:'Tariflarni ochish', demoTag:'Demo', subBtn:'Obuna' },
+    lockBtn:'Tariflarni ochish', demoTag:'Demo', subBtn:'Obuna', buyBtn:'Obuna sotib olish' },
   en:{ title:'Calculator access', sub:'Demo is open to all. Full calculation requires a subscription.',
     plan1:'1 month', plan6:'6 months', plan12:'12 months', popular:'Best value', perMonth:'/mo',
     promoPh:'Promo code (if any)', apply:'Apply', promoOk:'Discount', promoInvalid:'Invalid code',
@@ -2406,7 +2423,7 @@ const PAY_STR = {
     copied:'Order details copied — paste them into the manager chat',
     active:'Subscription active', until:'until', expired:'Subscription expired', none:'No active subscription',
     lockTitle:'Available with subscription', lockBody:'This is demo mode: editing data and drawings requires an active subscription.',
-    lockBtn:'View plans', demoTag:'Demo', subBtn:'Subscription' },
+    lockBtn:'View plans', demoTag:'Demo', subBtn:'Subscription', buyBtn:'Buy subscription' },
 };
 function pt(k){ return (PAY_STR[_lang]||PAY_STR.ru)[k] || PAY_STR.ru[k] || k; }
 function planName(id){ return pt(id==='m1'?'plan1':id==='m6'?'plan6':'plan12'); }
@@ -2464,8 +2481,7 @@ function promoReasonMsg(r){
 let _payState = { plan:'m6', promo:null };
 function planFinalPrice(plan){ const base=aqPlan(plan).price; const d=_payState.promo?_payState.promo.discount:0; return Math.round(base*(1-d/100)); }
 function openPaywall(){
-  const u = authCurrentUser();
-  if(!u){ toast(pt('loginFirst'),'err'); setTimeout(()=>openAuth('login'),350); return; }
+  // Тарифы можно смотреть без входа; логин потребуется на шаге оплаты (payViaTelegram).
   if(!document.getElementById('paywall-overlay')){
     const ov=document.createElement('div'); ov.id='paywall-overlay'; ov.className='pw-ov';
     ov.addEventListener('click', e=>{ if(e.target===ov) closePaywall(); });
@@ -2473,9 +2489,16 @@ function openPaywall(){
   }
   renderPaywall();
   document.getElementById('paywall-overlay').classList.add('open');
-  document.body.style.overflow='hidden';
+  _lockBodyScroll();
 }
-function closePaywall(){ const o=document.getElementById('paywall-overlay'); if(o) o.classList.remove('open'); document.body.style.overflow=''; }
+function closePaywall(){ const o=document.getElementById('paywall-overlay'); if(o) o.classList.remove('open'); _unlockBodyScroll(); }
+/* Локализация статичных кнопок «Подписка/Купить подписку» (нав + плавающая). */
+function _aqSubLabels(){
+  try{
+    document.querySelectorAll('.aq-sub-label').forEach(el=>{ el.textContent = pt('subBtn'); });
+    document.querySelectorAll('.aq-buy-label').forEach(el=>{ el.textContent = pt('buyBtn'); });
+  }catch(e){}
+}
 function paySelectPlan(id){ _payState.plan=id; renderPaywall(); }
 async function payApplyPromo(){
   const inp=document.getElementById('pw-promo-inp'); if(!inp) return;
@@ -2604,6 +2627,18 @@ function aqLockedStepHTML(){
   .pw-lock-title{font-size:17px;font-weight:800;color:#E6EDF8;margin-bottom:8px}
   .pw-lock-body{font-size:13px;color:#9aa7c0;line-height:1.6;max-width:340px;margin:0 auto 18px}
   .pw-demo-tag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.28);border-radius:20px;padding:3px 10px}
+  /* кнопка «Подписка» в шапке */
+  #aq-nav-sub{display:inline-flex;align-items:center;gap:6px;border-radius:100px;padding:.42rem .85rem;font-size:12px;font-weight:700;cursor:pointer;color:#0B0F1A;background:#f59e0b;border:none;transition:transform .2s,background .2s;white-space:nowrap}
+  #aq-nav-sub:hover{background:#fbb12e;transform:translateY(-1px)}
+  #aq-nav-sub svg{width:14px;height:14px}
+  @media(max-width:639px){#aq-nav-sub{display:none}}
+  /* плавающая кнопка «Купить подписку» — над WhatsApp, видна на всём сайте */
+  #floating-sub{position:fixed;bottom:5.4rem;right:1.75rem;z-index:150;display:inline-flex;align-items:center;gap:.55rem;background:#f59e0b;color:#0B0F1A;border:none;border-radius:100px;padding:.7rem 1.1rem .7rem .9rem;font-size:.8rem;font-weight:800;cursor:pointer;box-shadow:0 4px 24px rgba(245,158,11,.45),0 2px 10px rgba(0,0,0,.32);transition:transform .3s cubic-bezier(.34,1.4,.64,1),box-shadow .3s,opacity .3s}
+  #floating-sub:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 8px 36px rgba(245,158,11,.6),0 4px 14px rgba(0,0,0,.38)}
+  #floating-sub:active{transform:translateY(0) scale(.98)}
+  #floating-sub svg{width:18px;height:18px;flex-shrink:0}
+  .sec-overlay.open~#floating-sub,body:has(.sec-overlay.open) #floating-sub,body:has(#paywall-overlay.open) #floating-sub,body:has(#admin-overlay.open) #floating-sub{opacity:0;pointer-events:none;transform:scale(.8)}
+  @media(max-width:550px){#floating-sub{bottom:5rem;right:1.2rem;padding:.85rem;border-radius:50%}.aq-buy-label{display:none}}
   @media (max-width:420px){.pw-card-price{font-size:12px}.pw-card-name{font-size:11px}}`;
   const st=document.createElement('style'); st.id='paywall-css'; st.textContent=css; document.head.appendChild(st);
 })();
@@ -2946,11 +2981,11 @@ function openAuth(tab){
   _authTab=tab||'login'; _authClientType='client';
   renderAuthBody();
   document.getElementById('auth-overlay').classList.add('open');
-  document.body.style.overflow='hidden';
+  _lockBodyScroll();
 }
 function closeAuth(){
   document.getElementById('auth-overlay').classList.remove('open');
-  document.body.style.overflow='';
+  _unlockBodyScroll();
   _showPageWidgets();
 }
 function renderAuthBody(){
@@ -3087,6 +3122,7 @@ function initAuthNav(){
       <div class="udrop-sep"></div>
       <div class="udrop-item" role="button" tabindex="0" onclick="openProfile();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${t('profile')}</div>
       <div class="udrop-item" role="button" tabindex="0" onclick="openMyCalcs();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>${t('my-calcs')}</div>
+      <div class="udrop-item" role="button" tabindex="0" onclick="openPaywall();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5"><path d="M12 1l3.09 6.26L22 8.27l-5 4.87 1.18 6.88L12 16.77l-6.18 3.25L7 13.14 2 8.27l6.91-1.01L12 1z"/></svg>${pt('subBtn')}</div>
       ${canAdmin?`<div class="udrop-item" role="button" tabindex="0" onclick="openAdmin();toggleUserDropdown()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>${t('admin')}</div>`:''}
       <div class="udrop-sep"></div>
       <div class="udrop-item danger" role="button" tabindex="0" onclick="authLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>${t('logout')}</div>
@@ -3113,12 +3149,12 @@ function openAdmin(){
   _hidePageWidgets();
   document.getElementById('admin-current-user').textContent=u.login+' ('+(u.role==='owner'?t('role-owner'):t('role-admin'))+')';
   document.getElementById('admin-overlay').classList.add('open');
-  document.body.style.overflow='hidden';
+  _lockBodyScroll();
   adminPage(_adminPage);
 }
 function closeAdmin(){
   document.getElementById('admin-overlay').classList.remove('open');
-  document.body.style.overflow='';
+  _unlockBodyScroll();
   _showPageWidgets();
 }
 
@@ -3140,20 +3176,41 @@ function _showPageWidgets(){
   const lp=document.getElementById('live-panel'); if(lp) lp.style.display='';
 }
 
+/* ══ Body scroll lock (position:fixed approach for iOS Safari) ══ */
+let _bodyLocked=false, _savedScrollY=0;
+function _lockBodyScroll(){
+  if(_bodyLocked) return;
+  _bodyLocked=true;
+  _savedScrollY=window.scrollY;
+  document.body.style.overflow='hidden';
+  document.body.style.position='fixed';
+  document.body.style.width='100%';
+  document.body.style.top=`-${_savedScrollY}px`;
+  if(window._lenis) window._lenis.stop();
+}
+function _unlockBodyScroll(){
+  if(!_bodyLocked) return;
+  _bodyLocked=false;
+  document.body.style.overflow='';
+  document.body.style.position='';
+  document.body.style.width='';
+  document.body.style.top='';
+  window.scrollTo(0,_savedScrollY);
+  if(window._lenis) window._lenis.start();
+}
+
 /* ══ Helper: open/close any sec-overlay ══ */
 function _openSec(id,renderFn){
   _closeDropdown();
   _hidePageWidgets();
   renderFn();
   document.getElementById(id).classList.add('open');
-  document.body.style.overflow='hidden';
-  if(window._lenis) window._lenis.stop();
+  _lockBodyScroll();
 }
 function _closeSec(id){
   document.getElementById(id).classList.remove('open');
-  document.body.style.overflow='';
+  _unlockBodyScroll();
   _showPageWidgets();
-  if(window._lenis) window._lenis.start();
 }
 
 /* ════ PROFILE PANEL ════ */
@@ -3540,7 +3597,7 @@ function _tgPills(k,opts,def,extra){
   }).join('')}</div>`;
 }
 function _tgR(ic,bg,tt,sb,ctrl,cls=''){
-  return `<div class="tg-r ${cls}"><div class="tg-r-ic" style="background:${bg}20;color:${bg}">${ic}</div><div class="tg-r-bd"><p class="tg-r-tt">${tt}</p>${sb?`<p class="tg-r-sb">${sb}</p>`:''}</div>${ctrl?`<div class="tg-r-ctrl">${ctrl}</div>`:'</div>'}</div>`;
+  return `<div class="tg-r ${cls}"><div class="tg-r-ic" style="background:${bg}20;color:${bg}">${ic}</div><div class="tg-r-bd"><p class="tg-r-tt">${tt}</p>${sb?`<p class="tg-r-sb">${sb}</p>`:''}</div>${ctrl?`<div class="tg-r-ctrl">${ctrl}</div>`:''}</div>`;
 }
 const _tgHd=(lbl)=>`<div class="tg-pan-hd"><button class="tg-pan-back" onclick="tgBack()">‹</button>${lbl}</div>`;
 
@@ -5735,10 +5792,13 @@ function tip(key){
 ════════════════════════════════════════════════════════════ */
 let _toastT;
 function toast(msg, kind){
+  if(kind==='err' && _tgG('errorSound',true)) _playBeep(220,0.15);
   if(kind!=='err' && !_tgG('notifs',true)) return;
   let el=document.getElementById('toast');
   if(!el){ el=document.createElement('div'); el.id='toast'; document.body.appendChild(el); }
-  el.className=kind==='err'?'err':''; el.textContent=msg;
+  const toastStyle=_tgG('toastStyle','banner');
+  el.className=(kind==='err'?'err':'')+(toastStyle!=='banner'?' toast-'+toastStyle:'');
+  el.textContent=msg;
   requestAnimationFrame(()=>el.classList.add('show'));
   const dur=_tgG('toastDur',4000);
   clearTimeout(_toastT); _toastT=setTimeout(()=>el.classList.remove('show'),dur);
@@ -7991,6 +8051,7 @@ function applyLang(){
   });
   updateNavHint();
   initAuthNav();
+  try{ _aqSubLabels(); }catch(e){}
   // re-render open overlays so their text switches immediately
   if(document.getElementById('settings-content')?.children.length) openSettings();
   if(document.getElementById('auth-body')?.children.length) renderAuthBody();
@@ -8108,6 +8169,20 @@ const HEAT_REGIMES = [             // температурный режим си
   {id:'75/65', name:'75/65 °C', tm:70,   desc:'Низкотемпературный',   descUz:'Past haroratli',         descEn:'Low-temperature'},
   {id:'70/55', name:'70/55 °C', tm:62.5, desc:'Конденсационный котёл',descUz:'Kondensatsion qozon',    descEn:'Condensing boiler'},
   {id:'55/45', name:'55/45 °C', tm:50,   desc:'Тёплый режим',         descUz:'Iliq rejim',             descEn:'Warm mode'},
+];
+const PIPE_TYPES = [
+  {id:'pp',     name:'Полипропилен (PP-R)',  desc:'Бюджетно, быстрый монтаж, Ø20–40 мм'},
+  {id:'mpl',    name:'Металлопластик',       desc:'PEX/AL/PEX, гибкий, для скрытой разводки'},
+  {id:'pert',   name:'PE-RT / PE-X',         desc:'Тёплый пол, коллекторная схема, tmax 95 °C'},
+  {id:'copper', name:'Медь',                 desc:'Долговечно, котлы высокого давления'},
+  {id:'steel',  name:'Сталь / чугун',        desc:'Металл, старый фонд, высокая прочность'},
+];
+const HEATING_TYPES = [
+  {id:'radiator',  name:'Радиатор',       desc:'Биметалл, алюминий или сталь — под окном'},
+  {id:'underfloor',name:'Тёплый пол',     desc:'Водяной или электрический, равномерный прогрев'},
+  {id:'ceiling',   name:'Потолочное',     desc:'ИК-панели или тёплый потолок'},
+  {id:'fancoil',   name:'Фанкойл',        desc:'Скрытый вентиляторный доводчик, зонирование'},
+  {id:'convector', name:'Конвектор',      desc:'Встраиваемый в пол или плинтусный'},
 ];
 const SECTION_W_NOMINAL = 150;     // Вт/секцию при ΔT=60 (режим 90/70/20, биметалл)
 const SECTION_DT_NOMINAL = 60;
@@ -8408,7 +8483,7 @@ function computeObject(){
   });
   return {
     floors:fres, byType,
-    totalW, totalKw:totalW/1000, boilerKw:(totalW/1000)*_tgG('safeFactor',1.25),
+    totalW, totalKw:totalW/1000, boilerKw:(totalW/1000)*_tgG('safeFactor',1.25)/(_tgG('boilerEff',90)/100),
     totalArea, totalSections, roomCount
   };
 }
@@ -8482,11 +8557,12 @@ const ST = {
   activeFloorId:null,
   mat:{ wallId:'brick_380', windowId:'double_glazing_pvc', doorId:'door_metal_insulated', floorId:'floor_xps50', ceilingId:'ceil_i100' },
   airtight:'normal', heatRegime:'90/70', attic:'closed', lambdaMode:'A',
+  pipeType:'pp', heatingTypes:['radiator'],
   basement: null, tExtManual:null,
 };
 
 function initFloors(){
-  ST.floors = [{ id:uid('fl'), name:'1 этаж', height:2.8, rooms:[], floorSlab:{thickness:20,insulation:'none',insulationThickness:0,note:''} }];
+  ST.floors = [{ id:uid('fl'), name:'1 этаж', height:_tgG('defCeilH',2.8), rooms:[], floorSlab:{thickness:20,insulation:'none',insulationThickness:0,note:''} }];
   ST.activeFloorId = ST.floors[0].id;
 }
 function activeFloor(){ return (ST.basement&&ST.basement.id===ST.activeFloorId)?ST.basement:ST.floors.find(f=>f.id===ST.activeFloorId)||ST.floors[0]; }
@@ -8523,9 +8599,10 @@ function updateLivePanel(){
     statusEl.innerHTML='<span class="inline-block h-1.5 w-1.5 rounded-full bg-amber mr-1.5"></span>'+t('live-all-obj');
     const sf=_tgG('safeFactor',1.25);
     const sfPct=Math.round((sf-1)*100);
+    const boilerEff=_tgG('boilerEff',90);
     document.getElementById('kw-boiler').textContent=res.boilerKw.toFixed(dec)+' '+t('live-kw-unit');
     const boilerHintEl=document.querySelector('[data-i18n="boiler-hint"]');
-    if(boilerHintEl) boilerHintEl.textContent=`Котёл (запас ${sfPct}%)`;
+    if(boilerHintEl) boilerHintEl.textContent=boilerEff<100?`Котёл (запас ${sfPct}%, КПД ${boilerEff}%)`:`Котёл (запас ${sfPct}%)`;
     document.getElementById('kw-area').textContent=res.totalArea.toFixed(1)+' '+t('mr-unit-m')+'²';
     document.getElementById('kw-rooms').textContent=res.roomCount+' '+t('rooms-unit');
     detailEl.classList.remove('hidden');
@@ -8617,7 +8694,7 @@ function wizNext(){
   if(ST.step===N){ wizReset(); return; }
   trackEvent('step_'+ST.step);  // track step completion before incrementing
   ST.step++; renderProgress(); transitionStep(1); updateNavHint(); updateLivePanel();
-  if(ST.step===6){ trackEvent('calc_complete'); _playBeep(523,0.18); _playBeep(659,0.18);
+  if(ST.step===6){ trackEvent('calc_complete'); if(_tgG('calcCompleteSound',true)){ _playBeep(523,0.18); _playBeep(659,0.18); }
     pushHistory();
     // автосохранение расчёта в кабинет (в офлайн-режиме; в Supabase-режиме
     // authSaveProject — no-op, расчёты сохраняются кнопкой «Сохранить в кабинет»)
@@ -8852,7 +8929,7 @@ function floorRow(f,i){
 }
 function addFloor(){
   const n=ST.floors.length+1;
-  ST.floors.push({id:uid('fl'),name:n+' этаж',height:2.8,rooms:[],floorSlab:{thickness:20,insulation:'none',insulationThickness:0,note:''}});
+  ST.floors.push({id:uid('fl'),name:n+' этаж',height:_tgG('defCeilH',2.8),rooms:[],floorSlab:{thickness:20,insulation:'none',insulationThickness:0,note:''}});
   rerenderFloors(); updateLivePanel();
 }
 function removeFloor(id){
@@ -10125,6 +10202,7 @@ function openEditor(){
   HOTKEYS.load();
   EDITOR.open=true; EDITOR.selId=null;
   document.body.style.overflow='hidden';
+  if(window._lenis) window._lenis.stop();
   _hidePageWidgets();
   const root=document.getElementById('ed-root');
   root.innerHTML=buildEditorUI();
@@ -10143,6 +10221,7 @@ function closeEditor(){
   document.getElementById('ed-root').classList.remove('open');
   document.getElementById('ed-root').innerHTML='';
   document.body.style.overflow='';
+  if(window._lenis) window._lenis.start();
   _showPageWidgets();
   window.removeEventListener('keydown', edKey);
   window.removeEventListener('keyup', edKeyUp);
@@ -12711,11 +12790,44 @@ function objectParamsBlock(){
         <p class="text-xs text-muted mt-1">${o.d}</p>
       </button>`).join('')}
     </div>
+  </div>
+  <div class="mb-6">
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">Тип труб</h4>
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      ${PIPE_TYPES.map(o=>`<button type="button" data-pt="${o.id}" onclick="selPipeType('${o.id}')" class="pcard text-left ${(ST.pipeType||'pp')===o.id?'active':''}">
+        <p class="font-semibold text-cream text-sm leading-snug">${o.name}</p>
+        <p class="text-xs text-muted mt-1">${o.desc}</p>
+      </button>`).join('')}
+    </div>
+  </div>
+  <div class="mb-6">
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">Тип отопления <span class="text-muted/60 normal-case font-normal ml-1">(можно несколько)</span></h4>
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      ${HEATING_TYPES.map(o=>{ const active=(ST.heatingTypes||['radiator']).includes(o.id); return `<button type="button" data-ht="${o.id}" onclick="toggleHeatingType('${o.id}')" class="pcard text-left ${active?'active':''}">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="ht-check h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg class="ht-uncheck h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+          <p class="font-semibold text-cream text-sm leading-snug">${o.name}</p>
+        </div>
+        <p class="text-xs text-muted">${o.desc}</p>
+      </button>`; }).join('')}
+    </div>
   </div>`;
 }
 function selAirtight(id){ ST.airtight=id; refreshPcards('selAirtight',id); updateLivePanel(); }
 function selRegime(id){ ST.heatRegime=id; refreshPcards('selRegime',id); updateLivePanel(); }
 function selLambdaMode(id){ ST.lambdaMode=(id==='B')?'B':'A'; refreshPcards('selLambdaMode',id); updateLivePanel(); }
+function selPipeType(id){
+  ST.pipeType=id;
+  document.querySelectorAll('#step-panel [data-pt]').forEach(el=>el.classList.toggle('active',el.getAttribute('data-pt')===id));
+}
+function toggleHeatingType(id){
+  if(!Array.isArray(ST.heatingTypes)||!ST.heatingTypes.length) ST.heatingTypes=['radiator'];
+  const idx=ST.heatingTypes.indexOf(id);
+  if(idx>=0){ if(ST.heatingTypes.length>1) ST.heatingTypes.splice(idx,1); }
+  else ST.heatingTypes.push(id);
+  document.querySelectorAll('#step-panel [data-ht]').forEach(el=>el.classList.toggle('active',(ST.heatingTypes).includes(el.getAttribute('data-ht'))));
+}
 function presetGrid(label,cat,currentId,onselect){
   const isWall = cat==='walls';
   const total = presetList(cat).length;
@@ -13664,6 +13776,7 @@ function _serFloor(fl){ return {n:fl.name,h:fl.height,r:fl.rooms.map(rm=>[rm.typ
 function serializeState(){
   const obj={c:ST.cityId,p:[ST.plot.w,ST.plot.d],n:ST.northSide,a:ST.airtight,hr:ST.heatRegime,at:ST.attic,lm:ST.lambdaMode,
     m:[ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId],
+    pt:ST.pipeType||'pp', ht:ST.heatingTypes||['radiator'],
     f:ST.floors.map(_serFloor)};
   if(ST.basement){ obj.bs=_serFloor(ST.basement); obj.bs.bt=ST.basement.tExt!=null?ST.basement.tExt:-6; }
   return obj;
@@ -13676,6 +13789,8 @@ function loadState(o){
   ST.heatRegime = (o.hr&&HEAT_REGIMES.some(r=>r.id===o.hr))?o.hr:'90/70';
   ST.attic = (o.at&&ATTIC[o.at])?o.at:'closed';
   ST.lambdaMode = (o.lm==='B')?'B':'A';
+  ST.pipeType = PIPE_TYPES.some(x=>x.id===o.pt) ? o.pt : 'pp';
+  ST.heatingTypes = (Array.isArray(o.ht)&&o.ht.length) ? o.ht : ['radiator'];
   if(o.m){ [ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId]=o.m; }
   ST.floors=(o.f||[]).map(fl=>({id:uid('fl'),name:fl.n,height:fl.h,rooms:(fl.r||[]).map(rm=>{
     const room={id:uid('rm'),typeId:rm[0],x:rm[1],y:rm[2],w:rm[3],h:rm[4],name:rm[5]||'',tInt:roomTypeTemp(rm[0]),
@@ -13714,12 +13829,13 @@ function tryLoadFromHash(){
 const HIST_KEY='aq_history_v1';
 function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY))||[]; }catch(e){ return []; } }
 function pushHistory(){
+  if(!_tgG('saveHistory',true)) return;
   const res=computeObject(); if(!res||!res.roomCount) return;
   const label=`${ST.cityName||'—'} · ${ST.floors.length} эт. · ${res.totalArea.toFixed(0)} м² · ${res.totalKw.toFixed(1)} кВт`;
   let h=loadHistory();
   if(h[0]&&h[0].label===label) return;            // не дублируем последний
   h.unshift({t:Date.now(),label,state:serializeState()});
-  h=h.slice(0,10);
+  const lim=_tgG('histLimit',50); h=lim>0?h.slice(0,lim):h;
   try{ localStorage.setItem(HIST_KEY,JSON.stringify(h)); }catch(e){}
 }
 function loadFromHistory(i){
@@ -13875,9 +13991,10 @@ function openModal(){
   _hidePageWidgets();
   const res=computeObject()||{totalKw:0,boilerKw:0,totalSections:0,totalArea:0,roomCount:0};
   renderModalForm(res);
-  document.getElementById('modal-backdrop').classList.add('open'); document.body.style.overflow='hidden';
+  document.getElementById('modal-backdrop').classList.add('open');
+  _lockBodyScroll();
 }
-function closeModal(){ document.getElementById('modal-backdrop').classList.remove('open'); document.body.style.overflow=''; _showPageWidgets(); }
+function closeModal(){ document.getElementById('modal-backdrop').classList.remove('open'); _unlockBodyScroll(); _showPageWidgets(); }
 function renderModalForm(s){
   document.getElementById('modal-body').innerHTML=`
     <p class="text-xs font-semibold uppercase tracking-widest text-amber/80 mb-1">Бесплатная консультация</p>
@@ -15440,12 +15557,14 @@ function openSupport(){
   if(!el) return;
   _hidePageWidgets();
   el.classList.add('open');
+  _lockBodyScroll();
   nanoOpen(document.getElementById('support-card'));
   _renderSupportForm('question');
 }
 function closeSupport(){
   const el = document.getElementById('support-overlay');
   if(el) el.classList.remove('open');
+  _unlockBodyScroll();
   _supportPhotos = [];
   _showPageWidgets();
 }
