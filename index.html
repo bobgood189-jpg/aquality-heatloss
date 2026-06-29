@@ -538,6 +538,8 @@ select.wi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .pcard{cursor:pointer;border-radius:1rem;border:1.5px solid rgba(140,165,210,.1);background:rgba(17,24,39,.92);padding:.9rem;transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease,transform .2s ease;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 2px 8px rgba(0,0,0,.18);}
 .pcard:hover{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.07);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 4px 16px rgba(245,158,11,.1);transform:translateY(-1px);}
 .pcard.active{border-color:#f59e0b!important;background:rgba(245,158,11,.1)!important;box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 0 18px rgba(245,158,11,.2)!important;}
+.pcard-compact{padding:.38rem .6rem!important;border-radius:.5rem!important;}
+.pcard-grid{padding:.55rem .65rem!important;border-radius:.7rem!important;}
 
 .step-panel{will-change:transform,opacity}
 
@@ -1044,7 +1046,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .thermal-cv-wrap{padding:.6rem;position:relative}
 #thermal-map{width:100%;display:block;border-radius:1rem;cursor:crosshair}
 .thermal-legend{display:flex;align-items:center;gap:.5rem;padding:0 .7rem .65rem;font-size:.58rem;font-weight:600;color:#4e6080;letter-spacing:.04em;text-transform:uppercase}
-.thermal-legend-bar{flex:1;height:7px;border-radius:999px;background:linear-gradient(90deg,#02031c,#0000ee,#00ccff,#00ff80,#f0f000,#ff5500,#ffffff);opacity:.75}
+.thermal-legend-bar{flex:1;height:7px;border-radius:999px;background:linear-gradient(90deg,#d62828,#ff5a00,#ffd200,#3cc85a,#00c8eb,#1446e1,#040850);opacity:.75}
 .thermal-tip{position:absolute;pointer-events:none;background:rgba(11,15,26,.95);border:1px solid rgba(245,158,11,.28);border-radius:.65rem;padding:.42rem .7rem;font-size:.7rem;line-height:1.45;opacity:0;transition:opacity .12s;z-index:5;white-space:nowrap;top:0;left:0}
 .eclass-suite{display:grid;grid-template-columns:auto 1fr;gap:.75rem;margin-bottom:.75rem;align-items:stretch}
 @media(max-width:580px){.eclass-suite{grid-template-columns:1fr}}
@@ -1755,7 +1757,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
       <!-- Brand -->
       <div>
         <p class="font-extrabold text-cream text-lg">Aquality <span class="text-amber">|</span> WaterPro</p>
-        <p class="mt-1 text-xs text-muted">г. Фергана, ул. Мустакиллик 42</p>
+        <p class="mt-1 text-xs text-muted">Tadbirkorlar ko'chasi 277 (польский базар, магазин 27)</p>
         <p class="mt-0.5 text-xs text-muted" data-i18n="hours">Пн–Сб 9:00–18:00</p>
         <p class="mt-3 text-xs text-muted/50">© 2025 Aquality | WaterPro</p>
       </div>
@@ -4886,7 +4888,7 @@ const CONTACT = {
   tgPhone:'+998 77-295-15-55',   // ⚠️ 295, НЕ путать с 294 (телефон магазина)
   instagram:'https://www.instagram.com/aquality_global',
   youtube:'https://youtube.com/@aquality_global',
-  address:'г. Фергана, ул. Мустакиллик 42'
+  address:"Tadbirkorlar ko'chasi 277 (польский базар, магазин 27)"
 };
 
 /* ════════════════════════════════════════════════════════════
@@ -5549,20 +5551,49 @@ function updMatSearch(cat, q){
   if(el) el.innerHTML = renderMatCards(cat);
 }
 
-function renderCard(p, fn, currentId, isWall){
+function renderCard(p, fn, currentId, isWall, view){
   const homog = p.homog!=null ? p.homog : WALL_HOMOG_DEFAULT;
   const rEff  = isWall ? p.r*homog : null;
+  const rDisp = rEff!=null ? rEff : p.r;
+  const cat = fn==='selWall'?'walls':fn==='selWindow'?'windows':fn==='selDoor'?'doors':fn==='selFloor'?'floors':'ceilings';
+  const menuBtn = `<button type="button" onclick="event.stopPropagation();pcardMenu(this,'${p.id}','${cat}',${p.r})" class="pcard-menu-btn" title="Опции">⋮</button>`;
+  const activeCls = currentId===p.id?'active':'';
+
+  if(view==='compact'){
+    return `<div onclick="${fn}('${p.id}')" class="pcard pcard-compact text-left relative ${activeCls}" style="cursor:pointer">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 min-w-0">
+          <p class="font-medium text-cream text-xs leading-tight truncate">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber">★</span>':''}</p>
+          ${p.desc?`<p class="text-[10px] text-muted truncate">${p.desc}</p>`:''}
+        </div>
+        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20 flex-shrink-0">R ${rDisp.toFixed(2)}</span>
+        ${menuBtn}
+      </div>
+    </div>`;
+  }
+
+  if(view==='grid'){
+    return `<div onclick="${fn}('${p.id}')" class="pcard pcard-grid text-left relative ${activeCls}" style="cursor:pointer">
+      <div class="flex items-center justify-between gap-1 mb-1.5">
+        <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20">R ${rDisp.toFixed(2)}</span>
+        ${menuBtn}
+      </div>
+      <p class="font-semibold text-cream text-xs leading-snug">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber text-[9px] ml-0.5">★</span>':''}</p>
+      ${p.desc?`<p class="text-[10px] text-muted mt-0.5 leading-tight" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.desc}</p>`:''}
+    </div>`;
+  }
+
+  // list view (full card)
   const uVal  = p.u!=null ? p.u : (p.r>0 ? Math.round((1/p.r)*100)/100 : null);
   const chips = [];
   if(p.brand) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-sky-900/40 text-sky-300 border border-sky-700/30">${p.brand}</span>`);
   if(p.thickness) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-w800/60 text-muted border border-white/10">${p.thickness}мм</span>`);
-  const cat = fn==='selWall'?'walls':fn==='selWindow'?'windows':fn==='selDoor'?'doors':fn==='selFloor'?'floors':'ceilings';
-  return `<div onclick="${fn}('${p.id}')" class="pcard text-left relative ${currentId===p.id?'active':''}" style="cursor:pointer">
+  return `<div onclick="${fn}('${p.id}')" class="pcard text-left relative ${activeCls}" style="cursor:pointer">
     <div class="flex items-start justify-between gap-1">
       <p class="font-semibold text-cream text-sm leading-snug flex-1">${p.name}${p.custom?' <span class="chip ml-1">своё</span>':''}${p.recommended?' <span class="inline-block px-1 py-0 rounded text-[10px] bg-amber/15 text-amber border border-amber/30 ml-1">★ Рекомендуем</span>':''}</p>
       <div class="flex items-center gap-1 flex-shrink-0">
         <span class="rounded-md bg-w900 px-2 py-0.5 mono text-xs text-amber border border-amber/20">R ${rEff!=null?rEff.toFixed(3):p.r.toFixed(3)}</span>
-        <button type="button" onclick="event.stopPropagation();pcardMenu(this,'${p.id}','${cat}',${p.r})" class="pcard-menu-btn" title="Опции">⋮</button>
+        ${menuBtn}
       </div>
     </div>
     ${chips.length?`<div class="flex gap-1 mt-1 flex-wrap">${chips.join('')}</div>`:''}
@@ -5646,32 +5677,6 @@ function renderMatCards(cat){
   const fn  = _matSelFns[cat];
   const isWall = cat==='walls';
   const q = _matSearch[cat]||'';
-  let list = presetList(cat);
-  if(q){
-    list = list.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q));
-    if(!list.length) return '<p class="text-xs text-muted py-3 text-center">Ничего не найдено</p>';
-    return `<div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">${list.map(p=>renderCard(p,fn,currentId,isWall)).join('')}</div>`;
-  }
-  // Popular block (Fergana oblast) — always open, not shown during search
-  const popIds = POPULAR_UZ[cat]||[];
-  let popularHtml = '';
-  if(popIds.length){
-    const popItems = popIds.map(id=>list.find(p=>p.id===id)).filter(Boolean);
-    if(popItems.length){
-      popularHtml = `<div class="mb-2">
-        <div class="px-1 mb-1.5"><span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">⭐ Популярно в Ферганской обл.</span></div>
-        <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">${popItems.map(p=>renderCard(p,fn,currentId,isWall)).join('')}</div>
-        <div class="border-b border-white/5 mt-2 mb-2"></div>
-      </div>`;
-    }
-  }
-  // Grouped accordion view
-  const grpMap={}, grpOrder=[];
-  list.forEach(p=>{
-    const g=p.group||'Прочее';
-    if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);}
-    grpMap[g].push(p);
-  });
   const view = _matView[cat]||'list';
   const gridCls = view==='grid' ? 'grid grid-cols-2 gap-1' : view==='compact' ? 'flex flex-col gap-0.5' : 'grid grid-cols-1 gap-1.5 sm:grid-cols-2';
   const viewBar = `<div class="flex items-center justify-end gap-1 mb-2">
@@ -5686,6 +5691,33 @@ function renderMatCards(cat){
       <svg viewBox="0 0 12 12" fill="none" class="w-3 h-3"><rect x="1" y="1.5" width="10" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="5" width="10" height="1.5" rx=".5" fill="currentColor"/><rect x="1" y="8.5" width="10" height="1.5" rx=".5" fill="currentColor"/></svg>
     </button>
   </div>`;
+
+  let list = presetList(cat);
+  if(q){
+    list = list.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q));
+    if(!list.length) return viewBar + '<p class="text-xs text-muted py-3 text-center">Ничего не найдено</p>';
+    return viewBar + `<div class="${gridCls}">${list.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`;
+  }
+  // Popular block (Fergana oblast) — always open, not shown during search
+  const popIds = POPULAR_UZ[cat]||[];
+  let popularHtml = '';
+  if(popIds.length){
+    const popItems = popIds.map(id=>list.find(p=>p.id===id)).filter(Boolean);
+    if(popItems.length){
+      popularHtml = `<div class="mb-2">
+        <div class="px-1 mb-1.5"><span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">⭐ Популярно в Ферганской обл.</span></div>
+        <div class="${gridCls}">${popItems.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>
+        <div class="border-b border-white/5 mt-2 mb-2"></div>
+      </div>`;
+    }
+  }
+  // Grouped accordion view
+  const grpMap={}, grpOrder=[];
+  list.forEach(p=>{
+    const g=p.group||'Прочее';
+    if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);}
+    grpMap[g].push(p);
+  });
 
   return viewBar + popularHtml + grpOrder.map(grp=>{
     const items=grpMap[grp];
@@ -5703,7 +5735,7 @@ function renderMatCards(cat){
           <svg class="w-3 h-3 text-muted transition-transform duration-150 ${open?'':'rotate-[-90deg]'}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
       </button>
-      ${open?`<div class="${gridCls} pl-1">${items.map(p=>renderCard(p,fn,currentId,isWall)).join('')}</div>`:''}
+      ${open?`<div class="${gridCls} pl-1">${items.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -5730,7 +5762,7 @@ const _i18n = {
     'live-all-obj':'Расчёт всего объекта',
     'live-city-lbl':'Город:','live-plot-lbl':'Участок:','live-north-lbl':'Север:',
     'dir-top-text':'вверху','dir-right-text':'справа','dir-bottom-text':'внизу','dir-left-text':'слева',
-    'boiler-hint':'Котёл (запас 25%)','area-hint':'Площадь объекта','rooms-hint':'Комнат всего',
+    'boiler-hint':'Котёл (запас 25%)','area-hint':'Площадь объекта','rooms-hint':'Комнат всего','rooms-unit':'комн.',
     'tagline':'Отопление · Сантехника · Фергана',
     'faq-tag':'Вопросы и ответы','faq-title':'Частые вопросы о теплопотерях',
     'faq-q-1':'Что вводить в поле температуры?',
@@ -5871,6 +5903,9 @@ const _i18n = {
     'mat-walls':'Наружные стены','mat-windows-default':'Окна (по умолчанию)','mat-doors-default':'Двери (по умолчанию)',
     'mat-floor':'Пол (нижний этаж)','mat-ceiling':'Потолок (верхний этаж)',
     'airtight-title':'Герметичность объекта (инфильтрация)','regime-title':'Температурный режим системы (радиаторы)',
+    'lambda-title':'Влажностный режим λ (условия эксплуатации, КМК прил.2)',
+    'lambda-a-name':'А — сухой','lambda-a-desc':'Сухой/нормальный режим — по умолчанию для Ферганы',
+    'lambda-b-name':'Б — влажный','lambda-b-desc':'Влажные помещения, подвал, мокрые зоны — λ выше, потери больше',
     'mat-search':'Поиск','mat-custom':'своё',
     'result-heatloss':'Теплопотери','result-boiler':'Котёл +25%','result-radiators':'Радиаторы',
     'result-area':'Площадь',
@@ -6175,7 +6210,7 @@ const _i18n = {
     "live-all-obj":"Butun ob'ekt hisobi",
     'live-city-lbl':'Shahar:','live-plot-lbl':'Maydon:','live-north-lbl':'Shimol:',
     'dir-top-text':'yuqorida','dir-right-text':'o\'ngda','dir-bottom-text':'pastda','dir-left-text':'chapda',
-    "boiler-hint":"Qozon (+25%)","area-hint":"Ob'ekt maydoni",'rooms-hint':'Xonalar soni',
+    "boiler-hint":"Qozon (+25%)","area-hint":"Ob'ekt maydoni",'rooms-hint':'Xonalar soni','rooms-unit':'xona',
     "tagline":"Isitish · Sanitariya · Farg'ona",
     "faq-tag":"Savol-javoblar","faq-title":"Issiqlik yo'qotishlari haqida tez-tez beriladigan savollar",
     "faq-q-1":"Harorat maydoniga nima kiritish kerak?",
@@ -6316,6 +6351,9 @@ const _i18n = {
     'mat-walls':"Tashqi devorlar",'mat-windows-default':"Derazalar (standart)",'mat-doors-default':"Eshiklar (standart)",
     'mat-floor':"Pol (quyi qavat)",'mat-ceiling':"Ship (yuqori qavat)",
     'airtight-title':"Germetiklik (infiltratsiya)",'regime-title':"Isitish tizimi rejimi (radiatorlar)",
+    'lambda-title':"Namlik rejimi λ (foydalanish sharoiti, KMK ilova 2)",
+    'lambda-a-name':"A — quruq",'lambda-a-desc':"Quruq/oddiy rejim — Farg'ona uchun standart",
+    'lambda-b-name':"B — nam",'lambda-b-desc':"Nam xonalar, yerto'la, ho'l zonalar — λ yuqori, yo'qotish ko'proq",
     'mat-search':"Qidirish",'mat-custom':"o'zim",
     'result-heatloss':"Issiqlik yo'qotish",'result-boiler':"Qozon +25%",'result-radiators':"Radiatorlar",
     'result-area':"Maydon",
@@ -6620,7 +6658,7 @@ const _i18n = {
     'live-all-obj':'Full building calculation',
     'live-city-lbl':'City:','live-plot-lbl':'Plot:','live-north-lbl':'North:',
     'dir-top-text':'top','dir-right-text':'right','dir-bottom-text':'bottom','dir-left-text':'left',
-    'boiler-hint':'Boiler (+25%)','area-hint':'Building area','rooms-hint':'Total rooms',
+    'boiler-hint':'Boiler (+25%)','area-hint':'Building area','rooms-hint':'Total rooms','rooms-unit':'rooms',
     'tagline':'Heating · Plumbing · Fergana',
     'faq-tag':'FAQ','faq-title':'Common questions about heat loss',
     'faq-q-1':'What do I enter in the temperature field?',
@@ -6767,6 +6805,9 @@ const _i18n = {
     'mat-walls':'Exterior walls','mat-windows-default':'Windows (default)','mat-doors-default':'Doors (default)',
     'mat-floor':'Floor (ground floor)','mat-ceiling':'Ceiling (top floor)',
     'airtight-title':'Building airtightness (infiltration)','regime-title':'Heating system mode (radiators)',
+    'lambda-title':'Moisture regime λ (service conditions, KMK app.2)',
+    'lambda-a-name':'A — dry','lambda-a-desc':'Dry/normal regime — default for Fergana',
+    'lambda-b-name':'B — wet','lambda-b-desc':'Wet rooms, basement, damp zones — higher λ, more loss',
     'mat-search':'Search','mat-custom':'custom',
     // results
     'result-heatloss':'Heat loss','result-boiler':'Boiler +25%','result-radiators':'Radiators',
@@ -7140,6 +7181,53 @@ const BETA_ORIENT = {N:0.10, NE:0.10, E:0.10, SE:0.05, S:0.0, SW:0.0, W:0.05, NW
 const R_PARTITION = 0.45;          // приведённое R внутренней перегородки (½ кирпича оштукатуренная)
 const CORNER_SURCHARGE = 0.05;     // +5% на угловые помещения (2+ наружных стены) — СНиП
 const WALL_HOMOG_DEFAULT = 0.85;   // коэф. однородности; мостики холода (швы раствора, перемычки) по СП 50.13330.2012 прил. В
+
+/* ── Коэффициенты теплоотдачи поверхностей α [Вт/(м²·°C)] (КМК 2.01.04-18) ──
+   Конверт стены R_si+R_se = 1/8.7 + 1/23 = 0.115+0.043 = 0.158.
+   В BASE_PRESETS принят округлённый 0.17 (Rвн0.13+Rнар0.04) и пресеты под него калиброваны,
+   поэтому WALL_ENVELOPE_R=0.17 используем и для РУЧНОГО ввода λ по ребру (раньше конверт там терялся —
+   ручная стена считалась только δ/λ и завышала потери). Пол/потолок остаются на методе n/зон. */
+const ALPHA = {in_wall:8.7, in_ceiling:7.6, in_floor:5.8, out_wall:23, out_roof:12, out_vent:6};
+const WALL_ENVELOPE_R = 0.17;      // R_si+R_se стены/двери при ручном вводе λ (совместимо с пресетами)
+
+/* ── β надбавки на открывание НАРУЖНЫХ дверей/ворот ──
+   Источник: ТЕПЛОПОТЕРЬЯ хисоб-китоблари.xlsx (image7). Применяются только к наружным проёмам-дверям
+   (приток холодного воздуха при открывании); к окнам и внутренним дверям не применяются. */
+const BETA_DOOR = {
+  none:           {beta:0,    name:'Без надбавки'},
+  single:         {beta:0.22, name:'1-створ. без тамбура'},
+  double:         {beta:0.34, name:'2-створ. без тамбура'},
+  double_tambour: {beta:0.27, name:'2-створ. + тамбур'},
+  triple_tambour: {beta:0.20, name:'3-створ. + 2 тамбура'},
+  tambour:        {beta:0.05, name:'Тамбур без тепл. завесы'},
+  gate_tambour:   {beta:0.10, name:'Ворота + тамбур'},
+};
+function doorBeta(op){ return (op && op.type==='door' && op.doorType) ? ((BETA_DOOR[op.doorType]||BETA_DOOR.none).beta) : 0; }
+
+/* ── Влажностный режим λ (условия эксплуатации А «сухой» / Б «влажный», КМК прил.2) ──
+   Текущие λ пресетов трактуем как режим А (для сухого климата Ферганы — по умолчанию).
+   Режим Б повышает λ конструктивного слоя в (λБ/λА) раз — КЛАССОВЫЕ отношения из
+   ТЕПЛОПОТЕРЬЯ.xlsx, лист «Материалларнинг лямбдаси» (E=λА, F=λБ):
+   глина 0.70/0.81, силикат 0.76/0.87, известняк 0.56/0.58, газобетон 0.22/0.26,
+   ж/б 1.92/2.04, дерево 0.14/0.18, минвата/EPS/XPS ~0.06/0.068. Утеплитель доминирует в R
+   многослойных стен → к ним применяется его малое отношение (класс insul). Окна/двери —
+   паспортные (от влажности не зависят), пол на грунте — зональный метод, оба НЕ масштабируются. */
+const WET_RATIO = {clay:1.157, silicate:1.145, limestone:1.05, aac:1.18, concrete:1.06, wood:1.21, insul:1.13, default:1.12};
+function clsOf(s){
+  s=(s||'').toLowerCase();
+  if(/(вата|минват|базальт|эковат|\beps\b|\bxps\b|пенопол|ппу|пеноплекс|перлит|керамзит\b|каркас|пенофол|сип|\bsip\b|пир|\bpir\b)/.test(s)) return 'insul';
+  if(/силикат/.test(s)) return 'silicate';
+  if(/(газоблок|газобетон|пеноблок|пенобетон|пеносиликат|aac|ячеист)/.test(s)) return 'aac';
+  if(/(ракушеч|известн)/.test(s)) return 'limestone';
+  if(/(монолит|панель|ж\/б|жб |бетон|керамзитоблок|керамзитобетон)/.test(s)) return 'concrete';
+  if(/(дерев|сосна|ель|дуб|осб|\bosb\b|фанер|гкл|гвл|вагонк)/.test(s)) return 'wood';
+  if(/(кирпич|пахса|саман|шлакоблок|керамоблок)/.test(s)) return 'clay';
+  return 'default';
+}
+function presetClass(p){ return clsOf(((p&&p.name)||'')+' '+((p&&p.group)||'')+' '+((p&&p.desc)||'')); }
+function wetRatio(cls){ return (ST&&ST.lambdaMode==='B') ? (WET_RATIO[cls]||WET_RATIO.default) : 1; }
+/* R конструкции при текущем режиме: масштабируем только проводящую часть (R−конверт) */
+function regimeR(rTotal, envelope, cls){ const k=wetRatio(cls); if(k===1) return rTotal; return envelope + Math.max(0,(rTotal-envelope))/k; }
 const FLOOR_ZONE_R = [2.1, 4.3, 8.6, 14.2]; // R грунта по зонам (Староверов, ч.I, гл.8.2, стр.35) — неутепл. пол на грунте
 const AIRTIGHT = {                 // воздухообмен ACH (1/ч) по герметичности объекта
   new:    {ach:0.4, name:'Новый / герметичный',  nameUz:'Yangi / germetik',   nameEn:'New / Airtight',
@@ -7341,7 +7429,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
 
   if(dTout<=0){ return {area, qW:0, breakdown, sections:0}; }
 
-  const wallR = wp ? wp.r * (wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT) : 0;
+  const wallR = wp ? regimeR(wp.r, WALL_ENVELOPE_R, presetClass(wp)) * (wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT) : 0;
 
   // Рёбра комнаты с разбиением на наружные сегменты и перегородки к соседям
   const edges = roomEdges(room).map(ed=>({...ed, segs: edgeSegments(room, ed.a, ed.b, rooms, tExt)}));
@@ -7365,15 +7453,16 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
       if(localDT<=0) continue;                 // сосед теплее — потерь нет
       const pl = op.type==='window' ? 'windows' : 'doors';
       const pp = findPreset(pl, op.presetId) || findPreset(pl, op.type==='window'?ST.mat.windowId:ST.mat.doorId);
-      const k = seg.ext ? (1+beta)*cornerK : 1;
+      const dBeta = doorBeta(op);                          // надбавка на открывание наружной двери (КМК)
+      const k = seg.ext ? (1+beta+dBeta)*cornerK : 1;
       const opR = op.customU>0 ? 1/op.customU : (pp?pp.r:0);
       if(opR>0) breakdown[op.type] += (localDT/opR)*a*k;
     }
     // Per-edge R override (Фаза 1+3): preset OR manual λ+thickness
     const em = room.edgeMats && room.edgeMats[ed.i];
     let edgeR = wallR;
-    if(em && em.preset){ const ep=findPreset('walls',em.preset); if(ep) edgeR=ep.r*(ep.homog!=null?ep.homog:WALL_HOMOG_DEFAULT); }
-    else if(em && em.lambda>0 && em.thick>0){ edgeR=(em.thick/1000)/em.lambda; }
+    if(em && em.preset){ const ep=findPreset('walls',em.preset); if(ep) edgeR=regimeR(ep.r,WALL_ENVELOPE_R,presetClass(ep))*(ep.homog!=null?ep.homog:WALL_HOMOG_DEFAULT); }
+    else if(em && em.lambda>0 && em.thick>0){ edgeR=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda; }
     ed.segs.forEach((seg,si)=>{
       const localDT = tInt - seg.tOther;
       if(localDT<=0) return;
@@ -7396,7 +7485,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
         const addR=fp.addR!=null?fp.addR:0, n=fp.n!=null?fp.n:1;
         for(const z of zonalFloorAreas(room,rooms)) breakdown.floor+=(dTout/(z.r+addR))*z.a*n;
       } else {
-        breakdown.floor += (dTout/fp.r)*area*(fp.n!=null?fp.n:1);
+        breakdown.floor += (dTout/regimeR(fp.r,0.17,presetClass(fp)))*area*(fp.n!=null?fp.n:1);
       }
     }
   }
@@ -7406,7 +7495,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
     if(customCeilR!=null){
       if(customCeilR>0) breakdown.ceiling += (dTout/customCeilR)*area*atticN();
     } else if(cp){
-      breakdown.ceiling += (dTout/cp.r)*area*atticN();
+      breakdown.ceiling += (dTout/regimeR(cp.r,0.17,presetClass(cp)))*area*atticN();
     }
   }
 
@@ -7459,6 +7548,50 @@ function computeObject(){
   };
 }
 
+/* ════════════════════════════════════════════════════════════
+   SELF-TEST — регрессионная самопроверка ядра computeRoom.
+   Эталон qW закреплён по ФАКТИЧЕСКОМУ методу кода (конверт 0.17 + homog 0.85 +
+   β ориентации + угловая надбавка 1.05 + инфильтрация с ρ(t)+ACH), НЕ по α-конверту.
+   Запуск: добавить ?selftest к URL, либо runSelfTest() в консоли. */
+const SELFTEST_PINNED_Q = 4198.1;   // Вт — эталон комнаты 4×5×3, brick_380/закр.чердак/normal, tInt20/tExt-14
+                                    // (стены 3217 + потолок 218.5 + пол 214.7 + инфильтрация 547.7)
+function runSelfTest(){
+  const snap = JSON.stringify({mat:ST.mat,attic:ST.attic,airtight:ST.airtight,heatRegime:ST.heatRegime,northSide:ST.northSide,lambdaMode:ST.lambdaMode});
+  const results=[];
+  const approx=(a,b,tol)=>b!==0 && Math.abs(a-b)<=Math.abs(b)*tol;
+  const ok=(name,cond,info)=>results.push({name,pass:!!cond,info:info||''});
+  try{
+    ST.mat={wallId:'brick_380',windowId:'double_glazing_pvc',doorId:'door_metal_insulated',floorId:'floor_xps50',ceilingId:'ceil_i100'};
+    ST.attic='closed'; ST.airtight='normal'; ST.heatRegime='90/70'; ST.northSide='top'; ST.lambdaMode='A';
+    const tExt=-14;
+    const mkRoom=(ops)=>({id:'__t',name:'test',typeId:'living_room',tInt:20,x:0,y:0,w:4,h:5,openings:ops||[]});
+    const fl={id:'__f',name:'t',height:3.0,rooms:[]};
+
+    const base=mkRoom([]); fl.rooms=[base];
+    const rB=computeRoom(base,fl,0,0,tExt,[base]);
+    ok('ΔT: нет двойного минуса (qW>0 при tExt=-14)', rB.qW>0, `qW=${rB.qW.toFixed(1)} Вт`);
+    ok('Эталон qW базовой комнаты (±1.5%)', approx(rB.qW,SELFTEST_PINNED_Q,0.015), `qW=${rB.qW.toFixed(1)} / эталон ${SELFTEST_PINNED_Q}`);
+    ok('Инфильтрация = 0.28·1.005·V·ρ(t)·ΔT·ACH', (()=>{const V=20*3,rho=(1.293*273)/(273+tExt);return approx(rB.breakdown.infil,0.28*1.005*V*rho*34*airtightAch(),1e-4);})(), `infil=${rB.breakdown.infil.toFixed(1)} Вт`);
+
+    const win=mkRoom([{id:'w1',type:'window',side:'top',pos:50,w:2,h:1.5,count:1}]); fl.rooms=[win];
+    const rW=computeRoom(win,fl,0,0,tExt,[win]);
+    ok('Окно вычитается из стены и даёт свою статью', rW.breakdown.wall<rB.breakdown.wall && rW.breakdown.window>0, `wall ${rB.breakdown.wall.toFixed(0)}→${rW.breakdown.wall.toFixed(0)}, window=${rW.breakdown.window.toFixed(0)}`);
+
+    const d0=mkRoom([{id:'d0',type:'door',side:'top',pos:50,w:1,h:2.1,count:1,doorType:'none'}]);   fl.rooms=[d0];
+    const rD0=computeRoom(d0,fl,0,0,tExt,[d0]);
+    const dN=mkRoom([{id:'dN',type:'door',side:'top',pos:50,w:1,h:2.1,count:1,doorType:'double'}]); fl.rooms=[dN];
+    const rDN=computeRoom(dN,fl,0,0,tExt,[dN]);
+    ok('β двери (double +0.34) увеличивает потерю двери', rDN.breakdown.door>rD0.breakdown.door, `none=${rD0.breakdown.door.toFixed(0)} → double=${rDN.breakdown.door.toFixed(0)} Вт`);
+  }catch(e){ ok('Без исключений', false, e&&e.message); }
+  finally{ Object.assign(ST, JSON.parse(snap)); }
+
+  const passed=results.filter(r=>r.pass).length, all=passed===results.length;
+  console.log('%c[SELF-TEST] '+passed+'/'+results.length+(all?' ✅ PASS':' ❌ FAIL'),'font-weight:bold;color:'+(all?'#22c55e':'#ef4444'));
+  results.forEach(r=>console.log((r.pass?'  ✓ ':'  ✗ ')+r.name+(r.info?' — '+r.info:'')));
+  return {passed,total:results.length,pass:all,results};
+}
+if(typeof location!=='undefined' && /[?&]selftest/.test(location.search)){ setTimeout(runSelfTest,600); }
+
 /* Нормируемое R стены по ГСОП (КМК 2.01.04-18 табл.4, Узбекистан Z_oto≈155 суток) */
 function getReqWallR(tExt){
   const gsop=(18-tExt)*155;
@@ -7483,7 +7616,7 @@ const ST = {
   floors:[],
   activeFloorId:null,
   mat:{ wallId:'brick_380', windowId:'double_glazing_pvc', doorId:'door_metal_insulated', floorId:'floor_xps50', ceilingId:'ceil_i100' },
-  airtight:'normal', heatRegime:'90/70', attic:'closed',
+  airtight:'normal', heatRegime:'90/70', attic:'closed', lambdaMode:'A',
   basement: null, tExtManual:null,
 };
 
@@ -7524,7 +7657,7 @@ function updateLivePanel(){
     statusEl.innerHTML='<span class="inline-block h-1.5 w-1.5 rounded-full bg-amber mr-1.5"></span>'+t('live-all-obj');
     document.getElementById('kw-boiler').textContent=res.boilerKw.toFixed(2)+' '+t('live-kw-unit');
     document.getElementById('kw-area').textContent=res.totalArea.toFixed(1)+' '+t('mr-unit-m')+'²';
-    document.getElementById('kw-rooms').textContent=res.roomCount;
+    document.getElementById('kw-rooms').textContent=res.roomCount+' '+t('rooms-unit');
     detailEl.classList.remove('hidden');
     if(res.floors.length>1){
       floorsEl.classList.remove('hidden');
@@ -10940,7 +11073,7 @@ function _edgeApproxQ(room, edgeIdx, floorH){
   const em=room.edgeMats&&room.edgeMats[edgeIdx];
   let R=1.5;
   if(em&&em.preset){const ep=findPreset('walls',em.preset);if(ep)R=ep.r*(ep.homog??WALL_HOMOG_DEFAULT);}
-  else if(em&&em.lambda>0&&em.thick>0){R=(em.thick/1000)/em.lambda;}
+  else if(em&&em.lambda>0&&em.thick>0){R=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;}
   else{const wp=findPreset('walls',ST.mat.wallId);if(wp)R=wp.r*(wp.homog??WALL_HOMOG_DEFAULT);}
   return R>0?(dT/R)*len*H:0;
 }
@@ -10968,7 +11101,7 @@ function buildWallMatsPanel(room){
     const dirLabel=getWallDir(a,b);
     let dispR=null, dispLam=null, dispThick=null;
     if(em&&em.preset){const ep=findPreset('walls',em.preset);if(ep){dispR=ep.r;dispThick=em.thick||300;dispLam=ep.lambda||null;}}
-    else if(em&&em.lambda>0&&em.thick>0){dispLam=em.lambda;dispThick=em.thick;dispR=(em.thick/1000)/em.lambda;}
+    else if(em&&em.lambda>0&&em.thick>0){dispLam=em.lambda;dispThick=em.thick;dispR=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;}
     else{const wp=findPreset('walls',ST.mat.wallId);if(wp){dispR=wp.r;}}
     const qApprox=isExt?_edgeApproxQ(room,i,H):0;
     if(isExt){totalExtQ+=qApprox;totalExtLen+=extLen;}
@@ -11014,7 +11147,7 @@ function buildWallMatsPanel(room){
     const extSelPct=totalExtQ>0&&isExtSel?((qW/totalExtQ)*100).toFixed(1)+'%':'—';
     let selR=null;
     if(em.preset){const ep=findPreset('walls',em.preset);if(ep)selR=ep.r;}
-    else if(em.lambda>0&&em.thick>0){selR=(em.thick/1000)/em.lambda;}
+    else if(em.lambda>0&&em.thick>0){selR=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;}
     else{const wp=findPreset('walls',ST.mat.wallId);if(wp)selR=wp.r;}
     const R_wall_min=1.8; // КМК Zone III
     const wComply=selR!=null?(selR>=R_wall_min?'ok':selR>=R_wall_min*0.75?'warn':'bad'):null;
@@ -11080,7 +11213,7 @@ function edSetFloorHeight(v){ const f=activeFloor(); f.height=Math.max(2,Math.mi
 /* ── Layer R/U calculation: R_total = 0.17 (surfaces) + Σ(δ/λ) ── */
 function calcLayerR(layers){
   if(!layers||!layers.length) return null;
-  const layerSum=layers.reduce((s,l)=>s+(l.lambda>0?(Math.max(0.5,l.thick||1))/100/l.lambda:0),0);
+  const layerSum=layers.reduce((s,l)=>s+(l.lambda>0?(Math.max(0.5,l.thick||1))/100/(l.lambda*wetRatio(clsOf(l.name||''))):0),0);
   return parseFloat((0.17+layerSum).toFixed(4));
 }
 
@@ -11274,7 +11407,18 @@ function edSetOpModelName(opId,val){
   const op=(r.openings||[]).find(o=>o.id===opId);if(!op)return;
   op.modelName=val.trim();edPushHist();
 }
+function edSetOpDoorType(opId,val){
+  const r=edSelRoom();if(!r)return;
+  const op=(r.openings||[]).find(o=>o.id===opId);if(!op)return;
+  op.doorType=val||'none';edPushHist();updateLivePanel();edDraw();
+}
 function buildOpMfPanel(op){
+  const doorRow = op.type==='door' ? `<div class="flex items-center gap-1.5">
+      <label class="text-[10px] text-muted whitespace-nowrap">${t('mr-doorbeta-label')||'Открывание (нар.)'}</label>
+      <select class="wi py-1 text-xs" onchange="edSetOpDoorType('${op.id}',this.value)" title="Надбавка на открывание наружной двери (КМК)">
+        ${Object.entries(BETA_DOOR).map(([v,d])=>`<option value="${v}" ${(op.doorType||'none')===v?'selected':''}>${d.name}${d.beta?` (+${d.beta})`:''}</option>`).join('')}
+      </select>
+    </div>` : '';
   const cat=OP_CATALOG[op.type]||{};
   const brandOpts=Object.entries(cat).map(([v,b])=>`<option value="${v}" ${op.manufacturer===v?'selected':''}>${b.label}</option>`).join('');
   const selBrand=cat[op.manufacturer||''];
@@ -11282,6 +11426,7 @@ function buildOpMfPanel(op){
   const curU=op.customU!=null?op.customU.toFixed(2):'';
   const curR=op.customU>0?(1/op.customU).toFixed(3):'';
   return `<div class="mt-1.5 border-t border-sand/10 pt-1.5 space-y-1">
+    ${doorRow}
     <p class="text-[10px] text-muted uppercase tracking-wider">${t('mr-mfr-label')}</p>
     <select class="wi py-1 text-xs" onchange="edSetOpBrand('${op.id}',this.value)">
       <option value="">—</option>${brandOpts}
@@ -11682,10 +11827,20 @@ function objectParamsBlock(){
         <p class="text-xs text-muted mt-1">${heatRegimeDesc(o)}</p>
       </button>`).join('')}
     </div>
+  </div>
+  <div class="mb-6">
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3 flex items-center">${t('lambda-title')||'Влажностный режим λ (условия эксплуатации, КМК прил.2)'}</h4>
+    <div class="grid grid-cols-2 gap-2">
+      ${[{id:'A',n:t('lambda-a-name')||'А — сухой',d:t('lambda-a-desc')||'Сухой/нормальный режим — по умолчанию для Ферганы'},{id:'B',n:t('lambda-b-name')||'Б — влажный',d:t('lambda-b-desc')||'Влажные помещения, подвал, мокрые зоны — λ выше, потери больше'}].map(o=>`<button type="button" onclick="selLambdaMode('${o.id}')" class="pcard text-left ${ST.lambdaMode===o.id?'active':''}">
+        <p class="font-semibold text-cream text-sm leading-snug">${o.n}</p>
+        <p class="text-xs text-muted mt-1">${o.d}</p>
+      </button>`).join('')}
+    </div>
   </div>`;
 }
 function selAirtight(id){ ST.airtight=id; refreshPcards('selAirtight',id); updateLivePanel(); }
 function selRegime(id){ ST.heatRegime=id; refreshPcards('selRegime',id); updateLivePanel(); }
+function selLambdaMode(id){ ST.lambdaMode=(id==='B')?'B':'A'; refreshPcards('selLambdaMode',id); updateLivePanel(); }
 function presetGrid(label,cat,currentId,onselect){
   const isWall = cat==='walls';
   const total = presetList(cat).length;
@@ -12265,7 +12420,7 @@ function applyPreset(kind){
   if(!ST.cityId) selectCity('fergana');
   const P=PRESETS_DATA[kind]; if(!P) return;
   ST.plot={w:P.plot[0],d:P.plot[1]}; ST.northSide='top';
-  ST.airtight=P.airtight||'normal'; ST.heatRegime=P.heatRegime||'90/70'; ST.attic=P.attic||'closed';
+  ST.airtight=P.airtight||'normal'; ST.heatRegime=P.heatRegime||'90/70'; ST.attic=P.attic||'closed'; ST.lambdaMode=(P.lambdaMode==='B')?'B':'A';
   ST.mat=Object.assign({windowId:'double_glazing_pvc',doorId:'door_metal_insulated'},P.mat);
   ST.floors=P.floors.map(fl=>({id:uid('fl'),name:fl.name,height:fl.h,rooms:fl.rooms.map(r=>({
     id:uid('rm'),typeId:r.t,name:r.n||'',tInt:roomTypeTemp(r.t),x:r.x,y:r.y,w:r.w,h:r.h,
@@ -12283,9 +12438,9 @@ function applyPreset(kind){
    THERMAL ANALYSIS SUITE — тепловая карта · энергокласс · сезонный график
 ════════════════════════════════════════════════════════════ */
 
-/* FLIR thermal palette: deep navy → blue → cyan → green → yellow → orange → white */
+/* Палитра теплопотерь (инверсия): меньше потерь = красный → больше потерь = синий */
 function thermalCol(t){
-  const stops=[[2,3,30],[0,0,220],[0,200,255],[0,255,100],[255,240,0],[255,80,0],[255,255,255]];
+  const stops=[[214,40,40],[255,90,0],[255,210,0],[60,200,90],[0,200,235],[20,70,225],[4,8,80]];
   const n=stops.length-1; const s=Math.max(0,Math.min(1,t))*n;
   const i=Math.min(Math.floor(s),n-1), f=s-i;
   const [r1,g1,b1]=stops[i],[r2,g2,b2]=stops[i+1];
@@ -12610,10 +12765,10 @@ function compareWalls(){
    СОХРАНЕНИЕ РАСЧЁТА (ссылка)
 ════════════════════════════════════════════════════════════ */
 function _serFloor(fl){ return {n:fl.name,h:fl.height,r:fl.rooms.map(rm=>[rm.typeId,rm.x,rm.y,rm.w,rm.h,rm.name||'',
-  (rm.openings||[]).map(o=>[o.side,o.type,o.presetId,o.w,o.h,o.count,o.pos!=null?o.pos:50,o.edge!=null?o.edge:null]),
+  (rm.openings||[]).map(o=>[o.side,o.type,o.presetId,o.w,o.h,o.count,o.pos!=null?o.pos:50,o.edge!=null?o.edge:null,o.doorType||0]),
   rm.poly||null])}; }
 function serializeState(){
-  const obj={c:ST.cityId,p:[ST.plot.w,ST.plot.d],n:ST.northSide,a:ST.airtight,hr:ST.heatRegime,at:ST.attic,
+  const obj={c:ST.cityId,p:[ST.plot.w,ST.plot.d],n:ST.northSide,a:ST.airtight,hr:ST.heatRegime,at:ST.attic,lm:ST.lambdaMode,
     m:[ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId],
     f:ST.floors.map(_serFloor)};
   if(ST.basement){ obj.bs=_serFloor(ST.basement); obj.bs.bt=ST.basement.tExt!=null?ST.basement.tExt:-6; }
@@ -12626,17 +12781,18 @@ function loadState(o){
   ST.airtight = (o.a&&AIRTIGHT[o.a])?o.a:'normal';
   ST.heatRegime = (o.hr&&HEAT_REGIMES.some(r=>r.id===o.hr))?o.hr:'90/70';
   ST.attic = (o.at&&ATTIC[o.at])?o.at:'closed';
+  ST.lambdaMode = (o.lm==='B')?'B':'A';
   if(o.m){ [ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId]=o.m; }
   ST.floors=(o.f||[]).map(fl=>({id:uid('fl'),name:fl.n,height:fl.h,rooms:(fl.r||[]).map(rm=>{
     const room={id:uid('rm'),typeId:rm[0],x:rm[1],y:rm[2],w:rm[3],h:rm[4],name:rm[5]||'',tInt:roomTypeTemp(rm[0]),
-      openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null}))};
+      openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null,doorType:(o[8]&&o[8]!==0)?o[8]:'none'}))};
     if(rm[7]){ room.poly=rm[7]; const b=roomBBox(room); room.x=b.x; room.y=b.y; room.w=b.w; room.h=b.h; }
     return room;
   })}));
   if(!ST.floors.length) initFloors(); else ST.activeFloorId=ST.floors[0].id;
   if(o.bs){ const fl=o.bs; ST.basement={id:uid('bs'),name:fl.n,height:fl.h,isBasement:true,tExt:fl.bt!=null?fl.bt:-6,rooms:(fl.r||[]).map(rm=>{
     const room={id:uid('rm'),typeId:rm[0],x:rm[1],y:rm[2],w:rm[3],h:rm[4],name:rm[5]||'',tInt:roomTypeTemp(rm[0]),
-      openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null}))};
+      openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null,doorType:(o[8]&&o[8]!==0)?o[8]:'none'}))};
     if(rm[7]){ room.poly=rm[7]; const b=roomBBox(room); room.x=b.x; room.y=b.y; room.w=b.w; room.h=b.h; }
     return room; })};
   } else { ST.basement=null; }
@@ -13952,7 +14108,8 @@ function thermalFloorPlanHTML(res){
   if(allRooms.length<2) return '';
   const maxKw=Math.max(...allRooms.map(r=>r.qKw))||1;
   const flirCol=pct=>{
-    const s=[[0,[2,3,30]],[.18,[0,0,200]],[.38,[0,180,255]],[.58,[0,255,80]],[.75,[255,230,0]],[.9,[255,60,0]],[1,[220,0,0]]];
+    /* Инверсия: меньше потерь = красный → больше потерь = синий */
+    const s=[[0,[220,0,0]],[.1,[255,60,0]],[.25,[255,230,0]],[.42,[0,255,80]],[.62,[0,180,255]],[.82,[0,0,200]],[1,[2,3,30]]];
     let i=0; while(i<s.length-2&&s[i+1][0]<=pct) i++;
     const [t0,c0]=s[i],[t1,c1]=s[i+1];
     const f=t1>t0?(pct-t0)/(t1-t0):0;
@@ -13998,7 +14155,7 @@ function thermalFloorPlanHTML(res){
     </div>
     <div class="flex items-center gap-2 mt-3">
       <span class="text-[9px] text-muted">меньше</span>
-      <div style="height:5px;flex:1;border-radius:3px;background:linear-gradient(to right,rgb(0,0,200),rgb(0,180,255),rgb(0,255,80),rgb(255,230,0),rgb(255,60,0))"></div>
+      <div style="height:5px;flex:1;border-radius:3px;background:linear-gradient(to right,rgb(220,0,0),rgb(255,60,0),rgb(255,230,0),rgb(0,255,80),rgb(0,180,255),rgb(0,0,200))"></div>
       <span class="text-[9px] text-muted">больше потерь</span>
     </div>
   </div>`;
@@ -14179,7 +14336,7 @@ function demoPreset(kind){
   if(!ST.cityId) selectCity('fergana');
   const P=PRESETS_DATA[kind]; if(!P) return;
   ST.plot={w:P.plot[0],d:P.plot[1]}; ST.northSide='top';
-  ST.airtight=P.airtight||'normal'; ST.heatRegime=P.heatRegime||'90/70'; ST.attic=P.attic||'closed';
+  ST.airtight=P.airtight||'normal'; ST.heatRegime=P.heatRegime||'90/70'; ST.attic=P.attic||'closed'; ST.lambdaMode=(P.lambdaMode==='B')?'B':'A';
   ST.mat=Object.assign({windowId:'double_glazing_pvc',doorId:'door_metal_insulated'},P.mat);
   ST.floors=P.floors.map(fl=>({id:uid('fl'),name:fl.name,height:fl.h,rooms:fl.rooms.map(r=>({
     id:uid('rm'),typeId:r.t,name:r.n||'',tInt:roomTypeTemp(r.t),x:r.x,y:r.y,w:r.w,h:r.h,
