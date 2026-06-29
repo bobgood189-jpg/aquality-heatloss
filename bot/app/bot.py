@@ -50,7 +50,10 @@ async def main():
     await _set_commands(bot)
     me = await bot.get_me()
     log.info("Starting @%s (id=%s)", me.username, me.id)
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+    # drop_pending_updates: on (re)start, ignore the backlog so old button taps
+    # aren't replayed against stale callback-query ids.
+    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(),
+                           drop_pending_updates=True)
 
 
 if __name__ == "__main__":

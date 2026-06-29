@@ -2,6 +2,27 @@
 image runs locally and on Railway/Render/any VPS."""
 import os
 
+
+def _load_dotenv():
+    """Minimal .env loader (no dependency): populate os.environ from bot/.env if
+    present, without overriding values already set in the real environment."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key, val = key.strip(), val.split("#", 1)[0].strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = val
+    except FileNotFoundError:
+        pass
+
+
+_load_dotenv()
+
 # Telegram bot token from @BotFather — REQUIRED.
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 

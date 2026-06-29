@@ -145,6 +145,6 @@ async def menu_demo(cb: CallbackQuery, state: FSMContext):
                             floors=obj["floors"], attic="closed", airtight="normal",
                             lambda_mode="A", heat_regime="90/70")
     storage.log_event("demo_run")
-    await cb.message.answer("🏡 <b>Демо: типовой дом ~58 м² (Фергана)</b>")
+    await cb.message.answer("🏡 <b>Демо: типовой дом ~60 м² (Фергана)</b>")
     await send_results(cb.message, res, lang, state)
     await cb.answer()
