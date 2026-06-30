@@ -14,6 +14,11 @@ ruvector.db
 .claude-flow/
 .agents/
 .swarm/
+.mcp.json
+
+# Node
+node_modules/
+package-lock.json
 
 # Encrypted build artifact (regenerate with scripts/encrypt.js)
 index.protected.html

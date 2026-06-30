@@ -5,6 +5,7 @@
 командой /grant. Промокоды (10/30/50/100 %) проверяются командой /promo.
 """
 import time
+import math
 from datetime import datetime
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -65,7 +66,13 @@ async def _status_line(user, lang):
     if not sub:
         return ""
     date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
-    return t("sub_active", lang, date=date)
+    days = _days_left(sub["expires_ts"])
+    base = t("sub_active", lang, date=date)
+    if days <= 1:
+        return f"⚠️ {base} — {t('sub_expires_tomorrow', lang)}"
+    if days <= 3:
+        return f"⚠️ {base} — {t('sub_expires_in', lang, n=days)}"
+    return f"✅ {base} ({t('sub_days_left', lang, n=days)})"
 
 
 def _plans_block(lang, disc=0):
@@ -162,6 +169,25 @@ async def cmd_mysub(message: Message, state: FSMContext):
 
 
 # ── админ-команды (только владелец) ────────────────────────────────────────
+@router.message(Command("mysub"))
+async def cmd_mysub(message: Message, state: FSMContext):
+    lang = await get_lang(state, message.from_user.id)
+    sub = storage.get_active_sub(message.from_user.id)
+    if not sub:
+        await message.answer(t("sub_none_user", lang))
+        return
+    date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
+    days = _days_left(sub["expires_ts"])
+    plan_str = t(PLAN_NAME_KEY.get(sub["plan"], sub["plan"]), lang)
+    if days <= 1:
+        status = f"⚠️ {t('sub_expiry_tomorrow', lang, date=date)}"
+    elif days <= 3:
+        status = f"⚠️ {t('sub_expiry_warn', lang, n=days, date=date)}"
+    else:
+        status = f"✅ {t('sub_active', lang, date=date).strip()} ({t('sub_days_left', lang, n=days)})"
+    await message.answer(f"<b>{plan_str}</b>\n\n{status}")
+
+
 @router.message(Command("grant"))
 async def cmd_grant(message: Message):
     if not is_owner(message.from_user):
