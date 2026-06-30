@@ -14,7 +14,7 @@ from aiogram.types import BotCommand
 
 from .config import require_token
 from . import storage
-from .handlers import menu, admin, wizard, results, payments
+from .handlers import menu, admin, wizard, results, payments, auth
 from .i18n import t
 
 logging.basicConfig(level=logging.INFO,
@@ -92,6 +92,7 @@ async def main():
     bot = _make_bot(token)
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(menu.router)
+    dp.include_router(auth.router)      # registration must be before wizard
     dp.include_router(admin.router)
     dp.include_router(payments.router)
     dp.include_router(wizard.router)

@@ -152,8 +152,17 @@ async def nav_back(cb: CallbackQuery, state: FSMContext):
 # ── entry ──
 @router.callback_query(F.data == "menu:calc")
 async def start_calc(cb: CallbackQuery, state: FSMContext):
+    from ..config import SB_CONFIGURED
+    from .. import supabase_db as sb_mod
     lang = await get_lang(state, cb.from_user.id)
-    if not has_access(cb.from_user):
+    # If SB is configured and user is not registered, send to registration first
+    if SB_CONFIGURED:
+        profile = await sb_mod.get_profile(cb.from_user.id)
+        if not profile:
+            from .auth import start_registration
+            await start_registration(cb.message, state, lang)
+            return await cb.answer()
+    if not await has_access(cb.from_user):
         await cb.message.answer(t("pay_locked", lang))
         await show_tariffs(cb.message, state, cb.from_user, lang)
         return await cb.answer()
