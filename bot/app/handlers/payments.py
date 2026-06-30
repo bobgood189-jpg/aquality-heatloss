@@ -13,7 +13,8 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
 from .. import storage
-from ..config import PAYWALL, PLANS, PAY_TG, PAY_REQUISITES
+from .. import supabase_db as sb
+from ..config import PAYWALL, PLANS, PAY_TG, PAY_REQUISITES, SB_CONFIGURED
 from ..i18n import t
 from .. import keyboards as K
 from .util import get_lang, is_owner
@@ -31,12 +32,28 @@ def _plan_name(plan_id, lang):
     return t(PLAN_NAME_KEY.get(plan_id, plan_id), lang)
 
 
-def has_access(user):
-    """Доступ к полному расчёту: paywall выключен, владелец, либо активная подписка."""
+async def has_access(user) -> bool:
+    """Доступ к полному расчёту.
+
+    Порядок проверок:
+    1. Paywall выключен → доступ есть.
+    2. Владелец → доступ есть.
+    3. Supabase настроен → проверяем активную подписку в Supabase.
+    4. Иначе → проверяем SQLite (старый путь).
+    """
     if not PAYWALL:
         return True
     if is_owner(user):
         return True
+    if SB_CONFIGURED:
+        sub = await sb.get_active_sub(user.id)
+        if sub:
+            return True
+        # also check if role is admin/owner in SB
+        profile = await sb.get_profile(user.id)
+        if profile and profile.get("role") in ("admin", "owner"):
+            return True
+        return False
     return storage.get_active_sub(user.id) is not None
 
 
@@ -44,7 +61,28 @@ def _days_left(expires_ts):
     return math.ceil((expires_ts - time.time()) / 86400)
 
 
-def _status_line(user, lang):
+async def _status_line(user, lang):
+    if SB_CONFIGURED:
+        sub = await sb.get_active_sub(user.id)
+        if not sub:
+            return ""
+        from datetime import datetime as _dt
+        expires_iso = sub.get("expires_at", "")
+        if expires_iso:
+            try:
+                dt = _dt.fromisoformat(expires_iso.replace("Z", "+00:00"))
+                date = dt.strftime("%d.%m.%Y")
+                days = max(0, (dt.replace(tzinfo=None) - _dt.utcnow()).days)
+            except Exception:
+                return ""
+        else:
+            return ""
+        base = t("sub_active", lang, date=date)
+        if days <= 1:
+            return f"⚠️ {base} — {t('sub_expires_tomorrow', lang)}"
+        if days <= 3:
+            return f"⚠️ {base} — {t('sub_expires_in', lang, n=days)}"
+        return f"✅ {base} ({t('sub_days_left', lang, n=days)})"
     sub = storage.get_active_sub(user.id)
     if not sub:
         return ""
@@ -81,7 +119,8 @@ async def _tariffs_text(state, user, lang):
         price = PLANS[plan]["price"] * (1 - disc / 100)
         total = "\n\n" + t("promo_applied", lang, code=code, disc=disc,
                            plan=_plan_name(plan, lang), price=_fmt_sum(price))
-    return t("tariffs_title", lang, status=_status_line(user, lang),
+    status = await _status_line(user, lang)
+    return t("tariffs_title", lang, status=status,
              plans=_plans_block(lang, disc), total=total)
 
 
@@ -106,7 +145,10 @@ async def cmd_promo(message: Message, state: FSMContext):
     code = message.text.partition(" ")[2].strip()
     if not code:
         return await message.answer(t("promo_usage", lang))
-    res = storage.validate_promo(code, message.from_user.id)
+    if SB_CONFIGURED:
+        res = await sb.validate_promo(message.from_user.id, code)
+    else:
+        res = storage.validate_promo(code, message.from_user.id)
     if not res["ok"]:
         reason = res.get("reason")
         key = {"exhausted": "promo_exhausted", "already_used": "promo_used"}.get(reason, "promo_bad")
@@ -116,11 +158,38 @@ async def cmd_promo(message: Message, state: FSMContext):
     await show_tariffs(message, state, message.from_user, lang)
 
 
-# ── админ-команды (только владелец) ────────────────────────────────────────
+# ── команды пользователя ───────────────────────────────────────────────────
+
 @router.message(Command("mysub"))
 async def cmd_mysub(message: Message, state: FSMContext):
     lang = await get_lang(state, message.from_user.id)
-    sub = storage.get_active_sub(message.from_user.id)
+    tg_id = message.from_user.id
+
+    if SB_CONFIGURED:
+        sub = await sb.get_active_sub(tg_id)
+        if not sub:
+            await message.answer(t("sub_none_user", lang))
+            return
+        expires_iso = sub.get("expires_at", "")
+        try:
+            from datetime import datetime as _dt
+            dt = _dt.fromisoformat(expires_iso.replace("Z", "+00:00"))
+            date = dt.strftime("%d.%m.%Y")
+            days = max(0, (dt.replace(tzinfo=None) - _dt.utcnow()).days)
+        except Exception:
+            date, days = "?", 0
+        plan_str = t(PLAN_NAME_KEY.get(sub["plan"], sub["plan"]), lang)
+        if days <= 1:
+            status = f"⚠️ {t('sub_expiry_tomorrow', lang, date=date)}"
+        elif days <= 3:
+            status = f"⚠️ {t('sub_expiry_warn', lang, n=days, date=date)}"
+        else:
+            status = f"✅ {t('sub_active', lang, date=date).strip()} ({t('sub_days_left', lang, n=days)})"
+        await message.answer(f"<b>{plan_str}</b>\n\n{status}")
+        return
+
+    # SQLite fallback
+    sub = storage.get_active_sub(tg_id)
     if not sub:
         await message.answer(t("sub_none_user", lang))
         return
@@ -136,6 +205,8 @@ async def cmd_mysub(message: Message, state: FSMContext):
     await message.answer(f"<b>{plan_str}</b>\n\n{status}")
 
 
+# ── команды владельца ──────────────────────────────────────────────────────
+
 @router.message(Command("grant"))
 async def cmd_grant(message: Message):
     if not is_owner(message.from_user):
@@ -143,12 +214,45 @@ async def cmd_grant(message: Message):
     parts = message.text.split()
     if len(parts) < 3 or parts[2] not in PLANS:
         return await message.answer("Использование: /grant <user_id> <m1|m6|m12> [ПРОМО]")
-    uid = int(parts[1]) if parts[1].lstrip("-").isdigit() else None
-    if uid is None:
+    if not parts[1].lstrip("-").isdigit():
         return await message.answer("user_id должен быть числом (узнать: пользователь шлёт /myid).")
+    uid = int(parts[1])
     plan = parts[2]
     promo = parts[3] if len(parts) > 3 else None
     p = PLANS[plan]
+
+    if SB_CONFIGURED:
+        # Validate promo via Supabase, then activate in Supabase
+        disc = 0
+        if promo:
+            pres = await sb.validate_promo(uid, promo)
+            disc = pres.get("discount", 0) if pres.get("ok") else 0
+        price = p["price"] * (1 - disc / 100)
+        res = await sb.activate_sub(uid, plan, amount=price, promo=promo, source="manual")
+        if not res.get("ok"):
+            reason = res.get("reason", "")
+            if reason == "not_registered":
+                return await message.answer(
+                    f"⚠️ id{uid} не зарегистрирован в боте (нет linked Supabase-профиля).\n"
+                    "Пользователь должен пройти регистрацию через /start."
+                )
+            return await message.answer(f"⚠️ Ошибка активации: {reason}")
+        expires_iso = res.get("expires_at", "")
+        try:
+            from datetime import datetime as _dt
+            date = _dt.fromisoformat(expires_iso.replace("Z", "+00:00")).strftime("%d.%m.%Y")
+        except Exception:
+            date = expires_iso[:10] if expires_iso else "?"
+        await message.answer(f"✅ Подписка {plan} активирована для id{uid} до {date} (Supabase).")
+        try:
+            await message.bot.send_message(
+                uid, f"✅ Ваша подписка Aquality активна до <b>{date}</b>. Спасибо!"
+            )
+        except Exception:
+            pass
+        return
+
+    # SQLite fallback
     v = storage.validate_promo(promo, uid) if promo else {"ok": False, "discount": 0}
     price = p["price"] * (1 - v["discount"] / 100) if v["ok"] else p["price"]
     expires = storage.activate_sub(uid, plan, p["days"], amount=price, promo=promo, source="manual")
@@ -156,14 +260,6 @@ async def cmd_grant(message: Message):
     await message.answer(f"✅ Подписка {plan} активирована для id{uid} до {date}.")
     try:
         await message.bot.send_message(uid, f"✅ Ваша подписка Aquality активна до <b>{date}</b>. Спасибо!")
-    except Exception:
-        pass
-    # Sync to Supabase if the user has a linked website profile
-    try:
-        from ..supabase_sync import activate_sub as _sb_activate
-        sb_result = _sb_activate(uid, plan, p["days"], amount=price, promo=promo)
-        if sb_result.get("ok"):
-            await message.answer(f"🔗 Синхронизировано с сайтом (expires_at: {sb_result.get('expires_at','?')[:10]}).")
     except Exception:
         pass
 
@@ -176,7 +272,7 @@ async def cmd_revoke(message: Message):
     if len(parts) < 2 or not parts[1].lstrip("-").isdigit():
         return await message.answer("Использование: /revoke <user_id>")
     storage.cancel_sub(int(parts[1]))
-    await message.answer(f"Подписка id{parts[1]} отменена.")
+    await message.answer(f"Подписка id{parts[1]} отменена (SQLite).")
 
 
 @router.message(Command("subs"))
@@ -184,13 +280,14 @@ async def cmd_subs(message: Message):
     if not is_owner(message.from_user):
         return
     subs = storage.list_active_subs()
-    if not subs:
-        return await message.answer("Активных подписок нет.")
-    lines = [f"<b>Активные подписки:</b> {len(subs)}"]
+    lines = [f"<b>Активные подписки (SQLite):</b> {len(subs)}"]
     for s in subs:
         date = datetime.fromtimestamp(s["expires_ts"]).strftime("%d.%m.%Y")
         promo = f" · промо {s['promo_code']}" if s["promo_code"] else ""
         lines.append(f"• id{s['tg_user_id']} · {s['plan']} · до {date}{promo}")
+    if not subs:
+        lines = ["Активных SQLite-подписок нет."]
+    lines.append("\n<i>Supabase-подписки видны в админ-панели сайта.</i>")
     await message.answer("\n".join(lines))
 
 
