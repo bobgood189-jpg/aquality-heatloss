@@ -12,7 +12,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
 from .. import storage
-from ..config import PAYWALL, PLANS, PAY_TG, PAY_REQUISITES
+from ..config import PAYWALL, PLANS, PAY_TG, PAY_REQUISITES, SB_CONFIGURED
 from ..i18n import t
 from .. import keyboards as K
 from .util import get_lang, is_owner
@@ -30,16 +30,37 @@ def _plan_name(plan_id, lang):
     return t(PLAN_NAME_KEY.get(plan_id, plan_id), lang)
 
 
-def has_access(user):
+async def has_access(user) -> bool:
     """Доступ к полному расчёту: paywall выключен, владелец, либо активная подписка."""
     if not PAYWALL:
         return True
     if is_owner(user):
         return True
+    if SB_CONFIGURED:
+        from .. import supabase_db as _sb
+        sub = await _sb.get_active_sub(user.id)
+        if sub:
+            return True
+        profile = await _sb.get_profile(user.id)
+        if profile and profile.get("role") in ("admin", "owner"):
+            return True
+        return False
     return storage.get_active_sub(user.id) is not None
 
 
-def _status_line(user, lang):
+async def _status_line(user, lang):
+    if SB_CONFIGURED:
+        from .. import supabase_db as _sb
+        sub = await _sb.get_active_sub(user.id)
+        if not sub:
+            return ""
+        expires = sub.get("expires_at", "")
+        try:
+            dt = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+            date = dt.astimezone().strftime("%d.%m.%Y")
+        except Exception:
+            date = expires[:10]
+        return t("sub_active", lang, date=date)
     sub = storage.get_active_sub(user.id)
     if not sub:
         return ""
@@ -65,12 +86,11 @@ async def _tariffs_text(state, user, lang):
     disc = data.get("pay_disc", 0) or 0
     total = ""
     if code and disc:
-        # суммарная строка по выбранному «выгодному» тарифу (6 мес) как ориентир
         plan = "m6"
         price = PLANS[plan]["price"] * (1 - disc / 100)
         total = "\n\n" + t("promo_applied", lang, code=code, disc=disc,
                            plan=_plan_name(plan, lang), price=_fmt_sum(price))
-    return t("tariffs_title", lang, status=_status_line(user, lang),
+    return t("tariffs_title", lang, status=await _status_line(user, lang),
              plans=_plans_block(lang, disc), total=total)
 
 
@@ -95,7 +115,11 @@ async def cmd_promo(message: Message, state: FSMContext):
     code = message.text.partition(" ")[2].strip()
     if not code:
         return await message.answer(t("promo_usage", lang))
-    res = storage.validate_promo(code, message.from_user.id)
+    if SB_CONFIGURED:
+        from .. import supabase_db as _sb
+        res = await _sb.validate_promo(message.from_user.id, code)
+    else:
+        res = storage.validate_promo(code, message.from_user.id)
     if not res["ok"]:
         reason = res.get("reason")
         key = {"exhausted": "promo_exhausted", "already_used": "promo_used"}.get(reason, "promo_bad")
@@ -103,6 +127,38 @@ async def cmd_promo(message: Message, state: FSMContext):
         return await message.answer(t(key, lang))
     await state.update_data(pay_promo=code.strip().upper(), pay_disc=res["discount"])
     await show_tariffs(message, state, message.from_user, lang)
+
+
+@router.message(Command("mysub"))
+async def cmd_mysub(message: Message, state: FSMContext):
+    lang = await get_lang(state, message.from_user.id)
+    if SB_CONFIGURED:
+        from .. import supabase_db as _sb
+        sub = await _sb.get_active_sub(message.from_user.id)
+        if sub:
+            expires = sub.get("expires_at", "")
+            try:
+                dt = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+                date = dt.astimezone().strftime("%d.%m.%Y")
+            except Exception:
+                date = expires[:10]
+            plan = sub.get("plan", "")
+            return await message.answer(
+                f"✅ Подписка <b>{plan}</b> активна до <b>{date}</b>.",
+                reply_markup=K.back_menu_kb(lang))
+        profile = await _sb.get_profile(message.from_user.id)
+        if profile and profile.get("role") in ("admin", "owner"):
+            return await message.answer("👑 У вас администраторский доступ.",
+                                        reply_markup=K.back_menu_kb(lang))
+        return await message.answer(t("pay_locked", lang),
+                                    reply_markup=K.tariffs_kb(lang, PAY_TG))
+    sub = storage.get_active_sub(message.from_user.id)
+    if sub:
+        date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
+        return await message.answer(
+            f"✅ Подписка <b>{sub['plan']}</b> активна до <b>{date}</b>.",
+            reply_markup=K.back_menu_kb(lang))
+    await message.answer(t("pay_locked", lang), reply_markup=K.tariffs_kb(lang, PAY_TG))
 
 
 # ── админ-команды (только владелец) ────────────────────────────────────────
@@ -119,10 +175,30 @@ async def cmd_grant(message: Message):
     plan = parts[2]
     promo = parts[3] if len(parts) > 3 else None
     p = PLANS[plan]
-    v = storage.validate_promo(promo, uid) if promo else {"ok": False, "discount": 0}
-    price = p["price"] * (1 - v["discount"] / 100) if v["ok"] else p["price"]
-    expires = storage.activate_sub(uid, plan, p["days"], amount=price, promo=promo, source="manual")
-    date = datetime.fromtimestamp(expires).strftime("%d.%m.%Y")
+
+    if SB_CONFIGURED:
+        from .. import supabase_db as _sb
+        res = await _sb.activate_sub(uid, plan,
+                                     amount=p["price"], promo=promo, source="manual")
+        if not res.get("ok"):
+            reason = res.get("reason", "")
+            if reason == "not_registered":
+                return await message.answer(
+                    f"⚠️ id{uid} не зарегистрирован в Supabase. "
+                    "Пользователь должен сначала пройти регистрацию в боте.")
+            return await message.answer(f"⚠️ Ошибка активации: {reason}")
+        expires_at = res.get("expires_at", "")
+        try:
+            dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            date = dt.astimezone().strftime("%d.%m.%Y")
+        except Exception:
+            date = expires_at[:10]
+    else:
+        v = storage.validate_promo(promo, uid) if promo else {"ok": False, "discount": 0}
+        price = p["price"] * (1 - v["discount"] / 100) if v["ok"] else p["price"]
+        expires = storage.activate_sub(uid, plan, p["days"], amount=price, promo=promo, source="manual")
+        date = datetime.fromtimestamp(expires).strftime("%d.%m.%Y")
+
     await message.answer(f"✅ Подписка {plan} активирована для id{uid} до {date}.")
     try:
         await message.bot.send_message(uid, f"✅ Ваша подписка Aquality активна до <b>{date}</b>. Спасибо!")
