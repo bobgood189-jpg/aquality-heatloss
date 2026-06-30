@@ -6,7 +6,8 @@ from aiogram.fsm.context import FSMContext
 
 from .. import engine as E
 from .. import storage
-from ..config import CONTACT, PAYWALL
+from .. import supabase_db as sb
+from ..config import CONTACT, PAYWALL, SB_CONFIGURED
 from ..i18n import t, loc_name, LANG_NAMES
 from ..presets import BASE_PRESETS
 from .. import keyboards as K
@@ -21,16 +22,36 @@ async def show_menu(message, lang, owner=False):
                          disable_web_page_preview=True)
 
 
+async def _maybe_start_registration(message, state, lang):
+    """If SB is configured and user is not registered, start registration flow."""
+    if not SB_CONFIGURED:
+        return False
+    profile = await sb.get_profile(message.from_user.id)
+    if profile:
+        return False
+    from .auth import start_registration
+    await start_registration(message, state, lang)
+    return True
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
     storage.init_db()
-    lang = storage.get_user_lang(message.from_user.id)
-    if lang:
-        await state.update_data(lang=lang)
-        await show_menu(message, lang, is_owner(message.from_user))
-    else:
+    tg_id = message.from_user.id
+    lang = storage.get_user_lang(tg_id) or "ru"
+    await state.update_data(lang=lang)
+
+    if not storage.get_user_lang(tg_id):
+        # First visit: choose language, then register
+        await state.update_data(sb_need_reg=True)
         await message.answer(t("choose_lang", "ru"), reply_markup=K.lang_kb())
+        return
+
+    if await _maybe_start_registration(message, state, lang):
+        return
+
+    await show_menu(message, lang, is_owner(message.from_user))
 
 
 @router.message(Command("menu"))
@@ -84,6 +105,20 @@ async def set_lang(cb: CallbackQuery, state: FSMContext):
         return await cb.answer()
     storage.set_user_lang(cb.from_user.id, lang)
     await state.update_data(lang=lang)
+
+    # After language selection, check if registration is needed
+    data = await state.get_data()
+    if data.get("sb_need_reg") and SB_CONFIGURED:
+        await state.update_data(sb_need_reg=False)
+        from .auth import start_registration
+        await start_registration(cb.message, state, lang)
+        await cb.answer()
+        return
+    # Also check on any lang switch
+    if await _maybe_start_registration(cb.message, state, lang):
+        await cb.answer()
+        return
+
     await cb.message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, is_owner(cb.from_user), PAYWALL),
                             disable_web_page_preview=True)
     await cb.answer()
