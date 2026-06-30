@@ -51,6 +51,22 @@ PLANS = {
 PAY_TG = os.getenv("PAY_TG", "aqualityHL").lstrip("@")
 PAY_REQUISITES = os.getenv("PAY_REQUISITES", "").strip()
 
+# ── Telegram bot public username (shown in linking instructions on the website) ──
+BOT_USERNAME = os.getenv("BOT_USERNAME", "aqualityHL_bot").strip().lstrip("@")
+
+# ── Supabase (общая БД с сайтом) ──────────────────────────────────────────
+# SUPABASE_URL уже задан (проект uhyomjdsswasmlycpoyh).
+# SUPABASE_SERVICE_KEY: Supabase Dashboard → Settings → API → service_role.
+# Когда оба заданы, бот использует Supabase как основную БД для пользователей
+# и подписок (те же таблицы, что и сайт). SQLite — только для lang-прeференций.
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://uhyomjdsswasmlycpoyh.supabase.co").strip().rstrip("/")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "").strip()
+SB_CONFIGURED = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
+BOT_SYNC_SECRET = os.getenv("BOT_SYNC_SECRET", "").strip()
+
+# ── Website URL (shown in bot messages so users can open the site) ──────────
+SITE_URL = os.getenv("SITE_URL", "https://aquality-hl.netlify.app").strip().rstrip("/")
+
 # Business contact details (mirrors CONTACT in index.html).
 CONTACT = {
     "whatsapp": "998772941555",

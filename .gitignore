@@ -22,3 +22,6 @@ package-lock.json
 
 # Encrypted build artifact (regenerate with scripts/encrypt.js)
 index.protected.html
+
+# Local Netlify folder
+.netlify

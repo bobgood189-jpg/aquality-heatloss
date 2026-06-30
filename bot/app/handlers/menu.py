@@ -56,6 +56,27 @@ async def cmd_myid(message: Message):
         f"Set <code>OWNER_ID={u.id}</code> in the bot env to receive leads here.")
 
 
+@router.message(Command("link"))
+async def cmd_link(message: Message, state: FSMContext):
+    lang = await get_lang(state, message.from_user.id)
+    token = message.text.partition(" ")[2].strip().upper()
+    if not token:
+        return await message.answer(t("link_usage", lang))
+    from ..supabase_sync import link_account
+    u = message.from_user
+    result = link_account(u.id, u.username or "", token)
+    if result.get("ok"):
+        await message.answer(t("link_success", lang))
+    else:
+        reason = result.get("reason", "error")
+        key = {
+            "invalid_token": "link_bad_token",
+            "already_linked": "link_already",
+            "not_configured": "link_error",
+        }.get(reason, "link_error")
+        await message.answer(t(key, lang))
+
+
 @router.callback_query(F.data.startswith("lang:"))
 async def set_lang(cb: CallbackQuery, state: FSMContext):
     lang = cb.data.split(":", 1)[1]

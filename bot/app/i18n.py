@@ -186,6 +186,72 @@ STR = {
         "uz": "❓ <b>Qanday hisoblanadi?</b>\n\nKMK 2.01.04-18 va KMK 2.01.01-94 (parametr B) bo'yicha muhandislik hisobi:\n\n<b>Q = (Δt / R) · S · n · (1 + Σβ)</b> har bir to'siq uchun + infiltratsiya.\n\nQozon 25% zaxira bilan olinadi. Natija taxminiy; aniq loyihani mutaxassis bepul aniqlaydi.",
         "en": "❓ <b>How it works</b>\n\nEngineering calc per KMK 2.01.04-18 & KMK 2.01.01-94 (parameter B):\n\n<b>Q = (Δt / R) · S · n · (1 + Σβ)</b> for each enclosure + infiltration.\n\nBoiler sized with a 25% margin. Result is approximate; a specialist refines the exact project for free."},
     "restart_hint": {"ru": "Расчёт сброшен. /start — начать заново.", "uz": "Hisob tozalandi. /start — qaytadan.", "en": "Calculation reset. /start to begin again."},
+    # ── Telegram ↔ сайт: привязка аккаунта ──
+    "link_usage": {
+        "ru": "Использование: /link КОД\n\nКод берётся на сайте Aquality в профиле → «Привязать Telegram».",
+        "uz": "Foydalanish: /link KOD\n\nKodni Aquality saytida profil → «Telegramni bog'lash» bo'limidan oling.",
+        "en": "Usage: /link CODE\n\nGet the code on the Aquality website: Profile → 'Link Telegram'."},
+    "link_success": {
+        "ru": "✅ Telegram-аккаунт успешно привязан к вашему профилю на сайте.\n\nТеперь подписки синхронизируются автоматически.",
+        "uz": "✅ Telegram-akkaunt saytdagi profilingizga muvaffaqiyatli bog'landi.\n\nEndi obunalar avtomatik sinxronlanadi.",
+        "en": "✅ Telegram account successfully linked to your website profile.\n\nSubscriptions will now sync automatically."},
+    "link_bad_token": {
+        "ru": "❌ Неверный или просроченный код. Зайдите в профиль на сайте и сгенерируйте новый.",
+        "uz": "❌ Noto'g'ri yoki muddati o'tgan kod. Saytdagi profilga kirib, yangisini oling.",
+        "en": "❌ Invalid or expired code. Open your profile on the website and generate a new one."},
+    "link_already": {
+        "ru": "ℹ️ Этот Telegram-аккаунт уже привязан к другому профилю на сайте.",
+        "uz": "ℹ️ Bu Telegram-akkaunt saytda boshqa profilga allaqachon bog'langan.",
+        "en": "ℹ️ This Telegram account is already linked to another website profile."},
+    "link_error": {
+        "ru": "⚠️ Не удалось привязать аккаунт. Попробуйте позже.",
+        "uz": "⚠️ Akkauntni bog'lab bo'lmadi. Keyinroq urinib ko'ring.",
+        "en": "⚠️ Failed to link account. Please try again later."},
+    # ── Регистрация (email-based, Supabase) ───────────────────────────────
+    "reg_prompt": {
+        "ru": "📧 <b>Регистрация</b>\n\nДля доступа к расчётам введите ваш <b>email</b>.\nЕсли вы уже зарегистрированы на сайте — укажите тот же email, и аккаунты будут объединены.",
+        "uz": "📧 <b>Ro'yxatdan o'tish</b>\n\nHisob-kitoblarga kirish uchun <b>email</b> manzilingizni kiriting.\nAgar saytda ro'yxatdan o'tgan bo'lsangiz — xuddi o'sha emailni kiriting.",
+        "en": "📧 <b>Registration</b>\n\nEnter your <b>email</b> to access calculations.\nIf you already have a website account, use the same email to link them."},
+    "reg_invalid_email": {
+        "ru": "⚠️ Неверный формат email. Попробуйте ещё раз:",
+        "uz": "⚠️ Email formati noto'g'ri. Qaytadan kiriting:",
+        "en": "⚠️ Invalid email format. Try again:"},
+    "reg_account_found": {
+        "ru": "✅ Аккаунт найден и привязан!\n\n📧 <b>{email}</b>",
+        "uz": "✅ Akkaunt topildi va bog'landi!\n\n📧 <b>{email}</b>",
+        "en": "✅ Account found and linked!\n\n📧 <b>{email}</b>"},
+    "reg_created": {
+        "ru": "✅ Аккаунт создан!\n\n📧 <b>{email}</b>\n\nТеперь заполним профиль (можно пропустить).",
+        "uz": "✅ Akkaunt yaratildi!\n\n📧 <b>{email}</b>\n\nEndi profilni to'ldiramiz (o'tkazib yuborish mumkin).",
+        "en": "✅ Account created!\n\n📧 <b>{email}</b>\n\nLet's fill in your profile (you can skip)."},
+    "reg_ask_name": {
+        "ru": "👤 Ваше имя{hint}:\n\n/skip — пропустить",
+        "uz": "👤 Ismingiz{hint}:\n\n/skip — o'tkazib yuborish",
+        "en": "👤 Your name{hint}:\n\n/skip — to skip"},
+    "reg_ask_phone": {
+        "ru": "📱 Ваш номер телефона:\n\n/skip — пропустить",
+        "uz": "📱 Telefon raqamingiz:\n\n/skip — o'tkazib yuborish",
+        "en": "📱 Your phone number:\n\n/skip — to skip"},
+    "reg_done": {
+        "ru": "✅ <b>Регистрация завершена!</b>\n\nТеперь вы можете оформить подписку для доступа к полному расчёту.",
+        "uz": "✅ <b>Ro'yxatdan o'tish tugadi!</b>\n\nEndi to'liq hisob-kitobga kirish uchun obuna rasmiylashtiring.",
+        "en": "✅ <b>Registration complete!</b>\n\nNow you can subscribe for full calculation access."},
+    "reg_email_error": {
+        "ru": "⚠️ Не удалось создать аккаунт с этим email.\n\nВозможно, он уже зарегистрирован на сайте — войдите туда и привяжите Telegram в профиле.\n\nИли попробуйте другой email:",
+        "uz": "⚠️ Bu email bilan akkaunt yaratib bo'lmadi.\n\nEhtimol, u saytda allaqachon ro'yxatdan o'tgan — u yerga kirib, profildan Telegramni bog'lang.\n\nYoki boshqa emailni kiriting:",
+        "en": "⚠️ Could not create account with this email.\n\nIt may already be registered on the website — log in there and link Telegram from your profile.\n\nOr try a different email:"},
+    "reg_error": {
+        "ru": "⚠️ Ошибка регистрации. Попробуйте позже или свяжитесь с поддержкой.",
+        "uz": "⚠️ Ro'yxatdan o'tishda xato. Keyinroq urinib ko'ring yoki qo'llab-quvvatlash bilan bog'laning.",
+        "en": "⚠️ Registration error. Try again later or contact support."},
+    "need_register": {
+        "ru": "🔒 Для использования бота нужна регистрация.\n\nОтправьте /start чтобы зарегистрироваться.",
+        "uz": "🔒 Botdan foydalanish uchun ro'yxatdan o'tish kerak.\n\n/start yuboring.",
+        "en": "🔒 Registration is required to use the bot.\n\nSend /start to register."},
+    "reg_no_sb": {
+        "ru": "ℹ️ Регистрация через сайт пока недоступна в боте. Используйте демо.",
+        "uz": "ℹ️ Sayt orqali ro'yxatdan o'tish hozircha botda mavjud emas. Demodan foydalaning.",
+        "en": "ℹ️ Website registration is not yet available in the bot. Use the demo."},
 }
 
 

@@ -69,6 +69,11 @@ def back_menu_kb(lang):
     return kb([[btn(t("menu", lang), "menu:home")]])
 
 
+def reg_skip_kb(lang):
+    """Skip button for optional registration fields (name / phone)."""
+    return kb([[btn(t("skip", lang), "reg:skip")]])
+
+
 # ── cities ──
 def cities_kb(lang):
     buttons = [btn(f"{c['name']} ({int(c['t'])}°)", f"city:{c['id']}") for c in CITIES]
@@ -140,10 +145,9 @@ def mat_items_kb(cat, group_idx, page, lang):
     for p in chunk:
         r = p.get("r")
         lam = disp_lambda(p)
-        tail = f" · R{r}" + (f" · λ{lam}" if lam else "")
-        # keep the name readable: trim the name, not the R/λ figures
+        specs = f"R{r}" + (f" · λ{lam}" if lam else "")
         name = loc_name(p, lang)
-        label = (name[:60 - len(tail)] + tail) if len(name) + len(tail) > 60 else name + tail
+        label = f"{name}\n{specs}"
         rows.append([btn(label, f"mat:{cat}:{p['id']}")])
     nav = []
     if page > 0:

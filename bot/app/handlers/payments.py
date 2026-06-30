@@ -158,6 +158,14 @@ async def cmd_grant(message: Message):
         await message.bot.send_message(uid, f"✅ Ваша подписка Aquality активна до <b>{date}</b>. Спасибо!")
     except Exception:
         pass
+    # Sync to Supabase if the user has a linked website profile
+    try:
+        from ..supabase_sync import activate_sub as _sb_activate
+        sb_result = _sb_activate(uid, plan, p["days"], amount=price, promo=promo)
+        if sb_result.get("ok"):
+            await message.answer(f"🔗 Синхронизировано с сайтом (expires_at: {sb_result.get('expires_at','?')[:10]}).")
+    except Exception:
+        pass
 
 
 @router.message(Command("revoke"))
