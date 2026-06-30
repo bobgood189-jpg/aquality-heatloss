@@ -20,6 +20,7 @@ from .. import keyboards as K
 from .util import get_lang, is_owner
 from .results import build_object, send_results
 from .payments import has_access, show_tariffs
+from ..config import SB_CONFIGURED
 
 router = Router()
 
@@ -153,7 +154,14 @@ async def nav_back(cb: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "menu:calc")
 async def start_calc(cb: CallbackQuery, state: FSMContext):
     lang = await get_lang(state, cb.from_user.id)
-    if not has_access(cb.from_user):
+    if SB_CONFIGURED:
+        from .. import supabase_db as _sb
+        from .auth import start_registration as _start_reg
+        profile = await _sb.get_profile(cb.from_user.id)
+        if not profile:
+            await _start_reg(cb.message, state, lang)
+            return await cb.answer()
+    if not await has_access(cb.from_user):
         await cb.message.answer(t("pay_locked", lang))
         await show_tariffs(cb.message, state, cb.from_user, lang)
         return await cb.answer()
