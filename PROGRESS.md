@@ -73,5 +73,27 @@ WebGL Performance). Гипотеза «ошибка в начале скрипт
 
 ---
 
+## ЗАДАЧА: GitHub → bobgood189 + Netlify deploy (2026-06-30)
+
+### Статус шагов
+
+| Шаг | Описание | Статус |
+|-----|----------|--------|
+| 0 | CLI-диагностика | ✅ done |
+| 1 | Диагностика проекта | ✅ done |
+| 2 | План | ✅ done — ждём "да" |
+| 3A | GitHub: создать репо + push | 🔲 pending |
+| 3B | Netlify: link + deploy --prod | 🔲 pending |
+| 4 | Проверка браузером | 🔲 pending |
+| 5 | Итоговый чек-лист | 🔲 pending |
+
+### Данные диагностики (зашифрованы/маскированы)
+- Supabase project ref: `uhyomjdsswasmlycpoyh`
+- Live site: `https://aqualityheatloss.netlify.app/`
+- GitHub active account: `bobgood189-jpg`
+- Ключи: HARDCODED в `index.html:72-73` (anon key, безопасно для клиентской стороны)
+
+---
+
 ## АРХИВ — предыдущая задача (компоненты + подвальные этажи)
 Полностью завершена ранее; детали см. в истории git (коммит до этой задачи).

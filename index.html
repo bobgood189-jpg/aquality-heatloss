@@ -872,6 +872,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .adm-nav{display:flex;align-items:center;gap:.45rem;padding:.48rem .7rem;border-radius:.6rem;font-size:.82rem;color:#9a8675;cursor:pointer;transition:all .14s;margin-bottom:.15rem}
 .adm-nav:hover{background:rgba(245,158,11,.07);color:#d9c7b4}
 .adm-nav.active{background:rgba(245,158,11,.12);color:#ffd27a;font-weight:600}
+.adm-field-lbl{display:block;font-size:10px;font-weight:700;color:#6A7B9E;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
 .adm-ucard{border:1px solid rgba(140,165,210,.09);border-radius:1rem;background:#111827;padding:.9rem 1rem;cursor:pointer;transition:all .2s;margin-bottom:.55rem}
 .adm-ucard:hover{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.04)}
 .adm-badge{display:inline-flex;align-items:center;border-radius:999px;padding:.18rem .55rem;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
@@ -2780,29 +2781,55 @@ function payViaTelegram(){
 async function payIHavePaid(method){
   const u=authCurrentUser(); if(!u){ toast(pt('loginFirst'),'err'); return; }
   const planId=_curPlanId(), price=planFinalPrice();
+  const btn=event?.currentTarget;
+  if(btn){ btn.disabled=true; const orig=btn.innerHTML; btn._orig=orig; btn.innerHTML='<span style="opacity:.6">Отправляем…</span>'; }
   if(SB_CONFIGURED){
     try{
-      await sb().from('payments').insert({
-        user_id: u.id, provider: method, amount: price, status: 'pending',
-        raw: { plan: planId, promo: _payState.promo ? _payState.promo.code : null, email: u.email||u.login }
+      const {error}=await sb().from('payments').insert({
+        user_id:u.id, provider:method, amount:price, status:'pending',
+        raw:{plan:planId, promo:_payState.promo?_payState.promo.code:null, email:u.email||u.login||null}
       });
-    }catch(e){ console.warn('[AQ] payment record', e); }
+      if(error) console.warn('[AQ] payment insert',error.message);
+    }catch(e){ console.warn('[AQ] payment record',e); }
   }
-  toast(pt('pendingMsg') || 'Запрос получен. Менеджер активирует подписку в течение рабочего дня.');
+  const ov=document.getElementById('paywall-overlay');
+  if(ov){
+    const modal=ov.querySelector('.pw-modal');
+    if(modal){
+      const tierLabel=_payState.tier==='max'?'Max':'Pro';
+      const tgIco=`<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>`;
+      const xIco=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+      modal.innerHTML=`<button class="pw-x" onclick="closePaywall()">${xIco}</button>
+      <div class="pw-pending-screen">
+        <div class="pw-pending-icon">✓</div>
+        <div class="pw-pending-title">Заявка принята!</div>
+        <div class="pw-pending-body">Тариф <strong>${tierLabel} · ${planName(planId)||planId}</strong> — ${fmtSum(price)}</div>
+        <div class="pw-pending-timeline">
+          <div class="pw-tl-row done"><span class="pw-tl-dot"></span><span>Заявка получена</span></div>
+          <div class="pw-tl-row active"><span class="pw-tl-dot"></span><span>Менеджер обрабатывает</span></div>
+          <div class="pw-tl-row"><span class="pw-tl-dot"></span><span>Подписка активирована</span></div>
+        </div>
+        <p class="pw-pay-note" style="margin:14px 0 18px">Обычно в течение нескольких часов в рабочее время.<br>Для ускорения — напишите менеджеру.</p>
+        <div class="pw-method-actions">
+          <button class="pw-pay-btn blue" onclick="payViaTelegram()">${tgIco} Написать менеджеру</button>
+          <button class="pw-refresh" onclick="payRefresh()">↻ Проверить статус подписки</button>
+        </div>
+      </div>`;
+      return;
+    }
+  }
+  toast(pt('pendingMsg')||'Заявка принята. Менеджер активирует подписку в течение рабочего дня.');
   closePaywall();
-}
-function _fmtCardNum(v){ return v.replace(/\D/g,'').slice(0,16).replace(/(.{4})(?=.)/g,'$1 '); }
-function _fmtCardExp(v){ v=v.replace(/\D/g,'').slice(0,4); return v.length>2?v.slice(0,2)+' / '+v.slice(2):v; }
-function _payCardSubmit(method){
-  const n=(document.getElementById('pw-card-n')?.value||'').replace(/\s/g,'');
-  if(n.length<13){ toast('Введите корректный номер карты','err'); return; }
-  const e=(document.getElementById('pw-card-exp')?.value||'').replace(/[\s/]/g,'');
-  if(e.length<4){ toast('Укажите срок действия карты','err'); return; }
-  payIHavePaid(method);
 }
 function _payMethodDetailHTML(m){
   const price=planFinalPrice();
   const u=authCurrentUser();
+  if(!u) return `<div class="pw-method-detail"><div class="pw-login-gate">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="40" height="40" style="color:#F59E0B;margin-bottom:12px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <p style="margin-bottom:16px;font-size:13.5px;color:#9AA7C0">Войдите в аккаунт, чтобы оформить подписку</p>
+    <button class="pw-pay-btn amber" style="margin-bottom:8px" onclick="closePaywall();openAuth('login')">Войти в аккаунт</button>
+    <button class="pw-confirm-btn" onclick="closePaywall();openAuth('register')">Создать аккаунт бесплатно</button>
+  </div></div>`;
   const tierLabel=_payState.tier==='max'?'Max':'Pro';
   const promo=_payState.promo?` · промокод ${_payState.promo.code} (−${_payState.promo.discount}%)`:'';
   const who=u?(u.email||u.login||u.name||'—'):'—';
@@ -2857,28 +2884,27 @@ function _payMethodDetailHTML(m){
   const label=labelMap[m]||m.toUpperCase();
   const cardNum=(cardMap[m]||'').trim();
   const esc=cardNum.replace(/'/g,"\\'");
+  if(!cardNum){
+    return `<div class="pw-method-detail">
+      <p class="pw-method-hint">Реквизиты ${label} уточните у менеджера:</p>
+      <button class="pw-pay-btn blue" onclick="payViaTelegram()">${tgIco} Написать менеджеру</button>
+      <p class="pw-pay-note">Менеджер пришлёт номер карты и активирует подписку после оплаты</p>
+    </div>`;
+  }
   return `<div class="pw-method-detail">
-    ${cardNum?`<div class="pw-req-tag">
-      <span class="pw-req-lbl">Перевести на ${label}:</span>
-      <span class="pw-req-val">${cardNum}</span>
-      <button class="pw-req-copy" onclick="_copyPayText('${esc}')">Скопировать</button>
-    </div>`:''}
-    <div class="pw-card-form">
-      <input id="pw-card-n" class="pw-inp" type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" maxlength="19"
-        oninput="this.value=_fmtCardNum(this.value)">
-      <div class="pw-inp-row">
-        <input id="pw-card-exp" class="pw-inp" type="text" inputmode="numeric" placeholder="ММ / ГГ" maxlength="7"
-          oninput="this.value=_fmtCardExp(this.value)">
-        <input id="pw-card-cvv" class="pw-inp" type="password" inputmode="numeric" placeholder="CVV" maxlength="3"
-          oninput="this.value=this.value.replace(/\\D/g,'').slice(0,3)">
-      </div>
-      <input id="pw-card-name" class="pw-inp" type="text" placeholder="Имя владельца (необязательно)" autocomplete="cc-name">
-      <button class="pw-pay-btn amber" onclick="_payCardSubmit('${m}')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-        Оплатить ${priceFmt}
-      </button>
-      <p class="pw-pay-note">Платёж обрабатывается вручную · Менеджер активирует подписку в течение рабочего дня</p>
+    <div class="pw-transfer-box">
+      <div class="pw-tr-step-row"><span class="pw-tr-step-n">1</span><span class="pw-tr-step-t">Откройте приложение своего банка</span></div>
+      <div class="pw-tr-step-row"><span class="pw-tr-step-n">2</span><span class="pw-tr-step-t">Переведите <strong>${priceFmt}</strong> на карту ${label}:</span></div>
+      <div class="pw-card-num">${cardNum}</div>
+      <button class="pw-copy-btn" onclick="_copyPayText('${esc}')">Скопировать номер</button>
+      <div class="pw-tr-step-row" style="margin-top:6px"><span class="pw-tr-step-n">3</span><span class="pw-tr-step-t">Вернитесь и нажмите кнопку ниже</span></div>
     </div>
+    <button class="pw-pay-btn amber" onclick="payIHavePaid('${m}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Я перевёл деньги
+    </button>
+    <button class="pw-confirm-btn" onclick="payViaTelegram()">${tgIco} Написать менеджеру</button>
+    <p class="pw-pay-note">🔒 Менеджер активирует подписку в течение рабочего дня после проверки перевода</p>
   </div>`;
 }
 async function payRefresh(){ await aqRefreshSub(); renderPaywall(); initAuthNav(); if(aqHasAccess()){ closePaywall(); toast(pt('active')); if(typeof renderStep==='function'&&ST&&ST.step) renderStep(); } }
@@ -2889,6 +2915,21 @@ function subStatusHTML(){
   if(s){ const u=s.expires_at?(' · '+pt('until')+' '+new Date(s.expires_at).toLocaleDateString('ru-RU')):''; return `<div class="pw-status ok">✓ ${pt('active')}${u}</div>`; }
   return `<div class="pw-status">${pt('none')}</div>`;
 }
+const FEAT_PREVIEWS=[
+  {n:'Результат по объекту',d:'Итоговые теплопотери здания в Вт и кВт — сразу видно сколько тепла объект теряет за час в расчётный мороз.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="140" y="22" text-anchor="middle" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Теплопотери объекта · −14°C</text><text x="140" y="64" text-anchor="middle" fill="#F59E0B" font-size="34" font-weight="bold" font-family="system-ui,sans-serif">4 198 Вт</text><text x="140" y="80" text-anchor="middle" fill="#F59E0B" font-size="12" font-family="system-ui,sans-serif">= 4.2 кВт</text><rect x="16" y="96" width="116" height="48" rx="7" fill="#131f35"/><text x="74" y="117" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">Помещений</text><text x="74" y="136" text-anchor="middle" fill="#e8eef8" font-size="18" font-weight="bold" font-family="system-ui,sans-serif">6 шт</text><rect x="148" y="96" width="116" height="48" rx="7" fill="#131f35"/><text x="206" y="117" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">Рекоменд. котёл</text><text x="206" y="136" text-anchor="middle" fill="#22c55e" font-size="18" font-weight="bold" font-family="system-ui,sans-serif">5.25 кВт</text></svg>`},
+  {n:'Подбор котла (+25% резерв)',d:'Автоматически подбирает котёл с запасом 25% — чтобы не работал на износ при пиковой нагрузке.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><rect x="16" y="14" width="54" height="76" rx="8" fill="#131f35" stroke="#F59E0B" stroke-width="1.5"/><rect x="26" y="24" width="34" height="22" rx="4" fill="#1a2540"/><circle cx="43" cy="66" r="11" fill="none" stroke="#F59E0B" stroke-width="1.5"/><circle cx="43" cy="66" r="5" fill="#F59E0B"/><text x="82" y="30" fill="#e8eef8" font-size="13" font-weight="bold" font-family="system-ui,sans-serif">Котёл газовый</text><text x="82" y="46" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Rinnai BR-E160RFC</text><rect x="82" y="54" width="80" height="18" rx="4" fill="rgba(34,197,94,.15)"/><text x="122" y="67" text-anchor="middle" fill="#22c55e" font-size="9.5" font-weight="bold" font-family="system-ui,sans-serif">✓ Рекомендован</text><rect x="16" y="102" width="78" height="44" rx="6" fill="#131f35"/><text x="55" y="120" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">Нагрузка</text><text x="55" y="137" text-anchor="middle" fill="#F59E0B" font-size="14" font-weight="bold" font-family="system-ui,sans-serif">4.2 кВт</text><rect x="104" y="102" width="78" height="44" rx="6" fill="#131f35"/><text x="143" y="120" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">+25% резерв</text><text x="143" y="137" text-anchor="middle" fill="#e8eef8" font-size="14" font-weight="bold" font-family="system-ui,sans-serif">5.25 кВт</text><rect x="192" y="102" width="72" height="44" rx="6" fill="#131f35"/><text x="228" y="120" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">КПД</text><text x="228" y="137" text-anchor="middle" fill="#e8eef8" font-size="14" font-weight="bold" font-family="system-ui,sans-serif">93 %</text></svg>`},
+  {n:'Тепловой анализ объекта',d:'Разбивка теплопотерь по типу конструкции — видно через что уходит больше всего тепла.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="14" y="20" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Тепловой анализ — разбивка потерь</text><text x="14" y="44" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Стены</text><rect x="80" y="33" width="160" height="14" rx="3" fill="#1a2540"/><rect x="80" y="33" width="160" height="14" rx="3" fill="#F59E0B" opacity=".85"/><text x="252" y="44" text-anchor="end" fill="#F59E0B" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">1 840 Вт</text><text x="14" y="68" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Окна</text><rect x="80" y="57" width="106" height="14" rx="3" fill="#1a2540"/><rect x="80" y="57" width="106" height="14" rx="3" fill="#60a5fa" opacity=".85"/><text x="252" y="68" text-anchor="end" fill="#60a5fa" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">1 050 Вт</text><text x="14" y="92" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Пол</text><rect x="80" y="81" width="74" height="14" rx="3" fill="#1a2540"/><rect x="80" y="81" width="74" height="14" rx="3" fill="#a78bfa" opacity=".85"/><text x="252" y="92" text-anchor="end" fill="#a78bfa" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">740 Вт</text><text x="14" y="116" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Крыша</text><rect x="80" y="105" width="56" height="14" rx="3" fill="#1a2540"/><rect x="80" y="105" width="56" height="14" rx="3" fill="#34d399" opacity=".85"/><text x="252" y="116" text-anchor="end" fill="#34d399" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">568 Вт</text><line x1="14" y1="128" x2="266" y2="128" stroke="#1e2d45" stroke-width="1"/><text x="14" y="147" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Итого:</text><text x="266" y="147" text-anchor="end" fill="#F59E0B" font-size="11" font-weight="bold" font-family="system-ui,sans-serif">4 198 Вт</text></svg>`},
+  {n:'Расчётная нагрузка по этажам',d:'Теплопотери и нагрузка на отопление отдельно по каждому этажу здания.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="140" y="18" text-anchor="middle" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Нагрузка по этажам</text><text x="40" y="50" text-anchor="middle" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">1 этаж</text><rect x="16" y="54" width="48" height="72" rx="5" fill="#F59E0B" opacity=".85"/><text x="40" y="141" text-anchor="middle" fill="#F59E0B" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">1 820 Вт</text><text x="108" y="66" text-anchor="middle" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">2 этаж</text><rect x="84" y="70" width="48" height="56" rx="5" fill="#60a5fa" opacity=".85"/><text x="108" y="141" text-anchor="middle" fill="#60a5fa" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">1 420 Вт</text><text x="176" y="80" text-anchor="middle" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">3 этаж</text><rect x="152" y="84" width="48" height="42" rx="5" fill="#a78bfa" opacity=".85"/><text x="176" y="141" text-anchor="middle" fill="#a78bfa" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">958 Вт</text><text x="244" y="90" text-anchor="middle" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Чердак</text><rect x="220" y="94" width="48" height="32" rx="5" fill="#34d399" opacity=".8"/><text x="244" y="141" text-anchor="middle" fill="#34d399" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">508 Вт</text><line x1="14" y1="130" x2="266" y2="130" stroke="#1e2d45" stroke-width="1"/></svg>`},
+  {n:'3D Визуализация здания',d:'Объёмная модель объекта с цветовой тепловой картой — видно горячие и холодные зоны здания.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="140" y="18" text-anchor="middle" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">3D Визуализация · Тепловая карта</text><g transform="translate(80,24)"><polygon points="60,0 120,30 120,108 60,78" fill="#131f35" stroke="#F59E0B" stroke-width="1.2"/><polygon points="0,30 60,0 60,78 0,108" fill="#1a2540" stroke="#F59E0B" stroke-width="1.2"/><polygon points="0,30 60,0 120,30 60,60" fill="#223050" stroke="#F59E0B" stroke-width="1.2"/><rect x="10" y="54" width="20" height="30" rx="2" fill="none" stroke="#60a5fa" stroke-width="1" opacity=".7"/><rect x="38" y="54" width="20" height="30" rx="2" fill="none" stroke="#60a5fa" stroke-width="1" opacity=".7"/><rect x="74" y="44" width="14" height="22" rx="2" fill="none" stroke="#60a5fa" stroke-width="1" opacity=".7"/><rect x="94" y="44" width="14" height="22" rx="2" fill="none" stroke="#60a5fa" stroke-width="1" opacity=".7"/></g><rect x="14" y="144" width="10" height="10" rx="2" fill="#1d4ed8" opacity=".8"/><text x="28" y="153" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Высокие потери</text><rect x="120" y="144" width="10" height="10" rx="2" fill="#F59E0B" opacity=".8"/><text x="134" y="153" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Средние</text><rect x="200" y="144" width="10" height="10" rx="2" fill="#34d399" opacity=".8"/><text x="214" y="153" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Низкие</text></svg>`},
+  {n:'Теплопотери по комнатам',d:'Каждое помещение отдельно: площадь, тепловая нагрузка, какой нужен радиатор.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="14" y="18" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Теплопотери · Комнаты</text><rect x="14" y="24" width="252" height="30" rx="5" fill="#131f35"/><text x="24" y="44" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Гостиная  28 м²</text><rect x="190" y="33" width="60" height="10" rx="3" fill="#1a2540"/><rect x="190" y="33" width="60" height="10" rx="3" fill="#F59E0B" opacity=".75"/><text x="258" y="44" text-anchor="end" fill="#F59E0B" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">820 Вт</text><rect x="14" y="60" width="252" height="30" rx="5" fill="#131f35"/><text x="24" y="80" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Спальня  18 м²</text><rect x="190" y="69" width="46" height="10" rx="3" fill="#1a2540"/><rect x="190" y="69" width="46" height="10" rx="3" fill="#60a5fa" opacity=".75"/><text x="258" y="80" text-anchor="end" fill="#60a5fa" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">580 Вт</text><rect x="14" y="96" width="252" height="30" rx="5" fill="#131f35"/><text x="24" y="116" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Детская  14 м²</text><rect x="190" y="105" width="34" height="10" rx="3" fill="#1a2540"/><rect x="190" y="105" width="34" height="10" rx="3" fill="#a78bfa" opacity=".75"/><text x="258" y="116" text-anchor="end" fill="#a78bfa" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">420 Вт</text><rect x="14" y="132" width="252" height="24" rx="5" fill="#131f35"/><text x="24" y="149" fill="#e8eef8" font-size="11" font-family="system-ui,sans-serif">Кухня  12 м²</text><text x="258" y="149" text-anchor="end" fill="#34d399" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">360 Вт</text></svg>`},
+  {n:'Тепловая карта объекта',d:'Цветовая карта плана этажа: синий — большие потери, зелёный — минимальные.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="140" y="16" text-anchor="middle" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Тепловая карта · план этажа</text><rect x="20" y="22" width="240" height="118" rx="6" fill="#131f35"/><rect x="24" y="26" width="110" height="56" rx="4" fill="#1d4ed8" opacity=".55"/><text x="79" y="58" text-anchor="middle" fill="#bae6fd" font-size="10" font-family="system-ui,sans-serif">Гостиная</text><rect x="138" y="26" width="118" height="56" rx="4" fill="#0ea5e9" opacity=".45"/><text x="197" y="58" text-anchor="middle" fill="#bae6fd" font-size="10" font-family="system-ui,sans-serif">Спальня</text><rect x="24" y="86" width="84" height="50" rx="4" fill="#F59E0B" opacity=".4"/><text x="66" y="115" text-anchor="middle" fill="#fde68a" font-size="10" font-family="system-ui,sans-serif">Кухня</text><rect x="112" y="86" width="72" height="50" rx="4" fill="#dc2626" opacity=".35"/><text x="148" y="115" text-anchor="middle" fill="#fca5a5" font-size="10" font-family="system-ui,sans-serif">Санузел</text><rect x="188" y="86" width="68" height="50" rx="4" fill="#7c3aed" opacity=".35"/><text x="222" y="115" text-anchor="middle" fill="#c4b5fd" font-size="10" font-family="system-ui,sans-serif">Коридор</text><rect x="14" y="144" width="10" height="10" rx="2" fill="#1d4ed8" opacity=".8"/><text x="28" y="153" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Высокие</text><rect x="90" y="144" width="10" height="10" rx="2" fill="#dc2626" opacity=".7"/><text x="104" y="153" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Средние</text><rect x="168" y="144" width="10" height="10" rx="2" fill="#34d399" opacity=".8"/><text x="182" y="153" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Низкие</text></svg>`},
+  {n:'Распределение по конструкциям',d:'Круговая диаграмма: какая доля тепла уходит через стены, окна, пол и кровлю.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="80" y="16" text-anchor="middle" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Распределение потерь</text><circle cx="80" cy="88" r="52" fill="none" stroke="#F59E0B" stroke-width="18" stroke-dasharray="205 120" stroke-dashoffset="0"/><circle cx="80" cy="88" r="52" fill="none" stroke="#60a5fa" stroke-width="18" stroke-dasharray="100 225" stroke-dashoffset="-205"/><circle cx="80" cy="88" r="52" fill="none" stroke="#a78bfa" stroke-width="18" stroke-dasharray="72 253" stroke-dashoffset="-305"/><circle cx="80" cy="88" r="52" fill="none" stroke="#34d399" stroke-width="18" stroke-dasharray="58 267" stroke-dashoffset="-377"/><circle cx="80" cy="88" r="40" fill="#0d1421"/><text x="80" y="84" text-anchor="middle" fill="#e8eef8" font-size="16" font-weight="bold" font-family="system-ui,sans-serif">4 198</text><text x="80" y="98" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">Вт</text><rect x="158" y="28" width="10" height="10" rx="2" fill="#F59E0B"/><text x="172" y="38" fill="#e8eef8" font-size="10" font-family="system-ui,sans-serif">Стены  44%</text><rect x="158" y="48" width="10" height="10" rx="2" fill="#60a5fa"/><text x="172" y="58" fill="#e8eef8" font-size="10" font-family="system-ui,sans-serif">Окна  25%</text><rect x="158" y="68" width="10" height="10" rx="2" fill="#a78bfa"/><text x="172" y="78" fill="#e8eef8" font-size="10" font-family="system-ui,sans-serif">Пол  18%</text><rect x="158" y="88" width="10" height="10" rx="2" fill="#34d399"/><text x="172" y="98" fill="#e8eef8" font-size="10" font-family="system-ui,sans-serif">Кровля  13%</text></svg>`},
+  {n:'Расходы за месяц / сезон',d:'Сколько стоит отопление по месяцам и за весь сезон — с учётом вашего тарифа на газ или электро.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="14" y="18" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Расходы · отопительный сезон</text><text x="38" y="108" text-anchor="middle" fill="#6A7B9E" font-size="8" font-family="system-ui,sans-serif">Окт</text><rect x="24" y="70" width="28" height="36" rx="4" fill="#60a5fa" opacity=".7"/><text x="38" y="65" text-anchor="middle" fill="#60a5fa" font-size="8" font-family="system-ui,sans-serif">42к</text><text x="84" y="108" text-anchor="middle" fill="#6A7B9E" font-size="8" font-family="system-ui,sans-serif">Ноя</text><rect x="70" y="48" width="28" height="58" rx="4" fill="#818cf8" opacity=".8"/><text x="84" y="43" text-anchor="middle" fill="#818cf8" font-size="8" font-family="system-ui,sans-serif">68к</text><text x="130" y="108" text-anchor="middle" fill="#6A7B9E" font-size="8" font-family="system-ui,sans-serif">Дек</text><rect x="116" y="34" width="28" height="72" rx="4" fill="#F59E0B" opacity=".9"/><text x="130" y="29" text-anchor="middle" fill="#F59E0B" font-size="8" font-family="system-ui,sans-serif">86к</text><text x="176" y="108" text-anchor="middle" fill="#6A7B9E" font-size="8" font-family="system-ui,sans-serif">Янв</text><rect x="162" y="28" width="28" height="78" rx="4" fill="#ef4444" opacity=".8"/><text x="176" y="23" text-anchor="middle" fill="#ef4444" font-size="8" font-family="system-ui,sans-serif">91к</text><text x="222" y="108" text-anchor="middle" fill="#6A7B9E" font-size="8" font-family="system-ui,sans-serif">Фев</text><rect x="208" y="38" width="28" height="68" rx="4" fill="#F59E0B" opacity=".75"/><text x="222" y="33" text-anchor="middle" fill="#F59E0B" font-size="8" font-family="system-ui,sans-serif">82к</text><line x1="14" y1="108" x2="266" y2="108" stroke="#1e2d45" stroke-width="1"/><rect x="14" y="118" width="252" height="30" rx="6" fill="#131f35"/><text x="24" y="138" fill="#6A7B9E" font-size="10" font-family="system-ui,sans-serif">Итого за сезон:</text><text x="260" y="138" text-anchor="end" fill="#F59E0B" font-size="13" font-weight="bold" font-family="system-ui,sans-serif">481 000 сум</text></svg>`},
+  {n:'Влияние стен на теплопотери',d:'Сравнение по стенам здания: какие дают больше всего потерь и где утепление даст максимум.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="14" y="18" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Влияние стен · потери</text><text x="14" y="40" fill="#e8eef8" font-size="10.5" font-family="system-ui,sans-serif">Север (15 м²)</text><rect x="120" y="29" width="132" height="14" rx="3" fill="#1a2540"/><rect x="120" y="29" width="132" height="14" rx="3" fill="#ef4444" opacity=".8"/><text x="258" y="40" text-anchor="end" fill="#ef4444" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">648 Вт</text><text x="14" y="64" fill="#e8eef8" font-size="10.5" font-family="system-ui,sans-serif">Запад (12 м²)</text><rect x="120" y="53" width="100" height="14" rx="3" fill="#1a2540"/><rect x="120" y="53" width="100" height="14" rx="3" fill="#F59E0B" opacity=".8"/><text x="258" y="64" text-anchor="end" fill="#F59E0B" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">496 Вт</text><text x="14" y="88" fill="#e8eef8" font-size="10.5" font-family="system-ui,sans-serif">Восток (12 м²)</text><rect x="120" y="77" width="78" height="14" rx="3" fill="#1a2540"/><rect x="120" y="77" width="78" height="14" rx="3" fill="#60a5fa" opacity=".8"/><text x="258" y="88" text-anchor="end" fill="#60a5fa" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">398 Вт</text><text x="14" y="112" fill="#e8eef8" font-size="10.5" font-family="system-ui,sans-serif">Юг (10 м²)</text><rect x="120" y="101" width="58" height="14" rx="3" fill="#1a2540"/><rect x="120" y="101" width="58" height="14" rx="3" fill="#34d399" opacity=".8"/><text x="258" y="112" text-anchor="end" fill="#34d399" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">298 Вт</text><rect x="14" y="128" width="252" height="24" rx="5" fill="rgba(239,68,68,.1)"/><text x="24" y="144" fill="#fca5a5" font-size="9" font-family="system-ui,sans-serif">Северная стена — приоритет утепления</text></svg>`},
+  {n:'Сравнение: Сейчас vs с утеплением',d:'До и после утепления: разница в теплопотерях, мощности котла и расходах за сезон.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><rect x="14" y="12" width="120" height="20" rx="4" fill="#1a2540"/><text x="74" y="26" text-anchor="middle" fill="#e8eef8" font-size="11" font-weight="bold" font-family="system-ui,sans-serif">Сейчас</text><rect x="146" y="12" width="120" height="20" rx="4" fill="rgba(245,158,11,.15)" stroke="#F59E0B" stroke-width="1"/><text x="206" y="26" text-anchor="middle" fill="#F59E0B" font-size="11" font-weight="bold" font-family="system-ui,sans-serif">С утеплением</text><line x1="14" y1="36" x2="266" y2="36" stroke="#1e2d45" stroke-width="1"/><text x="14" y="52" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Теплопотери</text><text x="74" y="54" text-anchor="middle" fill="#e8eef8" font-size="12" font-family="system-ui,sans-serif">4 198 Вт</text><text x="206" y="54" text-anchor="middle" fill="#22c55e" font-size="12" font-family="system-ui,sans-serif">2 840 Вт ↓</text><line x1="14" y1="62" x2="266" y2="62" stroke="#1a2540" stroke-width="1"/><text x="14" y="78" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Котёл</text><text x="74" y="80" text-anchor="middle" fill="#e8eef8" font-size="12" font-family="system-ui,sans-serif">5.25 кВт</text><text x="206" y="80" text-anchor="middle" fill="#22c55e" font-size="12" font-family="system-ui,sans-serif">3.55 кВт ↓</text><line x1="14" y1="88" x2="266" y2="88" stroke="#1a2540" stroke-width="1"/><text x="14" y="104" fill="#6A7B9E" font-size="9" font-family="system-ui,sans-serif">Расходы/сезон</text><text x="74" y="106" text-anchor="middle" fill="#e8eef8" font-size="12" font-family="system-ui,sans-serif">481 000</text><text x="206" y="106" text-anchor="middle" fill="#22c55e" font-size="12" font-family="system-ui,sans-serif">325 000 ↓</text><line x1="14" y1="114" x2="266" y2="114" stroke="#1a2540" stroke-width="1"/><rect x="14" y="124" width="252" height="28" rx="6" fill="rgba(34,197,94,.1)"/><text x="140" y="143" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="bold" font-family="system-ui,sans-serif">Экономия: 156 000 сум/сезон (−32%)</text></svg>`},
+  {n:'Симулятор утепления',d:'Интерактивный инструмент: меняете параметры утепления — сразу видите новые теплопотери и расходы.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="140" y="18" text-anchor="middle" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Симулятор утепления стен</text><text x="14" y="42" fill="#6A7B9E" font-size="10" font-family="system-ui,sans-serif">Толщина утеплителя</text><text x="264" y="42" text-anchor="end" fill="#F59E0B" font-size="10" font-weight="bold" font-family="system-ui,sans-serif">100 мм</text><rect x="14" y="48" width="252" height="6" rx="3" fill="#1a2540"/><rect x="14" y="48" width="168" height="6" rx="3" fill="#F59E0B"/><circle cx="182" cy="51" r="9" fill="#F59E0B" stroke="#0d1421" stroke-width="2.5"/><text x="14" y="76" fill="#6A7B9E" font-size="10" font-family="system-ui,sans-serif">Материал утеплителя</text><rect x="150" y="64" width="116" height="18" rx="5" fill="#131f35" stroke="rgba(245,158,11,.3)" stroke-width="1"/><text x="208" y="77" text-anchor="middle" fill="#e8eef8" font-size="10" font-family="system-ui,sans-serif">Минеральная вата</text><rect x="14" y="96" width="122" height="52" rx="7" fill="#131f35"/><text x="75" y="116" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">До утепления</text><text x="75" y="136" text-anchor="middle" fill="#e8eef8" font-size="17" font-weight="bold" font-family="system-ui,sans-serif">4 198 Вт</text><rect x="144" y="96" width="122" height="52" rx="7" fill="rgba(34,197,94,.08)" stroke="#22c55e" stroke-width="1"/><text x="205" y="116" text-anchor="middle" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">После</text><text x="205" y="136" text-anchor="middle" fill="#22c55e" font-size="17" font-weight="bold" font-family="system-ui,sans-serif">2 840 Вт</text></svg>`},
+  {n:'Рекомендуемое оборудование',d:'Список подходящих котлов и радиаторов с характеристиками — на основе ваших расчётных данных.',s:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="160" fill="#0d1421" rx="10"/><text x="14" y="16" fill="#4A5B7E" font-size="10" font-family="system-ui,sans-serif">Рекомендуемое оборудование</text><rect x="14" y="22" width="252" height="42" rx="7" fill="#131f35"/><rect x="22" y="30" width="28" height="28" rx="5" fill="#1a2540"/><rect x="28" y="36" width="16" height="16" rx="3" fill="#F59E0B" opacity=".8"/><text x="62" y="41" fill="#e8eef8" font-size="11" font-weight="bold" font-family="system-ui,sans-serif">Котёл Rinnai BR-E160</text><text x="62" y="55" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">5.25 кВт · КПД 93% · газовый</text><rect x="208" y="28" width="50" height="20" rx="4" fill="rgba(34,197,94,.15)"/><text x="233" y="42" text-anchor="middle" fill="#22c55e" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">✓ Подходит</text><rect x="14" y="70" width="252" height="42" rx="7" fill="#131f35"/><rect x="22" y="78" width="28" height="28" rx="5" fill="#1a2540"/><rect x="28" y="84" width="16" height="16" rx="3" fill="#60a5fa" opacity=".8"/><text x="62" y="89" fill="#e8eef8" font-size="11" font-weight="bold" font-family="system-ui,sans-serif">Радиатор Royal Thermo</text><text x="62" y="103" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">8 секций · 980 Вт · алюминий</text><rect x="208" y="76" width="50" height="20" rx="4" fill="rgba(34,197,94,.15)"/><text x="233" y="90" text-anchor="middle" fill="#22c55e" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">✓ Подходит</text><rect x="14" y="118" width="252" height="36" rx="7" fill="#131f35"/><rect x="22" y="126" width="28" height="22" rx="5" fill="#1a2540"/><rect x="28" y="131" width="16" height="12" rx="3" fill="#a78bfa" opacity=".8"/><text x="62" y="135" fill="#e8eef8" font-size="11" font-weight="bold" font-family="system-ui,sans-serif">Насос Grundfos UP 15-14</text><text x="62" y="149" fill="#4A5B7E" font-size="9" font-family="system-ui,sans-serif">14 Вт · авторегулировка скорости</text></svg>`}
+];
 function renderPaywall(){
   const ov=document.getElementById('paywall-overlay'); if(!ov) return;
   const d=_payState.promo?_payState.promo.discount:0;
@@ -2900,10 +2941,19 @@ function renderPaywall(){
     {ok:0,l:'Мастерская'},{ok:0,l:'FLIR тепловые карты'},
   ];
   const MAX_FEATS=[
-    {ok:1,l:'Расчёт теплопотерь'},{ok:1,l:'Подбор котла (+25% резерв)'},
-    {ok:1,l:'Структура потерь'},{ok:1,l:'Доступ к Telegram-боту'},
-    {ok:1,l:'Мини-Ревит (план этажа)'},{ok:1,l:'PDF отчёты'},
-    {ok:1,l:'Мастерская'},{ok:1,l:'FLIR тепловые карты'},
+    {ok:1,l:'Результат по объекту'},
+    {ok:1,l:'Подбор котла (+25% резерв)'},
+    {ok:1,l:'Тепловой анализ объекта'},
+    {ok:1,l:'Расчётная нагрузка по этажам'},
+    {ok:1,l:'3D Визуализация здания'},
+    {ok:1,l:'Теплопотери по комнатам'},
+    {ok:1,l:'Тепловая карта объекта'},
+    {ok:1,l:'Распределение по конструкциям'},
+    {ok:1,l:'Расходы за месяц / сезон'},
+    {ok:1,l:'Влияние стен на теплопотери'},
+    {ok:1,l:'Сравнение: Сейчас vs с утеплением'},
+    {ok:1,l:'Симулятор утепления'},
+    {ok:1,l:'Рекомендуемое оборудование'},
   ];
   const periodTabs=PERIODS.map(p=>{
     const sel=_payState.period===p.id;
@@ -2923,7 +2973,12 @@ function renderPaywall(){
     const perMo=Math.round(finalPrice/plan.months);
     const base=aqPlan(tier+'_m1')?.price||(isMax?159000:99000);
     const savePct=plan.months>1?Math.round((1-Math.round(plan.price/plan.months)/base)*100):0;
-    const featHTML=feats.map(f=>`<li class="pw-tier-feat${f.ok?' ok':' no'}"><i class="pw-tier-feat-ico">${f.ok?'✓':'✗'}</i><span>${f.l}</span></li>`).join('');
+    const mkLi=f=>`<li class="pw-tier-feat${f.ok?' ok':' no'}"><i class="pw-tier-feat-ico">${f.ok?'✓':'✗'}</i><span>${f.l}</span></li>`;
+    const SHOW=8;
+    const hidFeats=isMax?feats.slice(SHOW):[];
+    const extraId=`pw-extra-${tier}`;
+    const extraBlock=hidFeats.length?`<ul id="${extraId}" class="pw-tier-feats" style="display:none;margin-top:7px">${hidFeats.map(mkLi).join('')}</ul><button class="pw-feat-more" onclick="event.stopPropagation();var x=document.getElementById('${extraId}');var shown=x.style.display!=='none';x.style.display=shown?'none':'block';this.textContent=shown?'+ Показать ещё (${hidFeats.length})':'− Скрыть'">+ Показать ещё (${hidFeats.length})</button>`:'';
+    const featHTML=feats.slice(0,SHOW).map(mkLi).join('');
     const priceHTML=d?`<s class="pw-old-price">${fmtSum(plan.price)}</s> ${fmtSum(finalPrice)}`:fmtSum(finalPrice);
     const saveLine=(savePct>0&&!d)?` · <span style="color:#34d399">−${savePct}%</span>`:(d?` · <span style="color:#34d399">−${d}% промо</span>`:'');
     const iconPro=`<svg viewBox="0 0 24 24" width="22" height="22" fill="rgba(96,165,250,.2)" stroke="#60A5FA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
@@ -2940,6 +2995,8 @@ function renderPaywall(){
         <div class="pw-tier-permo">${fmtSum(perMo)} / мес${saveLine}</div>
       </div>
       <ul class="pw-tier-feats">${featHTML}</ul>
+      ${extraBlock}
+      ${isMax?`<button class="pw-feat-peek" onclick="event.stopPropagation();openFeatPreview(0)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Посмотреть примеры</button>`:''}
       <button class="pw-tier-cta" onclick="event.stopPropagation();paySelectTier('${tier}')">${sel?'Выбрано ✓':'Выбрать'}</button>
     </div>`;
   }
@@ -2947,10 +3004,10 @@ function renderPaywall(){
     {id:'tg',    icon:`<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>`, label:'Telegram'},
     {id:'humo',  icon:`<svg viewBox="0 0 64 28" width="64" height="28"><rect width="64" height="28" rx="5" fill="#00A651"/><text x="32" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13" fill="#ffffff" letter-spacing="1.5">HUMO</text></svg>`, label:'HUMO'},
     {id:'uzcard',icon:`<svg viewBox="0 0 68 28" width="68" height="28"><rect width="68" height="28" rx="5" fill="#1B4FA3"/><text x="34" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="12" fill="#ffffff" letter-spacing="0.5">Uzcard</text></svg>`, label:'Uzcard'},
-    {id:'visa',  icon:`<svg viewBox="0 0 54 22" width="54" height="22" fill="none"><text x="0" y="19" font-size="21" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="#1A1F71" letter-spacing="1.5">VISA</text></svg>`, label:'Visa'},
+    {id:'visa',  icon:`<svg viewBox="-3 0 57 22" width="54" height="22" fill="none"><text x="0" y="19" font-size="21" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="#1A1F71" letter-spacing="1.5">VISA</text></svg>`, label:'Visa'},
     {id:'master',icon:`<svg viewBox="0 0 38 24" width="44" height="28"><circle cx="14" cy="12" r="10" fill="#EB001B"/><circle cx="24" cy="12" r="10" fill="#F79E1B"/><path d="M19 5.3a10 10 0 0 1 0 13.4A10 10 0 0 1 19 5.3z" fill="#FF5F00"/></svg>`, label:'MasterCard'},
-    {id:'paypal',icon:`<svg viewBox="0 0 24 24" fill="#003087" width="20" height="20"><path d="M20.067 8.478c.492.315.844.825.966 1.42.338 1.653-.902 3.245-2.741 3.563h-2.67l-.484 3.093H12.4L14.04 6h3.986c1.128 0 1.898.217 2.041.478zm-3.19 3.28h2.09c.82-.142 1.35-.817 1.163-1.659-.104-.476-.474-.82-1.017-.82h-1.79l-.446 2.479z"/></svg>`, label:'PayPal'},
-    {id:'sbp',   icon:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><rect width="24" height="24" rx="4" fill="#1D1D1D"/><path d="M5 8h14M5 12h9M5 16h5" stroke="#7B2FBE" stroke-width="2.5" stroke-linecap="round"/></svg>`, label:'СБП'},
+    {id:'paypal',icon:`<svg viewBox="0 0 80 28" width="72" height="26"><rect width="80" height="28" rx="5" fill="#003087"/><text x="14" y="19" font-size="17" font-weight="900" font-family="Arial,sans-serif" fill="#009CDE">Pay</text><text x="41" y="19" font-size="17" font-weight="900" font-family="Arial,sans-serif" fill="#ffffff">Pal</text></svg>`, label:'PayPal'},
+    {id:'sbp',   icon:`<svg viewBox="0 0 64 28" width="64" height="28"><rect width="64" height="28" rx="5" fill="#1D1D1D"/><text x="32" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="11" fill="#7B2FBE" letter-spacing="1">СБП</text></svg>`, label:'СБП'},
   ];
   const methodBtns=methods.map(m=>{
     const sel=_payState.method===m.id;
@@ -3053,6 +3110,28 @@ function aqLockedStepHTML(){
   .pw-tier-feat-ico{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:900;margin-top:.1em;font-style:normal}
   .pw-tier-feat.ok .pw-tier-feat-ico{background:rgba(245,158,11,.18);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
   .pw-tier-feat.no .pw-tier-feat-ico{background:rgba(255,255,255,.04);color:#3E4F6E;border:1px solid rgba(120,145,210,.1)}
+  .pw-feat-more{display:block;background:none;border:none;padding:6px 0 2px;font-size:11px;font-weight:700;color:#F59E0B;cursor:pointer;opacity:.8;transition:opacity .15s;text-align:left;width:100%}
+  .pw-feat-more:hover{opacity:1}
+  .pw-feat-peek{display:flex;align-items:center;gap:6px;background:none;border:1px solid rgba(245,158,11,.22);border-radius:8px;padding:7px 12px;font-size:11px;font-weight:700;color:#D4A030;cursor:pointer;opacity:.75;transition:all .2s;margin:6px 0 0;width:100%;justify-content:center}
+  .pw-feat-peek:hover{opacity:1;background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.4)}
+  #fp-ov{position:fixed;inset:0;z-index:10002;display:flex;align-items:center;justify-content:center;background:rgba(2,5,14,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .fp-card{background:#0d1421;border:1px solid rgba(245,158,11,.2);border-radius:20px;width:min(340px,92vw);overflow:hidden;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+  .fp-top{padding:14px 16px 8px;display:flex;align-items:center;justify-content:space-between}
+  .fp-counter{font-size:10px;font-weight:700;color:#4A5B7E;letter-spacing:.05em}
+  .fp-close{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.06);border:none;color:#6A7B9E;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
+  .fp-close:hover{background:rgba(255,255,255,.12);color:#e8eef8}
+  .fp-img{width:100%;display:block;background:#131f35;line-height:0}
+  .fp-img svg{width:100%;height:auto;display:block}
+  .fp-body{padding:14px 16px 16px}
+  .fp-name{font-size:13.5px;font-weight:700;color:#e8eef8;margin-bottom:5px}
+  .fp-desc{font-size:11px;color:#6A7B9E;line-height:1.55;margin-bottom:13px}
+  .fp-nav{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .fp-arr{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(120,145,210,.15);color:#8A9BBF;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;line-height:1}
+  .fp-arr:hover:not([disabled]){background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35);color:#F59E0B}
+  .fp-arr[disabled]{opacity:.22;cursor:default}
+  .fp-dots{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:180px}
+  .fp-dot{width:6px;height:6px;border-radius:50%;background:rgba(245,158,11,.2);transition:background .2s;cursor:pointer}
+  .fp-dot.on{background:#F59E0B;transform:scale(1.2)}
   .pw-tier-cta{width:100%;padding:11px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;border:1.5px solid rgba(120,145,210,.15);background:rgba(255,255,255,.04);color:#7A8BAF}
   .pw-tier:hover .pw-tier-cta{border-color:rgba(245,158,11,.35);color:#D4A030}
   .pw-tier.sel .pw-tier-cta{background:linear-gradient(135deg,#F59E0B,#D97706);color:#06080F;border-color:transparent;box-shadow:0 4px 20px rgba(245,158,11,.3)}
@@ -3086,7 +3165,22 @@ function aqLockedStepHTML(){
   .pw-req-val{font-size:13px;font-weight:700;color:#E8EEF8;letter-spacing:.07em;flex:1;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pw-req-copy{flex-shrink:0;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:7px;padding:5px 11px;color:#F59E0B;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
   .pw-req-copy:hover{background:rgba(245,158,11,.28)}
-  .pw-card-form{display:flex;flex-direction:column}
+  .pw-card-form{display:flex;flex-direction:column;gap:10px}
+  .pw-card-preview{position:relative;border-radius:16px;padding:20px 22px 18px;background:linear-gradient(135deg,#1a2540 0%,#0e1628 60%,#12192e 100%);border:1px solid rgba(245,158,11,.22);box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;min-height:128px}
+  .pw-card-preview::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(245,158,11,.1) 0%,transparent 70%);pointer-events:none}
+  .pw-card-chip{margin-bottom:14px}
+  .pw-cprev-num{font-size:17px;font-weight:700;color:#E8EEF8;letter-spacing:.17em;font-family:'JetBrains Mono',monospace,sans-serif;margin-bottom:16px;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+  .pw-cprev-bottom{display:flex;gap:24px}
+  .pw-cprev-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5A6B8E;margin-bottom:3px}
+  .pw-cprev-val{font-size:11px;font-weight:700;color:#B0C0DC;letter-spacing:.06em;text-transform:uppercase}
+  .pw-field-wrap{display:flex;flex-direction:column;gap:5px}
+  .pw-field-lbl{font-size:11px;font-weight:700;color:#8A9BBF;letter-spacing:.03em}
+  .pw-field-inner{position:relative;display:flex;align-items:center}
+  .pw-field-ico{position:absolute;left:13px;color:#4A5B7E;pointer-events:none;flex-shrink:0}
+  .pw-inp2{width:100%;border-radius:12px;border:1.5px solid rgba(120,145,210,.15);background:rgba(255,255,255,.04);color:#E8EEF8;padding:12px 14px 12px 38px;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s,background .2s;font-family:inherit;box-sizing:border-box;letter-spacing:.05em}
+  .pw-inp2:focus{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.03);box-shadow:0 0 0 3px rgba(245,158,11,.08)}
+  .pw-inp2::placeholder{color:#3A4A65;font-size:13px;letter-spacing:normal}
+  .pw-field-row{display:flex;gap:8px}
   .pw-inp{width:100%;border-radius:12px;border:1.5px solid rgba(120,145,210,.15);background:rgba(255,255,255,.04);color:#E8EEF8;padding:13px 14px;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;font-family:inherit;margin-bottom:10px;box-sizing:border-box;letter-spacing:.04em}
   .pw-inp:focus{border-color:rgba(245,158,11,.5);box-shadow:0 0 0 3px rgba(245,158,11,.08)}
   .pw-inp::placeholder{color:#3E4F6E;font-size:13px;letter-spacing:normal}
@@ -3135,7 +3229,27 @@ function aqLockedStepHTML(){
   @media(max-width:550px){#floating-sub{padding:.85rem;border-radius:50%}.aq-buy-label{display:none}}
   @media(max-width:400px){.pw-methods{grid-template-columns:repeat(3,1fr)}.pw-method-lbl{font-size:9px}.pw-card-price{font-size:14px}}
   @media(max-width:600px){.pw-tiers{grid-template-columns:1fr}.pw-modal{padding:24px 16px 20px}.pw-tier-price{font-size:18px}}
-  @media(max-width:400px){.pw-methods{grid-template-columns:repeat(3,1fr)}.pw-method-lbl{font-size:9px}.pw-periods{gap:2px}.pw-period{font-size:11px}}`;
+  @media(max-width:400px){.pw-methods{grid-template-columns:repeat(3,1fr)}.pw-method-lbl{font-size:9px}.pw-periods{gap:2px}.pw-period{font-size:11px}}
+  .pw-pending-screen{display:flex;flex-direction:column;align-items:center;text-align:center;padding:20px 0 8px}
+  .pw-pending-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(52,211,153,.05));border:2px solid rgba(52,211,153,.35);display:flex;align-items:center;justify-content:center;font-size:26px;color:#34d399;margin-bottom:16px;box-shadow:0 8px 32px rgba(52,211,153,.12)}
+  .pw-pending-title{font-size:21px;font-weight:800;color:#E8EEF8;margin-bottom:8px}
+  .pw-pending-body{font-size:13px;color:#9AA7C0;line-height:1.65;margin-bottom:20px}
+  .pw-pending-body strong{color:#E8EEF8;font-weight:700}
+  .pw-pending-timeline{width:100%;text-align:left;display:flex;flex-direction:column;gap:11px;padding:14px 16px;background:rgba(255,255,255,.025);border-radius:12px;border:1px solid rgba(120,145,210,.1);margin-bottom:4px}
+  .pw-tl-row{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#6A7B9E}
+  .pw-tl-dot{width:8px;height:8px;border-radius:50%;background:rgba(120,145,210,.18);flex-shrink:0;transition:all .3s}
+  .pw-tl-row.done .pw-tl-dot{background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.4)}
+  .pw-tl-row.done{color:#9AA7C0}
+  .pw-tl-row.active .pw-tl-dot{background:#F59E0B;animation:tlPulse 1.4s ease-in-out infinite}
+  .pw-tl-row.active{color:#E8EEF8;font-weight:600}
+  @keyframes tlPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.45)}60%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}
+  .pw-transfer-box{background:rgba(255,255,255,.025);border:1px solid rgba(120,145,210,.1);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:0}
+  .pw-tr-step-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13px;line-height:1.5}
+  .pw-tr-step-row:last-child{margin-bottom:0}
+  .pw-tr-step-n{min-width:22px;height:22px;border-radius:50%;background:rgba(245,158,11,.15);color:#F59E0B;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .pw-tr-step-t{color:#B0BCDA}
+  .pw-tr-step-t strong{color:#E8EEF8}
+  .pw-login-gate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px 12px}`;
   const st=document.createElement('style'); st.id='paywall-css'; st.textContent=css; document.head.appendChild(st);
 })();
 
@@ -6088,19 +6202,54 @@ async function adminSubs(){
   const now=Date.now();
   const active=subs.filter(s=>s.status==='active' && (!s.expires_at || new Date(s.expires_at)>now));
   const byUser={}; users.forEach(u=>byUser[u.id]=u);
-  const planLbl={m1:'1 мес',m6:'6 мес',m12:'12 мес'};
+  const planLbl={'pro_m1':'Pro 1 мес','pro_m3':'Pro 3 мес','pro_m6':'Pro 6 мес','pro_m12':'Pro 12 мес','max_m1':'Max 1 мес','max_m3':'Max 3 мес','max_m6':'Max 6 мес','max_m12':'Max 12 мес',m1:'1 мес',m3:'3 мес',m6:'6 мес',m12:'12 мес'};
   const opts=users.map(u=>`<option value="${u.id}">${(u.login||u.email||'—').replace(/"/g,'')}</option>`).join('');
   return `
   <h2 class="text-xl font-extrabold text-cream mb-5">Подписки</h2>
-  <div class="adm-stat text-left mb-6" style="padding:16px">
-    <p class="text-xs font-bold text-cream mb-3">Активировать подписку (после оплаты)</p>
-    <div class="grid gap-2" style="grid-template-columns:1fr">
-      <select id="subact-user" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal">${opts}</select>
-      <div class="grid grid-cols-3 gap-2">
-        <select id="subact-plan" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal"><option value="m1">1 месяц</option><option value="m6" selected>6 месяцев</option><option value="m12">12 месяцев</option></select>
-        <input id="subact-promo" class="pw-promo-inp" placeholder="Промокод (необяз.)">
-        <button class="lg-btn px-4 py-2 text-sm" onclick="adminActivateSub()">Активировать</button>
+  <div class="adm-stat text-left mb-6" style="padding:18px 20px">
+    <p class="font-bold text-cream mb-1" style="font-size:13px">Активировать подписку вручную</p>
+    <p class="text-xs mb-4" style="color:#6A7B9E">После получения оплаты через Telegram или наличными</p>
+    <div class="grid gap-3">
+      <div>
+        <label class="adm-field-lbl">Пользователь</label>
+        <select id="subact-user" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal;width:100%" onchange="adminSubPreview()">${opts}</select>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="adm-field-lbl">Тариф</label>
+          <select id="subact-tier" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal;width:100%" onchange="adminSubPreview()">
+            <option value="max" selected>Max — полный доступ</option>
+            <option value="pro">Pro — базовый</option>
+          </select>
+        </div>
+        <div>
+          <label class="adm-field-lbl">Период</label>
+          <select id="subact-period" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal;width:100%" onchange="adminSubPreview()">
+            <option value="m1">1 месяц</option>
+            <option value="m3">3 месяца</option>
+            <option value="m6" selected>6 месяцев</option>
+            <option value="m12">12 месяцев</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="adm-field-lbl">Источник оплаты</label>
+          <select id="subact-source" class="pw-promo-inp" style="text-transform:none;letter-spacing:normal;width:100%">
+            <option value="telegram" selected>Telegram</option>
+            <option value="cash">Наличные</option>
+            <option value="humo">HUMO</option>
+            <option value="uzcard">Uzcard</option>
+            <option value="manual">Другое</option>
+          </select>
+        </div>
+        <div>
+          <label class="adm-field-lbl">Промокод <span style="color:#4A5B7E;text-transform:none">(необяз.)</span></label>
+          <input id="subact-promo" class="pw-promo-inp" placeholder="PROMO10" style="width:100%;box-sizing:border-box">
+        </div>
+      </div>
+      <div id="subact-preview" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#D4A030;font-weight:600"></div>
+      <button class="lg-btn px-4 py-2.5 text-sm" style="width:100%" onclick="adminActivateSub()">✓ Активировать подписку</button>
     </div>
   </div>
   <h3 class="text-sm font-bold text-cream mb-3">Активные подписки · ${active.length}</h3>
@@ -6112,19 +6261,89 @@ async function adminSubs(){
         <button class="text-xs text-red-400 hover:underline" onclick="adminCancelSub('${s.id}')">Отменить</button>
       </div></div>`; }).join('')}`;
 }
+function adminSubPreview(){
+  const tier=document.getElementById('subact-tier')?.value||'max';
+  const period=document.getElementById('subact-period')?.value||'m6';
+  const planId=tier+'_'+period;
+  const plan=aqPlan(planId);
+  const el=document.getElementById('subact-preview');
+  if(!el) return;
+  if(plan){
+    el.style.display='block';
+    el.textContent=`Тариф: ${tier==='max'?'Max':'Pro'} · ${plan.months} мес · ${plan.price.toLocaleString('ru-RU')} сум`;
+  } else {
+    el.style.display='none';
+  }
+}
 async function adminActivateSub(){
   const uid=document.getElementById('subact-user')?.value;
-  const plan=document.getElementById('subact-plan')?.value;
-  const promo=document.getElementById('subact-promo')?.value||null;
-  if(!uid||!plan) return;
-  const price=aqPlan(plan)?aqPlan(plan).price:null;
+  const tier=document.getElementById('subact-tier')?.value||'max';
+  const period=document.getElementById('subact-period')?.value||'m6';
+  const promo=document.getElementById('subact-promo')?.value.trim()||null;
+  const source=document.getElementById('subact-source')?.value||'manual';
+  if(!uid){ toast('Выберите пользователя','err'); return; }
+  const planId=tier+'_'+period;
+  const plan=aqPlan(planId);
+  const price=plan?plan.price:null;
+  const tierLabel=tier==='max'?'Max':'Pro';
+  if(!confirm(`Активировать ${tierLabel} на ${plan?plan.months+' мес':period} для выбранного пользователя?`)) return;
   try{
-    const { error }=await sb().rpc('admin_activate_sub',{ p_user:uid, p_plan:plan, p_amount:price, p_promo:promo, p_source:'manual' });
+    const { error }=await sb().rpc('admin_activate_sub',{ p_user:uid, p_plan:planId, p_amount:price, p_promo:promo, p_source:source });
     if(error){ toast('Ошибка: '+error.message,'err'); return; }
-    toast('Подписка активирована');
-    try{ await sb().functions.invoke('notify-user',{body:{type:'subscription_activated',user_id:uid,plan,amount:price}}); }catch(e){}
+    toast('✓ Подписка активирована');
+    try{ await sb().functions.invoke('notify-user',{body:{type:'subscription_activated',user_id:uid,plan:planId,amount:price}}); }catch(e){}
     adminPage('subs');
   }catch(e){ toast('Ошибка активации','err'); }
+}
+/* ═══════════ FEATURE PREVIEW CAROUSEL ═══════════ */
+let _fpIdx=0,_fpSwX=0;
+function openFeatPreview(idx){
+  _fpIdx=idx||0;
+  let ov=document.getElementById('fp-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='fp-ov';
+    ov.onclick=e=>{ if(e.target===ov) closeFeatPreview(); };
+    ov.addEventListener('touchstart',e=>{_fpSwX=e.touches[0].clientX;},{passive:true});
+    ov.addEventListener('touchend',e=>{
+      const dx=e.changedTouches[0].clientX-_fpSwX;
+      if(Math.abs(dx)>48) navFeatPreview(dx<0?1:-1);
+    });
+    document.addEventListener('keydown',_fpKey);
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex'; _fpRender();
+}
+function _fpKey(e){
+  if(e.key==='Escape') closeFeatPreview();
+  else if(e.key==='ArrowRight') navFeatPreview(1);
+  else if(e.key==='ArrowLeft') navFeatPreview(-1);
+}
+function closeFeatPreview(){
+  const ov=document.getElementById('fp-ov');
+  if(ov) ov.style.display='none';
+  document.removeEventListener('keydown',_fpKey);
+}
+function navFeatPreview(dir){
+  _fpIdx=Math.max(0,Math.min(FEAT_PREVIEWS.length-1,_fpIdx+dir));
+  _fpRender();
+}
+function _fpRender(){
+  const ov=document.getElementById('fp-ov'); if(!ov) return;
+  const p=FEAT_PREVIEWS[_fpIdx], L=FEAT_PREVIEWS.length;
+  const dots=FEAT_PREVIEWS.map((_,i)=>`<div class="fp-dot${i===_fpIdx?' on':''}" onclick="event.stopPropagation();_fpIdx=${i};_fpRender()"></div>`).join('');
+  ov.innerHTML=`<div class="fp-card">
+    <div class="fp-top"><span class="fp-counter">${_fpIdx+1} / ${L}</span><button class="fp-close" onclick="closeFeatPreview()">✕</button></div>
+    <div class="fp-img">${p.s}</div>
+    <div class="fp-body">
+      <div class="fp-name">${p.n}</div>
+      <div class="fp-desc">${p.d}</div>
+      <div class="fp-nav">
+        <button class="fp-arr" onclick="event.stopPropagation();navFeatPreview(-1)" ${_fpIdx===0?'disabled':''}>&#8592;</button>
+        <div class="fp-dots">${dots}</div>
+        <button class="fp-arr" onclick="event.stopPropagation();navFeatPreview(1)" ${_fpIdx===L-1?'disabled':''}>&#8594;</button>
+      </div>
+    </div>
+  </div>`;
 }
 async function adminCancelSub(id){
   if(!confirm('Отменить эту подписку?')) return;
@@ -6219,12 +6438,13 @@ async function adminPayments(){
     const prov=providerLabel[p.provider]||p.provider||'—';
     const st=statusLabel[p.status]||p.status;
     const stColor=statusColor[p.status]||'';
-    const planLbl={m1:'1 мес',m3:'3 мес',m6:'6 мес',m12:'12 мес'};
+    const _planLbl={max_m1:'Max · 1 мес',max_m3:'Max · 3 мес',max_m6:'Max · 6 мес',max_m12:'Max · 12 мес',pro_m1:'Pro · 1 мес',pro_m3:'Pro · 3 мес',pro_m6:'Pro · 6 мес',pro_m12:'Pro · 12 мес',m1:'1 мес',m3:'3 мес',m6:'6 мес',m12:'12 мес'};
+    const planDisp=_planLbl[plan]||plan;
     return `<div class="adm-ucard">
       <div class="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <div class="font-semibold text-cream text-sm mb-0.5">${who}</div>
-          <p class="text-xs text-muted">${prov} · ${planLbl[plan]||plan}${promo} · ${fmtSum(p.amount||0)} · ${dt}</p>
+          <p class="text-xs text-muted">${prov} · ${planDisp}${promo} · ${fmtSum(p.amount||0)} · ${dt}</p>
           <p class="text-xs mt-0.5" style="${stColor}">${st}</p>
         </div>
         <div class="flex gap-2">
@@ -9340,6 +9560,276 @@ function computeObject(){
 }
 
 /* ════════════════════════════════════════════════════════════
+   ИНЖЕНЕРНОЕ ЯДРО (отопление) — методика портирована из Santexprog.
+   Гидравлика · Тёплый пол · Расширительный бак · Панельные радиаторы.
+   Все формулы стандартные: СП 60.13330 / EN 442 / EN 1264 / Darcy-Weisbach.
+   Единый источник коэффициентов — HVAC_CONST (правится из «settings» при желании).
+════════════════════════════════════════════════════════════ */
+const HVAC_CONST = {
+  C_WATER: 1.163,        // Вт·ч/(кг·°C) = 4187/3600 — теплоёмкость воды для G=Q/(c·ΔT)
+  G_GRAV: 9.81,          // м/с²
+  RE_LAM: 2300,          // граница ламинарного режима
+  ROUGH_MM: 0.007,       // абс. шероховатость трубы (как в Santexprog), мм
+  RESERVE: 1.3,          // запас по напору насоса U12 (Santexprog)
+  TANK_K: 0.10,          // коэф. расширения воды (0.04–0.10), доля объёма системы
+};
+/* Свойства воды по температуре (линейная интерполяция 20…90 °C) */
+function waterRho(t){ return 1000.6 - 0.0857*t - 0.0036*t*t; }            // кг/м³ (≈992@40, ≈971@80)
+function waterNu(t){                                                       // кинем. вязкость, м²/с
+  const T=[20,40,60,80], NU=[1.004e-6,0.658e-6,0.475e-6,0.365e-6];
+  if(t<=T[0]) return NU[0]; if(t>=T[3]) return NU[3];
+  for(let i=0;i<3;i++){ if(t<=T[i+1]){ const f=(t-T[i])/(T[i+1]-T[i]); return NU[i]+f*(NU[i+1]-NU[i]); } }
+  return NU[3];
+}
+/* Δt системы (подача−обратка) из текущего режима, напр. 90/70 → 20 */
+function regimeDT(){ const p=heatRegime().id.split('/').map(Number); return Math.max(1,(p[0]||80)-(p[1]||60)); }
+/* Средняя температура теплоносителя, напр. 90/70 → 80 */
+function regimeTmean(){ const p=heatRegime().id.split('/').map(Number); return ((p[0]||80)+(p[1]||60))/2; }
+
+/* 1. РАСХОД теплоносителя.  G[кг/ч]=Q/(c·Δt);  G[м³/ч]=G[кг/ч]/ρ */
+function flowRate(qW, dT, tWater){
+  dT=dT||regimeDT(); tWater=tWater!=null?tWater:regimeTmean();
+  const rho=waterRho(tWater);
+  const kgh = qW/(HVAC_CONST.C_WATER*dT);
+  const m3h = kgh/rho;
+  return { kgh, m3h, ls:m3h*1000/3600, lh:m3h*1000 };
+}
+/* 2. СКОРОСТЬ в трубе.  v=Q_об/A,  A=π/4·d² */
+function pipeVelocity(m3h, dMm){
+  const d=dMm/1000, A=Math.PI/4*d*d;
+  if(A<=0) return 0;
+  return (m3h/3600)/A;            // м/с
+}
+/* 3. ПОТЕРИ ДАВЛЕНИЯ (Darcy–Weisbach).  ΔP=(λ·L/d+Σξ)·ρv²/2 */
+function pressureLoss(qW, dMm, lenM, fittingK, dT, tWater){
+  dT=dT||regimeDT(); tWater=tWater!=null?tWater:regimeTmean();
+  const f=flowRate(qW,dT,tWater), v=pipeVelocity(f.m3h,dMm);
+  const d=dMm/1000, rho=waterRho(tWater), nu=waterNu(tWater);
+  const Re=v>0? v*d/nu : 0;
+  let lam;
+  if(Re<=0) lam=0;
+  else if(Re<HVAC_CONST.RE_LAM) lam=64/Re;                                 // ламинарный
+  else { const rel=(HVAC_CONST.ROUGH_MM/1000)/d;                           // турбулентный (Альтшуль)
+         lam=0.11*Math.pow(rel+68/Re,0.25); }
+  const dynHead=rho*v*v/2;                                                  // Па
+  const pa=(lam*(lenM/d)+(fittingK||0))*dynHead;                           // Па
+  const mWater=pa/(rho*HVAC_CONST.G_GRAV);                                  // м вод. ст.
+  return { pa, kpa:pa/1000, mWater, v, Re, lambda:lam, flow:f, regime:Re<HVAC_CONST.RE_LAM?'lam':'turb' };
+}
+
+/* 4. ТЁПЛЫЙ ПОЛ.  q[Вт/м²]=f_step·(t_ср−t_комн)/R_вверх (EN 1264, упрощ.) */
+const FLOOR_COVERING = {            // тепловое сопротивление покрытия R, м²·°C/Вт
+  tile:   {r:0.02, name:'Плитка / керамогранит', nameUz:'Plitka / keramogranit', nameEn:'Tile'},
+  laminate:{r:0.10, name:'Ламинат',              nameUz:'Laminat',               nameEn:'Laminate'},
+  parquet:{r:0.12, name:'Паркет / дерево',       nameUz:'Parket / yog‘och',  nameEn:'Parquet'},
+  carpet: {r:0.15, name:'Ковролин',              nameUz:'Kovrolin',              nameEn:'Carpet'},
+};
+const FLOOR_STEP_F = {100:0.95, 150:0.82, 200:0.68, 250:0.55, 300:0.45};   // КПД шага укладки, мм→доля
+function floorStepF(stepMm){ const k=Object.keys(FLOOR_STEP_F).map(Number).sort((a,b)=>a-b);
+  if(stepMm<=k[0])return FLOOR_STEP_F[k[0]]; if(stepMm>=k[k.length-1])return FLOOR_STEP_F[k[k.length-1]];
+  for(let i=0;i<k.length-1;i++){ if(stepMm<=k[i+1]){ const f=(stepMm-k[i])/(k[i+1]-k[i]); return FLOOR_STEP_F[k[i]]+f*(FLOOR_STEP_F[k[i+1]]-FLOOR_STEP_F[k[i]]); } }
+  return FLOOR_STEP_F[k[k.length-1]];
+}
+const FLOOR_R_SCREED=0.05, FLOOR_R_SURFACE=0.093;                          // стяжка + поверхностная плёнка
+/* tMeanWater — средняя t воды пола (обычно ниже радиаторной), tRoom — комната */
+function floorQ(coveringId, stepMm, tMeanWater, tRoom){
+  const cov=FLOOR_COVERING[coveringId]||FLOOR_COVERING.tile;
+  const Rup=cov.r+FLOOR_R_SCREED+FLOOR_R_SURFACE;
+  const q=floorStepF(stepMm)*(tMeanWater-tRoom)/Rup;
+  return Math.max(0,q);                                                     // Вт/м²
+}
+/* Полный расчёт контура тёплого пола по комнате */
+function floorLoop(area, coveringId, stepMm, tMeanWater, tRoom, dT, collectorM){
+  const q=floorQ(coveringId,stepMm,tMeanWater,tRoom);
+  const Qw=q*area;
+  const pipeLen=area/(stepMm/1000)+2*(collectorM||0);                       // м трубы (шаг + подводки)
+  const f=flowRate(Qw, dT||10, tMeanWater);
+  return { q, Qw, pipeLen, flow:f, perM:q*(stepMm/1000) };
+}
+
+/* 5. РАСШИРИТЕЛЬНЫЙ БАК.  V_бак=V_системы·K */
+function expansionTank(vSystemL, k){
+  k=k!=null?k:HVAC_CONST.TANK_K;
+  const vTank=vSystemL*k;
+  const STD=[5,8,12,18,24,35,50,80,100];                                   // стандартный ряд, л
+  const rec=STD.find(s=>s>=vTank)||STD[STD.length-1];
+  return { vSystemL, k, vTank, recommended:rec };
+}
+/* Объём воды системы: радиаторы + трубы магистрали (оценка по мощности) */
+function systemWaterVolume(res){
+  const secs=res.totalSections||0;
+  const radL=secs*0.45;                                                     // ~0.45 л/секция (биметалл)
+  const pipeL=res.totalKw*1.0;                                             // ~1 л/кВт на трубы+котёл (оценка)
+  return { radL, pipeL, totalL:radL+pipeL };
+}
+
+/* 6. ПАНЕЛЬНЫЕ РАДИАТОРЫ (Tip 11/22, EN 442).  W = Wном·(Δt/50)^1.3 */
+const PANEL_W_PER_M = {            // Вт/м при Δt=50 K (Purmo Compact, ориентир)
+  11:{300:341, 400:430, 500:520, 600:600, 900:860},
+  22:{300:599, 400:755, 500:910, 600:1056, 900:1480},
+};
+const PANEL_LEN = [400,500,600,800,1000,1200,1400,1600];                   // типовые длины, мм
+function panelOutput(type, hMm, lMm, dTactual){
+  const wm=(PANEL_W_PER_M[type]||PANEL_W_PER_M[11])[hMm];
+  if(!wm) return 0;
+  return wm*(lMm/1000)*Math.pow(Math.max(dTactual,1)/50,1.3);              // Вт
+}
+/* Δt радиатора = средняя t воды − t комнаты (арифм., как у Santexprog) */
+function panelDT(tRoom){ return regimeTmean()-tRoom; }
+/* Автоподбор: варианты по типу/высоте/длине, покрывающие reqW (сорт по близости) */
+function autoSelectPanels(reqW, tRoom){
+  const dT=panelDT(tRoom), out=[];
+  for(const type of [11,22]){
+    for(const h of [300,500,600]){
+      for(const l of PANEL_LEN){
+        const w1=panelOutput(type,h,l,dT); if(w1<=0) continue;
+        const n=Math.ceil(reqW/w1); if(n>4) continue;
+        const total=w1*n, cover=total/reqW*100;
+        out.push({type,h,l,n,w1:Math.round(w1),total:Math.round(total),cover:Math.round(cover)});
+      }
+    }
+  }
+  return out.filter(o=>o.cover>=100).sort((a,b)=>a.cover-b.cover).slice(0,9);
+}
+
+/* ════════════════════════════════════════════════════════════
+   ИНЖЕНЕРНЫЕ МОДУЛИ — UI на странице результатов (s6).
+   4 интерактивных калькулятора, питающихся от теплопотерь:
+   Гидравлика · Тёплый пол · Расширительный бак · Панельные радиаторы.
+════════════════════════════════════════════════════════════ */
+const HVI='width:100%;background:var(--aq-bg2);border:1px solid rgba(140,165,210,.2);border-radius:.5rem;color:var(--aq-bright);padding:.4rem .55rem;font-size:.82rem;outline:none;box-sizing:border-box';
+const _hvNum=(id,def)=>{ const el=document.getElementById(id); const v=el?parseFloat(el.value):NaN; return isFinite(v)&&v>0?v:def; };
+const _hvVal=(id,def)=>{ const el=document.getElementById(id); return el&&el.value?el.value:def; };
+function _hvSet(id,html){ const el=document.getElementById(id); if(el) el.innerHTML=html; }
+
+/* Главный генератор — вставляется в s6 */
+function engineeringModulesHTML(res){
+  if(!res||res.roomCount===0) return '';
+  const dT=regimeDT(), tmean=regimeTmean();
+  // мощность представительной (самой нагруженной) комнаты — дефолт для радиатора/ветки
+  let maxRoomW=0; res.floors.forEach(f=>f.rooms.forEach(r=>{ if(r.qKw*1000>maxRoomW) maxRoomW=r.qKw*1000; }));
+  maxRoomW=Math.round(maxRoomW)||Math.round(res.totalW/Math.max(1,res.roomCount));
+  const totalW=Math.round(res.totalW);
+  const sv=systemWaterVolume(res);
+  return `
+  <h4 class="font-semibold text-cream mb-1 mt-2 flex items-center gap-2">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 text-amber"><path d="M12 2v6m0 0a4 4 0 1 0 0 8m0-8a4 4 0 1 1 0 8m0 0v6"/></svg>
+    Инженерные расчёты системы отопления
+  </h4>
+  <p class="text-xs text-muted mb-4">Гидравлика, тёплый пол, расширительный бак и подбор панельных радиаторов — рассчитаны от теплопотерь вашего объекта. Режим системы: <b class="text-cream">${heatRegime().name}</b> (Δt=${dT}°C, t_ср=${tmean}°C).</p>
+
+  <div class="grid grid-cols-1 gap-4 mb-8 lg:grid-cols-2">
+
+    <!-- 1. ГИДРАВЛИКА -->
+    <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-1">💧 Гидравлика трубопровода</p>
+      <p class="text-[11px] text-muted mb-3">G = Q / (1.163·Δt) · v = G/S · ΔP по Дарси–Вейсбаху</p>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <label class="text-[11px] text-muted">Мощность участка, Вт<input id="hv-h-q" type="number" min="1" value="${totalW}" oninput="hvHydroCalc()" style="${HVI}"></label>
+        <label class="text-[11px] text-muted">Диаметр вн., мм<input id="hv-h-d" type="number" min="4" value="20" oninput="hvHydroCalc()" style="${HVI}"></label>
+        <label class="text-[11px] text-muted">Длина, м<input id="hv-h-l" type="number" min="0" value="10" oninput="hvHydroCalc()" style="${HVI}"></label>
+        <label class="text-[11px] text-muted">Σξ (фитинги)<input id="hv-h-k" type="number" min="0" value="5" oninput="hvHydroCalc()" style="${HVI}"></label>
+      </div>
+      <div id="hv-h-out"></div>
+    </div>
+
+    <!-- 2. ТЁПЛЫЙ ПОЛ -->
+    <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-1">🌡️ Тёплый пол (контур)</p>
+      <p class="text-[11px] text-muted mb-3">q = f(шаг)·(t_ср−t_комн)/R_покр · Q = q·S</p>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <label class="text-[11px] text-muted">Площадь, м²<input id="hv-f-a" type="number" min="1" value="${Math.min(30,Math.round(res.totalArea))||15}" oninput="hvFloorCalc()" style="${HVI}"></label>
+        <label class="text-[11px] text-muted">Покрытие<select id="hv-f-cov" onchange="hvFloorCalc()" style="${HVI}">${Object.entries(FLOOR_COVERING).map(([k,c])=>`<option value="${k}"${k==='laminate'?' selected':''}>${c.name}</option>`).join('')}</select></label>
+        <label class="text-[11px] text-muted">Шаг трубы, мм<select id="hv-f-step" onchange="hvFloorCalc()" style="${HVI}">${[100,150,200,250,300].map(s=>`<option value="${s}"${s===150?' selected':''}>${s}</option>`).join('')}</select></label>
+        <label class="text-[11px] text-muted">t подачи пола, °C<input id="hv-f-tin" type="number" min="25" max="55" value="45" oninput="hvFloorCalc()" style="${HVI}"></label>
+      </div>
+      <div id="hv-f-out"></div>
+    </div>
+
+    <!-- 3. РАСШИРИТЕЛЬНЫЙ БАК -->
+    <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-1">🛢️ Расширительный бак</p>
+      <p class="text-[11px] text-muted mb-3">V_бак = V_системы · K · Объём системы — автоматически</p>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <label class="text-[11px] text-muted">Доп. объём (котёл/магистраль), л<input id="hv-t-add" type="number" min="0" value="0" oninput="hvTankCalc()" style="${HVI}"></label>
+        <label class="text-[11px] text-muted">Коэф. K (0.04–0.10)<input id="hv-t-k" type="number" min="0.02" max="0.15" step="0.01" value="0.10" oninput="hvTankCalc()" style="${HVI}"></label>
+      </div>
+      <div id="hv-t-out"></div>
+    </div>
+
+    <!-- 4. ПАНЕЛЬНЫЕ РАДИАТОРЫ -->
+    <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-1">🔥 Панельные радиаторы (Tip 11/22)</p>
+      <p class="text-[11px] text-muted mb-3">Автоподбор по EN 442: W = Wном·(Δt/50)^1.3</p>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <label class="text-[11px] text-muted">Потребность Q, Вт<input id="hv-p-q" type="number" min="1" value="${maxRoomW}" oninput="hvPanelCalc()" style="${HVI}"></label>
+        <label class="text-[11px] text-muted">t комнаты, °C<input id="hv-p-tr" type="number" min="16" max="26" value="22" oninput="hvPanelCalc()" style="${HVI}"></label>
+      </div>
+      <div id="hv-p-out"></div>
+    </div>
+
+  </div>`;
+}
+
+/* ── Пересчёты модулей ── */
+function hvHydroCalc(){
+  const q=_hvNum('hv-h-q',1000), d=_hvNum('hv-h-d',20), l=_hvNum('hv-h-l',10), k=_hvNum('hv-h-k',5);
+  const pl=pressureLoss(q,d,l,k);
+  const vWarn=pl.v>1.5, recPipe=(typeof recommendPipe==='function')?recommendPipe(q/1000):'';
+  _hvSet('hv-h-out',`
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Расход</p><p class="mono text-sm font-bold text-cream">${pl.flow.m3h.toFixed(3)}</p><p class="text-[9px] text-muted">м³/ч</p></div>
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Скорость</p><p class="mono text-sm font-bold ${vWarn?'text-ember':'text-cream'}">${pl.v.toFixed(3)}</p><p class="text-[9px] text-muted">м/с</p></div>
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Потери</p><p class="mono text-sm font-bold text-cream">${pl.mWater.toFixed(3)}</p><p class="text-[9px] text-muted">м (${pl.kpa.toFixed(2)} кПа)</p></div>
+    </div>
+    <p class="text-[10px] text-muted mt-2">Re=${pl.Re.toFixed(0)} (${pl.regime==='lam'?'ламинарный':'турбулентный'}), λ=${pl.lambda.toFixed(3)}. ${recPipe?`Рекоменд. Ø магистрали для этой мощности: <b class="text-cream">${recPipe} мм</b>. `:''}${vWarn?'<b class="text-ember">⚠ Скорость >1.5 м/с — возможен шум, увеличьте диаметр.</b>':'Скорость в норме (≤1.5 м/с).'}</p>`);
+}
+function hvFloorCalc(){
+  const a=_hvNum('hv-f-a',15), cov=_hvVal('hv-f-cov','laminate'), step=_hvNum('hv-f-step',150), tin=_hvNum('hv-f-tin',45);
+  const dTf=10, tmean=tin-dTf/2, tRoom=22;
+  const lp=floorLoop(a,cov,step,tmean,tRoom,dTf,2);
+  const loops=Math.ceil(lp.pipeLen/90); // макс ~90 м на контур
+  _hvSet('hv-f-out',`
+    <div class="grid grid-cols-2 gap-2 text-center mb-2">
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Удельная мощн.</p><p class="mono text-sm font-bold text-cream">${lp.q.toFixed(0)} <span class="text-[9px]">Вт/м²</span></p></div>
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Мощность пола</p><p class="mono text-sm font-bold text-cream">${lp.Qw.toFixed(0)} <span class="text-[9px]">Вт</span></p></div>
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Длина трубы</p><p class="mono text-sm font-bold text-cream">${lp.pipeLen.toFixed(1)} <span class="text-[9px]">м</span></p></div>
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Расход</p><p class="mono text-sm font-bold text-cream">${lp.flow.lh.toFixed(0)} <span class="text-[9px]">л/ч</span></p></div>
+    </div>
+    <p class="text-[10px] text-muted">t_ср воды = ${tmean.toFixed(0)}°C (подача ${tin.toFixed(0)} − Δt${dTf}/2). Контуров (≤90 м): <b class="text-cream">${loops}</b>. ${lp.q>100?'<b class="text-ember">⚠ q>100 Вт/м² — перегрев пола, снизьте t подачи.</b>':'Комфортный режим.'}</p>`);
+}
+function hvTankCalc(){
+  const res=window._calcRes; if(!res) return;
+  const sv=systemWaterVolume(res), add=_hvNum('hv-t-add',0)||0, k=_hvNum('hv-t-k',0.10);
+  const vSys=sv.totalL+add, et=expansionTank(vSys,k);
+  _hvSet('hv-t-out',`
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Объём системы</p><p class="mono text-sm font-bold text-cream">${vSys.toFixed(1)}</p><p class="text-[9px] text-muted">литров</p></div>
+      <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Расширение</p><p class="mono text-sm font-bold text-cream">${et.vTank.toFixed(1)}</p><p class="text-[9px] text-muted">литров</p></div>
+      <div class="rounded-xl bg-amber/12 border border-amber/30 py-2"><p class="text-[10px] text-muted">Бак (станд.)</p><p class="mono text-sm font-bold text-amber">${et.recommended}</p><p class="text-[9px] text-muted">литров</p></div>
+    </div>
+    <p class="text-[10px] text-muted mt-2">Оценка объёма: радиаторы ≈ ${sv.radL.toFixed(1)} л (${res.totalSections} сек.×0.45) + трубы/котёл ≈ ${sv.pipeL.toFixed(1)} л (${res.totalKw.toFixed(1)} кВт). Берётся ближайший больший бак из ряда 5/8/12/18/24/35/50/80/100 л.</p>`);
+}
+function hvPanelCalc(){
+  const reqW=_hvNum('hv-p-q',1000), tr=_hvNum('hv-p-tr',22);
+  const dT=panelDT(tr), variants=autoSelectPanels(reqW,tr);
+  if(!variants.length){ _hvSet('hv-p-out',`<p class="text-[11px] text-ember">Нет варианта ≤4 секций — увеличьте t системы или разбейте на 2 радиатора.</p>`); return; }
+  _hvSet('hv-p-out',`
+    <p class="text-[10px] text-muted mb-2">Δt радиатора = ${dT.toFixed(0)}°C (t_ср ${regimeTmean()} − комн ${tr}). Варианты, покрывающие ${reqW} Вт:</p>
+    <div class="grid grid-cols-3 gap-1.5">
+      ${variants.slice(0,6).map((v,i)=>`
+        <div class="rounded-xl border ${i===0?'border-amber/40 bg-amber/10':'border-sand/10 bg-amber/5'} p-2 text-center">
+          <p class="text-[10px] font-bold text-cream">${v.n}× Tip ${v.type}</p>
+          <p class="text-[9px] text-muted">${v.h}×${v.l} мм</p>
+          <p class="mono text-xs font-bold ${i===0?'text-amber':'text-cream'} mt-0.5">${v.total} Вт</p>
+          <p class="text-[9px] ${v.cover>140?'text-ember':'text-muted'}">${v.cover}%</p>
+        </div>`).join('')}
+    </div>
+    <p class="text-[10px] text-muted mt-2">Первый вариант — самый близкий к потребности. Tip 11 — одиночная панель, Tip 22 — двойная (компактнее по длине).</p>`);
+}
+function initEngineeringModules(){ try{ hvHydroCalc(); hvFloorCalc(); hvTankCalc(); hvPanelCalc(); }catch(e){ console.warn('HVAC modules init:',e); } }
+
+/* ════════════════════════════════════════════════════════════
    SELF-TEST — регрессионная самопроверка ядра computeRoom.
    Эталон qW закреплён по ФАКТИЧЕСКОМУ методу кода (конверт 0.17 + homog 0.85 +
    β ориентации + угловая надбавка 1.05 + инфильтрация с ρ(t)+ACH), НЕ по α-конверту.
@@ -9373,6 +9863,22 @@ function runSelfTest(){
     const dN=mkRoom([{id:'dN',type:'door',side:'top',pos:50,w:1,h:2.1,count:1,doorType:'double'}]); fl.rooms=[dN];
     const rDN=computeRoom(dN,fl,0,0,tExt,[dN]);
     ok('β двери (double +0.34) увеличивает потерю двери', rDN.breakdown.door>rD0.breakdown.door, `none=${rD0.breakdown.door.toFixed(0)} → double=${rDN.breakdown.door.toFixed(0)} Вт`);
+
+    /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
+    const fr=flowRate(193,20,80);
+    ok('Расход G=Q/(1.163·Δt): 193 Вт / Δt20 ≈ 8.30 кг/ч', approx(fr.kgh,8.30,0.01), `G=${fr.kgh.toFixed(2)} кг/ч = ${fr.m3h.toFixed(4)} м³/ч`);
+    const vel=pipeVelocity(fr.m3h,12);
+    ok('Скорость в Ø12: ≈ 0.021 м/с', approx(vel,0.021,0.06), `v=${vel.toFixed(3)} м/с`);
+    const pl=pressureLoss(193,12,10,10,20,80);
+    ok('Потери давления > 0 и в ламинарном режиме (Re<2300)', pl.pa>0 && pl.regime==='lam', `ΔP=${pl.pa.toFixed(1)} Па = ${pl.mWater.toFixed(4)} м, Re=${pl.Re.toFixed(0)}`);
+    const fq=floorQ('laminate',150,40,22);
+    ok('Тёплый пол q (ламинат, шаг150, t_ср40, комн22): ≈ 60.7 Вт/м²', approx(fq,60.7,0.03), `q=${fq.toFixed(1)} Вт/м²`);
+    const et=expansionTank(100,0.10);
+    ok('Расш. бак: 100 л × 0.10 = 10 л → станд. 12 л', et.vTank===10 && et.recommended===12, `V=${et.vTank} л → ${et.recommended} л`);
+    const po=panelOutput(11,500,1000,60);
+    ok('Панель Tip11 H500 L1000 при Δt60: ≈ 659 Вт', approx(po,659,0.02), `W=${po.toFixed(0)} Вт`);
+    const aps=autoSelectPanels(600,20);
+    ok('Автоподбор панелей: есть варианты с покрытием ≥100%', aps.length>0 && aps[0].cover>=100, `вариантов=${aps.length}, лучший=${aps[0]?aps[0].cover+'%':'—'}`);
   }catch(e){ ok('Без исключений', false, e&&e.message); }
   finally{ Object.assign(ST, JSON.parse(snap)); }
 
@@ -9515,7 +10021,7 @@ function canProceed(){
       case 1: return !!ST.cityId || ST.tExtManual!=null;
       case 2: return !!(ST.mat.wallId&&ST.mat.floorId&&ST.mat.ceilingId);
       case 3: return ST.simpleRoomCount>=1;
-      case 4: return simpleRoomValid(ST.simpleRoomIdx);
+      case 4: return ST.simpleRooms.every((_,i)=>simpleRoomValid(i));
       default: return true;
     }
   }
@@ -9539,8 +10045,7 @@ function updateNavHint(){
   } else { el.textContent=''; nb.style.opacity='1'; nb.style.cursor='pointer'; }
   const N=ST.calcMode==='simple'?5:STEP_TITLES.length;
   if(ST.calcMode==='simple'){
-    if(ST.step===4 && ST.simpleRoomIdx<ST.simpleRoomCount-1) label.textContent=t('next');
-    else if(ST.step===4) label.textContent=t('calculate');
+    if(ST.step===4) label.textContent=t('calculate');
     else if(ST.step===N) label.textContent=t('new-calc');
     else label.textContent=t('next');
   } else {
@@ -9565,13 +10070,9 @@ function wizNext(){
     setTimeout(()=>openAuth('register'),400);
     return;
   }
-  // Simple mode: step 3 → init rooms; step 4 → room-by-room navigation
+  // Simple mode: step 3 → init rooms
   if(ST.calcMode==='simple'){
-    if(ST.step===3){ initSimpleRooms(); ST.simpleRoomIdx=0; }
-    if(ST.step===4 && ST.simpleRoomIdx<ST.simpleRoomCount-1){
-      ST.simpleRoomIdx++;
-      transitionStep(1); updateNavHint(); return;
-    }
+    if(ST.step===3){ initSimpleRooms(); }
     const N=5;
     if(ST.step===N){ wizReset(); return; }
     trackEvent('step_'+ST.step);
@@ -9593,9 +10094,6 @@ function wizNext(){
   }
 }
 function wizBack(){
-  if(ST.calcMode==='simple' && ST.step===4 && ST.simpleRoomIdx>0){
-    ST.simpleRoomIdx--; transitionStep(-1); updateNavHint(); return;
-  }
   if(ST.step<=1) return;
   ST.step--; renderProgress(); transitionStep(-1); updateNavHint(); updateLivePanel();
 }
@@ -9764,10 +10262,12 @@ function setSimpleRoomCount(n){
 }
 
 /* --- Simple step helpers --- */
+let _srFocusRoom=0;
 function srSetType(i,typeId){
   const rt=ROOM_TYPES.find(x=>x.id===typeId);
   const r=ST.simpleRooms[i]; if(!r) return;
   r.typeId=typeId; r.tInt=rt?rt.t:20;
+  _srFocusRoom=i;
   const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); updateNavHint();
 }
 function srToggleWall(i,dir){
@@ -9775,6 +10275,7 @@ function srToggleWall(i,dir){
   const idx=r.extWalls.indexOf(dir);
   if(idx>=0) r.extWalls.splice(idx,1); else r.extWalls.push(dir);
   if(r.doors&&r.doors.dir&&!r.extWalls.includes(r.doors.dir)&&r.extWalls.length>0) r.doors.dir=r.extWalls[0];
+  _srFocusRoom=i;
   const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); updateNavHint();
 }
 function srSetDim(i,field,val){
@@ -9787,13 +10288,29 @@ function srSetWin(i,dir,field,val){
   const r=ST.simpleRooms[i]; if(!r) return;
   if(!r.windows[dir]) r.windows[dir]={count:0,w:1.2,h:1.4};
   r.windows[dir][field]=field==='count'?Math.max(0,Math.round(+val||0)):Math.max(0.1,parseFloat(val)||1);
-  if(field==='count'){ const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); }
+  if(field==='count'){ _srFocusRoom=i; const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); }
 }
 function srSetDoor(i,field,val){
   const r=ST.simpleRooms[i]; if(!r) return;
   if(!r.doors) r.doors={count:0,w:0.9,h:2.1,dir:'N',doorType:'none'};
   r.doors[field]=field==='count'?Math.max(0,Math.round(+val||0)):val;
-  if(field==='count'){ const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); }
+  if(field==='count'){ _srFocusRoom=i; const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); }
+}
+function srAddRoom(){
+  ST.simpleRoomCount++;
+  initSimpleRooms();
+  _srFocusRoom=ST.simpleRoomCount-1;
+  const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4();
+  updateNavHint();
+  setTimeout(()=>{const d=document.querySelectorAll('#step-panel details');if(d.length)d[d.length-1].scrollIntoView({behavior:'smooth',block:'start'});},50);
+}
+function srDeleteRoom(i){
+  if(ST.simpleRooms.length<=1) return;
+  ST.simpleRooms.splice(i,1);
+  ST.simpleRoomCount=ST.simpleRooms.length;
+  _srFocusRoom=Math.min(_srFocusRoom,ST.simpleRoomCount-1);
+  const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4();
+  updateNavHint();
 }
 
 /* --- Simple step renders --- */
@@ -9833,151 +10350,169 @@ function sSimple3(){
 }
 
 function sSimple4(){
-  const i=ST.simpleRoomIdx;
-  if(!ST.simpleRooms[i]) initSimpleRooms();
-  const r=ST.simpleRooms[i];
-  const M=ST.simpleRoomCount;
+  if(!ST.simpleRooms||!ST.simpleRooms.length) initSimpleRooms();
   const dirs=['N','S','E','W'];
   const dl={N:t('simple-dir-N'),S:t('simple-dir-S'),E:t('simple-dir-E'),W:t('simple-dir-W')};
-  if(!r.wallLengths) r.wallLengths={N:r.width,S:r.width,E:r.length,W:r.length};
-  if(!r.windows) r.windows={N:{count:1,w:1.2,h:1.4},S:{count:0,w:1.2,h:1.4},E:{count:0,w:1.2,h:1.4},W:{count:0,w:1.2,h:1.4}};
-  if(!r.doors) r.doors={count:0,w:0.9,h:2.1,dir:'N',doorType:'none'};
 
-  const rtBtns=ROOM_TYPES.slice(0,10).map(rt=>`
-    <button type="button" onclick="srSetType(${i},'${rt.id}')"
-      class="rounded-lg border py-1.5 px-2.5 text-xs font-semibold transition-colors ${r.typeId===rt.id?'border-amber bg-amber/15 text-amber':'border-sand/15 bg-w800/50 text-sand'}">${_pick(rt,'name','nameUz','nameEn')}</button>`).join('');
+  const cards=ST.simpleRooms.map((r,i)=>{
+    if(!r.wallLengths) r.wallLengths={N:r.width,S:r.width,E:r.length,W:r.length};
+    if(!r.windows) r.windows={N:{count:1,w:1.2,h:1.4},S:{count:0,w:1.2,h:1.4},E:{count:0,w:1.2,h:1.4},W:{count:0,w:1.2,h:1.4}};
+    if(!r.doors) r.doors={count:0,w:0.9,h:2.1,dir:'N',doorType:'none'};
 
-  const wallBtns=dirs.map(d=>`
-    <button type="button" onclick="srToggleWall(${i},'${d}')"
-      class="rounded-lg border py-2 px-3 text-sm font-bold transition-colors ${r.extWalls.includes(d)?'border-amber bg-amber/15 text-amber':'border-sand/15 bg-w800/50 text-sand'}">${dl[d]}</button>`).join('');
+    const rtBtns=ROOM_TYPES.slice(0,10).map(rt=>`
+      <button type="button" onclick="srSetType(${i},'${rt.id}')"
+        class="rounded-lg border py-1.5 px-2.5 text-xs font-semibold transition-colors ${r.typeId===rt.id?'border-amber bg-amber/15 text-amber':'border-sand/15 bg-w800/50 text-sand'}">${_pick(rt,'name','nameUz','nameEn')}</button>`).join('');
 
-  const wallLenRows=(r.extWalls||[]).map(d=>`
-    <div class="flex items-center gap-2">
-      <span class="text-xs text-sand w-28 flex-shrink-0">${dl[d]}</span>
-      <input type="number" class="wi w-20 py-1.5 text-sm text-center" min="0.5" max="100" step="0.1"
-        value="${(r.wallLengths[d]||((['N','S'].includes(d)?r.width:r.length)||4)).toFixed(1)}"
-        oninput="srSetWallLen(${i},'${d}',+this.value)">
-      <span class="text-xs text-muted">м</span>
-    </div>`).join('');
+    const wallBtns=dirs.map(d=>`
+      <button type="button" onclick="srToggleWall(${i},'${d}')"
+        class="rounded-lg border py-2 px-3 text-sm font-bold transition-colors ${r.extWalls.includes(d)?'border-amber bg-amber/15 text-amber':'border-sand/15 bg-w800/50 text-sand'}">${dl[d]}</button>`).join('');
 
-  const winRows=(r.extWalls||[]).map(d=>{
-    const w=r.windows[d]||{count:0,w:1.2,h:1.4};
-    return `<div class="flex items-center gap-2 flex-wrap">
-      <span class="text-xs text-sand w-28 flex-shrink-0">${dl[d]}</span>
-      <div class="flex items-center gap-1.5">
-        <span class="text-xs text-muted">кол.</span>
-        <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0" max="20" step="1"
-          value="${w.count||0}" oninput="srSetWin(${i},'${d}','count',+this.value)">
-      </div>
-      ${(w.count||0)>0?`<div class="flex items-center gap-1">
-        <span class="text-xs text-muted">Ш</span>
-        <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0.3" max="5" step="0.05"
-          value="${w.w||1.2}" oninput="srSetWin(${i},'${d}','w',+this.value)">
-        <span class="text-xs text-muted">×В</span>
-        <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0.3" max="3" step="0.05"
-          value="${w.h||1.4}" oninput="srSetWin(${i},'${d}','h',+this.value)">
-        <span class="text-xs text-muted">м</span>
-      </div>`:''}
-    </div>`;}).join('');
-
-  const dTypeOpts=Object.entries(BETA_DOOR).map(([id,o])=>`<option value="${id}" ${(r.doors.doorType||'none')===id?'selected':''}>${o.name}</option>`).join('');
-  const dDirOpts=(r.extWalls||[]).map(d=>`<option value="${d}" ${(r.doors.dir||'N')===d?'selected':''}>${dl[d]}</option>`).join('');
-
-  return `<div class="mb-5">
-    <div class="flex items-center justify-between mb-1.5">
-      <span class="text-xs font-semibold uppercase tracking-widest text-amber/70">${t('simple-room-n-of-m').replace('{n}',i+1).replace('{m}',M)}</span>
-      <span class="text-xs text-muted">${i+1} / ${M}</span>
-    </div>
-    <div class="h-1.5 rounded-full bg-sand/10"><div class="h-1.5 rounded-full bg-amber transition-all" style="width:${((i+1)/M)*100}%"></div></div>
-  </div>
-
-  <div class="space-y-5">
-    <div>
-      <label class="block text-xs font-semibold text-sand mb-1.5">Название <span class="text-muted font-normal">(необязательно)</span></label>
-      <input class="wi" type="text" maxlength="40" placeholder="${t('simple-room-name-ph').replace('{n}',i+1)}"
-        value="${r.name||''}" oninput="ST.simpleRooms[${i}].name=this.value">
-    </div>
-
-    <div>
-      <label class="block text-xs font-semibold text-sand mb-2">${t('rre-room-type-label')}</label>
-      <div class="flex flex-wrap gap-1.5">${rtBtns}</div>
-      <div class="mt-2 flex items-center gap-2">
-        <span class="text-xs text-muted">t внутр.</span>
-        <input type="number" class="wi w-20 py-1.5 text-sm text-center" min="5" max="35" step="1"
-          value="${r.tInt||20}" oninput="ST.simpleRooms[${i}].tInt=Math.max(5,Math.min(35,+this.value||20))">
-        <span class="text-xs text-muted">°C</span>
-      </div>
-    </div>
-
-    <div>
-      <label class="block text-xs font-semibold text-sand mb-2">Размеры помещения</label>
-      <div class="grid grid-cols-3 gap-3">
-        <div><label class="block text-[11px] text-muted mb-1">Длина, м</label>
-          <input type="number" class="wi py-2 text-sm text-center" min="1" max="100" step="0.1"
-            value="${r.length||5}" oninput="srSetDim(${i},'length',+this.value)"></div>
-        <div><label class="block text-[11px] text-muted mb-1">Ширина, м</label>
-          <input type="number" class="wi py-2 text-sm text-center" min="1" max="100" step="0.1"
-            value="${r.width||4}" oninput="srSetDim(${i},'width',+this.value)"></div>
-        <div><label class="block text-[11px] text-muted mb-1">Высота, м</label>
-          <input type="number" class="wi py-2 text-sm text-center" min="1.8" max="12" step="0.1"
-            value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7)"></div>
-      </div>
-    </div>
-
-    <div>
-      <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-ext-walls')} <span class="text-xs text-muted font-normal">(минимум одна)</span></label>
-      <div class="flex gap-2 flex-wrap">${wallBtns}</div>
-      ${r.extWalls.length?`<div class="mt-3 space-y-2">
-        <p class="text-[11px] text-muted">${t('simple-wall-len')}</p>${wallLenRows}</div>`:''}
-    </div>
-
-    ${r.extWalls.length?`
-    <div>
-      <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-windows')}</label>
-      <div class="space-y-3">${winRows}</div>
-    </div>
-
-    <div>
-      <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-doors')}</label>
+    const wallLenRows=(r.extWalls||[]).map(d=>`
       <div class="flex items-center gap-2">
-        <span class="text-xs text-muted">${t('simple-door-count')}</span>
-        <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="0" max="10" step="1"
-          value="${r.doors.count||0}" oninput="srSetDoor(${i},'count',+this.value)">
-      </div>
-      ${(r.doors.count||0)>0?`<div class="mt-2 space-y-2">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs text-muted">Ш</span>
-          <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="0.6" max="3" step="0.05"
-            value="${r.doors.w||0.9}" oninput="srSetDoor(${i},'w',+this.value)">
-          <span class="text-xs text-muted">× В</span>
-          <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="1.5" max="4" step="0.05"
-            value="${r.doors.h||2.1}" oninput="srSetDoor(${i},'h',+this.value)">
-          <span class="text-xs text-muted">м</span>
-        </div>
-        ${r.extWalls.length>1?`<div class="flex items-center gap-2">
-          <span class="text-xs text-muted">${t('simple-door-dir')}</span>
-          <select class="wi py-1.5 text-sm" onchange="srSetDoor(${i},'dir',this.value)">${dDirOpts}</select>
-        </div>`:''}
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-muted">${t('simple-door-type-lbl')}</span>
-          <select class="wi py-1.5 text-sm" onchange="srSetDoor(${i},'doorType',this.value)">${dTypeOpts}</select>
-        </div>
-      </div>`:''}
-    </div>`:''}
+        <span class="text-xs text-sand w-28 flex-shrink-0">${dl[d]}</span>
+        <input type="number" class="wi w-20 py-1.5 text-sm text-center" min="0.5" max="100" step="0.1"
+          value="${(r.wallLengths[d]||((['N','S'].includes(d)?r.width:r.length)||4)).toFixed(1)}"
+          oninput="srSetWallLen(${i},'${d}',+this.value)">
+        <span class="text-xs text-muted">м</span>
+      </div>`).join('');
 
-    <div class="space-y-2.5 pt-1 border-t border-sand/10">
-      <label class="flex items-center gap-2.5 cursor-pointer select-none">
-        <input type="checkbox" class="accent-amber" ${r.is_ground?'checked':''}
-          onchange="ST.simpleRooms[${i}].is_ground=this.checked">
-        <span class="text-sm text-cream">${t('simple-room-ground')}</span>
-      </label>
-      <label class="flex items-center gap-2.5 cursor-pointer select-none">
-        <input type="checkbox" class="accent-amber" ${r.is_top?'checked':''}
-          onchange="ST.simpleRooms[${i}].is_top=this.checked">
-        <span class="text-sm text-cream">${t('simple-room-top')}</span>
-      </label>
-    </div>
-  </div>`;
+    const winRows=(r.extWalls||[]).map(d=>{
+      const w=r.windows[d]||{count:0,w:1.2,h:1.4};
+      return `<div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs text-sand w-28 flex-shrink-0">${dl[d]}</span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-muted">кол.</span>
+          <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0" max="20" step="1"
+            value="${w.count||0}" oninput="srSetWin(${i},'${d}','count',+this.value)">
+        </div>
+        ${(w.count||0)>0?`<div class="flex items-center gap-1">
+          <span class="text-xs text-muted">Ш</span>
+          <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0.3" max="5" step="0.05"
+            value="${w.w||1.2}" oninput="srSetWin(${i},'${d}','w',+this.value)">
+          <span class="text-xs text-muted">×В</span>
+          <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0.3" max="3" step="0.05"
+            value="${w.h||1.4}" oninput="srSetWin(${i},'${d}','h',+this.value)">
+          <span class="text-xs text-muted">м</span>
+        </div>`:''}
+      </div>`;}).join('');
+
+    const dTypeOpts=Object.entries(BETA_DOOR).map(([id,o])=>`<option value="${id}" ${(r.doors.doorType||'none')===id?'selected':''}>${o.name}</option>`).join('');
+    const dDirOpts=(r.extWalls||[]).map(d=>`<option value="${d}" ${(r.doors.dir||'N')===d?'selected':''}>${dl[d]}</option>`).join('');
+    const rt=ROOM_TYPES.find(x=>x.id===r.typeId);
+    const rLabel=r.name||(rt?_pick(rt,'name','nameUz','nameEn'):'')||t('simple-room-name-ph').replace('{n}',i+1);
+    const isOpen=i===_srFocusRoom;
+    const hasErr=!simpleRoomValid(i);
+
+    return `<details ${isOpen?'open':''} ontoggle="if(this.open)_srFocusRoom=${i}" class="rounded-2xl border ${hasErr?'border-ember/30':'border-sand/10'} bg-w850/40 mb-3 overflow-hidden">
+      <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-amber/15 text-amber text-xs font-bold">${i+1}</span>
+          <span class="text-sm font-semibold text-cream truncate">${rLabel}</span>
+          ${hasErr?'<span class="flex-shrink-0 text-[10px] font-bold text-ember bg-ember/10 rounded-full px-2 py-0.5">!</span>':''}
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          ${ST.simpleRooms.length>1?`<button type="button" onclick="event.preventDefault();event.stopPropagation();srDeleteRoom(${i})"
+            class="text-muted hover:text-ember transition-colors text-sm leading-none px-1.5 py-0.5 rounded border border-sand/10 hover:border-ember/30">×</button>`:''}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="h-4 w-4 text-muted transition-transform"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </summary>
+      <div class="px-4 pb-4 pt-4 space-y-5 border-t border-sand/10">
+        <div>
+          <label class="block text-xs font-semibold text-sand mb-1.5">Название <span class="text-muted font-normal">(необязательно)</span></label>
+          <input class="wi" type="text" maxlength="40" placeholder="${t('simple-room-name-ph').replace('{n}',i+1)}"
+            value="${r.name||''}" oninput="ST.simpleRooms[${i}].name=this.value">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sand mb-2">${t('rre-room-type-label')}</label>
+          <div class="flex flex-wrap gap-1.5">${rtBtns}</div>
+          <div class="mt-2 flex items-center gap-2">
+            <span class="text-xs text-muted">t внутр.</span>
+            <input type="number" class="wi w-20 py-1.5 text-sm text-center" min="5" max="35" step="1"
+              value="${r.tInt||20}" oninput="ST.simpleRooms[${i}].tInt=Math.max(5,Math.min(35,+this.value||20))">
+            <span class="text-xs text-muted">°C</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sand mb-2">Размеры помещения</label>
+          <div class="grid grid-cols-3 gap-2 min-w-0">
+            <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">Длина, м</label>
+              <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1" max="100" step="0.1"
+                value="${r.length||5}" oninput="srSetDim(${i},'length',+this.value)"></div>
+            <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">Ширина, м</label>
+              <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1" max="100" step="0.1"
+                value="${r.width||4}" oninput="srSetDim(${i},'width',+this.value)"></div>
+            <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">Высота, м</label>
+              <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1.8" max="12" step="0.1"
+                value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7)"></div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-ext-walls')} <span class="text-xs text-muted font-normal">(минимум одна)</span></label>
+          <div class="flex gap-2 flex-wrap">${wallBtns}</div>
+          ${r.extWalls.length?`<div class="mt-3 space-y-2">
+            <p class="text-[11px] text-muted">${t('simple-wall-len')}</p>${wallLenRows}</div>`:''}
+        </div>
+
+        ${r.extWalls.length?`
+        <div>
+          <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-windows')}</label>
+          <div class="space-y-3">${winRows}</div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-doors')}</label>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted">${t('simple-door-count')}</span>
+            <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="0" max="10" step="1"
+              value="${r.doors.count||0}" oninput="srSetDoor(${i},'count',+this.value)">
+          </div>
+          ${(r.doors.count||0)>0?`<div class="mt-2 space-y-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-muted">Ш</span>
+              <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="0.6" max="3" step="0.05"
+                value="${r.doors.w||0.9}" oninput="srSetDoor(${i},'w',+this.value)">
+              <span class="text-xs text-muted">× В</span>
+              <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="1.5" max="4" step="0.05"
+                value="${r.doors.h||2.1}" oninput="srSetDoor(${i},'h',+this.value)">
+              <span class="text-xs text-muted">м</span>
+            </div>
+            ${r.extWalls.length>1?`<div class="flex items-center gap-2">
+              <span class="text-xs text-muted">${t('simple-door-dir')}</span>
+              <select class="wi py-1.5 text-sm" onchange="srSetDoor(${i},'dir',this.value)">${dDirOpts}</select>
+            </div>`:''}
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-muted">${t('simple-door-type-lbl')}</span>
+              <select class="wi py-1.5 text-sm" onchange="srSetDoor(${i},'doorType',this.value)">${dTypeOpts}</select>
+            </div>
+          </div>`:''}
+        </div>`:''}
+
+        <div class="space-y-2.5 pt-1 border-t border-sand/10">
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" class="accent-amber" ${r.is_ground?'checked':''}
+              onchange="ST.simpleRooms[${i}].is_ground=this.checked">
+            <span class="text-sm text-cream">${t('simple-room-ground')}</span>
+          </label>
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" class="accent-amber" ${r.is_top?'checked':''}
+              onchange="ST.simpleRooms[${i}].is_top=this.checked">
+            <span class="text-sm text-cream">${t('simple-room-top')}</span>
+          </label>
+        </div>
+      </div>
+    </details>`;
+  }).join('');
+
+  return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
+  <p class="text-sm text-muted mb-4">Заполните каждое помещение. Нажмите на заголовок чтобы раскрыть.</p>
+  ${cards}
+  <button type="button" onclick="srAddRoom()"
+    class="mt-1 w-full rounded-2xl border border-dashed border-amber/30 bg-amber/5 py-3 text-sm font-semibold text-amber hover:bg-amber/10 transition-colors">
+    + Добавить комнату
+  </button>`;
 }
 
 function sSimple5(){ return s6(); }
@@ -14332,6 +14867,7 @@ function s6(){
   const sc=buildScenario();
   const dKw=(((sc.imp.totalKw-sc.cur.totalKw)/sc.cur.totalKw)*100).toFixed(0)+'%';
   const impBoiler=recommendBoiler(sc.imp.boilerKw);
+  const isMax=aqHasMax();
 
   setTimeout(()=>{
     ['r-kw','r-boiler','r-secs','r-area'].forEach(id=>{
@@ -14339,16 +14875,21 @@ function s6(){
       const target=parseFloat(el.dataset.target), dec=parseInt(el.dataset.dec)||0;
       const obj={v:0}; gsap.to(obj,{v:target,duration:1.2,ease:'power3.out',delay:.15,onUpdate(){el.textContent=obj.v.toFixed(dec);}});
     });
-    updatePayback();
+    if(isMax) updatePayback();
   },40);
-  setTimeout(()=>initThermalSuite(res),80);
-  setTimeout(()=>drawHeatDonut(res),180);
-  setTimeout(()=>initThermalScore(),120);
+  if(isMax){
+    setTimeout(()=>initThermalSuite(res),80);
+    setTimeout(()=>drawHeatDonut(res),180);
+    setTimeout(()=>initThermalScore(),120);
+  }
   setTimeout(()=>fireThermalConfetti(),500);
   setTimeout(()=>initStickyResultsBar(res),350);
-  setTimeout(()=>initInsulSlider(),400);
-  setTimeout(()=>{ initMonthBarAnim(); initBenchBars(); initRoomHeatBars(); initThermalFloorPlan(); },450);
-  setTimeout(()=>{ initFuelCompareBars(); },1400);
+  setTimeout(()=>initEngineeringModules(),120);
+  if(isMax){
+    setTimeout(()=>initInsulSlider(),400);
+    setTimeout(()=>{ initMonthBarAnim(); initBenchBars(); initRoomHeatBars(); initThermalFloorPlan(); },450);
+    setTimeout(()=>{ initFuelCompareBars(); },1400);
+  }
 
   const byTypeRows=Object.entries(res.byType).filter(([k,v])=>v>0).map(([k,v])=>`
     <tr><td class="text-sand">${TYPE[k]||k}</td><td class="r mono text-cream">${Math.round(v)}</td><td class="r mono text-muted">${((v/res.totalW)*100).toFixed(1)}%</td></tr>`).join('');
@@ -14394,21 +14935,15 @@ function s6(){
     </div>
   </div>
 
-  <div class="info-card">
+  ${isMax?`<div class="info-card">
     <p class="text-sm leading-relaxed text-cream">Ваш объект теряет <b class="text-amber">${res.totalKw.toFixed(1)} кВт</b> тепла в самый холодный день — это примерно как <b class="text-amber">${ip.heaters} электрообогревател${ip.heaters%10===1&&ip.heaters%100!==11?'ь':'я'}</b> по 2 кВт на полной мощности.</p>
     <p class="mt-2 text-sm leading-relaxed text-muted">Удельные потери — <b style="color:${ip.qcolor}">${ip.perM2.toFixed(0)} Вт/м²</b> (${ip.quality}). Для сравнения: типовая утеплённая квартира ≈ 50–70 Вт/м². Это <b class="text-cream">${ip.ratio}%</b> от мощности средней квартиры (3 кВт).</p>
   </div>
-
   ${normHtml}
-
   ${thermalScoreHTML(res)}
-
   ${benchmarkHTML(res)}
-
   ${thermalSuiteHTML(res)}
-
   ${aiAdvisorHTML(res)}
-
   <div class="flex items-center justify-between gap-3 mb-2 mt-2">
     <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/70">3D-визуализация здания</p>
     <button id="btn3d" type="button" onclick="toggle3DView()" class="px-3 py-1.5 rounded-xl text-xs font-bold border border-amber/30 text-amber hover:bg-amber/10 transition-colors">Показать 3D здание</button>
@@ -14421,20 +14956,15 @@ function s6(){
       <span style="font-size:10px;color:#4E6080;font-family:'JetBrains Mono',monospace">THREE.js r128</span>
     </div>
   </div>
-
   ${roomCardsHTML(res)}
-
   ${roomChampionsHTML(res)}
-
   ${roomHeatBarsHTML(res)}
-
   ${thermalFloorPlanHTML(res)}
-
   <h4 class="font-semibold text-cream mb-3">${t('result-floors-h4')}</h4>
   <div class="overflow-x-auto rounded-2xl border border-sand/10 mb-8">
     <table class="btable"><thead><tr><th>${t('col-room')}</th><th class="r">${t('col-area')}</th><th class="r">${t('col-loss')}</th><th class="r">${t('col-sections')}</th></tr></thead>
     <tbody>${floorsRows}<tr class="tot"><td>${t('col-total')}</td><td class="r mono">${res.totalArea.toFixed(1)} м²</td><td class="r mono">${res.totalKw.toFixed(2)} кВт</td><td class="r mono">${res.totalSections}</td></tr></tbody></table>
-  </div>
+  </div>`:''}
 
   <h4 class="font-semibold text-cream mb-3">${t('result-breakdown-h4')}</h4>
   <div class="overflow-hidden rounded-2xl border border-sand/10 mb-8">
@@ -14442,7 +14972,9 @@ function s6(){
     <tbody>${byTypeRows}<tr class="tot"><td>${t('col-total')}</td><td class="r mono">${Math.round(res.totalW)}</td><td class="r mono">100%</td></tr></tbody></table>
   </div>
 
-  <h4 class="font-semibold text-cream mb-3 flex items-center">${t('result-cost-h4')} ${tip('Ориентировочно: средняя загрузка котла 45% за отопительный сезон, тарифы Узбекистана ~2025 г. Точные суммы зависят от тарифа и режима эксплуатации.')}</h4>
+  ${engineeringModulesHTML(res)}
+
+  ${isMax?`<h4 class="font-semibold text-cream mb-3 flex items-center">${t('result-cost-h4')} ${tip('Ориентировочно: средняя загрузка котла 45% за отопительный сезон, тарифы Узбекистана ~2025 г. Точные суммы зависят от тарифа и режима эксплуатации.')}</h4>
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-4">
     ${Object.entries(cost.out).map(([k,c])=>`
       <div class="rounded-2xl border border-sand/10 bg-w850 p-4">
@@ -14452,20 +14984,15 @@ function s6(){
       </div>`).join('')}
   </div>
   <p class="text-xs text-muted mb-5">Потребление ≈ <span class="mono text-cream">${Math.round(cost.monthlyKwh).toLocaleString('ru-RU')} кВт·ч/мес</span>. Цифры ориентировочные — точный расчёт сделает специалист.</p>
-
   ${monthlyCostHTML(res)}
-
   ${fuelCompareHTML(res)}
-
   ${quickLeadCTA(res)}
-
   <h4 class="font-semibold text-cream mb-3 flex items-center">Как материал стен влияет на результат ${tip('r')}</h4>
   <div class="overflow-x-auto rounded-2xl border border-sand/10 mb-3">
     <table class="btable"><thead><tr><th>Материал стен</th><th class="r">R</th><th class="r">Теплопотери</th><th class="r">Δ к текущему</th></tr></thead>
     <tbody>${cmp.rows.map(r=>{ const d=((r.kw-cmp.curKw)/cmp.curKw*100); const ds=(d>0?'+':'')+d.toFixed(0)+'%'; return `<tr class="${r.isCur?'sub':''}"><td>${r.name}${r.isCur?' <span class="chip">текущий</span>':''}</td><td class="r mono text-muted">${r.r.toFixed(2)}</td><td class="r mono text-cream">${r.kw.toFixed(2)} кВт</td><td class="r mono ${d<-0.5?'text-green-400':d>0.5?'text-ember':'text-muted'}">${r.isCur?'—':ds}</td></tr>`; }).join('')}</tbody></table>
   </div>
   <p class="text-xs text-muted mb-8">Лучший вариант «<span class="text-cream">${cmpBest.name}</span>»: потери ≈ <span class="mono text-amber">${cmpBest.kw.toFixed(2)} кВт</span> (${(((cmpBest.kw-cmp.curKw)/cmp.curKw)*100).toFixed(0)}% к текущему). Так видно эффект утепления ещё до ремонта.</p>
-
   <h4 class="font-semibold text-cream mb-3">Сравнение: сейчас vs с утеплением</h4>
   <div class="overflow-x-auto rounded-2xl border border-sand/10 mb-3">
     <table class="btable"><thead><tr><th>Параметр</th><th class="r">Сейчас</th><th class="r">С утеплением<br><span style="font-size:9.5px;font-weight:400;color:#6b7280;font-family:JetBrains Mono,monospace">(+100мм минваты${sc.winUp?', Low-E':''})</span></th><th class="r">Эффект</th></tr></thead>
@@ -14497,7 +15024,7 @@ function s6(){
     <label class="block text-xs font-semibold text-sand mb-1.5">Стоимость утепления, сум за м² стены ${tip('Цена работ + материала за 1 м² фасада. Подставьте вашу — окупаемость пересчитается автоматически.')}</label>
     <input id="insul-price" class="wi mb-3" type="number" min="0" step="10000" value="${INSUL_PRICE_DEFAULT}" oninput="updatePayback();initInsulSlider()">
     <p id="payback-out" class="text-sm text-muted"></p>
-  </div>
+  </div>`:''}
 
   <div class="info-card">
     <h4 class="font-extrabold text-cream text-lg mb-3">Что дальше?</h4>
@@ -14517,7 +15044,20 @@ function s6(){
     </div>
   </div>
 
-  <div class="flex flex-col gap-3 sm:flex-row">
+  ${!isMax?`<div class="info-card mt-2">
+    <h4 class="font-extrabold text-cream text-base mb-2 flex items-center gap-2">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5 text-amber flex-shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+      Доступ к Telegram-боту
+    </h4>
+    <p class="text-sm text-sand mb-3">Получайте расчёты теплопотерь прямо в Telegram — отправьте параметры и бот выдаст результат за секунды.</p>
+    <a href="https://t.me/AqualityHeatLossBot" target="_blank" rel="noopener"
+       class="lg-btn inline-flex items-center gap-2 px-5 py-3 text-sm">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+      Открыть бота
+    </a>
+  </div>`:''}
+
+  ${isMax?`<div class="flex flex-col gap-3 sm:flex-row">
     <button type="button" onclick="aqSaveCalc()" class="lg-btn flex flex-1 items-center justify-center gap-2 px-5 py-3.5 text-sm font-medium">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Сохранить в кабинет
@@ -14562,6 +15102,7 @@ function s6(){
       <div class="px-5 pb-4 text-sm text-sand leading-relaxed">${a}</div>
     </details>`).join('')}
   </div>
+`:''}
 
   </div>`;  /* closes #result-area */
 }
