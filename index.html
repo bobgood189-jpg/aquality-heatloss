@@ -78,7 +78,14 @@
     // Контакты для оплаты (Telegram владельца) и реквизиты перевода.
     PAY_TG: 'aqualityHL',
     PAY_TG2: 'ibrokh1movv7',
-    PAY_REQUISITES: 'Карта для перевода: уточните у менеджера в Telegram'
+    PAY_REQUISITES: 'Карта для перевода: уточните у менеджера в Telegram',
+    // Реквизиты оплаты (заполните или оставьте пустыми — пользователь увидит «уточните у менеджера»)
+    PAY_CARD_HUMO:   '',    // '9860 XXXX XXXX XXXX'
+    PAY_CARD_UZCARD: '',    // '8600 XXXX XXXX XXXX'
+    PAY_CARD_VISA:   '',    // '4XXX XXXX XXXX XXXX'
+    PAY_CARD_MASTER: '',    // '5XXX XXXX XXXX XXXX'
+    PAY_PAYPAL:      '',    // 'your@paypal.email'
+    PAY_CARD_SBP:    ''     // '+7 XXX XXX-XX-XX (Тинькофф)'
   };
 </script>
 <!-- Supabase JS подгружается ДИНАМИЧЕСКИ и только если заданы ключи (см. loadSupabaseLib).
@@ -237,13 +244,17 @@ section#calculator{
 }
 
 /* Auth */
-[data-theme="light"] #auth-overlay{background:rgba(238,242,250,.96)}
-[data-theme="light"] #auth-card{
-  background:var(--aq-auth-card);border-color:rgba(217,119,6,.25);
-  box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 28px 80px rgba(60,35,10,.2)
-}
+[data-theme="light"] #auth-overlay{background:radial-gradient(ellipse 90% 70% at 15% 20%,rgba(37,99,235,.04) 0%,transparent 55%),rgba(238,242,250,.97)}
+[data-theme="light"] #auth-card{background:linear-gradient(160deg,rgba(255,255,255,.99),rgba(240,245,255,.97));border-color:rgba(217,119,6,.25);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 28px 80px rgba(60,35,10,.18)}
+[data-theme="light"] .auth-brand{border-color:rgba(0,0,0,.06)}
+[data-theme="light"] .auth-tabs-wrap{background:rgba(215,222,240,.55);border-color:rgba(0,0,0,.07)}
 [data-theme="light"] .auth-tab:not(.active){color:var(--aq-muted)}
-[data-theme="light"] .auth-tab.active{background:rgba(217,119,6,.12);border-color:rgba(217,119,6,.4);color:var(--aq-accent)}
+[data-theme="light"] .auth-tab.active{background:linear-gradient(135deg,rgba(217,119,6,.15),rgba(249,115,22,.08));color:var(--aq-accent);box-shadow:0 1px 0 rgba(255,255,255,.5) inset}
+[data-theme="light"] .auth-close-btn{color:rgba(100,116,139,.45)}
+[data-theme="light"] .auth-close-btn:hover{color:rgba(51,65,85,.8);background:rgba(0,0,0,.05)}
+[data-theme="light"] .auth-lbl{color:rgba(71,85,105,.65)}
+[data-theme="light"] .auth-field-icon{color:rgba(100,116,139,.4)}
+[data-theme="light"] .auth-field-wrap:focus-within .auth-field-icon{color:var(--aq-accent)}
 
 /* Buttons */
 [data-theme="light"] .lg-btn{
@@ -472,8 +483,9 @@ section#calculator{
 [data-theme="light"] .ctype-btn{
   background:rgba(255,255,255,.75)!important;border-color:var(--aq-border)!important
 }
+[data-theme="light"] .ctype-btn{background:rgba(255,255,255,.8)!important;border-color:rgba(0,0,0,.1)!important}
 [data-theme="light"] .ctype-btn:hover{border-color:rgba(217,119,6,.35)!important;background:rgba(254,243,199,.4)!important}
-[data-theme="light"] .ctype-btn.active{border-color:var(--aq-accent)!important;background:rgba(254,243,199,.7)!important}
+[data-theme="light"] .ctype-btn.active{border-color:var(--aq-accent)!important;background:rgba(254,243,199,.7)!important;box-shadow:0 0 0 1px rgba(217,119,6,.18)}
 
 *,*::before,*::after{box-sizing:border-box}
 /* Native smooth-scroll ТОЛЬКО когда Lenis выключен (reduced-motion).
@@ -801,16 +813,28 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 /* ══════════════════════════════════════════════
    AUTH OVERLAY
 ══════════════════════════════════════════════ */
-#auth-overlay{position:fixed;inset:0;z-index:210;background:rgba(10,7,5,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
+#auth-overlay{position:fixed;inset:0;z-index:210;background:radial-gradient(ellipse 90% 70% at 15% 20%,rgba(37,99,235,.07) 0%,transparent 55%),radial-gradient(ellipse 70% 60% at 85% 80%,rgba(245,158,11,.05) 0%,transparent 50%),rgba(6,9,18,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
 #auth-overlay.open{display:flex}
-#auth-card{width:100%;max-width:480px;border-radius:1.5rem;border:1px solid rgba(245,158,11,.2);background:linear-gradient(155deg,rgba(17,24,39,.97),rgba(11,15,26,.93));backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);padding:2rem;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 28px 80px rgba(0,0,0,.7),0 0 50px rgba(245,158,11,.05);margin:auto}
-.auth-tab{flex:1;padding:.58rem;border-radius:.75rem;border:1px solid transparent;font-size:.87rem;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;background:none}
-.auth-tab.active{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1);color:#ffd27a}
-.auth-tab:not(.active){color:#9a8675}
-.auth-tab:not(.active):hover{color:#d9c7b4;background:rgba(255,255,255,.04)}
-.ctype-btn{cursor:pointer;border-radius:.9rem;border:1.5px solid rgba(217,199,180,.1);background:rgba(26,22,16,.85);padding:.75rem;transition:all .2s;text-align:left;width:100%}
-.ctype-btn:hover{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.07)}
-.ctype-btn.active{border-color:#f59e0b!important;background:rgba(245,158,11,.11)!important}
+#auth-card{width:100%;max-width:520px;border-radius:1.25rem;border:1px solid rgba(245,158,11,.15);background:linear-gradient(160deg,rgba(13,18,32,.99) 0%,rgba(8,11,22,.98) 100%);backdrop-filter:blur(32px) saturate(160%);-webkit-backdrop-filter:blur(32px) saturate(160%);padding:0;overflow:hidden;box-shadow:0 2px 0 rgba(255,255,255,.04) inset,0 32px 96px rgba(0,0,0,.75),0 0 60px rgba(245,158,11,.04);margin:auto;animation:authCardIn .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes authCardIn{from{transform:translateY(16px) scale(.965);opacity:0}to{transform:none;opacity:1}}
+.auth-thermal-bar{height:3px;width:100%;background:linear-gradient(90deg,#2563EB 0%,#60A5FA 25%,#94A3B8 45%,#F59E0B 72%,#F97316 100%);animation:thermalPulse 3s ease-in-out infinite alternate}
+@keyframes thermalPulse{from{opacity:.6}to{opacity:1}}
+.auth-brand{padding:1.4rem 1.75rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.auth-body-pad{padding:1.6rem 1.75rem 2rem}
+.auth-close-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:.5rem;transition:all .15s;background:none;border:none;cursor:pointer;color:rgba(148,163,184,.35);flex-shrink:0}
+.auth-close-btn:hover{color:rgba(203,213,225,.75);background:rgba(255,255,255,.06)}
+.auth-tabs-wrap{display:flex;background:rgba(6,9,18,.7);border:1px solid rgba(255,255,255,.06);border-radius:.875rem;padding:3px;margin-bottom:1.4rem}
+.auth-tab{flex:1;padding:.52rem;border-radius:.7rem;border:none;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .22s cubic-bezier(.2,.8,.2,1);text-align:center;background:none;color:rgba(148,163,184,.5)}
+.auth-tab.active{background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(249,115,22,.12));color:#FCD34D;box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 2px 10px rgba(0,0,0,.5)}
+.auth-tab:not(.active):hover{color:rgba(203,213,225,.75);background:rgba(255,255,255,.04)}
+.auth-field-wrap{position:relative}
+.auth-field-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:rgba(100,116,139,.45);width:15px;height:15px;pointer-events:none;transition:color .15s;flex-shrink:0}
+.auth-field-wrap:focus-within .auth-field-icon{color:#F59E0B}
+.auth-field-wrap .wi{padding-left:2.5rem}
+.auth-lbl{display:block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(148,163,184,.6);margin-bottom:.38rem}
+.ctype-btn{cursor:pointer;border-radius:.75rem;border:1px solid rgba(148,163,184,.1);background:rgba(8,11,22,.6);padding:.6rem .875rem;transition:all .2s;text-align:left;width:100%}
+.ctype-btn:hover{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
+.ctype-btn.active{border-color:rgba(245,158,11,.55)!important;background:rgba(245,158,11,.1)!important;box-shadow:0 0 0 1px rgba(245,158,11,.12)}
 
 /* ══════════════════════════════════════════════
    USER NAV / DROPDOWN
@@ -2015,12 +2039,20 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 <!-- ═══════ AUTH OVERLAY ═══════ -->
 <div id="auth-overlay" data-lenis-prevent>
   <div id="auth-card">
-    <div class="flex items-center justify-center gap-2 mb-6">
-      <span class="text-xl font-extrabold text-cream">Aquality</span>
-      <span class="text-amber font-bold text-xl">|</span>
-      <span class="text-xl font-extrabold text-cream">WaterPro</span>
+    <div class="auth-thermal-bar"></div>
+    <div class="auth-brand">
+      <div class="flex items-center gap-3">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" style="flex-shrink:0"><path d="M15 2c0 7.5-7.5 9.5-7.5 16a7.5 7.5 0 0 0 15 0c0-6.5-7.5-8.5-7.5-16z" fill="rgba(245,158,11,.1)" stroke="#F59E0B" stroke-width="1.4" stroke-linejoin="round"/><path d="M15 14c0 3.5-3.5 4.5-3.5 7.5a3.5 3.5 0 0 0 7 0c0-3-3.5-4-3.5-7.5z" fill="#F59E0B" opacity=".6"/></svg>
+        <div>
+          <p class="font-extrabold text-cream leading-none" style="font-size:.92rem;letter-spacing:-.01em">Aquality <span style="color:rgba(245,158,11,.5);font-weight:300">·</span> WaterPro</p>
+          <p style="font-size:.65rem;color:rgba(148,163,184,.45);margin-top:.25rem;letter-spacing:.03em;text-transform:uppercase">Расчёт теплопотерь</p>
+        </div>
+      </div>
+      <button class="auth-close-btn" onclick="closeAuth()" aria-label="Закрыть">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
     </div>
-    <div id="auth-body"></div>
+    <div id="auth-body" class="auth-body-pad"></div>
   </div>
 </div>
 
@@ -2056,6 +2088,11 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
       <div class="adm-nav" id="adm-nav-promos" onclick="adminPage('promos')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         <span>Промокоды</span>
+      </div>
+      <div class="adm-nav" id="adm-nav-payments" onclick="adminPage('payments')" role="button" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 flex-shrink-0"><rect x="2" y="5" width="20" height="14" rx="2"/><polyline points="2 10 22 10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+        <span>Платежи</span>
+        <span id="adm-payments-badge" class="ml-auto"></span>
       </div>
     </div>
     <div id="admin-content" data-lenis-prevent>
@@ -2398,15 +2435,22 @@ async function aqMaybeMigrate(){
       закрывает UI; формулы расчёта всё равно уезжают в браузер.
 ════════════════════════════════════════════════════════════ */
 const AQ_PLANS = [
-  { id:'m1',  months:1,  price:100000  },
-  { id:'m6',  months:6,  price:550000, popular:true },
-  { id:'m12', months:12, price:1000000 },
+  { id:'m1',  months:1,  price:99000   },
+  { id:'m3',  months:3,  price:267000  },
+  { id:'m6',  months:6,  price:509000, popular:true },
+  { id:'m12', months:12, price:949000  },
 ];
 // Включён ли paywall: явный флаг приоритетнее; иначе авто (вкл. при Supabase).
 const PAYWALL_ON = (typeof AQ_CFG.PAYWALL === 'boolean') ? AQ_CFG.PAYWALL : SB_CONFIGURED;
-const PAY_TG  = (AQ_CFG.PAY_TG  || 'aqualityHL').replace(/^@/,'');
-const PAY_TG2 = (AQ_CFG.PAY_TG2 || 'ibrokh1movv7').replace(/^@/,'');
-const PAY_REQ = AQ_CFG.PAY_REQUISITES || '';
+const PAY_TG        = (AQ_CFG.PAY_TG  || 'aqualityHL').replace(/^@/,'');
+const PAY_TG2       = (AQ_CFG.PAY_TG2 || 'ibrokh1movv7').replace(/^@/,'');
+const PAY_REQ       = AQ_CFG.PAY_REQUISITES || '';
+const PAY_CARD_HUMO   = AQ_CFG.PAY_CARD_HUMO   || '';
+const PAY_CARD_UZCARD = AQ_CFG.PAY_CARD_UZCARD || '';
+const PAY_CARD_VISA   = AQ_CFG.PAY_CARD_VISA   || '';
+const PAY_CARD_MASTER = AQ_CFG.PAY_CARD_MASTER || '';
+const PAY_PAYPAL      = AQ_CFG.PAY_PAYPAL      || '';
+const PAY_CARD_SBP    = AQ_CFG.PAY_CARD_SBP    || '';
 const SUB_LOCAL_KEY   = 'aq_sub_v1';      // офлайн-кэш подписки (тест/владелец)
 const PROMO_LOCAL_KEY = 'aq_promos_v1';   // офлайн-список промокодов
 
@@ -2415,7 +2459,7 @@ let _aqSub = null;                        // активная подписка �
 /* ── мини-i18n модуля (самодостаточно, без правки больших словарей) ── */
 const PAY_STR = {
   ru:{ title:'Доступ к калькулятору', sub:'Демо открыто всем. Полный расчёт — по подписке.',
-    plan1:'1 месяц', plan6:'6 месяцев', plan12:'12 месяцев', popular:'Выгодно', perMonth:'/мес',
+    plan1:'1 месяц', plan3:'3 месяца', plan6:'6 месяцев', plan12:'12 месяцев', popular:'Выгодно', perMonth:'/мес',
     promoPh:'Промокод (если есть)', apply:'Применить', promoOk:'Скидка', promoInvalid:'Код недействителен',
     promoExhausted:'Лимит кода исчерпан', promoUsed:'Вы уже применяли этот код', promoAuth:'Войдите, чтобы применить код',
     payTg:'Оплатить через Telegram', total:'К оплате', refresh:'Я оплатил — обновить статус',
@@ -2424,9 +2468,15 @@ const PAY_STR = {
     copied:'Детали заказа скопированы — вставьте в чат менеджеру',
     active:'Подписка активна', until:'до', expired:'Подписка истекла', none:'Нет активной подписки',
     lockTitle:'Доступно по подписке', lockBody:'Это демо-режим: редактирование данных и чертежей доступно только с активной подпиской.',
-    lockBtn:'Открыть тарифы', demoTag:'Демо', subBtn:'Подписка', buyBtn:'Купить подписку' },
+    lockBtn:'Открыть тарифы', demoTag:'Демо', subBtn:'Подписка', buyBtn:'Купить подписку',
+    choosePay:'Выберите способ оплаты', paidBtn:'Я оплатил — подтвердить',
+    pendingMsg:'Запрос получен. Менеджер активирует подписку в течение рабочего дня.',
+    copyCard:'Скопировать реквизиты', copied2:'Скопировано!',
+    askManager:'Уточните реквизиты у менеджера в Telegram',
+    transferTo:'Переведите', toCard:'на карту', toPaypal:'через PayPal',
+    tgBtn:'Написать в Telegram', waBtn:'Написать в WhatsApp', sendMsg:'Отправьте менеджеру:' },
   uz:{ title:'Kalkulyatorga kirish', sub:'Demo hammaga ochiq. Toʻliq hisob — obuna orqali.',
-    plan1:'1 oy', plan6:'6 oy', plan12:'12 oy', popular:'Foydali', perMonth:'/oy',
+    plan1:'1 oy', plan3:'3 oy', plan6:'6 oy', plan12:'12 oy', popular:'Foydali', perMonth:'/oy',
     promoPh:'Promokod (agar boʻlsa)', apply:'Qoʻllash', promoOk:'Chegirma', promoInvalid:'Kod notoʻgʻri',
     promoExhausted:'Kod limiti tugagan', promoUsed:'Bu kodni allaqachon ishlatgansiz', promoAuth:'Kod uchun kiring',
     payTg:'Telegram orqali toʻlash', total:'Toʻlovga', refresh:'Toʻladim — holatni yangilash',
@@ -2435,9 +2485,15 @@ const PAY_STR = {
     copied:'Buyurtma tafsilotlari nusxalandi — menejer chatiga joylang',
     active:'Obuna faol', until:'gacha', expired:'Obuna tugagan', none:'Faol obuna yoʻq',
     lockTitle:'Obuna orqali ochiladi', lockBody:'Bu demo: maʼlumot va chizmalarni tahrirlash faqat faol obuna bilan.',
-    lockBtn:'Tariflarni ochish', demoTag:'Demo', subBtn:'Obuna', buyBtn:'Obuna sotib olish' },
+    lockBtn:'Tariflarni ochish', demoTag:'Demo', subBtn:'Obuna', buyBtn:'Obuna sotib olish',
+    choosePay:'Toʻlov usulini tanlang', paidBtn:'Toʻladim — tasdiqlash',
+    pendingMsg:'Soʻrov qabul qilindi. Menejer obunani ish kuni davomida faollashtiradi.',
+    copyCard:'Rekvizitlarni nusxalash', copied2:'Nusxalandi!',
+    askManager:'Rekvizitlarni Telegram menejerdan soʻrang',
+    transferTo:'Oʻtkazing', toCard:'karta raqamiga', toPaypal:'PayPal orqali',
+    tgBtn:'Telegramga yozish', waBtn:'WhatsAppga yozish', sendMsg:'Menejerga yuboring:' },
   en:{ title:'Calculator access', sub:'Demo is open to all. Full calculation requires a subscription.',
-    plan1:'1 month', plan6:'6 months', plan12:'12 months', popular:'Best value', perMonth:'/mo',
+    plan1:'1 month', plan3:'3 months', plan6:'6 months', plan12:'12 months', popular:'Best value', perMonth:'/mo',
     promoPh:'Promo code (if any)', apply:'Apply', promoOk:'Discount', promoInvalid:'Invalid code',
     promoExhausted:'Code limit reached', promoUsed:'You already used this code', promoAuth:'Sign in to apply a code',
     payTg:'Pay via Telegram', total:'Total', refresh:'I paid — refresh status',
@@ -2446,10 +2502,16 @@ const PAY_STR = {
     copied:'Order details copied — paste them into the manager chat',
     active:'Subscription active', until:'until', expired:'Subscription expired', none:'No active subscription',
     lockTitle:'Available with subscription', lockBody:'This is demo mode: editing data and drawings requires an active subscription.',
-    lockBtn:'View plans', demoTag:'Demo', subBtn:'Subscription', buyBtn:'Buy subscription' },
+    lockBtn:'View plans', demoTag:'Demo', subBtn:'Subscription', buyBtn:'Buy subscription',
+    choosePay:'Choose payment method', paidBtn:'I paid — confirm',
+    pendingMsg:'Request received. A manager will activate your subscription within a business day.',
+    copyCard:'Copy details', copied2:'Copied!',
+    askManager:'Ask manager in Telegram for details',
+    transferTo:'Transfer', toCard:'to card', toPaypal:'via PayPal',
+    tgBtn:'Write in Telegram', waBtn:'Write in WhatsApp', sendMsg:'Send to manager:' },
 };
 function pt(k){ return (PAY_STR[_lang]||PAY_STR.ru)[k] || PAY_STR.ru[k] || k; }
-function planName(id){ return pt(id==='m1'?'plan1':id==='m6'?'plan6':'plan12'); }
+function planName(id){ return pt(id==='m1'?'plan1':id==='m3'?'plan3':id==='m6'?'plan6':'plan12'); }
 function aqPlan(id){ return AQ_PLANS.find(p=>p.id===id); }
 function fmtSum(n){ try{ return new Intl.NumberFormat('ru-RU').format(Math.round(n))+' сум'; }catch(e){ return Math.round(n)+' сум'; } }
 
@@ -2513,10 +2575,9 @@ function promoReasonMsg(r){
 }
 
 /* ── paywall-модалка ── */
-let _payState = { plan:'m6', promo:null };
+let _payState = { plan:'m6', promo:null, method:null };
 function planFinalPrice(plan){ const base=aqPlan(plan).price; const d=_payState.promo?_payState.promo.discount:0; return Math.round(base*(1-d/100)); }
 function openPaywall(){
-  // Тарифы можно смотреть без входа; логин потребуется на шаге оплаты (payViaTelegram).
   if(!document.getElementById('paywall-overlay')){
     const ov=document.createElement('div'); ov.id='paywall-overlay'; ov.className='pw-ov';
     ov.addEventListener('click', e=>{ if(e.target===ov) closePaywall(); });
@@ -2527,14 +2588,14 @@ function openPaywall(){
   _lockBodyScroll();
 }
 function closePaywall(){ const o=document.getElementById('paywall-overlay'); if(o) o.classList.remove('open'); _unlockBodyScroll(); }
-/* Локализация статичных кнопок «Подписка/Купить подписку» (нав + плавающая). */
 function _aqSubLabels(){
   try{
     document.querySelectorAll('.aq-sub-label').forEach(el=>{ el.textContent = pt('subBtn'); });
     document.querySelectorAll('.aq-buy-label').forEach(el=>{ el.textContent = pt('buyBtn'); });
   }catch(e){}
 }
-function paySelectPlan(id){ _payState.plan=id; renderPaywall(); }
+function paySelectPlan(id){ _payState.plan=id; _payState.method=null; renderPaywall(); }
+function paySelectMethod(m){ _payState.method=m; renderPaywall(); }
 async function payApplyPromo(){
   const inp=document.getElementById('pw-promo-inp'); if(!inp) return;
   const res=await aqValidatePromo(inp.value);
@@ -2546,6 +2607,10 @@ async function payApplyPromo(){
   }
   renderPaywall(true);
 }
+function _copyPayText(txt){
+  try{ navigator.clipboard && navigator.clipboard.writeText(txt); toast(pt('copied2')||'Скопировано!'); }
+  catch(e){ toast(txt); }
+}
 function payViaTelegram(){
   const u=authCurrentUser(); if(!u){ toast(pt('loginFirst'),'err'); return; }
   const plan=_payState.plan, price=planFinalPrice(plan);
@@ -2555,6 +2620,67 @@ function payViaTelegram(){
   try{ navigator.clipboard && navigator.clipboard.writeText(msg); }catch(e){}
   toast(pt('copied'));
   window.open('https://t.me/'+PAY_TG, '_blank');
+}
+async function payIHavePaid(method){
+  const u=authCurrentUser(); if(!u){ toast(pt('loginFirst'),'err'); return; }
+  const plan=_payState.plan, price=planFinalPrice(plan);
+  if(SB_CONFIGURED){
+    try{
+      await sb().from('payments').insert({
+        user_id: u.id, provider: method, amount: price, status: 'pending',
+        raw: { plan, promo: _payState.promo ? _payState.promo.code : null, email: u.email||u.login }
+      });
+    }catch(e){ console.warn('[AQ] payment record', e); }
+  }
+  toast(pt('pendingMsg') || 'Запрос получен. Менеджер активирует подписку в течение рабочего дня.');
+  closePaywall();
+}
+function _payMethodDetailHTML(m){
+  const price=planFinalPrice(_payState.plan);
+  const u=authCurrentUser();
+  const promo=_payState.promo?` · промокод ${_payState.promo.code} (−${_payState.promo.discount}%)`:'';
+  const who=u?(u.email||u.login||u.name||'—'):'—';
+  if(m==='tg'){
+    const msg=`Здравствуйте! Хочу оформить подписку Aquality: ${planName(_payState.plan)} — ${fmtSum(price)}${promo}. Аккаунт: ${who}.`;
+    const escaped=msg.replace(/'/g,"\\'");
+    return `<div class="pw-method-detail">
+      <p class="pw-method-hint">${pt('sendMsg')}</p>
+      <div class="pw-card-num" style="font-size:11px;line-height:1.5">${msg}</div>
+      <div class="pw-method-actions">
+        <button class="pw-pay" onclick="payViaTelegram()">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+          ${pt('tgBtn')}
+        </button>
+        <button class="pw-refresh" onclick="payIHavePaid('tg')" style="margin-top:8px">✓ ${pt('paidBtn')}</button>
+      </div></div>`;
+  }
+  const cardMap={humo:PAY_CARD_HUMO,uzcard:PAY_CARD_UZCARD,visa:PAY_CARD_VISA,master:PAY_CARD_MASTER,sbp:PAY_CARD_SBP};
+  const labelMap={humo:'HUMO',uzcard:'Uzcard',visa:'Visa',master:'MasterCard',sbp:'СБП',paypal:'PayPal'};
+  const label=labelMap[m]||m.toUpperCase();
+  if(m==='paypal'){
+    const val=PAY_PAYPAL;
+    const escaped=val.replace(/'/g,"\\'");
+    return `<div class="pw-method-detail">
+      <p class="pw-method-hint">${pt('transferTo')} <b>${fmtSum(price)}</b> ${pt('toPaypal')}:</p>
+      <div class="pw-card-num">${val||pt('askManager')}</div>
+      ${val?`<button class="pw-copy-btn" onclick="_copyPayText('${escaped}')">${pt('copyCard')}</button>`:''}
+      <div class="pw-method-actions">
+        <button class="pw-refresh" onclick="payIHavePaid('paypal')">✓ ${pt('paidBtn')}</button>
+      </div></div>`;
+  }
+  const val=cardMap[m]||'';
+  const escaped=val.replace(/'/g,"\\'");
+  return `<div class="pw-method-detail">
+    <p class="pw-method-hint">${pt('transferTo')} <b>${fmtSum(price)}</b> ${pt('toCard')} <b>${label}</b>:</p>
+    <div class="pw-card-num">${val||pt('askManager')}</div>
+    ${val?`<button class="pw-copy-btn" onclick="_copyPayText('${escaped}')">${pt('copyCard')}</button>`:''}
+    <div class="pw-method-actions">
+      <button class="pw-pay" onclick="payViaTelegram()" style="margin-bottom:0">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+        ${pt('tgBtn')}
+      </button>
+      <button class="pw-refresh" onclick="payIHavePaid('${m}')">✓ ${pt('paidBtn')}</button>
+    </div></div>`;
 }
 async function payRefresh(){ await aqRefreshSub(); renderPaywall(); initAuthNav(); if(aqHasAccess()){ closePaywall(); toast(pt('active')); if(typeof renderStep==='function'&&ST&&ST.step) renderStep(); } }
 
@@ -2566,7 +2692,7 @@ function subStatusHTML(){
 }
 function renderPaywall(promoOnly){
   const ov=document.getElementById('paywall-overlay'); if(!ov) return;
-  if(promoOnly){ // только пересчёт цен/итога без сброса фокуса промо-инпута
+  if(promoOnly){
     AQ_PLANS.forEach(p=>{ const el=document.getElementById('pw-price-'+p.id); if(el){ const d=_payState.promo?_payState.promo.discount:0; el.innerHTML = d?`<s>${fmtSum(p.price)}</s> ${fmtSum(Math.round(p.price*(1-d/100)))}`:fmtSum(p.price); } });
     const tot=document.getElementById('pw-total'); if(tot) tot.textContent=fmtSum(planFinalPrice(_payState.plan));
     return;
@@ -2583,6 +2709,28 @@ function renderPaywall(promoOnly){
       <div class="pw-card-permo">${fmtSum(perMo)} ${pt('perMonth')}</div>
     </button>`;
   }).join('');
+
+  /* Способы оплаты */
+  const methods=[
+    {id:'tg',    icon:`<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>`, label:'Telegram', color:'#229ED9'},
+    {id:'humo',  icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="8" cy="15" r="1.5" fill="#00A86B" stroke="none"/></svg>`, label:'HUMO', color:'#00A86B'},
+    {id:'uzcard',icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="8" cy="15" r="1.5" fill="#1A56C4" stroke="none"/></svg>`, label:'Uzcard', color:'#1A56C4'},
+    {id:'visa',  icon:`<svg viewBox="0 0 48 20" width="38" height="16" fill="none"><text x="0" y="16" font-size="18" font-weight="900" font-family="Arial,sans-serif" fill="#1A1F71" letter-spacing="1">VISA</text></svg>`, label:'Visa', color:'#1A1F71'},
+    {id:'master',icon:`<svg viewBox="0 0 38 24" width="38" height="24"><circle cx="14" cy="12" r="10" fill="#EB001B"/><circle cx="24" cy="12" r="10" fill="#F79E1B"/><path d="M19 5.3a10 10 0 0 1 0 13.4A10 10 0 0 1 19 5.3z" fill="#FF5F00"/></svg>`, label:'MasterCard', color:'#EB001B'},
+    {id:'paypal',icon:`<svg viewBox="0 0 24 24" fill="#003087" width="22" height="22"><path d="M20.067 8.478c.492.315.844.825.966 1.42.338 1.653-.902 3.245-2.741 3.563-.122.02-.246.031-.37.031h-2.67l-.484 3.093H12.4L14.04 6h3.986c1.128 0 1.898.217 2.041.478zm-3.19 3.28h2.09c.82-.142 1.35-.817 1.163-1.659-.104-.476-.474-.82-1.017-.82h-1.79l-.446 2.479zM8.3 6h3.986c1.128 0 1.898.217 2.041.478.492.315.844.825.966 1.42.338 1.653-.902 3.245-2.741 3.563-.122.02-.246.031-.37.031H9.512l-.484 3.093H6.66L8.3 6zm3.19 3.758h2.09c.82-.142 1.35-.817 1.163-1.659-.104-.476-.474-.82-1.017-.82h-1.79l-.446 2.479z"/></svg>`, label:'PayPal', color:'#003087'},
+    {id:'sbp',   icon:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none"><rect width="24" height="24" rx="4" fill="#1D1D1D"/><path d="M5 8h14M5 12h9M5 16h5" stroke="#7B2FBE" stroke-width="2.5" stroke-linecap="round"/></svg>`, label:'СБП', color:'#7B2FBE'},
+  ];
+
+  const methodBtns=methods.map(m=>{
+    const sel=_payState.method===m.id;
+    return `<button class="pw-method${sel?' sel':''}" onclick="paySelectMethod('${m.id}')" title="${m.label}">
+      <span class="pw-method-icon">${m.icon}</span>
+      <span class="pw-method-lbl">${m.label}</span>
+    </button>`;
+  }).join('');
+
+  const methodDetail=_payState.method?_payMethodDetailHTML(_payState.method):'';
+
   ov.innerHTML=`<div class="pw-modal" role="dialog" aria-modal="true" aria-label="${pt('title')}">
     <button class="pw-x" onclick="closePaywall()" aria-label="${pt('close')}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -2596,11 +2744,11 @@ function renderPaywall(promoOnly){
     </div>
     <div id="pw-promo-msg" class="pw-promo-msg ${_payState.promo?'ok':''}">${_payState.promo?(pt('promoOk')+' −'+_payState.promo.discount+'%'):''}</div>
     <div class="pw-total-row"><span>${pt('total')}</span><b id="pw-total">${fmtSum(planFinalPrice(_payState.plan))}</b></div>
-    <button class="pw-pay" onclick="payViaTelegram()">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
-      ${pt('payTg')}</button>
-    <button class="pw-refresh" onclick="payRefresh()">${pt('refresh')}</button>
-    <p class="pw-note">${pt('note')}${PAY_REQ?'<br>'+PAY_REQ:''}</p>
+    <p class="pw-choose-lbl">${pt('choosePay')}</p>
+    <div class="pw-methods">${methodBtns}</div>
+    ${methodDetail}
+    <button class="pw-refresh" onclick="payRefresh()" style="margin-top:${_payState.method?'8':'0'}px">${pt('refresh')}</button>
+    <p class="pw-note">${pt('note')}</p>
   </div>`;
 }
 
@@ -2674,7 +2822,22 @@ function aqLockedStepHTML(){
   #floating-sub svg{width:18px;height:18px;flex-shrink:0}
   /* скрытие плавающих кнопок при открытых оверлеях — на контейнере #floating-actions */
   @media(max-width:550px){#floating-sub{padding:.85rem;border-radius:50%}.aq-buy-label{display:none}}
-  @media (max-width:420px){.pw-card-price{font-size:12px}.pw-card-name{font-size:11px}}`;
+  @media (max-width:420px){.pw-card-price{font-size:12px}.pw-card-name{font-size:11px}}
+  /* ── payment methods grid ── */
+  .pw-choose-lbl{font-size:11.5px;font-weight:700;color:#9aa7c0;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .pw-methods{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+  .pw-method{display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.03);border:1.5px solid rgba(140,165,210,.13);border-radius:13px;padding:10px 6px 8px;cursor:pointer;transition:.15s;color:#E6EDF8;min-height:66px;justify-content:center}
+  .pw-method:hover{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.05)}
+  .pw-method.sel{border-color:#f59e0b;background:rgba(245,158,11,.1);box-shadow:0 0 0 2px rgba(245,158,11,.18)}
+  .pw-method-icon{display:flex;align-items:center;justify-content:center;height:24px}
+  .pw-method-lbl{font-size:10px;font-weight:700;color:#cdd7ea;white-space:nowrap;letter-spacing:.01em}
+  .pw-method-detail{background:rgba(255,255,255,.03);border:1px solid rgba(140,165,210,.14);border-radius:13px;padding:13px 14px;margin-bottom:10px;animation:pwIn .18s ease}
+  .pw-method-hint{font-size:12px;color:#9aa7c0;margin-bottom:8px}
+  .pw-card-num{font-size:13px;font-weight:700;color:#E6EDF8;background:rgba(255,255,255,.05);border:1px solid rgba(140,165,210,.16);border-radius:9px;padding:10px 12px;letter-spacing:.06em;font-variant-numeric:tabular-nums;margin-bottom:8px;word-break:break-all}
+  .pw-copy-btn{font-size:11.5px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:6px 14px;cursor:pointer;transition:.15s;margin-bottom:8px}
+  .pw-copy-btn:hover{background:rgba(245,158,11,.2)}
+  .pw-method-actions{display:flex;flex-direction:column;gap:7px}
+  @media(max-width:400px){.pw-methods{grid-template-columns:repeat(3,1fr)}.pw-method-lbl{font-size:9px}}`;
   const st=document.createElement('style'); st.id='paywall-css'; st.textContent=css; document.head.appendChild(st);
 })();
 
@@ -3035,53 +3198,91 @@ function authSwitchTab(t){ _authTab=t; renderAuthBody(); }
 
 function renderLoginForm(){
   return `
-  <div class="flex gap-1.5 mb-5">
+  <div class="auth-tabs-wrap">
     <button class="auth-tab ${_authTab==='login'?'active':''}" onclick="authSwitchTab('login')">${t('login')}</button>
     <button class="auth-tab ${_authTab==='register'?'active':''}" onclick="authSwitchTab('register')">${t('register')}</button>
   </div>
-  <h2 class="text-xl font-extrabold text-cream mb-5" data-i18n="login-title">Вход в аккаунт</h2>
   <div class="space-y-3">
-    <div><label class="block text-xs font-semibold text-sand mb-1">${SB_CONFIGURED?'Email':t('auth-lbl-login')}</label>
-      <input id="al-login" class="wi" type="${SB_CONFIGURED?'email':'text'}" placeholder="${SB_CONFIGURED?'you@example.com':t('auth-ph-login')}" autocomplete="username"></div>
-    <div><label class="block text-xs font-semibold text-sand mb-1">${t('auth-lbl-pass')}</label>
-      <input id="al-pass" class="wi" type="password" placeholder="${t('auth-lbl-pass')}" autocomplete="current-password"></div>
+    <div>
+      <label class="auth-lbl">${SB_CONFIGURED?'Email':t('auth-lbl-login')}</label>
+      <div class="auth-field-wrap">
+        <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        <input id="al-login" class="wi" type="${SB_CONFIGURED?'email':'text'}" placeholder="${SB_CONFIGURED?'you@example.com':t('auth-ph-login')}" autocomplete="username">
+      </div>
+    </div>
+    <div>
+      <label class="auth-lbl">${t('auth-lbl-pass')}</label>
+      <div class="auth-field-wrap">
+        <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <input id="al-pass" class="wi" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+    </div>
   </div>
-  <p id="auth-err" class="text-xs text-ember mt-2 hidden"></p>
-  <button onclick="doLogin()" class="lg-btn w-full mt-4 py-3">${t('login')} →</button>
-  ${SB_CONFIGURED?`<p class="text-center text-xs text-muted mt-2"><button onclick="authSwitchTab('forgot')" class="text-amber hover:underline">${t('forgot-link')}</button></p>`:''}
-  <p class="text-center text-xs text-muted mt-3">${t('auth-no-account')} <button onclick="authSwitchTab('register')" class="text-amber hover:underline">${t('auth-register-link')}</button></p>`;
+  <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
+  <button onclick="doLogin()" class="lg-btn w-full mt-5 py-3">${t('login')} →</button>
+  ${SB_CONFIGURED?`<p class="text-center text-xs mt-3" style="color:rgba(148,163,184,.5)"><button onclick="authSwitchTab('forgot')" style="color:#F59E0B;background:none;border:none;cursor:pointer;font-size:inherit">${t('forgot-link')}</button></p>`:''}
+  <p class="text-center text-xs mt-2" style="color:rgba(148,163,184,.45)">${t('auth-no-account')} <button onclick="authSwitchTab('register')" style="color:#F59E0B;background:none;border:none;cursor:pointer;font-size:inherit">${t('auth-register-link')}</button></p>`;
 }
 
 function renderRegisterForm(){
   const cities=['Фергана','Ташкент','Андижан','Наманган','Самарканд','Бухара','Навои','Карши','Нукус','Термез','Ургенч','Гулистан','Джизак'];
   return `
-  <div class="flex gap-1.5 mb-5">
+  <div class="auth-tabs-wrap">
     <button class="auth-tab ${_authTab==='login'?'active':''}" onclick="authSwitchTab('login')">${t('login')}</button>
     <button class="auth-tab ${_authTab==='register'?'active':''}" onclick="authSwitchTab('register')">${t('register')}</button>
   </div>
-  <h2 class="text-xl font-extrabold text-cream mb-4" data-i18n="register-title">Создать аккаунт</h2>
   <div class="space-y-2.5">
     <div class="grid grid-cols-2 gap-2.5">
-      <div><label class="block text-xs font-semibold text-sand mb-1">${SB_CONFIGURED?t('auth-lbl-name'):t('auth-lbl-login')} <span class="text-ember">*</span></label>
-        <input id="ar-login" class="wi" placeholder="${SB_CONFIGURED?t('auth-ph-name'):t('auth-ph-login')}" autocomplete="${SB_CONFIGURED?'name':'username'}"></div>
-      <div><label class="block text-xs font-semibold text-sand mb-1">${t('auth-lbl-pass')} <span class="text-ember">*</span></label>
-        <input id="ar-pass" class="wi" type="password" placeholder="${SB_CONFIGURED?t('auth-ph-pass6'):t('auth-ph-pass4')}"></div>
+      <div>
+        <label class="auth-lbl">${SB_CONFIGURED?t('auth-lbl-name'):t('auth-lbl-login')} <span class="text-ember">*</span></label>
+        <div class="auth-field-wrap">
+          <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input id="ar-login" class="wi" placeholder="${SB_CONFIGURED?t('auth-ph-name'):t('auth-ph-login')}" autocomplete="${SB_CONFIGURED?'name':'username'}">
+        </div>
+      </div>
+      <div>
+        <label class="auth-lbl">${t('auth-lbl-pass')} <span class="text-ember">*</span></label>
+        <div class="auth-field-wrap">
+          <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="ar-pass" class="wi" type="password" placeholder="${SB_CONFIGURED?t('auth-ph-pass6'):t('auth-ph-pass4')}">
+        </div>
+      </div>
     </div>
     <div class="grid grid-cols-2 gap-2.5">
-      <div><label class="block text-xs font-semibold text-sand mb-1">${t('auth-lbl-phone')} <span class="text-ember">*</span></label>
-        <input id="ar-phone" class="wi" placeholder="+998 90 000-00-00" type="tel"></div>
-      <div><label class="block text-xs font-semibold text-sand mb-1">${t('auth-lbl-phone2')}</label>
-        <input id="ar-phone2" class="wi" placeholder="${t('auth-optional')}" type="tel"></div>
+      <div>
+        <label class="auth-lbl">${t('auth-lbl-phone')} <span class="text-ember">*</span></label>
+        <div class="auth-field-wrap">
+          <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.35 2 2 0 0 1 3.62 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <input id="ar-phone" class="wi" placeholder="+998 90 000-00-00" type="tel">
+        </div>
+      </div>
+      <div>
+        <label class="auth-lbl">${t('auth-lbl-phone2')}</label>
+        <div class="auth-field-wrap">
+          <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.35 2 2 0 0 1 3.62 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <input id="ar-phone2" class="wi" placeholder="${t('auth-optional')}" type="tel">
+        </div>
+      </div>
     </div>
     <div class="grid grid-cols-2 gap-2.5">
-      <div><label class="block text-xs font-semibold text-sand mb-1">Email <span class="text-ember">*</span></label>
-        <input id="ar-email" class="wi" placeholder="you@example.com" type="email" autocomplete="email"></div>
-      <div><label class="block text-xs font-semibold text-sand mb-1">${t('auth-lbl-city')}</label>
-        <select id="ar-city" class="wi"><option value="">${t('select-placeholder')}</option>${cities.map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div>
+      <div>
+        <label class="auth-lbl">Email <span class="text-ember">*</span></label>
+        <div class="auth-field-wrap">
+          <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <input id="ar-email" class="wi" placeholder="you@example.com" type="email" autocomplete="email">
+        </div>
+      </div>
+      <div>
+        <label class="auth-lbl">${t('auth-lbl-city')}</label>
+        <div class="auth-field-wrap">
+          <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <select id="ar-city" class="wi" style="padding-left:2.5rem"><option value="">${t('select-placeholder')}</option>${cities.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+        </div>
+      </div>
     </div>
     <div>
-      <label class="block text-xs font-semibold text-sand mb-2">${t('client-type-label')} <span class="text-ember">*</span></label>
-      <div class="space-y-1.5">
+      <label class="auth-lbl">${t('client-type-label')} <span class="text-ember">*</span></label>
+      <div class="space-y-1.5 mt-1">
         ${CLIENT_TYPES.map(t=>`<button class="ctype-btn ${_authClientType===t.id?'active':''}" onclick="setClientType('${t.id}')">
           <p class="font-semibold text-cream text-sm">${ctLabel(t)}</p>
           <p class="text-xs text-muted mt-0.5">${ctDesc(t)}</p>
@@ -3091,7 +3292,7 @@ function renderRegisterForm(){
   </div>
   <p id="auth-err" class="text-xs text-ember mt-2 hidden"></p>
   <button onclick="doRegister()" class="lg-btn w-full mt-4 py-3">${t('auth-register-link')} →</button>
-  <p class="text-center text-xs text-muted mt-3">${t('auth-has-account')} <button onclick="authSwitchTab('login')" class="text-amber hover:underline">${t('auth-login-link')}</button></p>`;
+  <p class="text-center text-xs mt-2" style="color:rgba(148,163,184,.45)">${t('auth-has-account')} <button onclick="authSwitchTab('login')" style="color:#F59E0B;background:none;border:none;cursor:pointer;font-size:inherit">${t('auth-login-link')}</button></p>`;
 }
 
 function setClientType(t){ _authClientType=t; document.querySelectorAll('.ctype-btn').forEach(b=>{ const oc=b.getAttribute('onclick')||''; b.classList.toggle('active',oc.includes(`'${t}'`)); }); }
@@ -3144,29 +3345,40 @@ async function doRegister(){
 function showAuthErr(msg){ const e=document.getElementById('auth-err'); if(e){ e.textContent=msg; e.classList.remove('hidden'); } }
 
 function renderForgotForm(){
+  const backBtn=`<button onclick="authSwitchTab('login')" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:rgba(148,163,184,.5);background:none;border:none;cursor:pointer;margin-bottom:1.25rem;padding:0;transition:color .15s" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.5)'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> ${t('forgot-back')}</button>`;
   if(_forgotStep===2) return `
-  <button onclick="authSwitchTab('login')" class="flex items-center gap-1 text-xs text-muted hover:text-cream mb-4">← ${t('forgot-back')}</button>
-  <h2 class="text-xl font-extrabold text-cream mb-2">${t('forgot-title')}</h2>
-  <p class="text-xs text-muted mb-5">${t('forgot-step2-hint').replace('%email%',_forgotEmail)}</p>
+  ${backBtn}
+  <h2 class="text-lg font-extrabold text-cream mb-1">${t('forgot-title')}</h2>
+  <p class="text-xs mb-5" style="color:rgba(148,163,184,.5)">${t('forgot-step2-hint').replace('%email%',_forgotEmail)}</p>
   <div class="space-y-3">
-    <div><label class="block text-xs font-semibold text-sand mb-1">${t('forgot-otp-lbl')}</label>
-      <input id="fp-otp" class="wi text-center text-xl tracking-widest" maxlength="6" placeholder="000000" inputmode="numeric" autocomplete="one-time-code"></div>
-    <div><label class="block text-xs font-semibold text-sand mb-1">${t('forgot-newpass-lbl')} <span class="text-ember">*</span></label>
-      <input id="fp-newpass" class="wi" type="password" placeholder="••••••" autocomplete="new-password"></div>
+    <div>
+      <label class="auth-lbl">${t('forgot-otp-lbl')}</label>
+      <input id="fp-otp" class="wi text-center tracking-widest" maxlength="6" placeholder="0  0  0  0  0  0" inputmode="numeric" autocomplete="one-time-code" style="letter-spacing:.25em;font-size:1.1rem;text-align:center">
+    </div>
+    <div>
+      <label class="auth-lbl">${t('forgot-newpass-lbl')} <span class="text-ember">*</span></label>
+      <div class="auth-field-wrap">
+        <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <input id="fp-newpass" class="wi" type="password" placeholder="••••••" autocomplete="new-password">
+      </div>
+    </div>
   </div>
-  <p id="auth-err" class="text-xs text-ember mt-2 hidden"></p>
-  <button onclick="doForgotVerify()" class="lg-btn w-full mt-4 py-3">${t('forgot-confirm-btn')} →</button>
-  <p class="text-center text-xs text-muted mt-3"><button onclick="doForgotSend()" class="hover:underline text-muted">${t('forgot-resend')}</button></p>`;
+  <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
+  <button onclick="doForgotVerify()" class="lg-btn w-full mt-5 py-3">${t('forgot-confirm-btn')} →</button>
+  <p class="text-center text-xs mt-3" style="color:rgba(148,163,184,.4)"><button onclick="doForgotSend()" style="color:rgba(148,163,184,.4);background:none;border:none;cursor:pointer;font-size:inherit" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.4)'">${t('forgot-resend')}</button></p>`;
   return `
-  <button onclick="authSwitchTab('login')" class="flex items-center gap-1 text-xs text-muted hover:text-cream mb-4">← ${t('forgot-back')}</button>
-  <h2 class="text-xl font-extrabold text-cream mb-2">${t('forgot-title')}</h2>
-  <p class="text-xs text-muted mb-5">${t('forgot-step1-hint')}</p>
-  <div class="space-y-3">
-    <div><label class="block text-xs font-semibold text-sand mb-1">Email</label>
-      <input id="fp-email" class="wi" type="email" placeholder="you@example.com" autocomplete="email"></div>
+  ${backBtn}
+  <h2 class="text-lg font-extrabold text-cream mb-1">${t('forgot-title')}</h2>
+  <p class="text-xs mb-5" style="color:rgba(148,163,184,.5)">${t('forgot-step1-hint')}</p>
+  <div>
+    <label class="auth-lbl">Email</label>
+    <div class="auth-field-wrap">
+      <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      <input id="fp-email" class="wi" type="email" placeholder="you@example.com" autocomplete="email">
+    </div>
   </div>
-  <p id="auth-err" class="text-xs text-ember mt-2 hidden"></p>
-  <button onclick="doForgotSend()" class="lg-btn w-full mt-4 py-3">${t('forgot-send-btn')} →</button>`;
+  <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
+  <button onclick="doForgotSend()" class="lg-btn w-full mt-5 py-3">${t('forgot-send-btn')} →</button>`;
 }
 async function doForgotSend(){
   const emailEl=document.getElementById('fp-email');
@@ -3246,6 +3458,15 @@ function openAdmin(){
   document.getElementById('admin-overlay').classList.add('open');
   _lockBodyScroll();
   adminPage(_adminPage);
+  _adminUpdatePayBadge();
+}
+async function _adminUpdatePayBadge(){
+  if(!SB_CONFIGURED) return;
+  try{
+    const { count }=await sb().from('payments').select('id',{count:'exact',head:true}).eq('status','pending');
+    const badge=document.getElementById('adm-payments-badge');
+    if(badge) badge.innerHTML=count?`<span style="background:#f59e0b;color:#0B0F1A;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800">${count}</span>`:'';
+  }catch(e){}
 }
 function closeAdmin(){
   document.getElementById('admin-overlay').classList.remove('open');
@@ -5503,6 +5724,7 @@ async function adminPage(page){
   else if(page==='leads') c.innerHTML=await adminLeads();
   else if(page==='subs') c.innerHTML=await adminSubs();
   else if(page==='promos') c.innerHTML=await adminPromos();
+  else if(page==='payments') c.innerHTML=await adminPayments();
   else if(page.startsWith('user:')) c.innerHTML=await adminUserProfile(page.slice(5));
 }
 
@@ -5619,6 +5841,80 @@ async function adminDeletePromo(code){
   if(SB_CONFIGURED){ try{ const { error }=await sb().from('promo_codes').delete().eq('code',code); if(error){ toast('Ошибка','err'); return; } }catch(e){ toast('Ошибка','err'); return; } }
   else { aqPromosLocalSave(aqPromosLocal().filter(x=>x.code!==code)); }
   toast('Удалено'); adminPage('promos');
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN · ПЛАТЕЖИ — ожидающие подтверждения (Telegram и другие способы)
+════════════════════════════════════════════════════════════ */
+async function adminPayments(){
+  if(!SB_CONFIGURED){
+    return `<h2 class="text-xl font-extrabold text-cream mb-4">Платежи</h2>
+    <div class="adm-stat text-left"><p class="text-sm text-muted">Управление платежами доступно при подключённом Supabase.</p></div>`;
+  }
+  let payments=[], users=[];
+  try{
+    const { data }=await sb().from('payments').select('*').order('created_at',{ascending:false}).limit(100);
+    payments=data||[];
+  }catch(e){}
+  users=await aqFetchProfiles();
+  const byUser={}; users.forEach(u=>byUser[u.id]=u);
+  const pending=payments.filter(p=>p.status==='pending');
+  const done=payments.filter(p=>p.status!=='pending');
+  const providerLabel={tg:'Telegram',humo:'HUMO',uzcard:'Uzcard',visa:'Visa',master:'MasterCard',paypal:'PayPal',sbp:'СБП',manual:'Вручную'};
+  const statusLabel={pending:'⏳ Ожидает',paid:'✓ Оплачен',failed:'✗ Отклонён',refunded:'↩ Возврат'};
+  const statusColor={pending:'color:#f59e0b',paid:'color:#34d399',failed:'color:#f87171',refunded:'color:#9aa7c0'};
+
+  function payRow(p){
+    const u=byUser[p.user_id];
+    const who=u?(u.login||u.email||'—'):p.user_id?.slice(0,8)||'—';
+    const raw=p.raw||{};
+    const plan=raw.plan||'—'; const promo=raw.promo?` · промо ${raw.promo}`:'';
+    const dt=p.created_at?new Date(p.created_at).toLocaleString('ru-RU'):'—';
+    const prov=providerLabel[p.provider]||p.provider||'—';
+    const st=statusLabel[p.status]||p.status;
+    const stColor=statusColor[p.status]||'';
+    const planLbl={m1:'1 мес',m3:'3 мес',m6:'6 мес',m12:'12 мес'};
+    return `<div class="adm-ucard">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div class="font-semibold text-cream text-sm mb-0.5">${who}</div>
+          <p class="text-xs text-muted">${prov} · ${planLbl[plan]||plan}${promo} · ${fmtSum(p.amount||0)} · ${dt}</p>
+          <p class="text-xs mt-0.5" style="${stColor}">${st}</p>
+        </div>
+        <div class="flex gap-2">
+          ${p.status==='pending'?`<button class="lg-btn text-xs px-3 py-1.5" onclick="adminApprovePayment('${p.id}','${p.user_id}','${plan}',${p.amount||0},'${p.provider}')">Активировать</button>`:''}
+          ${p.status==='pending'?`<button class="text-xs text-red-400 hover:underline" onclick="adminRejectPayment('${p.id}')">Отклонить</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* Обновить бейдж */
+  const badge=document.getElementById('adm-payments-badge');
+  if(badge) badge.innerHTML=pending.length?`<span style="background:#f59e0b;color:#0B0F1A;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800">${pending.length}</span>`:'';
+
+  return `
+  <h2 class="text-xl font-extrabold text-cream mb-5">Платежи</h2>
+  <h3 class="text-sm font-bold text-cream mb-3">Ожидают подтверждения · ${pending.length}</h3>
+  ${pending.length===0?'<p class="text-xs text-muted mb-6">Нет ожидающих платежей</p>':pending.map(payRow).join('')}
+  <h3 class="text-sm font-bold text-cream mb-3 mt-6">История · ${done.length}</h3>
+  ${done.length===0?'<p class="text-xs text-muted">Нет завершённых платежей</p>':done.slice(0,20).map(payRow).join('')}`;
+}
+
+async function adminApprovePayment(payId, userId, plan, amount, provider){
+  if(!SB_CONFIGURED) return;
+  const { error:subErr }=await sb().rpc('admin_activate_sub',{ p_user:userId, p_plan:plan, p_amount:amount, p_source:provider });
+  if(subErr){ toast('Ошибка активации: '+subErr.message,'err'); return; }
+  const { error:payErr }=await sb().from('payments').update({ status:'paid' }).eq('id',payId);
+  if(payErr) console.warn('[AQ] payment update', payErr);
+  toast('Подписка активирована'); adminPage('payments');
+}
+
+async function adminRejectPayment(payId){
+  if(!confirm('Отклонить этот платёж?')) return;
+  const { error }=await sb().from('payments').update({ status:'failed' }).eq('id',payId);
+  if(error){ toast('Ошибка','err'); return; }
+  toast('Платёж отклонён'); adminPage('payments');
 }
 
 /* Загрузка пользователей: Supabase (профили) или localStorage-fallback. */
