@@ -63,6 +63,11 @@ STR = {
         "uz": "❌ <b>Obunangiz tugadi.</b>\n\nTo'liq hisob-kitobga kirish cheklangan. Yangilash uchun biz bilan bog'laning.",
         "en": "❌ <b>Your subscription has expired.</b>\n\nFull calculation access is restricted. Contact us to renew.",
     },
+    "sub_none_user": {
+        "ru": "У вас нет активной подписки. Используйте /tariffs для просмотра тарифов.",
+        "uz": "Sizda faol obuna yo'q. Tariflarni ko'rish uchun /tariffs foydalaning.",
+        "en": "You have no active subscription. Use /tariffs to view plans.",
+    },
     "promo_applied": {"ru": "🎁 Промокод <b>{code}</b> применён: скидка −{disc}%. К оплате за {plan}: <b>{price}</b>.",
                       "uz": "🎁 <b>{code}</b> promokod qo'llandi: −{disc}% chegirma. {plan} uchun: <b>{price}</b>.",
                       "en": "🎁 Promo <b>{code}</b> applied: −{disc}% off. {plan} total: <b>{price}</b>."},

@@ -38,6 +38,7 @@ async def _set_commands(bot):
     await bot.set_my_commands([
         BotCommand(command="start", description="Меню / Menyu / Menu"),
         BotCommand(command="menu", description="Главное меню"),
+        BotCommand(command="mysub", description="Моя подписка / Mening obuna"),
         BotCommand(command="reset", description="Сбросить расчёт"),
         BotCommand(command="myid", description="Мой Telegram ID"),
     ])
