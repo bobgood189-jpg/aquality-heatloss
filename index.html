@@ -2522,6 +2522,18 @@ async function sbSignUp(data){
     return {ok:true, needsConfirm:true};
   }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
+// Вход по телефону ИЛИ email: телефон → email через RPC resolve_login_email
+// (см. supabase/resolve-login-email-schema.sql). Если это email или RPC недоступна —
+// возвращаем ввод как есть (email-вход продолжит работать).
+async function sbResolveLoginEmail(login){
+  if(login && login.includes('@')) return login;
+  const c=sb(); if(!c) return login;
+  try{
+    const {data,error}=await c.rpc('resolve_login_email',{p_login:login});
+    if(error||!data) return login;
+    return data;
+  }catch(e){ return login; }
+}
 async function sbSignIn(email, password){
   const c = sb(); if(!c) return {ok:false, err:'Supabase не настроен'};
   try{
@@ -4041,10 +4053,10 @@ function renderLoginForm(){
   </div>
   <div class="space-y-3">
     <div class="auth-field-item" style="animation-delay:.05s">
-      <label class="auth-lbl">${SB_CONFIGURED?'Email':t('auth-lbl-login')}</label>
+      <label class="auth-lbl">${SB_CONFIGURED?t('auth-lbl-contact'):t('auth-lbl-login')}</label>
       <div class="auth-field-wrap">
         <svg class="auth-field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-        <input id="al-login" class="wi" type="${SB_CONFIGURED?'email':'text'}" placeholder="${SB_CONFIGURED?'you@example.com':t('auth-ph-login')}" autocomplete="username">
+        <input id="al-login" class="wi" type="text" placeholder="${SB_CONFIGURED?t('auth-ph-contact'):t('auth-ph-login')}" autocomplete="username">
       </div>
     </div>
     <div class="auth-field-item" style="animation-delay:.12s">
@@ -4239,7 +4251,8 @@ async function doLogin(){
   if(SB_CONFIGURED){
     if(!login||!pass){ showAuthErr(t('auth-err-fill-all')); return; }
     const btn=event&&event.target; if(btn) btn.disabled=true;
-    const r=await sbSignIn(login,pass);
+    const email=await sbResolveLoginEmail(login);   // телефон → email (email — как есть)
+    const r=await sbSignIn(email,pass);
     if(btn) btn.disabled=false;
     if(!r.ok){
       if(r.needsConfirm){ _signupEmail=r.email||login; authSwitchTab('confirm'); return; }
@@ -8442,6 +8455,7 @@ const _i18n = {
     'auth-register-link':'Зарегистрироваться',
     'auth-login-link':'Войти',
     'auth-lbl-login':'Логин','auth-ph-login':'Ваш логин',
+    'auth-lbl-contact':'Email или телефон','auth-ph-contact':'you@example.com или +998…',
     'auth-lbl-name':'Имя','auth-ph-name':'Ваше имя',
     'auth-lbl-pass':'Пароль','auth-ph-pass6':'Мин. 6 символов','auth-ph-pass4':'Мин. 4 символа',
     'auth-lbl-phone':'Телефон','auth-lbl-phone2':'Телефон 2',
@@ -8962,6 +8976,7 @@ const _i18n = {
     "auth-register-link":"Ro'yxatdan o'tish",
     'auth-login-link':'Kirish',
     "auth-lbl-login":"Login","auth-ph-login":"Loginingiz",
+    "auth-lbl-contact":"Email yoki telefon","auth-ph-contact":"you@example.com yoki +998…",
     "auth-lbl-name":"Ism","auth-ph-name":"Ismingiz",
     "auth-lbl-pass":"Parol","auth-ph-pass6":"Min. 6 belgi","auth-ph-pass4":"Min. 4 belgi",
     "auth-lbl-phone":"Telefon","auth-lbl-phone2":"Telefon 2",
@@ -9498,6 +9513,7 @@ const _i18n = {
     'auth-register-link':'Sign up',
     'auth-login-link':'Log in',
     'auth-lbl-login':'Login','auth-ph-login':'Your login',
+    'auth-lbl-contact':'Email or phone','auth-ph-contact':'you@example.com or +998…',
     'auth-lbl-name':'Name','auth-ph-name':'Your name',
     'auth-lbl-pass':'Password','auth-ph-pass6':'Min. 6 chars','auth-ph-pass4':'Min. 4 chars',
     'auth-lbl-phone':'Phone','auth-lbl-phone2':'Phone 2',
