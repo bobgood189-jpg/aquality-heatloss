@@ -16,7 +16,7 @@ from .config import require_token, SB_CONFIGURED, ADMIN_CHAT_ID
 from . import storage
 from . import supabase_db as _sb
 from . import keyboards as K
-from .handlers import menu, admin, wizard, results, payments, auth, shop, review, site_payments
+from .handlers import menu, admin, wizard, results, payments, auth, shop, review, site_payments, account
 from .i18n import t
 
 logging.basicConfig(level=logging.INFO,
@@ -44,6 +44,7 @@ async def _set_commands(bot):
         BotCommand(command="mysub",  description="Моя подписка / Mening obuna"),
         BotCommand(command="help",   description="Справка и поддержка"),
         BotCommand(command="link",   description="Привязать аккаунт / Akkaunt bog'lash"),
+        BotCommand(command="account", description="Мой аккаунт 👤"),
         BotCommand(command="resetpass", description="Сбросить пароль сайта 🔑"),
         BotCommand(command="reset",  description="Сбросить расчёт"),
         BotCommand(command="myid",   description="Мой Telegram ID"),
@@ -95,6 +96,8 @@ async def _expiry_loop(bot: Bot):
 _REVIEW_CHECK_INTERVAL = 900  # check every 15 minutes
 
 _SITE_PAYMENT_POLL_INTERVAL = 25  # seconds — site payments awaiting owner notification
+
+_RESET_CODE_POLL_INTERVAL = 4  # seconds — user is watching the site live for this code
 
 _SITE_PROVIDER_LABELS = {
     "tg": "Telegram", "humo": "HUMO", "uzcard": "Uzcard", "visa": "Visa",
@@ -149,6 +152,25 @@ async def _site_payment_notify_loop(bot: Bot):
         await asyncio.sleep(_SITE_PAYMENT_POLL_INTERVAL)
 
 
+async def _reset_code_notify_loop(bot: Bot):
+    """Delivers site-requested password-reset codes to the user's Telegram chat.
+    Short interval — the user is watching the site's forgot-password screen live."""
+    if not SB_CONFIGURED:
+        return
+    while True:
+        try:
+            for rec in await _sb.list_pending_reset_codes():
+                try:
+                    lang = storage.get_user_lang(rec["telegram_id"]) or "ru"
+                    await bot.send_message(rec["telegram_id"], t("reset_code_message", lang, code=rec["code"]))
+                    await _sb.mark_reset_code_notified(rec["id"])
+                except Exception as e:
+                    log.warning("Could not deliver reset code %s: %s", rec.get("id"), e)
+        except Exception as e:
+            log.error("Reset code poll failed: %s", e)
+        await asyncio.sleep(_RESET_CODE_POLL_INTERVAL)
+
+
 async def _review_reminder_loop(bot: Bot):
     await asyncio.sleep(300)
     while True:
@@ -179,6 +201,7 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(menu.router)
     dp.include_router(auth.router)      # registration — before wizard
+    dp.include_router(account.router)   # "Мой аккаунт" screen
     dp.include_router(admin.router)
     dp.include_router(payments.router)
     dp.include_router(shop.router)      # purchase wizard
@@ -192,6 +215,7 @@ async def main():
     asyncio.create_task(_expiry_loop(bot))
     asyncio.create_task(_review_reminder_loop(bot))
     asyncio.create_task(_site_payment_notify_loop(bot))
+    asyncio.create_task(_reset_code_notify_loop(bot))
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(),
                            drop_pending_updates=True)
 

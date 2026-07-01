@@ -45,12 +45,31 @@ def lang_kb():
 def menu_kb(lang, is_owner=False, paywall=False):
     rows = [
         [btn("🛒 Купить подписку", "menu:buy")],
+        [btn(t("menu_account", lang), "menu:account")],
         [btn(t("menu_materials", lang), "menu:materials"), btn(t("menu_faq", lang), "menu:faq")],
         [btn(t("menu_contact", lang), "menu:contact"), btn(t("menu_lang", lang), "menu:lang")],
     ]
     if is_owner:
         rows.append([btn("👑 Админ-панель", "menu:admin")])
     return kb(rows)
+
+
+# ── account ──
+def account_kb(lang, linked, site_url=""):
+    rows = []
+    if linked:
+        rows.append([btn(t("account_btn_resetpass", lang), "account:resetpass")])
+        rows.append([btn(t("account_btn_unlink", lang), "account:unlink")])
+    rows.append([InlineKeyboardButton(text=t("account_btn_site", lang), url=site_url)])
+    rows.append([btn(t("menu", lang), "menu:home")])
+    return kb(rows)
+
+
+def account_unlink_confirm_kb(lang):
+    return kb([
+        [btn(t("account_unlink_yes", lang), "account:unlink_yes"),
+         btn(t("account_unlink_no", lang), "account:unlink_no")],
+    ])
 
 
 # ── tariffs / paywall ──

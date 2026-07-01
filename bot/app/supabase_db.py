@@ -237,6 +237,26 @@ async def link_by_token(tg_id: int, username: str, token: str) -> dict:
     return res or {"ok": False, "reason": "rpc_error"}
 
 
+async def unlink_by_telegram(tg_id: int) -> dict:
+    """Unlink Telegram from the profile bound to tg_id — bot-initiated (the
+    site's unlink_tg_account RPC needs auth.uid(), so it can't be called from
+    here). Powers the "Отвязать Telegram" button on the account screen."""
+    res = await _rpc("bot_unlink_telegram", {"p_telegram_id": tg_id})
+    return res or {"ok": False, "reason": "rpc_error"}
+
+
+# ── Password reset codes (Telegram OTP for the site's forgot-password flow) ───
+
+async def list_pending_reset_codes() -> list:
+    """Reset codes awaiting delivery to the user's Telegram chat."""
+    res = await _rpc("bot_list_pending_reset_codes", {})
+    return res or []
+
+
+async def mark_reset_code_notified(code_id: str) -> None:
+    await _rpc("bot_mark_reset_code_notified", {"p_id": code_id})
+
+
 # ── Analytics & audit ─────────────────────────────────────────────────────────
 
 async def log_event(tg_id: int, event: str, data: dict = None) -> None:

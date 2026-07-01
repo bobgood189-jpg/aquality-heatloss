@@ -3957,6 +3957,7 @@ let _authTab='login';
 let _authClientType='client';
 let _forgotStep=1;
 let _forgotEmail='';
+let _forgotSource='email'; // 'email' (Supabase native OTP) | 'telegram' (bot-delivered code)
 let _signupEmail='';
 
 let _authCanvasRaf=null;
@@ -4020,7 +4021,7 @@ function renderAuthBody(){
   clearInterval(_otpTimerIv); clearInterval(_otpResendIv);
   if(_authTab==='confirm'){ el.innerHTML=renderSignupConfirmForm(); requestAnimationFrame(initOtpBoxes); }
   else if(_authTab==='login') el.innerHTML=renderLoginForm();
-  else if(_authTab==='forgot'){ _forgotStep=1; el.innerHTML=renderForgotForm(); }
+  else if(_authTab==='forgot'){ _forgotStep=1; _forgotSource='email'; el.innerHTML=renderForgotForm(); }
   else el.innerHTML=renderRegisterForm();
 }
 function authSwitchTab(tab){ _authTab=tab; renderAuthBody(); }
@@ -4281,13 +4282,19 @@ function renderForgotForm(){
   const backBtn=`<button onclick="authSwitchTab('login')" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:rgba(148,163,184,.5);background:none;border:none;cursor:pointer;margin-bottom:1.25rem;padding:0;transition:color .15s" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.5)'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> ${t('forgot-back')}</button>`;
   // Резервный путь: если письмо с кодом не доходит (лимит почты Supabase) — сброс через Telegram-бота, без email.
   const tgReset=`<div style="margin-top:1.1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06);text-align:center"><p class="text-xs" style="color:rgba(148,163,184,.5);margin-bottom:.4rem">${t('forgot-tg-hint')}</p><a href="https://t.me/${BOT_USERNAME}?start=resetpass" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:700;color:#F59E0B;text-decoration:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161-1.858 8.762c-.14.626-.507.782-1.027.487l-2.84-2.093-1.37 1.318c-.152.152-.279.279-.571.279l.204-2.889 5.26-4.752c.229-.204-.05-.318-.354-.114l-6.503 4.094-2.802-.876c-.609-.19-.62-.609.128-.901l10.95-4.222c.507-.19.951.114.786.902z"/></svg>${t('forgot-tg-link')} →</a></div>`;
-  if(_forgotStep===2) return `
+  if(_forgotStep===2){
+    const step2Hint = _forgotSource==='telegram'
+      ? t('forgot-step2-hint-tg').replace('%bot%',BOT_USERNAME)
+      : t('forgot-step2-hint').replace('%email%',_forgotEmail);
+    const resendFn = _forgotSource==='telegram' ? 'doForgotSendTg' : 'doForgotSend';
+    const otpLbl = _forgotSource==='telegram' ? t('forgot-otp-lbl-tg') : t('forgot-otp-lbl');
+    return `
   ${backBtn}
   <h2 class="text-lg font-extrabold text-cream mb-1">${t('forgot-title')}</h2>
-  <p class="text-xs mb-5" style="color:rgba(148,163,184,.5)">${t('forgot-step2-hint').replace('%email%',_forgotEmail)}</p>
+  <p class="text-xs mb-5" style="color:rgba(148,163,184,.5)">${step2Hint}</p>
   <div class="space-y-3">
     <div>
-      <label class="auth-lbl">${t('forgot-otp-lbl')}</label>
+      <label class="auth-lbl">${otpLbl}</label>
       <input id="fp-otp" class="wi text-center tracking-widest" maxlength="6" placeholder="0  0  0  0  0  0" inputmode="numeric" autocomplete="one-time-code" style="letter-spacing:.25em;font-size:1.1rem;text-align:center">
     </div>
     <div>
@@ -4300,7 +4307,8 @@ function renderForgotForm(){
   </div>
   <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
   <button onclick="doForgotVerify()" class="lg-btn w-full mt-5 py-3">${t('forgot-confirm-btn')} →</button>
-  <p class="text-center text-xs mt-3" style="color:rgba(148,163,184,.4)"><button onclick="doForgotSend()" style="color:rgba(148,163,184,.4);background:none;border:none;cursor:pointer;font-size:inherit" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.4)'">${t('forgot-resend')}</button></p>${tgReset}`;
+  <p class="text-center text-xs mt-3" style="color:rgba(148,163,184,.4)"><button onclick="${resendFn}()" style="color:rgba(148,163,184,.4);background:none;border:none;cursor:pointer;font-size:inherit" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.4)'">${t('forgot-resend')}</button></p>${tgReset}`;
+  }
   return `
   ${backBtn}
   <h2 class="text-lg font-extrabold text-cream mb-1">${t('forgot-title')}</h2>
@@ -4313,7 +4321,8 @@ function renderForgotForm(){
     </div>
   </div>
   <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
-  <button onclick="doForgotSend()" class="lg-btn w-full mt-5 py-3">${t('forgot-send-btn')} →</button>${tgReset}`;
+  <button onclick="doForgotSend()" class="lg-btn w-full mt-5 py-3">${t('forgot-send-btn')} →</button>
+  <button onclick="doForgotSendTg()" class="lg-btn-sec w-full mt-2 py-2.5 text-sm">${t('forgot-tg-otp-btn')}</button>${tgReset}`;
 }
 async function doForgotSend(){
   const emailEl=document.getElementById('fp-email');
@@ -4324,8 +4333,47 @@ async function doForgotSend(){
   const r=await sbSendOtp(email);
   if(btn) btn.disabled=false;
   if(!r.ok){ showAuthErr(r.err); return; }
-  _forgotEmail=email; _forgotStep=2;
+  _forgotEmail=email; _forgotStep=2; _forgotSource='email';
   const el=document.getElementById('auth-body'); if(el) el.innerHTML=renderForgotForm();
+}
+// Резервный канал: код доставляется в Telegram-бот вместо почты (требует, чтобы
+// Telegram уже был привязан к аккаунту — см. _pfGenTgToken в профиле).
+async function doForgotSendTg(){
+  const emailEl=document.getElementById('fp-email');
+  const email=(emailEl?emailEl.value:_forgotEmail||'').trim();
+  if(!email){ showAuthErr(t('auth-err-no-email')); return; }
+  if(!AQ_CFG.SUPABASE_URL||/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_URL)){ showAuthErr('Доступно только в онлайн-режиме'); return; }
+  const c=sb(); if(!c){ showAuthErr(t('auth-err-network')); return; }
+  const btn=event&&event.target; if(btn) btn.disabled=true;
+  let r;
+  try{
+    const { data, error } = await c.rpc('request_tg_reset_code', { p_email: email });
+    r = error ? {ok:false, reason:'rpc_error'} : (data || {ok:false, reason:'rpc_error'});
+  }catch(e){ r = {ok:false, reason:'rpc_error'}; }
+  if(btn) btn.disabled=false;
+  if(!r.ok){
+    const msg = r.reason==='no_telegram_link' ? t('forgot-tg-no-link')
+              : r.reason==='email_not_found'  ? t('forgot-err-user-not-found')
+              : r.reason==='too_soon'         ? t('forgot-tg-too-soon')
+              : t('forgot-err-otp-invalid');
+    showAuthErr(msg); return;
+  }
+  _forgotEmail=email; _forgotStep=2; _forgotSource='telegram';
+  const el=document.getElementById('auth-body'); if(el) el.innerHTML=renderForgotForm();
+}
+async function verifyTgResetAndSetPassword(email,code,newPassword){
+  if(!AQ_CFG.SUPABASE_URL||/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_URL)) return {ok:false,err:'Доступно только в онлайн-режиме'};
+  try{
+    const res=await fetch(`${AQ_CFG.SUPABASE_URL}/functions/v1/verify-tg-reset`,{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':AQ_CFG.SUPABASE_ANON_KEY, 'Authorization':`Bearer ${AQ_CFG.SUPABASE_ANON_KEY}` },
+      body:JSON.stringify({ email, code, newPassword }),
+      signal:AbortSignal.timeout(20000)
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||data.ok===false) return {ok:false, err:data.error||t('forgot-err-otp-invalid')};
+    return {ok:true};
+  }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
 async function doForgotVerify(){
   const otp=(document.getElementById('fp-otp')?.value||'').trim();
@@ -4333,10 +4381,12 @@ async function doForgotVerify(){
   if(!otp||otp.length<6){ showAuthErr(t('forgot-err-otp-invalid')); return; }
   if(!newPass||newPass.length<6){ showAuthErr(t('auth-err-pass-short')); return; }
   const btn=event&&event.target; if(btn) btn.disabled=true;
-  const r=await sbVerifyOtpAndReset(_forgotEmail,otp,newPass);
+  const r = _forgotSource==='telegram'
+    ? await verifyTgResetAndSetPassword(_forgotEmail,otp,newPass)
+    : await sbVerifyOtpAndReset(_forgotEmail,otp,newPass);
   if(btn) btn.disabled=false;
   if(!r.ok){ showAuthErr(r.err); return; }
-  _forgotStep=1; _forgotEmail='';
+  _forgotStep=1; _forgotEmail=''; _forgotSource='email';
   closeAuth();
   toast(t('forgot-success'));
   initAuthNav();
@@ -8586,11 +8636,14 @@ const _i18n = {
     'forgot-link':'Забыли пароль?','forgot-title':'Восстановление пароля',
     'forgot-step1-hint':'Введите email — вышлем 6-значный код подтверждения.',
     'forgot-step2-hint':'Код отправлен на %email%. Введите его ниже.',
-    'forgot-send-btn':'Отправить код','forgot-otp-lbl':'Код из письма (6 цифр)',
+    'forgot-send-btn':'Отправить код','forgot-otp-lbl':'Код из письма (6 цифр)','forgot-otp-lbl-tg':'Код из Telegram-бота (6 цифр)',
     'forgot-newpass-lbl':'Новый пароль','forgot-confirm-btn':'Изменить пароль',
     'forgot-back':'Назад','forgot-resend':'Отправить код ещё раз',
     'forgot-success':'Пароль изменён ✓ Войдите с новым паролем.',
     'forgot-tg-hint':'Код не приходит на почту?','forgot-tg-link':'Сбросить пароль через Telegram-бота',
+    'forgot-tg-otp-btn':'📨 Получить код в Telegram','forgot-step2-hint-tg':'Код отправлен в Telegram-бот @%bot%. Введите его ниже.',
+    'forgot-tg-no-link':'⚠️ Telegram не привязан к этому аккаунту. Привяжите его в профиле или используйте сброс через бота ниже.',
+    'forgot-tg-too-soon':'Код уже отправлен, подождите немного перед повторной отправкой.',
     'forgot-err-user-not-found':'Email не зарегистрирован','forgot-err-otp-invalid':'Неверный или просроченный код',
     'sub-expiry-warning':'⚠ Подписка истекает через %n% дн. — продлите заранее.',
     'sub-expired-msg':'❌ Срок подписки истёк — обновите подписку для доступа.',
@@ -9096,11 +9149,14 @@ const _i18n = {
     'forgot-link':"Parolni unutdingizmi?",'forgot-title':'Parolni tiklash',
     'forgot-step1-hint':"Emailingizni kiriting — 6 xonali tasdiqlash kodi yuboramiz.",
     'forgot-step2-hint':"%email% manziliga kod yuborildi. Quyida kiriting.",
-    'forgot-send-btn':'Kod yuborish','forgot-otp-lbl':'Xatdagi kod (6 raqam)',
+    'forgot-send-btn':'Kod yuborish','forgot-otp-lbl':'Xatdagi kod (6 raqam)','forgot-otp-lbl-tg':'Telegram-botdagi kod (6 raqam)',
     'forgot-newpass-lbl':"Yangi parol",'forgot-confirm-btn':'Parolni o\'zgartirish',
     'forgot-back':'Orqaga','forgot-resend':'Kodni qayta yuborish',
     'forgot-success':"Parol o'zgartirildi ✓ Yangi parol bilan kiring.",
     'forgot-tg-hint':'Kod pochtaga kelmayaptimi?','forgot-tg-link':'Telegram-bot orqali parolni tiklash',
+    'forgot-tg-otp-btn':'📨 Telegramda kod olish','forgot-step2-hint-tg':'@%bot% Telegram-botiga kod yuborildi. Quyida kiriting.',
+    'forgot-tg-no-link':"⚠️ Telegram bu akkauntga bog'lanmagan. Profilda bog'lang yoki quyidagi bot orqali tiklashdan foydalaning.",
+    'forgot-tg-too-soon':'Kod allaqachon yuborilgan, biroz kutib turing.',
     'forgot-err-user-not-found':"Bu email ro'yxatdan o'tmagan",'forgot-err-otp-invalid':"Noto'g'ri yoki eskirgan kod",
     'sub-expiry-warning':'⚠ Obuna %n% kun ichida tugaydi — muddatidan oldin yangilang.',
     'sub-expired-msg':"❌ Obuna muddati tugadi — kirish uchun obunani yangilang.",
@@ -9624,11 +9680,14 @@ const _i18n = {
     'forgot-link':'Forgot password?','forgot-title':'Reset password',
     'forgot-step1-hint':'Enter your email — we\'ll send a 6-digit confirmation code.',
     'forgot-step2-hint':'Code sent to %email%. Enter it below.',
-    'forgot-send-btn':'Send code','forgot-otp-lbl':'Code from email (6 digits)',
+    'forgot-send-btn':'Send code','forgot-otp-lbl':'Code from email (6 digits)','forgot-otp-lbl-tg':'Code from the Telegram bot (6 digits)',
     'forgot-newpass-lbl':'New password','forgot-confirm-btn':'Change password',
     'forgot-back':'Back','forgot-resend':'Resend code',
     'forgot-success':'Password changed ✓ Sign in with your new password.',
     'forgot-tg-hint':"Code not arriving by email?",'forgot-tg-link':'Reset password via Telegram bot',
+    'forgot-tg-otp-btn':'📨 Get code via Telegram','forgot-step2-hint-tg':'Code sent to the @%bot% Telegram bot. Enter it below.',
+    'forgot-tg-no-link':"⚠️ Telegram isn't linked to this account. Link it in your profile or use the bot reset link below.",
+    'forgot-tg-too-soon':'A code was already sent — please wait a bit before requesting another.',
     'forgot-err-user-not-found':'Email not found','forgot-err-otp-invalid':'Invalid or expired code',
     'sub-expiry-warning':'⚠ Subscription expires in %n% days — renew now.',
     'sub-expired-msg':'❌ Your subscription has expired — renew to continue.',

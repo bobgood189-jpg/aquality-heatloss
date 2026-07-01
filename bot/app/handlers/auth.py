@@ -132,33 +132,22 @@ async def reg_phone(message: Message, state: FSMContext):
                                 name=data.get("reg_name", ""), phone=phone)
 
 
-# ── /link command (alias for registration / re-link) ─────────────────────────
-
-@router.message(Command("link"))
-async def cmd_link(message: Message, state: FSMContext):
-    from .util import get_lang
-    lang = await get_lang(state, message.from_user.id)
-    if not SB_CONFIGURED:
-        return await message.answer(t("reg_no_sb", lang))
-    profile = await sb.get_profile(message.from_user.id)
-    if profile:
-        email = profile.get("email", "")
-        return await message.answer(
-            f"✅ Аккаунт уже привязан: <b>{email}</b>\n\nЧтобы сменить привязку — напишите /start.")
-    await start_registration(message, state, lang)
-
-
 # ── /resetpass (email-free password recovery) ────────────────────────────────
 
-async def start_password_reset(message: Message, state: FSMContext, lang: str):
-    """Entry point — call from /resetpass or the t.me/bot?start=resetpass deep link.
+async def start_password_reset(message: Message, state: FSMContext, lang: str, tg_id: int = None):
+    """Entry point — call from /resetpass, the t.me/bot?start=resetpass deep link,
+    or the "Мой аккаунт" screen (account.py) via an inline button.
+
+    tg_id: pass explicitly when `message` isn't the user's own message (e.g. a
+    callback where message.from_user would resolve to the bot, not the user).
 
     Only linked accounts can reset here: identity is proven by the fact that the
     Telegram user is already bound to the profile. No email round-trip needed.
     """
+    tg_id = tg_id if tg_id is not None else message.from_user.id
     if not SB_CONFIGURED:
         return await message.answer(t("reg_no_sb", lang))
-    profile = await sb.get_profile(message.from_user.id)
+    profile = await sb.get_profile(tg_id)
     if not profile or not profile.get("user_id"):
         return await message.answer(t("reset_not_linked", lang))
     await state.set_state(Reset.password)

@@ -268,6 +268,59 @@ STR = {
         "uz": "⚠️ Bog'lash vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
         "en": "⚠️ Linking is temporarily unavailable. Please try again later.",
     },
+    "reg_no_sb": {
+        "ru": "⚠️ Функция недоступна (нет подключения к базе).",
+        "uz": "⚠️ Funksiya mavjud emas (bazaga ulanish yo'q).",
+        "en": "⚠️ Feature unavailable (no database connection).",
+    },
+    # ── password reset code delivered via Telegram (site-initiated) ──
+    "reset_code_message": {
+        "ru": "🔑 Код для сброса пароля на сайте: <b>{code}</b>\n\n⏱ Действителен 10 минут. Никому не сообщайте этот код.",
+        "uz": "🔑 Saytda parolni tiklash kodi: <b>{code}</b>\n\n⏱ 10 daqiqa amal qiladi. Bu kodni hech kimga aytmang.",
+        "en": "🔑 Your site password reset code: <b>{code}</b>\n\n⏱ Valid for 10 minutes. Do not share this code with anyone.",
+    },
+    # ── "Мой аккаунт" screen ──
+    "menu_account": {"ru": "👤 Мой аккаунт", "uz": "👤 Mening akkauntim", "en": "👤 My account"},
+    "account_not_linked": {
+        "ru": "👤 <b>Мой аккаунт</b>\n\nTelegram ещё не привязан к аккаунту на сайте.\n\nℹ️ Как привязать:\n1. Откройте профиль на {site}\n2. «Аккаунт» → «Привязать Telegram»\n3. Отправьте сюда: <code>/link КОД</code>",
+        "uz": "👤 <b>Mening akkauntim</b>\n\nTelegram hali saytdagi akkauntga bog'lanmagan.\n\nℹ️ Qanday bog'lash:\n1. {site} saytida profilni oching\n2. «Akkaunt» → «Telegram bog'lash»\n3. Bu yerga yuboring: <code>/link KOD</code>",
+        "en": "👤 <b>My account</b>\n\nTelegram isn't linked to a site account yet.\n\nℹ️ How to link:\n1. Open your profile at {site}\n2. 'Account' → 'Link Telegram'\n3. Send here: <code>/link CODE</code>",
+    },
+    "account_info": {
+        "ru": "👤 <b>Мой аккаунт</b>\n\n📧 Email: <b>{email}</b>\n🙍 Имя: {name}\n📱 Телефон: {phone}{sub}",
+        "uz": "👤 <b>Mening akkauntim</b>\n\n📧 Email: <b>{email}</b>\n🙍 Ism: {name}\n📱 Telefon: {phone}{sub}",
+        "en": "👤 <b>My account</b>\n\n📧 Email: <b>{email}</b>\n🙍 Name: {name}\n📱 Phone: {phone}{sub}",
+    },
+    "account_sub_active": {
+        "ru": "\n💳 Подписка: <b>{plan}</b> до {date}",
+        "uz": "\n💳 Obuna: <b>{plan}</b> {date} gacha",
+        "en": "\n💳 Subscription: <b>{plan}</b> until {date}",
+    },
+    "account_sub_none": {
+        "ru": "\n💳 Подписка не активна",
+        "uz": "\n💳 Obuna faol emas",
+        "en": "\n💳 No active subscription",
+    },
+    "account_btn_resetpass": {"ru": "🔑 Сменить пароль", "uz": "🔑 Parolni o'zgartirish", "en": "🔑 Change password"},
+    "account_btn_unlink": {"ru": "🔌 Отвязать Telegram", "uz": "🔌 Telegramni uzish", "en": "🔌 Unlink Telegram"},
+    "account_btn_site": {"ru": "🌐 Открыть на сайте", "uz": "🌐 Saytda ochish", "en": "🌐 Open on site"},
+    "account_unlink_confirm": {
+        "ru": "⚠️ Точно отвязать Telegram от аккаунта? Вы потеряете доступ к /resetpass и статусу подписки в боте.",
+        "uz": "⚠️ Telegramni akkauntdan uzasizmi? /resetpass va obuna holatiga botda kirish imkoniyatini yo'qotasiz.",
+        "en": "⚠️ Really unlink Telegram from your account? You'll lose access to /resetpass and subscription status in the bot.",
+    },
+    "account_unlink_yes": {"ru": "✅ Да, отвязать", "uz": "✅ Ha, uzish", "en": "✅ Yes, unlink"},
+    "account_unlink_no": {"ru": "✖️ Отмена", "uz": "✖️ Bekor qilish", "en": "✖️ Cancel"},
+    "account_unlinked": {
+        "ru": "✅ Telegram отвязан от аккаунта.",
+        "uz": "✅ Telegram akkauntdan uzildi.",
+        "en": "✅ Telegram unlinked from your account.",
+    },
+    "account_unlink_error": {
+        "ru": "⚠️ Не удалось отвязать. Попробуйте позже.",
+        "uz": "⚠️ Uzib bo'lmadi. Keyinroq urinib ko'ring.",
+        "en": "⚠️ Could not unlink. Please try again later.",
+    },
 }
 
 
