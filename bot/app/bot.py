@@ -12,9 +12,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
-from .config import require_token
+from .config import require_token, SB_CONFIGURED, ADMIN_CHAT_ID
 from . import storage
-from .handlers import menu, admin, wizard, results, payments, auth, shop, review
+from . import supabase_db as _sb
+from . import keyboards as K
+from .handlers import menu, admin, wizard, results, payments, auth, shop, review, site_payments
 from .i18n import t
 
 logging.basicConfig(level=logging.INFO,
@@ -91,6 +93,60 @@ async def _expiry_loop(bot: Bot):
 
 _REVIEW_CHECK_INTERVAL = 900  # check every 15 minutes
 
+_SITE_PAYMENT_POLL_INTERVAL = 25  # seconds — site payments awaiting owner notification
+
+_SITE_PROVIDER_LABELS = {
+    "tg": "Telegram", "humo": "HUMO", "uzcard": "Uzcard", "visa": "Visa",
+    "master": "MasterCard", "paypal": "PayPal", "sbp": "СБП", "manual": "Вручную",
+}
+_SITE_PLAN_LABELS = {
+    "max_m1": "Max · 1 мес", "max_m3": "Max · 3 мес",
+    "max_m6": "Max · 6 мес", "max_m12": "Max · 12 мес",
+    "pro_m1": "Pro · 1 мес", "pro_m3": "Pro · 3 мес",
+    "pro_m6": "Pro · 6 мес", "pro_m12": "Pro · 12 мес",
+    "m1": "1 мес", "m6": "6 мес", "m12": "12 мес",
+}
+
+
+async def _notify_site_payment(bot: Bot, pay: dict):
+    raw = pay.get("raw") or {}
+    plan = _SITE_PLAN_LABELS.get(raw.get("plan"), raw.get("plan") or "—")
+    provider = _SITE_PROVIDER_LABELS.get(pay.get("provider"), pay.get("provider") or "—")
+    who = pay.get("email") or pay.get("full_name") or str(pay.get("user_id", ""))[:8]
+    try:
+        amount = f"{int(round(pay.get('amount') or 0)):,}".replace(",", " ") + " сум"
+    except (TypeError, ValueError):
+        amount = "—"
+    created = pay.get("created_at", "")[:16].replace("T", " ")
+
+    text = (
+        "💳 <b>Новая заявка на оплату (сайт)</b>\n\n"
+        f"👤 {who}\n"
+        f"📦 Тариф: <b>{plan}</b>\n"
+        f"💰 Сумма: <b>{amount}</b>\n"
+        f"🏦 Способ: {provider}\n"
+        f"🕐 {created}"
+    )
+    await bot.send_message(ADMIN_CHAT_ID, text, reply_markup=K.site_payment_review_kb(pay["id"]))
+
+
+async def _site_payment_notify_loop(bot: Bot):
+    if not SB_CONFIGURED:
+        return
+    await asyncio.sleep(30)
+    while True:
+        try:
+            for pay in await _sb.list_pending_site_payments():
+                try:
+                    await _notify_site_payment(bot, pay)
+                    await _sb.mark_site_payment_notified(pay["id"])
+                    log.info("Notified owner about site payment %s", pay["id"])
+                except Exception as e:
+                    log.warning("Could not notify owner about site payment %s: %s", pay.get("id"), e)
+        except Exception as e:
+            log.error("Site payment poll failed: %s", e)
+        await asyncio.sleep(_SITE_PAYMENT_POLL_INTERVAL)
+
 
 async def _review_reminder_loop(bot: Bot):
     await asyncio.sleep(300)
@@ -126,6 +182,7 @@ async def main():
     dp.include_router(payments.router)
     dp.include_router(shop.router)      # purchase wizard
     dp.include_router(review.router)    # admin order review
+    dp.include_router(site_payments.router)  # site paywall payment review
     dp.include_router(wizard.router)
     dp.include_router(results.router)
     await _set_commands(bot)
@@ -133,6 +190,7 @@ async def main():
     log.info("Starting @%s (id=%s)", me.username, me.id)
     asyncio.create_task(_expiry_loop(bot))
     asyncio.create_task(_review_reminder_loop(bot))
+    asyncio.create_task(_site_payment_notify_loop(bot))
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types(),
                            drop_pending_updates=True)
 

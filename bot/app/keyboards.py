@@ -286,3 +286,10 @@ def admin_reject_reasons_kb(order_id: int):
         [btn("🖼 Плохой скриншот",      f"review:rej:{order_id}:bad")],
         [btn("📝 Другая причина",       f"review:rej:{order_id}:other")],
     ])
+
+
+def site_payment_review_kb(payment_id: str):
+    return kb([
+        [btn("✅ Подтвердить", f"sitepay:ok:{payment_id}"),
+         btn("❌ Отклонить",   f"sitepay:rej:{payment_id}")],
+    ])

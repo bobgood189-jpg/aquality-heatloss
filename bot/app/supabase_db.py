@@ -230,3 +230,33 @@ async def log_event(tg_id: int, event: str, data: dict = None) -> None:
 async def get_stats() -> Optional[dict]:
     """Return admin stats dict: users, subs, revenue, leads."""
     return await _rpc("bot_get_stats", {})
+
+
+# ── Site payments (paywall на сайте, подтверждение владельцем в Telegram) ─────
+
+async def list_pending_site_payments() -> list:
+    """Pending payments created via the site's paywall, not yet notified."""
+    res = await _rpc("bot_list_pending_site_payments", {})
+    return res or []
+
+
+async def mark_site_payment_notified(payment_id: str) -> None:
+    await _rpc("bot_mark_site_payment_notified", {"p_payment_id": payment_id})
+
+
+async def activate_site_payment(payment_id: str, actor_tg: int = None) -> dict:
+    """Confirm a site payment: activates the subscription, marks payment paid.
+    Returns {ok, sub_id, user_id, email, full_name, telegram_id, plan, amount, expires_at}."""
+    res = await _rpc("bot_activate_site_payment", {
+        "p_payment_id": payment_id,
+        "p_actor_tg":   actor_tg,
+    })
+    return res or {"ok": False, "reason": "rpc_error"}
+
+
+async def reject_site_payment(payment_id: str, actor_tg: int = None) -> dict:
+    res = await _rpc("bot_reject_site_payment", {
+        "p_payment_id": payment_id,
+        "p_actor_tg":   actor_tg,
+    })
+    return res or {"ok": False, "reason": "rpc_error"}
