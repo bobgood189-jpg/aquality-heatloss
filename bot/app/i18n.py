@@ -201,6 +201,22 @@ STR = {
         "ru": "✅ Аккаунт создан и Telegram привязан!",
         "uz": "✅ Akkaunt yaratildi va Telegram bog'landi!",
         "en": "✅ Account created and Telegram linked!"},
+    "reg_ask_password": {
+        "ru": "🔑 Придумайте пароль для входа на сайт (минимум 6 символов).\n\nС этим паролём и вашим email вы сможете войти на сайте.",
+        "uz": "🔑 Saytga kirish uchun parol o'ylab toping (kamida 6 belgi).\n\nShu parol va emailingiz bilan saytga kirasiz.",
+        "en": "🔑 Choose a password to log in on the site (at least 6 characters).\n\nUse it with your email to sign in on the site."},
+    "reg_pass_short": {
+        "ru": "⚠️ Пароль слишком короткий. Минимум 6 символов. Попробуйте ещё раз:",
+        "uz": "⚠️ Parol juda qisqa. Kamida 6 belgi. Qayta urinib ko'ring:",
+        "en": "⚠️ Password too short. At least 6 characters. Try again:"},
+    "reg_pass_ok": {
+        "ru": "✅ Пароль сохранён. Теперь можно войти на сайте: email + этот пароль.",
+        "uz": "✅ Parol saqlandi. Endi saytga kirishingiz mumkin: email + shu parol.",
+        "en": "✅ Password saved. You can now log in on the site: email + this password."},
+    "reg_pass_error": {
+        "ru": "⚠️ Пароль пока не удалось сохранить. Продолжим регистрацию — задать пароль можно позже через /resetpass.",
+        "uz": "⚠️ Parolni saqlab bo'lmadi. Ro'yxatdan o'tishni davom ettiramiz — parolni keyinroq /resetpass orqali o'rnatishingiz mumkin.",
+        "en": "⚠️ Couldn't save the password yet. Let's continue — you can set it later via /resetpass."},
     "reg_ask_name": {
         "ru": "Как вас зовут? (или /skip)",
         "uz": "Ismingiz nima? (yoki /skip)",

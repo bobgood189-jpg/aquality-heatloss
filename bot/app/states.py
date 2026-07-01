@@ -13,9 +13,10 @@ class Purchase(StatesGroup):
 
 
 class Register(StatesGroup):
-    email = State()
-    name  = State()
-    phone = State()
+    email    = State()
+    password = State()   # only for brand-new accounts — establishes site login
+    name     = State()
+    phone    = State()
 
 
 class Reset(StatesGroup):

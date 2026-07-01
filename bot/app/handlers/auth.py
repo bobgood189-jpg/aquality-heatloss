@@ -72,15 +72,46 @@ async def reg_email(message: Message, state: FSMContext):
             if ok:
                 await sb.log_event(tg_id, "reg_start", {"email": email})
                 await state.update_data(reg_email=email, reg_user_id=uid)
-                await state.set_state(Register.name)
+                # New account has no password yet — ask for one so the user can
+                # immediately log in on the site with email + password. Existing
+                # accounts (the res.get("ok") branch above) keep their password.
+                await state.set_state(Register.password)
                 await message.answer(t("reg_created", lang))
-                return await message.answer(t("reg_ask_name", lang),
-                                            reply_markup=K.reg_skip_kb(lang))
+                return await message.answer(t("reg_ask_password", lang))
         await message.answer(t("reg_email_error", lang))
         return
 
     log.error("upsert_user unexpected reason=%s tg_id=%s", reason, tg_id)
     await message.answer(t("reg_error", lang))
+
+
+# ── password step (new accounts only) ─────────────────────────────────────────
+
+@router.message(Register.password)
+async def reg_password(message: Message, state: FSMContext):
+    data = await state.get_data()
+    lang = data.get("reg_lang") or data.get("lang") or "ru"
+    pwd = (message.text or "").strip()
+
+    if len(pwd) < 6:
+        return await message.answer(t("reg_pass_short", lang))
+
+    uid = data.get("reg_user_id")
+    ok = await sb.set_user_password(uid, pwd) if uid else False
+    if ok:
+        # Delete the plaintext password message for safety (bots may delete
+        # incoming messages in private chats).
+        try:
+            await message.delete()
+        except Exception:
+            pass
+        await message.answer(t("reg_pass_ok", lang))
+    else:
+        # Don't hard-block: the user can still set a password later via /resetpass.
+        await message.answer(t("reg_pass_error", lang))
+
+    await state.set_state(Register.name)
+    await message.answer(t("reg_ask_name", lang), reply_markup=K.reg_skip_kb(lang))
 
 
 # ── name step ────────────────────────────────────────────────────────────────
