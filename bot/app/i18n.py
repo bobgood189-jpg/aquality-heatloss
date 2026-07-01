@@ -221,6 +221,27 @@ STR = {
         "ru": "⚠️ Ошибка привязки. Попробуйте позже.",
         "uz": "⚠️ Bog'lashda xatolik. Keyinroq urinib ko'ring.",
         "en": "⚠️ Linking error. Please try again later."},
+    # ── password reset (email-free, via bot) ──
+    "reset_not_linked": {
+        "ru": "🔒 Чтобы сбросить пароль, сначала привяжите аккаунт: отправьте /link и укажите email вашего аккаунта на сайте.",
+        "uz": "🔒 Parolni tiklash uchun avval akkauntni bog'lang: /link yuboring va saytdagi akkaunt emailini kiriting.",
+        "en": "🔒 To reset your password, link your account first: send /link and enter your site account email."},
+    "reset_prompt": {
+        "ru": "🔑 Придумайте новый пароль (минимум 6 символов) и отправьте его сообщением.\n\nОтмена — /cancel",
+        "uz": "🔑 Yangi parol o'ylab toping (kamida 6 belgi) va xabar sifatida yuboring.\n\nBekor qilish — /cancel",
+        "en": "🔑 Enter a new password (at least 6 characters) and send it as a message.\n\nCancel — /cancel"},
+    "reset_too_short": {
+        "ru": "⚠️ Пароль слишком короткий. Минимум 6 символов. Попробуйте ещё раз:",
+        "uz": "⚠️ Parol juda qisqa. Kamida 6 belgi. Qayta urinib ko'ring:",
+        "en": "⚠️ Password too short. At least 6 characters. Try again:"},
+    "reset_done": {
+        "ru": "✅ Пароль изменён!\n\nВойдите на сайте: email <b>{email}</b> + новый пароль.\n\n🔒 Для безопасности удалите сообщение с паролём.",
+        "uz": "✅ Parol o'zgartirildi!\n\nSaytga kiring: email <b>{email}</b> + yangi parol.\n\n🔒 Xavfsizlik uchun parol yozilgan xabarni o'chiring.",
+        "en": "✅ Password changed!\n\nLog in on the site: email <b>{email}</b> + new password.\n\n🔒 For safety, delete the message with your password."},
+    "reset_error": {
+        "ru": "⚠️ Не удалось сменить пароль. Попробуйте позже или напишите менеджеру.",
+        "uz": "⚠️ Parolni o'zgartirib bo'lmadi. Keyinroq urinib ko'ring yoki menejerga yozing.",
+        "en": "⚠️ Could not change the password. Try again later or contact the manager."},
     # ── telegram account linking ──
     "link_usage": {
         "ru": "ℹ️ Чтобы привязать Telegram к аккаунту на сайте:\n\n1. Откройте профиль на {site}\n2. Вкладка «Аккаунт» → «Привязать Telegram»\n3. Нажмите «Получить код» и отправьте:\n\n<code>/link КОД</code>",

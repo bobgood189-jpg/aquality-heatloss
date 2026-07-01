@@ -1,6 +1,6 @@
 """Start, language, main menu, contact, FAQ, materials reference and demo."""
 from aiogram import Router, F
-from aiogram.filters import CommandStart, Command, StateFilter
+from aiogram.filters import CommandStart, Command, StateFilter, CommandObject
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
@@ -16,6 +16,7 @@ from .results import send_results
 if SB_CONFIGURED:
     from .. import supabase_db as _sb
     from .auth import start_registration as _start_registration
+    from .auth import start_password_reset as _start_password_reset
 
 router = Router()
 
@@ -37,10 +38,15 @@ async def show_menu(message, lang, owner=False):
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
+async def cmd_start(message: Message, state: FSMContext, command: CommandObject = None):
     await state.clear()
     storage.init_db()
     lang = storage.get_user_lang(message.from_user.id)
+    # deep link: t.me/<bot>?start=resetpass → jump straight into email-free reset
+    if command and command.args == "resetpass" and SB_CONFIGURED:
+        _l = lang or "ru"
+        await state.update_data(lang=_l)
+        return await _start_password_reset(message, state, _l)
     if lang:
         await state.update_data(lang=lang)
         # Resume interrupted purchase if one exists

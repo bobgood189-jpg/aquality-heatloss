@@ -18,6 +18,10 @@ class Register(StatesGroup):
     phone = State()
 
 
+class Reset(StatesGroup):
+    password = State()   # email-free password reset via the bot (/resetpass)
+
+
 class Wizard(StatesGroup):
     lang = State()
     # object-level params

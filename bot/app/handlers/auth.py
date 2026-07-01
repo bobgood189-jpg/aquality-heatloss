@@ -14,7 +14,7 @@ from aiogram.filters import Command
 from .. import storage
 from ..config import SB_CONFIGURED
 from .. import supabase_db as sb
-from ..states import Register
+from ..states import Register, Reset
 from ..i18n import t
 from .. import keyboards as K
 
@@ -146,6 +146,58 @@ async def cmd_link(message: Message, state: FSMContext):
         return await message.answer(
             f"✅ Аккаунт уже привязан: <b>{email}</b>\n\nЧтобы сменить привязку — напишите /start.")
     await start_registration(message, state, lang)
+
+
+# ── /resetpass (email-free password recovery) ────────────────────────────────
+
+async def start_password_reset(message: Message, state: FSMContext, lang: str):
+    """Entry point — call from /resetpass or the t.me/bot?start=resetpass deep link.
+
+    Only linked accounts can reset here: identity is proven by the fact that the
+    Telegram user is already bound to the profile. No email round-trip needed.
+    """
+    if not SB_CONFIGURED:
+        return await message.answer(t("reg_no_sb", lang))
+    profile = await sb.get_profile(message.from_user.id)
+    if not profile or not profile.get("user_id"):
+        return await message.answer(t("reset_not_linked", lang))
+    await state.set_state(Reset.password)
+    await state.update_data(reset_uid=profile["user_id"],
+                            reset_email=profile.get("email", ""),
+                            reset_lang=lang)
+    await message.answer(t("reset_prompt", lang))
+
+
+@router.message(Command("resetpass"))
+async def cmd_resetpass(message: Message, state: FSMContext):
+    from .util import get_lang
+    lang = await get_lang(state, message.from_user.id)
+    await start_password_reset(message, state, lang)
+
+
+@router.message(Reset.password)
+async def reset_set_password(message: Message, state: FSMContext):
+    data = await state.get_data()
+    lang = data.get("reset_lang") or data.get("lang") or "ru"
+    pwd = (message.text or "").strip()
+
+    if pwd.lower() in ("/cancel", "cancel"):
+        await state.clear()
+        await state.update_data(lang=lang)
+        return await message.answer(t("restart_hint", lang))
+
+    if len(pwd) < 6:
+        return await message.answer(t("reset_too_short", lang))
+
+    ok = await sb.set_user_password(data.get("reset_uid"), pwd)
+    email = data.get("reset_email", "")
+    if not ok:
+        return await message.answer(t("reset_error", lang))
+
+    await sb.log_event(message.from_user.id, "password_reset", {"email": email})
+    await state.clear()
+    await state.update_data(lang=lang)
+    await message.answer(t("reset_done", lang, email=email))
 
 
 # ── finish ────────────────────────────────────────────────────────────────────

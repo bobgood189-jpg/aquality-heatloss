@@ -4213,6 +4213,8 @@ function showAuthErr(msg){ const e=document.getElementById('auth-err'); if(e){ e
 
 function renderForgotForm(){
   const backBtn=`<button onclick="authSwitchTab('login')" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:rgba(148,163,184,.5);background:none;border:none;cursor:pointer;margin-bottom:1.25rem;padding:0;transition:color .15s" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.5)'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> ${t('forgot-back')}</button>`;
+  // Резервный путь: если письмо с кодом не доходит (лимит почты Supabase) — сброс через Telegram-бота, без email.
+  const tgReset=`<div style="margin-top:1.1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06);text-align:center"><p class="text-xs" style="color:rgba(148,163,184,.5);margin-bottom:.4rem">${t('forgot-tg-hint')}</p><a href="https://t.me/${BOT_USERNAME}?start=resetpass" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:700;color:#F59E0B;text-decoration:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161-1.858 8.762c-.14.626-.507.782-1.027.487l-2.84-2.093-1.37 1.318c-.152.152-.279.279-.571.279l.204-2.889 5.26-4.752c.229-.204-.05-.318-.354-.114l-6.503 4.094-2.802-.876c-.609-.19-.62-.609.128-.901l10.95-4.222c.507-.19.951.114.786.902z"/></svg>${t('forgot-tg-link')} →</a></div>`;
   if(_forgotStep===2) return `
   ${backBtn}
   <h2 class="text-lg font-extrabold text-cream mb-1">${t('forgot-title')}</h2>
@@ -4232,7 +4234,7 @@ function renderForgotForm(){
   </div>
   <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
   <button onclick="doForgotVerify()" class="lg-btn w-full mt-5 py-3">${t('forgot-confirm-btn')} →</button>
-  <p class="text-center text-xs mt-3" style="color:rgba(148,163,184,.4)"><button onclick="doForgotSend()" style="color:rgba(148,163,184,.4);background:none;border:none;cursor:pointer;font-size:inherit" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.4)'">${t('forgot-resend')}</button></p>`;
+  <p class="text-center text-xs mt-3" style="color:rgba(148,163,184,.4)"><button onclick="doForgotSend()" style="color:rgba(148,163,184,.4);background:none;border:none;cursor:pointer;font-size:inherit" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.4)'">${t('forgot-resend')}</button></p>${tgReset}`;
   return `
   ${backBtn}
   <h2 class="text-lg font-extrabold text-cream mb-1">${t('forgot-title')}</h2>
@@ -4245,7 +4247,7 @@ function renderForgotForm(){
     </div>
   </div>
   <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
-  <button onclick="doForgotSend()" class="lg-btn w-full mt-5 py-3">${t('forgot-send-btn')} →</button>`;
+  <button onclick="doForgotSend()" class="lg-btn w-full mt-5 py-3">${t('forgot-send-btn')} →</button>${tgReset}`;
 }
 async function doForgotSend(){
   const emailEl=document.getElementById('fp-email');
@@ -8521,6 +8523,7 @@ const _i18n = {
     'forgot-newpass-lbl':'Новый пароль','forgot-confirm-btn':'Изменить пароль',
     'forgot-back':'Назад','forgot-resend':'Отправить код ещё раз',
     'forgot-success':'Пароль изменён ✓ Войдите с новым паролем.',
+    'forgot-tg-hint':'Код не приходит на почту?','forgot-tg-link':'Сбросить пароль через Telegram-бота',
     'forgot-err-user-not-found':'Email не зарегистрирован','forgot-err-otp-invalid':'Неверный или просроченный код',
     'sub-expiry-warning':'⚠ Подписка истекает через %n% дн. — продлите заранее.',
     'sub-expired-msg':'❌ Срок подписки истёк — обновите подписку для доступа.',
@@ -9029,6 +9032,7 @@ const _i18n = {
     'forgot-newpass-lbl':"Yangi parol",'forgot-confirm-btn':'Parolni o\'zgartirish',
     'forgot-back':'Orqaga','forgot-resend':'Kodni qayta yuborish',
     'forgot-success':"Parol o'zgartirildi ✓ Yangi parol bilan kiring.",
+    'forgot-tg-hint':'Kod pochtaga kelmayaptimi?','forgot-tg-link':'Telegram-bot orqali parolni tiklash',
     'forgot-err-user-not-found':"Bu email ro'yxatdan o'tmagan",'forgot-err-otp-invalid':"Noto'g'ri yoki eskirgan kod",
     'sub-expiry-warning':'⚠ Obuna %n% kun ichida tugaydi — muddatidan oldin yangilang.',
     'sub-expired-msg':"❌ Obuna muddati tugadi — kirish uchun obunani yangilang.",
@@ -9555,6 +9559,7 @@ const _i18n = {
     'forgot-newpass-lbl':'New password','forgot-confirm-btn':'Change password',
     'forgot-back':'Back','forgot-resend':'Resend code',
     'forgot-success':'Password changed ✓ Sign in with your new password.',
+    'forgot-tg-hint':"Code not arriving by email?",'forgot-tg-link':'Reset password via Telegram bot',
     'forgot-err-user-not-found':'Email not found','forgot-err-otp-invalid':'Invalid or expired code',
     'sub-expiry-warning':'⚠ Subscription expires in %n% days — renew now.',
     'sub-expired-msg':'❌ Your subscription has expired — renew to continue.',

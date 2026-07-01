@@ -107,6 +107,27 @@ async def find_auth_user_by_email(email: str) -> Optional[str]:
     return None
 
 
+async def set_user_password(user_id: str, password: str) -> bool:
+    """Set a new password for an auth user via the Admin API. Returns True on success.
+
+    Powers the bot's /resetpass flow so a user who is already verified in Telegram
+    (their telegram_id is linked to the profile) can recover access WITHOUT any
+    email — bypassing Supabase's rate-limited auth email on the free tier.
+    """
+    if not SB_CONFIGURED or not user_id:
+        return False
+    url = f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}"
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
+            r = await c.put(url, json={"password": password}, headers=_HEADERS)
+            if r.status_code == 200:
+                return True
+            log.warning("set_user_password %s → %s %s", user_id, r.status_code, r.text[:200])
+    except Exception as e:
+        log.error("set_user_password error: %s", e)
+    return False
+
+
 async def create_profile(user_id: str, tg_id: int, email: str,
                          name: str = "", phone: str = "",
                          username: str = "") -> bool:
