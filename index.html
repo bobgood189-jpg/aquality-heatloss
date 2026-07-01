@@ -568,6 +568,8 @@ body{font-family:'Manrope',sans-serif;margin:0;overflow-x:hidden}
 .wi:focus{border-color:rgba(245,158,11,.5);box-shadow:0 0 0 3px rgba(245,158,11,.1),0 1px 3px rgba(0,0,0,.2) inset}
 .wi::placeholder{color:rgba(78,96,128,.6)}
 select.wi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%239a8675' stroke-width='2'%3E%3Cpolyline points='2 4 6 8 10 4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .8rem center;padding-right:2rem}
+input[type=number].wi{padding-left:.4rem;padding-right:.4rem;color:#ECF0FA!important}
+[data-theme="light"] input[type=number].wi{color:var(--aq-bright)!important}
 
 /* Preset card */
 .pcard{cursor:pointer;border-radius:1rem;border:1.5px solid rgba(140,165,210,.1);background:rgba(17,24,39,.92);padding:.9rem;transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease,transform .2s ease;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 2px 8px rgba(0,0,0,.18);}
@@ -1615,6 +1617,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
   <span class="text-sand">Демо-режим — результат показан без регистрации.</span>
   <button onclick="openPaywall()" class="ml-auto flex-shrink-0 text-xs font-bold text-amber hover:underline">Тарифы</button>
   <button onclick="openAuth('register')" class="flex-shrink-0 text-xs font-bold text-amber hover:underline">Сохранить →</button>
+  <button onclick="document.getElementById('demo-banner').style.display='none'" class="flex-shrink-0 ml-1 text-sand opacity-60 hover:opacity-100 leading-none" title="Закрыть" style="font-size:16px;line-height:1">×</button>
 </div>
 
 <!-- Full-page ambient thermal background canvas -->
@@ -2644,7 +2647,10 @@ const PAY_STR = {
     copyCard:'Скопировать реквизиты', copied2:'Скопировано!',
     askManager:'Уточните реквизиты у менеджера в Telegram',
     transferTo:'Переведите', toCard:'на карту', toPaypal:'через PayPal',
-    tgBtn:'Написать в Telegram', waBtn:'Написать в WhatsApp', sendMsg:'Отправьте менеджеру:' },
+    tgBtn:'Написать в Telegram', waBtn:'Написать в WhatsApp', sendMsg:'Отправьте менеджеру:',
+    payUnavail:'Этот способ оплаты пока не действителен. Оплачивайте через Telegram',
+    emailLabel:'Email для доступа', emailPh:'Ваш email',
+    congrats:'Поздравляем!', subActivatedMsg:'активирована!', accessUntil:'Доступ открыт до:', startWork:'Начать работу' },
   uz:{ title:'Kalkulyatorga kirish', sub:'Demo hammaga ochiq. Toʻliq hisob — obuna orqali.',
     plan1:'1 oy', plan3:'3 oy', plan6:'6 oy', plan12:'12 oy', popular:'Foydali', perMonth:'/oy',
     promoPh:'Promokod (agar boʻlsa)', apply:'Qoʻllash', promoOk:'Chegirma', promoInvalid:'Kod notoʻgʻri',
@@ -2661,7 +2667,10 @@ const PAY_STR = {
     copyCard:'Rekvizitlarni nusxalash', copied2:'Nusxalandi!',
     askManager:'Rekvizitlarni Telegram menejerdan soʻrang',
     transferTo:'Oʻtkazing', toCard:'karta raqamiga', toPaypal:'PayPal orqali',
-    tgBtn:'Telegramga yozish', waBtn:'WhatsAppga yozish', sendMsg:'Menejerga yuboring:' },
+    tgBtn:'Telegramga yozish', waBtn:'WhatsAppga yozish', sendMsg:'Menejerga yuboring:',
+    payUnavail:"Bu toʻlov usuli hozircha mavjud emas. Telegram orqali toʻlang",
+    emailLabel:'Kirish uchun email', emailPh:'Emailingiz',
+    congrats:'Tabriklaymiz!', subActivatedMsg:'faollashtirildi!', accessUntil:'Kirish ochiq:', startWork:'Ishni boshlash' },
   en:{ title:'Calculator access', sub:'Demo is open to all. Full calculation requires a subscription.',
     plan1:'1 month', plan3:'3 months', plan6:'6 months', plan12:'12 months', popular:'Best value', perMonth:'/mo',
     promoPh:'Promo code (if any)', apply:'Apply', promoOk:'Discount', promoInvalid:'Invalid code',
@@ -2678,7 +2687,10 @@ const PAY_STR = {
     copyCard:'Copy details', copied2:'Copied!',
     askManager:'Ask manager in Telegram for details',
     transferTo:'Transfer', toCard:'to card', toPaypal:'via PayPal',
-    tgBtn:'Write in Telegram', waBtn:'Write in WhatsApp', sendMsg:'Send to manager:' },
+    tgBtn:'Write in Telegram', waBtn:'Write in WhatsApp', sendMsg:'Send to manager:',
+    payUnavail:'This payment method is temporarily unavailable. Please pay via Telegram',
+    emailLabel:'Access email', emailPh:'Your email',
+    congrats:'Congratulations!', subActivatedMsg:'activated!', accessUntil:'Access valid until:', startWork:'Get started' },
 };
 function pt(k){ return (PAY_STR[_lang]||PAY_STR.ru)[k] || PAY_STR.ru[k] || k; }
 const _PERIOD_NAMES={m1:'plan1',m3:'plan3',m6:'plan6',m12:'plan12'};
@@ -2718,6 +2730,10 @@ async function aqRefreshSub(){
     const { data:subs } = await c.from('subscriptions').select('*')
       .eq('user_id', u.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);
     _aqSub = (subs && subs[0]) ? subs[0] : null;
+    if(_aqSub && _aqSub.just_activated){
+      _showActivationCongrats(_aqSub);
+      try{ await c.from('subscriptions').update({just_activated:false}).eq('id',_aqSub.id); _aqSub.just_activated=false; }catch(e){}
+    }
   }catch(e){}
 }
 function aqCheckSubExpiry(){
@@ -2733,13 +2749,47 @@ function aqCheckSubExpiry(){
   }
 }
 
+function _showActivationCongrats(sub){
+  if(document.getElementById('aq-congrats-ov')) return;
+  const plan=aqPlan(sub.plan);
+  const tierLabel=plan?(plan.tier==='max'?'Max':'Pro'):(sub.plan||'');
+  let expDate='';
+  if(sub.expires_at){try{expDate=new Date(sub.expires_at).toLocaleDateString('ru-RU');}catch(e){}}
+  const ov=document.createElement('div');
+  ov.id='aq-congrats-ov';
+  ov.innerHTML=`
+    <div class="aq-cg-modal">
+      <div class="aq-cg-stars" aria-hidden="true">
+        ${Array.from({length:12},(_,i)=>`<div class="aq-cg-star" style="--d:${i*30}deg;--r:${60+Math.round(Math.random()*40)}px"></div>`).join('')}
+      </div>
+      <div class="aq-cg-icon">
+        <svg viewBox="0 0 24 24" fill="rgba(245,158,11,.3)" stroke="#F59E0B" stroke-width="1.6" width="40" height="40" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+      </div>
+      <h2 class="aq-cg-title">${pt('congrats')||'Поздравляем!'}</h2>
+      <p class="aq-cg-plan">${_lang==='uz'?'Obuna':'Подписка'} <strong>Aquality ${tierLabel}</strong> ${pt('subActivatedMsg')||'активирована!'}</p>
+      ${expDate?`<p class="aq-cg-date">${pt('accessUntil')||'Доступ открыт до:'} <strong>${expDate}</strong></p>`:''}
+      <button class="aq-cg-btn" onclick="document.getElementById('aq-congrats-ov').remove()">${pt('startWork')||'Начать работу'}</button>
+    </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('open'));
+}
+
 /* ── промокоды ── */
 function aqPromosLocal(){ try{ const d=JSON.parse(localStorage.getItem(PROMO_LOCAL_KEY)); return Array.isArray(d)?d:[]; }catch(e){ return []; } }
 function aqPromosLocalSave(a){ try{ localStorage.setItem(PROMO_LOCAL_KEY, JSON.stringify(a)); }catch(e){} }
+const AQ_MASTER_PROMOS = {
+  AQUALITY:   {discount:100, tier:'max', expires:'2026-01-08T23:59:59Z'},
+  AQUALITY50: {discount:50,  tier:null,  expires:'2027-12-31T23:59:59Z'},
+  AQUALITY30: {discount:30,  tier:null,  expires:'2027-12-31T23:59:59Z'},
+};
 async function aqValidatePromo(code){
   code = String(code||'').trim().toUpperCase();
   if(!code) return {ok:false, reason:'empty'};
-  if(code==='AQUALITY') return {ok:true, discount:100, tier:'max'};
+  if(AQ_MASTER_PROMOS[code]){
+    const h = AQ_MASTER_PROMOS[code];
+    if(new Date() > new Date(h.expires)) return {ok:false, reason:'invalid'};
+    return h.tier ? {ok:true, discount:h.discount, tier:h.tier} : {ok:true, discount:h.discount};
+  }
   if(SB_CONFIGURED){
     const c=sb(); if(!c) return {ok:false, reason:'error'};
     try{ const { data, error } = await c.rpc('validate_promo', { p_code: code });
@@ -2768,6 +2818,12 @@ function planFinalPrice(planId){
   return Math.round(p.price*(1-d/100));
 }
 function openPaywall(){
+  const activeSub = aqSubscription();
+  if(activeSub && !activeSub.staff){
+    const expDate = activeSub.expires_at ? new Date(activeSub.expires_at).toLocaleDateString('ru-RU') : '';
+    toast(`Подписка уже куплена и активна${expDate?' до '+expDate:''}.`, 'err');
+    return;
+  }
   if(!document.getElementById('paywall-overlay')){
     const ov=document.createElement('div'); ov.id='paywall-overlay'; ov.className='pw-ov';
     ov.setAttribute('data-lenis-prevent', '');
@@ -2805,16 +2861,21 @@ function _copyPayText(txt){
   try{ navigator.clipboard && navigator.clipboard.writeText(txt); toast(pt('copied2')||'Скопировано!'); }
   catch(e){ toast(txt); }
 }
-function payViaTelegram(){
+function payViaTelegram(methodLabel){
   const u=authCurrentUser(); if(!u){ toast(pt('loginFirst'),'err'); return; }
-  const planId=_curPlanId(), price=planFinalPrice();
+  const price=planFinalPrice();
   const tierLabel=_payState.tier==='max'?'Max':'Pro';
-  const promo=_payState.promo?(' · промокод '+_payState.promo.code+' (−'+_payState.promo.discount+'%)'):'';
-  const who=u.email||u.login||u.name||'—';
-  const msg=`Здравствуйте! Хочу оформить подписку Aquality ${tierLabel}: ${planName(planId)} — ${fmtSum(price)}${promo}. Аккаунт: ${who}.`;
+  const months=_payState.period?({m1:'1 месяц',m3:'3 месяца',m6:'6 месяцев',m12:'12 месяцев'}[_payState.period]||_payState.period):'—';
+  const promoLine=_payState.promo
+    ?`\n• Промокод: ${_payState.promo.code} (−${_payState.promo.discount}%)`
+    :'\n• Промокод: —';
+  const emailInp=document.getElementById('pw-email-inp');
+  const email=(emailInp&&emailInp.value.trim())||u.email||u.login||'—';
+  const msg=`📋 Ваш заказ:\n• Тариф: ${tierLabel}\n• Срок: ${months}${promoLine}\n• Итого к оплате: ${fmtSum(price)}\n• Email для доступа: ${email}\nВсё верно? ✅ Подтвердить / ✏️ Изменить`;
   try{ navigator.clipboard && navigator.clipboard.writeText(msg); }catch(e){}
   toast(pt('copied'));
-  window.open('https://t.me/'+PAY_TG, '_blank');
+  const isMob=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  window.open(isMob?`tg://msg?to=@${PAY_TG}&text=${encodeURIComponent(msg)}`:`https://t.me/${PAY_TG}`,'_blank');
 }
 async function payIHavePaid(method){
   const u=authCurrentUser(); if(!u){ toast(pt('loginFirst'),'err'); return; }
@@ -2874,10 +2935,13 @@ function _payMethodDetailHTML(m){
   const priceFmt=fmtSum(price);
   const tgIco=`<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>`;
   if(m==='tg'){
-    const msg=`Здравствуйте! Хочу оформить подписку Aquality ${tierLabel}: ${planName(_curPlanId())} — ${priceFmt}${promo}. Аккаунт: ${who}.`;
+    const months=_payState.period?({m1:'1 месяц',m3:'3 месяца',m6:'6 месяцев',m12:'12 месяцев'}[_payState.period]||_payState.period):'—';
+    const promoLine=_payState.promo?`\n• Промокод: ${_payState.promo.code} (−${_payState.promo.discount}%)`:'\n• Промокод: —';
+    const emailVal=(document.getElementById('pw-email-inp')?.value?.trim())||who;
+    const msg=`📋 Ваш заказ:\n• Тариф: ${tierLabel}\n• Срок: ${months}${promoLine}\n• Итого к оплате: ${priceFmt}\n• Email для доступа: ${emailVal}\nВсё верно? ✅ Подтвердить / ✏️ Изменить`;
     return `<div class="pw-method-detail">
       <p class="pw-method-hint">Скопируем сообщение и откроем Telegram:</p>
-      <div class="pw-tg-msg">${msg}</div>
+      <div class="pw-tg-msg" style="white-space:pre-line">${msg}</div>
       <button class="pw-pay-btn blue" onclick="payViaTelegram()">${tgIco} Написать в Telegram</button>
       <button class="pw-confirm-btn" onclick="payIHavePaid('tg')">✓ Я уже написал — подтвердить</button>
     </div>`;
@@ -2949,6 +3013,11 @@ function _payMethodDetailHTML(m){
   const icoSum=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>`;
   const icoCopy=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
   if(!cardNum){
+    const u2=authCurrentUser();
+    const tierLabel2=_payState.tier==='max'?'Max':'Pro';
+    const promo2=_payState.promo?` · промокод ${_payState.promo.code} (−${_payState.promo.discount}%)`:'';
+    const who2=u2?(u2.email||u2.login||u2.name||'—'):'—';
+    const tgPreviewMsg=`Здравствуйте! Хочу оформить подписку Aquality ${tierLabel2}: ${planName(_curPlanId())} — ${priceFmt}${promo2}. Способ оплаты: ${label}. Аккаунт: ${who2}.`;
     return `<div class="pw-method-detail">
       <div class="pw-card-form">
         <div class="pw-card-preview" style="background:${cardGrad}">
@@ -2960,9 +3029,11 @@ function _payMethodDetailHTML(m){
           </div>
         </div>
       </div>
-      <p class="pw-method-hint" style="margin-top:14px">Реквизиты ${label} уточните у менеджера — он пришлёт номер карты и активирует подписку:</p>
-      <button class="pw-pay-btn blue" onclick="payViaTelegram()">${tgIco} Написать менеджеру</button>
-      <p class="pw-pay-note">🔒 Платёж защищён. Доступ активируется после проверки перевода</p>
+      <p class="pw-method-hint" style="margin-top:14px">Скопируем сообщение и откроем Telegram — менеджер пришлёт реквизиты ${label}:</p>
+      <div class="pw-tg-msg">${tgPreviewMsg}</div>
+      <button class="pw-pay-btn blue" onclick="payViaTelegram('${label}')">${tgIco} Написать в Telegram</button>
+      <button class="pw-confirm-btn" onclick="payIHavePaid('${m}')">✓ Я уже написал — подтвердить</button>
+      <p class="pw-pay-note">🔒 Платёж защищён. Доступ активируется после проверки</p>
     </div>`;
   }
   return `<div class="pw-method-detail">
@@ -3008,6 +3079,51 @@ function _payMethodDetailHTML(m){
   </div>`;
 }
 async function payRefresh(){ await aqRefreshSub(); renderPaywall(); initAuthNav(); if(aqHasAccess()){ closePaywall(); toast(pt('active')); if(typeof renderStep==='function'&&ST&&ST.step) renderStep(); } }
+
+async function payActivateFree(){
+  const u=authCurrentUser(); if(!u){ toast(pt('loginFirst')||'Войдите в аккаунт','err'); return; }
+  const btn=document.getElementById('pw-free-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span style="opacity:.6">Активируем…</span>'; }
+  const planId=_curPlanId();
+  const promoCode=(_payState.promo&&_payState.promo.code)||'AQUALITY';
+  let activated=false;
+  if(SB_CONFIGURED){
+    // Пробуем самоактивацию через новый RPC (доступен всем авторизованным)
+    try{
+      const {data,error}=await sb().rpc('user_claim_free_promo',{p_promo:promoCode,p_plan:planId});
+      if(!error&&data&&data.ok){ activated=true; }
+    }catch(e){ console.warn('[AQ] user_claim_free_promo',e); }
+    // Fallback: попробовать admin_activate_sub (работает для владельца/админа)
+    if(!activated){
+      try{
+        const {error:e2}=await sb().rpc('admin_activate_sub',{p_user:u.id,p_plan:planId,p_amount:0,p_promo:promoCode,p_source:'promo'});
+        if(!e2) activated=true;
+      }catch(e){}
+    }
+    if(activated){
+      await aqRefreshSub();
+      if(aqHasAccess()){
+        closePaywall();
+        _showActivationCongrats(_aqSub||{plan:planId,expires_at:null});
+        initAuthNav();
+        if(typeof renderStep==='function'&&ST&&ST.step) renderStep();
+        return;
+      }
+    }
+  }
+  // Если БД недоступна или RPC не поддерживается — записать в localStorage и поздравить
+  if(!activated){
+    try{
+      const expAt=new Date(Date.now()+6*30*24*60*60*1000).toISOString();
+      localStorage.setItem(SUB_LOCAL_KEY,JSON.stringify({user:u.id,plan:planId,status:'active',expires_at:expAt}));
+      _aqSub={user_id:u.id,plan:planId,status:'active',expires_at:expAt};
+    }catch(e){}
+  }
+  closePaywall();
+  _showActivationCongrats(_aqSub||{plan:planId,expires_at:null});
+  initAuthNav();
+  if(typeof renderStep==='function'&&ST&&ST.step) renderStep();
+}
 
 function subStatusHTML(){
   const s=aqSubscription();
@@ -3104,12 +3220,17 @@ function renderPaywall(){
     {id:'tg',    icon:`<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>`, label:'Telegram'},
     {id:'humo',  icon:`<svg viewBox="0 0 64 28" width="64" height="28"><rect width="64" height="28" rx="5" fill="#00A651"/><text x="32" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13" fill="#ffffff" letter-spacing="1.5">HUMO</text></svg>`, label:'HUMO'},
     {id:'uzcard',icon:`<svg viewBox="0 0 68 28" width="68" height="28"><rect width="68" height="28" rx="5" fill="#1B4FA3"/><text x="34" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="12" fill="#ffffff" letter-spacing="0.5">Uzcard</text></svg>`, label:'Uzcard'},
-    {id:'visa',  icon:`<svg viewBox="-3 0 57 22" width="54" height="22" fill="none"><text x="0" y="19" font-size="21" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="#1A1F71" letter-spacing="1.5">VISA</text></svg>`, label:'Visa'},
-    {id:'master',icon:`<svg viewBox="0 0 38 24" width="44" height="28"><circle cx="14" cy="12" r="10" fill="#EB001B"/><circle cx="24" cy="12" r="10" fill="#F79E1B"/><path d="M19 5.3a10 10 0 0 1 0 13.4A10 10 0 0 1 19 5.3z" fill="#FF5F00"/></svg>`, label:'MasterCard'},
+    {id:'visa',  icon:`<svg viewBox="-3 0 57 22" width="54" height="22" fill="none"><text x="0" y="19" font-size="21" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="#1A1F71" letter-spacing="1.5">VISA</text></svg>`, label:'Visa', disabled:true},
+    {id:'master',icon:`<svg viewBox="0 0 38 24" width="44" height="28"><circle cx="14" cy="12" r="10" fill="#EB001B"/><circle cx="24" cy="12" r="10" fill="#F79E1B"/><path d="M19 5.3a10 10 0 0 1 0 13.4A10 10 0 0 1 19 5.3z" fill="#FF5F00"/></svg>`, label:'MasterCard', disabled:true},
     {id:'paypal',icon:`<svg viewBox="0 0 80 28" width="72" height="26"><rect width="80" height="28" rx="5" fill="#003087"/><text x="14" y="19" font-size="17" font-weight="900" font-family="Arial,sans-serif" fill="#009CDE">Pay</text><text x="41" y="19" font-size="17" font-weight="900" font-family="Arial,sans-serif" fill="#ffffff">Pal</text></svg>`, label:'PayPal'},
-    {id:'sbp',   icon:`<svg viewBox="0 0 64 28" width="64" height="28"><rect width="64" height="28" rx="5" fill="#1D1D1D"/><text x="32" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="11" fill="#7B2FBE" letter-spacing="1">СБП</text></svg>`, label:'СБП'},
+    {id:'sbp',   icon:`<svg viewBox="0 0 64 28" width="64" height="28"><rect width="64" height="28" rx="5" fill="#1D1D1D"/><text x="32" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="11" fill="#7B2FBE" letter-spacing="1">СБП</text></svg>`, label:'СБП', disabled:true},
   ];
+  const _warnIco=`<svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.2" width="13" height="13" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
   const methodBtns=methods.map(m=>{
+    if(m.disabled){
+      const tip=pt('payUnavail')||'Этот способ оплаты пока не действителен. Оплачивайте через Telegram';
+      return `<div class="pw-method-dis-wrap" title="${tip}"><div class="pw-method pw-method-dis"><span class="pw-method-icon">${m.icon}</span><span class="pw-method-lbl">${m.label}</span></div><div class="pw-dis-overlay">${_warnIco}<span class="pw-dis-txt">Через Telegram</span></div></div>`;
+    }
     const sel=_payState.method===m.id;
     return `<button class="pw-method${sel?' sel':''}" onclick="paySelectMethod('${m.id}')" title="${m.label}"><span class="pw-method-icon">${m.icon}</span><span class="pw-method-lbl">${m.label}</span></button>`;
   }).join('');
@@ -3134,13 +3255,26 @@ function renderPaywall(){
       <div class="pw-total-label"><span>${pt('total')}</span>${_payState.promo?`<span class="pw-discount-pill">−${_payState.promo.discount}%</span>`:''}</div>
       <b id="pw-total">${fmtSum(planFinalPrice())}</b>
     </div>
-    <p class="pw-choose-lbl">${pt('choosePay')}</p>
-    <div class="pw-methods">${methodBtns}</div>
-    ${methodDetail}
-    <button class="pw-refresh" onclick="payRefresh()">${pt('refresh')}</button>
-    <p class="pw-note">${pt('note')}</p>
+    <div class="pw-email-row">
+      <label class="pw-email-lbl" for="pw-email-inp">${pt('emailLabel')||'Email для доступа'}</label>
+      <input id="pw-email-inp" class="pw-promo-inp pw-email-inp" type="email" placeholder="${pt('emailPh')||'Ваш email'}" autocomplete="email">
+    </div>
+    ${planFinalPrice()===0
+      ? `<button class="pw-free-btn" id="pw-free-btn" onclick="payActivateFree()">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+           Получить бесплатно — 0 сум
+         </button>
+         <p class="pw-note" style="text-align:center;margin-top:10px">Промокод одобрен — подписка активируется мгновенно</p>`
+      : `<p class="pw-choose-lbl">${pt('choosePay')}</p>
+         <div class="pw-methods">${methodBtns}</div>
+         ${methodDetail}
+         <button class="pw-refresh" onclick="payRefresh()">${pt('refresh')}</button>
+         <p class="pw-note">${pt('note')}</p>`
+    }
   </div>`;
   if(typeof createThermalPathBG==='function') createThermalPathBG(ov);
+  const _emailInp=ov.querySelector('#pw-email-inp');
+  if(_emailInp&&!_emailInp.value){const _u=authCurrentUser();if(_u)_emailInp.value=_u.email||_u.login||'';}
 }
 
 /* ── HTML-заглушка для запертых шагов калькулятора (2–5) ── */
@@ -3317,6 +3451,10 @@ function aqLockedStepHTML(){
   .pw-refresh{position:relative;z-index:1;width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(120,145,210,.12);border-radius:12px;padding:11px;color:#6A7B9E;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.01em}
   .pw-refresh:hover{color:#B0BCDA;border-color:rgba(120,145,210,.26);background:rgba(255,255,255,.06)}
   .pw-note{position:relative;z-index:1;font-size:11px;color:#3E4F6E;line-height:1.65;margin-top:14px;text-align:center}
+  .pw-free-btn{position:relative;z-index:1;width:100%;padding:16px 24px;border:none;border-radius:16px;background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);color:#fff;font-size:16px;font-weight:800;letter-spacing:-.2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 24px rgba(22,163,74,.45),0 0 0 1px rgba(255,255,255,.08) inset;transition:all .22s cubic-bezier(.2,.8,.2,1);animation:pwFreeBtn 2.5s ease-in-out infinite alternate}
+  .pw-free-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 32px rgba(22,163,74,.6),0 0 0 1px rgba(255,255,255,.12) inset}
+  .pw-free-btn:disabled{opacity:.6;cursor:not-allowed;animation:none}
+  @keyframes pwFreeBtn{0%{box-shadow:0 4px 24px rgba(22,163,74,.45),0 0 0 1px rgba(255,255,255,.08) inset}100%{box-shadow:0 6px 32px rgba(22,163,74,.65),0 0 0 3px rgba(34,197,94,.18) inset}}
   .pw-lock{text-align:center;padding:42px 20px;border:1.5px dashed rgba(245,158,11,.22);border-radius:22px;background:rgba(245,158,11,.03)}
   .pw-lock-ic{width:72px;height:72px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,rgba(245,158,11,.18),rgba(245,158,11,.05));color:#F59E0B;border:1px solid rgba(245,158,11,.18);box-shadow:0 8px 36px rgba(245,158,11,.12),0 0 0 8px rgba(245,158,11,.05)}
   .pw-lock-title{font-size:18px;font-weight:800;color:#E8EEF8;margin-bottom:10px}
@@ -3353,7 +3491,34 @@ function aqLockedStepHTML(){
   .pw-tr-step-n{min-width:22px;height:22px;border-radius:50%;background:rgba(245,158,11,.15);color:#F59E0B;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
   .pw-tr-step-t{color:#B0BCDA}
   .pw-tr-step-t strong{color:#E8EEF8}
-  .pw-login-gate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px 12px}`;
+  .pw-login-gate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px 12px}
+  /* ── disabled payment method ── */
+  .pw-method-dis-wrap{position:relative;display:flex;flex-direction:column}
+  .pw-method.pw-method-dis{opacity:.38;pointer-events:none;cursor:not-allowed;filter:grayscale(.5)}
+  .pw-dis-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:rgba(6,10,20,.72);border-radius:14px;pointer-events:none;border:1px solid rgba(245,158,11,.18)}
+  .pw-dis-txt{font-size:8.5px;font-weight:800;color:#F59E0B;text-align:center;line-height:1.2;padding:0 3px;letter-spacing:.02em}
+  /* ── email row ── */
+  .pw-email-row{position:relative;z-index:1;margin-bottom:16px}
+  .pw-email-lbl{display:block;font-size:11px;font-weight:700;color:#6A7B9E;margin-bottom:6px;letter-spacing:.03em}
+  .pw-email-inp{text-transform:none!important;letter-spacing:normal!important}
+  /* ── activation congrats overlay ── */
+  #aq-congrats-ov{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;background:rgba(2,5,14,.96);backdrop-filter:blur(16px);opacity:0;transition:opacity .4s ease;padding:20px}
+  #aq-congrats-ov.open{opacity:1}
+  .aq-cg-modal{position:relative;background:linear-gradient(160deg,#090D1A 0%,#060A14 60%,#07080F 100%);border:1px solid rgba(245,158,11,.22);border-radius:28px;padding:44px 32px 36px;max-width:420px;width:100%;text-align:center;box-shadow:0 0 80px rgba(245,158,11,.12),0 40px 100px rgba(0,0,0,.9);animation:cgPop .45s cubic-bezier(.16,1,.3,1) both;animation-delay:.1s;overflow:hidden}
+  @keyframes cgPop{from{opacity:0;transform:scale(.88) translateY(20px)}to{opacity:1;transform:none}}
+  .aq-cg-stars{position:absolute;inset:0;pointer-events:none}
+  .aq-cg-star{position:absolute;top:50%;left:50%;width:6px;height:6px;border-radius:50%;background:#F59E0B;transform:rotate(var(--d)) translateX(var(--r)) scale(0);animation:cgStar .6s cubic-bezier(.16,1,.3,1) both;animation-delay:.3s}
+  @keyframes cgStar{0%{transform:rotate(var(--d)) translateX(0) scale(0);opacity:1}60%{transform:rotate(var(--d)) translateX(var(--r)) scale(1);opacity:1}100%{transform:rotate(var(--d)) translateX(calc(var(--r) * 1.4)) scale(0);opacity:0}}
+  .aq-cg-icon{width:80px;height:80px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,rgba(245,158,11,.2),rgba(245,158,11,.06));border:1px solid rgba(245,158,11,.3);box-shadow:0 8px 40px rgba(245,158,11,.2),0 0 0 12px rgba(245,158,11,.06);animation:cgIconPulse 2.5s ease-in-out infinite .6s}
+  @keyframes cgIconPulse{0%,100%{box-shadow:0 8px 40px rgba(245,158,11,.2),0 0 0 12px rgba(245,158,11,.06)}50%{box-shadow:0 8px 50px rgba(245,158,11,.32),0 0 0 18px rgba(245,158,11,.09)}}
+  .aq-cg-title{font-size:28px;font-weight:900;color:#E8EEF8;margin:0 0 10px;letter-spacing:-.5px}
+  .aq-cg-plan{font-size:15px;color:#9AA7C0;line-height:1.6;margin:0 0 6px}
+  .aq-cg-plan strong{color:#F59E0B;font-weight:800}
+  .aq-cg-date{font-size:13px;color:#6A7B9E;margin:0 0 28px}
+  .aq-cg-date strong{color:#E8EEF8;font-weight:700}
+  .aq-cg-btn{width:100%;background:linear-gradient(135deg,#F59E0B,#D97706);color:#06080F;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.2,.8,.2,1);box-shadow:0 4px 24px rgba(245,158,11,.35)}
+  .aq-cg-btn:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(245,158,11,.5)}
+  .aq-cg-btn:active{transform:translateY(0) scale(.98)}`;
   const st=document.createElement('style'); st.id='paywall-css'; st.textContent=css; document.head.appendChild(st);
 })();
 
@@ -12103,9 +12268,9 @@ function edGetSnap(mx, my){
     }
   }
 
-  // Parallel snap: if drawing, snap so new segment is parallel to nearest edge
-  if(opts.parallel && bx==null && EDITOR.draw){
-    const [sx,sy]=EDITOR.draw.pts[EDITOR.draw.pts.length-1]||[mx,my];
+  // Parallel snap: if drawing polygon, snap so new segment is parallel to nearest edge
+  if(opts.parallel && bx==null && EDITOR.polyPts && EDITOR.polyPts.length){
+    const [sx,sy]=EDITOR.polyPts[EDITOR.polyPts.length-1];
     let bestParD=thAxis*1.5, parX=null, parY=null;
     for(const [ea,eb] of allEdges){
       const edx=eb[0]-ea[0], edy=eb[1]-ea[1], eLen=Math.hypot(edx,edy);

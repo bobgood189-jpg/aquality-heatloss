@@ -44,12 +44,7 @@ def lang_kb():
 # ── main menu ──
 def menu_kb(lang, is_owner=False, paywall=False):
     rows = [
-        [btn(t("menu_calc", lang), "menu:calc")],
-        [btn(t("menu_demo", lang), "menu:demo")],
-    ]
-    if paywall:
-        rows.append([btn(t("menu_tariffs", lang), "menu:tariffs")])
-    rows += [
+        [btn("🛒 Купить подписку", "menu:buy")],
         [btn(t("menu_materials", lang), "menu:materials"), btn(t("menu_faq", lang), "menu:faq")],
         [btn(t("menu_contact", lang), "menu:contact"), btn(t("menu_lang", lang), "menu:lang")],
     ]
@@ -221,3 +216,73 @@ def share_phone_kb(lang):
 
 def remove_kb():
     return ReplyKeyboardRemove()
+
+
+# ── Shop (subscription purchase) ──────────────────────────────────────────────
+
+def shop_plans_kb():
+    return kb([
+        [btn("🔹 PRO", "buy:plan:pro")],
+        [btn("🔸 MAX",  "buy:plan:max")],
+        [btn("❌ Отмена", "buy:cancel")],
+    ])
+
+
+def shop_duration_kb():
+    return kb([
+        [btn("1 месяц", "buy:dur:1"),      btn("3 месяца", "buy:dur:3")],
+        [btn("6 месяцев", "buy:dur:6"),    btn("12 месяцев 🔥", "buy:dur:12")],
+        [btn("◀️ Назад", "buy:back"),       btn("❌ Отмена", "buy:cancel")],
+    ])
+
+
+def shop_promo_kb():
+    return kb([
+        [btn("✅ Да, ввести", "buy:promo:yes"), btn("➡️ Пропустить", "buy:promo:no")],
+        [btn("◀️ Назад", "buy:back"),           btn("❌ Отмена", "buy:cancel")],
+    ])
+
+
+def shop_promo_retry_kb():
+    return kb([
+        [btn("🔁 Ввести другой", "buy:promo:yes"), btn("➡️ Пропустить", "buy:promo:no")],
+        [btn("◀️ Назад", "buy:back"),              btn("❌ Отмена", "buy:cancel")],
+    ])
+
+
+def shop_back_cancel_kb():
+    return kb([[btn("◀️ Назад", "buy:back"), btn("❌ Отмена", "buy:cancel")]])
+
+
+def shop_confirm_kb():
+    return kb([
+        [btn("✅ Подтвердить и оплатить", "buy:confirm")],
+        [btn("✏️ Изменить", "buy:edit"), btn("❌ Отмена", "buy:cancel")],
+    ])
+
+
+def shop_cancel_kb():
+    return kb([[btn("❌ Отменить заказ", "buy:cancel")]])
+
+
+def shop_resume_kb(oid_str: str, order_id: int):
+    return kb([
+        [btn(f"▶️ Продолжить {oid_str}", f"buy:resume:{order_id}")],
+        [btn("🆕 Новый заказ", "buy:new")],
+    ])
+
+
+def admin_review_kb(order_id: int):
+    return kb([
+        [btn("✅ Подтвердить", f"review:ok:{order_id}"),
+         btn("❌ Отклонить",   f"review:nok:{order_id}")],
+    ])
+
+
+def admin_reject_reasons_kb(order_id: int):
+    return kb([
+        [btn("💰 Сумма не совпадает",   f"review:rej:{order_id}:sum")],
+        [btn("⏳ Платёж не поступил",   f"review:rej:{order_id}:norecv")],
+        [btn("🖼 Плохой скриншот",      f"review:rej:{order_id}:bad")],
+        [btn("📝 Другая причина",       f"review:rej:{order_id}:other")],
+    ])

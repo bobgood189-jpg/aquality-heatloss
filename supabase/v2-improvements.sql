@@ -81,6 +81,47 @@ DROP POLICY IF EXISTS "no direct access to admin_audit" ON public.admin_audit;
 CREATE POLICY "no direct access to admin_audit" ON public.admin_audit
   FOR ALL USING (false);
 
+-- ─── PLAN-ID SCHEME UNIFICATION ──────────────────────────────────────────────
+-- Бот (SHOP_PLANS: pro/max × 1/3/6/12 мес) и сайт (AQ_PLANS) используют единый
+-- id тарифа: pro_m1/pro_m3/pro_m6/pro_m12, max_m1/max_m3/max_m6/max_m12.
+-- Старые m1/m6/m12 (ручные /grant-активации) остаются валидными.
+ALTER TABLE public.subscriptions DROP CONSTRAINT IF EXISTS subscriptions_plan_check;
+ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_plan_check
+  CHECK (plan IN ('m1','m6','m12',
+                  'pro_m1','pro_m3','pro_m6','pro_m12',
+                  'max_m1','max_m3','max_m6','max_m12'));
+
+CREATE OR REPLACE FUNCTION public.plan_months(p_plan TEXT)
+RETURNS INT LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE v_suffix TEXT;
+BEGIN
+  CASE p_plan
+    WHEN 'm1'  THEN RETURN 1;
+    WHEN 'm6'  THEN RETURN 6;
+    WHEN 'm12' THEN RETURN 12;
+    ELSE
+      v_suffix := (regexp_match(p_plan, '_m(\d+)$'))[1];
+      RETURN COALESCE(v_suffix::INT, 0);
+  END CASE;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.plan_months(TEXT) TO authenticated;
+
+-- promo_codes: ограничение по тарифу (NULL = применим к любому тарифу)
+ALTER TABLE public.promo_codes ADD COLUMN IF NOT EXISTS plan_restriction TEXT;
+
+INSERT INTO public.promo_codes (code, discount, max_uses, expires_at, active, plan_restriction)
+VALUES
+  ('AQUALITY',   100, NULL, '2026-01-08 23:59:59+00', true, 'max'),
+  ('AQUALITY50',  50, NULL, '2027-12-31 23:59:59+00', true, NULL),
+  ('AQUALITY30',  30, NULL, '2027-12-31 23:59:59+00', true, NULL)
+ON CONFLICT (code) DO UPDATE
+  SET discount         = EXCLUDED.discount,
+      max_uses         = EXCLUDED.max_uses,
+      expires_at       = EXCLUDED.expires_at,
+      active           = EXCLUDED.active,
+      plan_restriction = EXCLUDED.plan_restriction;
+
 -- ─── IMPROVED RPC FUNCTIONS ──────────────────────────────────────────────────
 
 -- bot_upsert_user: atomic find-or-link in ONE round-trip
@@ -194,13 +235,17 @@ BEGIN
 END;
 $$;
 
--- bot_activate_sub: now records admin_audit
+-- bot_activate_sub: records admin_audit; falls back to email lookup + links
+-- telegram_id when the buyer purchased through the bot but hasn't linked their
+-- account yet; accepts explicit p_months for the new pro_mN/max_mN plan ids.
 CREATE OR REPLACE FUNCTION public.bot_activate_sub(
   p_telegram_id BIGINT, p_plan TEXT,
   p_amount      NUMERIC  DEFAULT NULL,
   p_promo       TEXT     DEFAULT NULL,
   p_source      TEXT     DEFAULT 'telegram',
-  p_actor_tg    BIGINT   DEFAULT NULL
+  p_actor_tg    BIGINT   DEFAULT NULL,
+  p_months      INT      DEFAULT NULL,
+  p_email       TEXT     DEFAULT NULL
 )
 RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -211,10 +256,19 @@ DECLARE
   v_sub     public.subscriptions%ROWTYPE;
 BEGIN
   SELECT id INTO v_user_id FROM public.profiles WHERE telegram_id = p_telegram_id;
-  IF NOT FOUND THEN
+
+  IF NOT FOUND AND p_email IS NOT NULL AND TRIM(p_email) <> '' THEN
+    SELECT id INTO v_user_id FROM public.profiles WHERE LOWER(email) = LOWER(TRIM(p_email));
+    IF FOUND THEN
+      UPDATE public.profiles SET telegram_id = p_telegram_id, updated_at = NOW()
+        WHERE id = v_user_id AND telegram_id IS NULL;
+    END IF;
+  END IF;
+
+  IF v_user_id IS NULL THEN
     RETURN json_build_object('ok', false, 'reason', 'not_registered');
   END IF;
-  v_months := public.plan_months(p_plan);
+  v_months := COALESCE(p_months, public.plan_months(p_plan));
   IF v_months = 0 THEN
     RETURN json_build_object('ok', false, 'reason', 'bad_plan');
   END IF;
@@ -279,6 +333,12 @@ BEGIN
 END;
 $$;
 
+-- ─── ACTIVATION CONGRATS FLAG ────────────────────────────────────────────────
+-- Бот ставит just_activated=true при выдаче подписки.
+-- Сайт показывает поздравительный экран при первом заходе, затем сбрасывает в false.
+ALTER TABLE public.subscriptions
+  ADD COLUMN IF NOT EXISTS just_activated BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- ─── ADMIN VIEW ───────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE VIEW public.v_admin_subscribers AS
@@ -288,3 +348,136 @@ FROM public.subscriptions s
 JOIN public.profiles p ON p.id = s.user_id
 WHERE s.status = 'active' AND s.expires_at > NOW()
 ORDER BY s.expires_at DESC;
+
+-- ─── SELF-ACTIVATION FOR 100% PROMO ─────────────────────────────────────────
+-- user_claim_free_promo: аутентифицированный пользователь активирует подписку
+-- сам, когда промокод даёт скидку 100% (цена = 0 сум). Сохраняет полный
+-- plan_id с префиксом тарифа (pro_mN/max_mN) — иначе сайт теряет признак
+-- Pro/Max при определении тарифа подписки (aqTier() ищет по AQ_PLANS.id).
+-- Промокоды с plan_restriction (напр. AQUALITY → только Max) принудительно
+-- переключают тариф, даже если пользователь выбрал другой в UI.
+-- just_activated=TRUE → сайт покажет экран поздравления при следующем aqRefreshSub.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.user_claim_free_promo(p_promo TEXT, p_plan TEXT)
+RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid         UUID        := auth.uid();
+  v_code        TEXT        := UPPER(TRIM(p_promo));
+  v_tier        TEXT;
+  v_dur         TEXT;
+  v_plan        TEXT;
+  v_months      INT;
+  v_disc        INT;
+  v_restriction TEXT;
+  v_base        TIMESTAMPTZ;
+  v_sub         public.subscriptions%ROWTYPE;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN json_build_object('ok', false, 'reason', 'not_authenticated');
+  END IF;
+
+  -- Принимаем оба формата входного plan_id: 'max_m6' и legacy 'm6'
+  IF p_plan ~ '^(pro|max)_m\d+$' THEN
+    v_tier := split_part(p_plan, '_', 1);
+    v_dur  := split_part(p_plan, '_', 2);
+  ELSIF p_plan ~ '^m\d+$' THEN
+    v_tier := 'pro';
+    v_dur  := p_plan;
+  ELSE
+    RETURN json_build_object('ok', false, 'reason', 'bad_plan');
+  END IF;
+
+  SELECT discount, plan_restriction INTO v_disc, v_restriction FROM public.promo_codes
+    WHERE code = v_code AND active = TRUE
+      AND (expires_at IS NULL OR expires_at > NOW())
+      AND (max_uses IS NULL OR used_count < max_uses);
+  IF NOT FOUND THEN
+    -- Защитный fallback для AQUALITY, если миграция промокодов ещё не применена
+    IF v_code = 'AQUALITY' THEN
+      v_disc := 100; v_restriction := 'max';
+    ELSE
+      RETURN json_build_object('ok', false, 'reason', 'invalid_or_not_free');
+    END IF;
+  ELSIF v_disc <> 100 THEN
+    RETURN json_build_object('ok', false, 'reason', 'invalid_or_not_free');
+  END IF;
+
+  IF v_restriction IS NOT NULL THEN
+    v_tier := v_restriction;
+  END IF;
+  v_plan := v_tier || '_' || v_dur;
+
+  v_months := public.plan_months(v_plan);
+  IF v_months = 0 THEN
+    RETURN json_build_object('ok', false, 'reason', 'bad_plan');
+  END IF;
+
+  -- Однократное использование
+  IF EXISTS (SELECT 1 FROM public.promo_redemptions WHERE code = v_code AND user_id = v_uid) THEN
+    RETURN json_build_object('ok', false, 'reason', 'already_used');
+  END IF;
+
+  -- Продлеваем от текущего срока, если ещё активен
+  SELECT MAX(expires_at) INTO v_base FROM public.subscriptions
+    WHERE user_id = v_uid AND status = 'active' AND expires_at > NOW();
+  IF v_base IS NULL THEN v_base := NOW(); END IF;
+
+  INSERT INTO public.subscriptions
+    (user_id, plan, status, started_at, expires_at, amount, promo_code, source, just_activated)
+  VALUES
+    (v_uid, v_plan, 'active', NOW(),
+     v_base + (v_months || ' months')::INTERVAL,
+     0, v_code, 'promo', TRUE)
+  RETURNING * INTO v_sub;
+
+  -- Фиксируем использование промокода
+  INSERT INTO public.promo_redemptions (code, user_id, discount)
+  VALUES (v_code, v_uid, v_disc)
+  ON CONFLICT (code, user_id) DO NOTHING;
+
+  IF v_code <> 'AQUALITY' THEN
+    UPDATE public.promo_codes SET used_count = used_count + 1 WHERE code = v_code;
+  END IF;
+
+  RETURN json_build_object(
+    'ok', true,
+    'sub_id', v_sub.id,
+    'plan', v_sub.plan,
+    'expires_at', v_sub.expires_at
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.user_claim_free_promo(TEXT, TEXT) TO authenticated;
+
+-- bot_validate_promo: теперь возвращает plan_restriction, чтобы бот мог
+-- отклонить применение кода к неподходящему тарифу до подтверждения заказа.
+CREATE OR REPLACE FUNCTION public.bot_validate_promo(p_telegram_id BIGINT, p_code TEXT)
+RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_user_id UUID;
+  v_code    TEXT := UPPER(TRIM(p_code));
+  v_row     public.promo_codes%ROWTYPE;
+BEGIN
+  SELECT id INTO v_user_id FROM public.profiles WHERE telegram_id = p_telegram_id;
+
+  SELECT * INTO v_row FROM public.promo_codes WHERE code = v_code;
+  IF NOT FOUND OR v_row.active IS FALSE THEN
+    RETURN json_build_object('ok', false, 'reason', 'invalid');
+  END IF;
+  IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN
+    RETURN json_build_object('ok', false, 'reason', 'invalid');
+  END IF;
+  IF v_row.max_uses IS NOT NULL AND v_row.used_count >= v_row.max_uses THEN
+    RETURN json_build_object('ok', false, 'reason', 'exhausted');
+  END IF;
+  IF v_user_id IS NOT NULL AND EXISTS (
+    SELECT 1 FROM public.promo_redemptions r
+    WHERE r.code = v_code AND r.user_id = v_user_id
+  ) THEN
+    RETURN json_build_object('ok', false, 'reason', 'already_used');
+  END IF;
+  RETURN json_build_object('ok', true, 'discount', v_row.discount,
+                           'plan_restriction', v_row.plan_restriction);
+END;
+$$;

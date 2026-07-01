@@ -205,6 +205,8 @@ async def cmd_grant(message: Message):
                     f"⚠️ id{uid} не зарегистрирован в Supabase. "
                     "Пользователь должен сначала пройти регистрацию в боте.")
             return await message.answer(f"⚠️ Ошибка активации: {reason}")
+        if res.get("sub_id"):
+            await _sb.set_just_activated(str(res["sub_id"]))
         expires_at = res.get("expires_at", "")
         try:
             dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))

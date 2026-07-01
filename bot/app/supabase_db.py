@@ -155,8 +155,15 @@ async def get_active_sub(tg_id: int) -> Optional[dict]:
 
 async def activate_sub(tg_id: int, plan: str, amount=None,
                        promo: str = None, source: str = "telegram",
-                       actor_tg: int = None) -> dict:
-    """Activate subscription. Returns {ok, sub_id, expires_at, plan}."""
+                       actor_tg: int = None, months: int = None,
+                       email: str = None) -> dict:
+    """Activate subscription. Returns {ok, sub_id, expires_at, plan}.
+
+    months: explicit duration for the new pro_mN/max_mN plan ids (bypasses
+    plan_months() parsing on the DB side).
+    email: fallback lookup when the buyer's telegram_id isn't linked to a
+    profile yet — the RPC links it to the profile matching this email.
+    """
     res = await _rpc("bot_activate_sub", {
         "p_telegram_id": tg_id,
         "p_plan":        plan,
@@ -164,8 +171,26 @@ async def activate_sub(tg_id: int, plan: str, amount=None,
         "p_promo":       promo,
         "p_source":      source,
         "p_actor_tg":    actor_tg,
+        "p_months":      months,
+        "p_email":       email,
     })
     return res or {"ok": False, "reason": "rpc_error"}
+
+
+async def set_just_activated(sub_id: str) -> bool:
+    """Set just_activated=true on subscription so the site shows the congrats modal."""
+    if not SB_CONFIGURED or not sub_id:
+        return False
+    url = f"{SUPABASE_URL}/rest/v1/subscriptions"
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
+            r = await c.patch(url, json={"just_activated": True},
+                              params={"id": f"eq.{sub_id}"},
+                              headers={**_HEADERS, "Prefer": "return=minimal"})
+            return r.status_code in (200, 204)
+    except Exception as e:
+        log.error("set_just_activated error: %s", e)
+    return False
 
 
 # ── Promo codes ───────────────────────────────────────────────────────────────

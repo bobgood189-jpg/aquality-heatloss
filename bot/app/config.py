@@ -69,6 +69,46 @@ SB_CONFIGURED = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
 BOT_USERNAME = os.getenv("BOT_USERNAME", "aqualityHL_bot").lstrip("@")
 SITE_URL = os.getenv("SITE_URL", "https://aquality-hl.netlify.app").rstrip("/")
 
+# ── Subscription shop: PRO/MAX × 1/3/6/12 months ──────────────────────────
+# Цены зеркалят AQ_PLANS на сайте (index.html) — держать в синхроне.
+SHOP_PLANS = {
+    "pro": {
+        "emoji": "🔹", "name_ru": "PRO",
+        "features": [
+            "Неограниченное число проектов",
+            "Экспорт расчёта в PDF",
+            "Сохранение планов в облаке",
+            "Базовая поддержка",
+        ],
+        "durations": {
+            1:  {"price": 99000,  "days": 30,  "disc": 0},
+            3:  {"price": 269000, "days": 90,  "disc": 9},
+            6:  {"price": 509000, "days": 182, "disc": 14},
+            12: {"price": 949000, "days": 365, "disc": 20},
+        },
+    },
+    "max": {
+        "emoji": "🔸", "name_ru": "MAX",
+        "features": [
+            "Всё из PRO",
+            "3D-визуализация здания",
+            "Расширенный экспорт (Excel + спецификация)",
+            "Приоритетная поддержка",
+            "Командный доступ",
+        ],
+        "durations": {
+            1:  {"price": 159000,  "days": 30,  "disc": 0},
+            3:  {"price": 459000,  "days": 90,  "disc": 4},
+            6:  {"price": 889000,  "days": 182, "disc": 7},
+            12: {"price": 1669000, "days": 365, "disc": 13},
+        },
+    },
+}
+
+PAY_CARD_NUMBER = os.getenv("PAY_CARD_NUMBER", "").strip()
+PAY_CARD_NAME   = os.getenv("PAY_CARD_NAME", "").strip()
+ADMIN_CHAT_ID   = int(os.getenv("ADMIN_CHAT_ID", str(OWNER_ID)) or "0")
+
 
 def require_token():
     if not BOT_TOKEN:

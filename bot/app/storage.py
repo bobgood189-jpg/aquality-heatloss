@@ -40,13 +40,14 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     source     TEXT DEFAULT 'manual'
 );
 CREATE TABLE IF NOT EXISTS promo_codes (
-    code       TEXT PRIMARY KEY,
-    discount   INTEGER NOT NULL,
-    max_uses   INTEGER,
-    used_count INTEGER NOT NULL DEFAULT 0,
-    expires_ts INTEGER,
-    active     INTEGER NOT NULL DEFAULT 1,
-    created_ts INTEGER NOT NULL
+    code             TEXT PRIMARY KEY,
+    discount         INTEGER NOT NULL,
+    max_uses         INTEGER,
+    used_count       INTEGER NOT NULL DEFAULT 0,
+    expires_ts       INTEGER,
+    active           INTEGER NOT NULL DEFAULT 1,
+    created_ts       INTEGER NOT NULL,
+    plan_restriction TEXT
 );
 CREATE TABLE IF NOT EXISTS promo_redemptions (
     code       TEXT NOT NULL,
@@ -54,6 +55,25 @@ CREATE TABLE IF NOT EXISTS promo_redemptions (
     discount   INTEGER,
     used_ts    INTEGER NOT NULL,
     PRIMARY KEY (code, tg_user_id)
+);
+CREATE TABLE IF NOT EXISTS orders (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    tg_user_id        INTEGER NOT NULL,
+    tg_username       TEXT,
+    plan              TEXT NOT NULL,
+    months            INTEGER NOT NULL,
+    base_price        INTEGER NOT NULL,
+    promo_code        TEXT,
+    promo_disc        INTEGER DEFAULT 0,
+    final_price       INTEGER NOT NULL,
+    email             TEXT NOT NULL,
+    status            TEXT NOT NULL DEFAULT 'draft',
+    screenshot_id     TEXT,
+    created_ts        INTEGER NOT NULL,
+    confirmed_ts      INTEGER,
+    reject_reason     TEXT,
+    review_started_ts INTEGER,
+    delay_notified    INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -72,6 +92,18 @@ def _conn():
 def init_db():
     with _conn() as con:
         con.executescript(_SCHEMA)
+        for col, ddl in [
+            ("review_started_ts", "INTEGER"),
+            ("delay_notified", "INTEGER NOT NULL DEFAULT 0"),
+        ]:
+            try:
+                con.execute(f"ALTER TABLE orders ADD COLUMN {col} {ddl}")
+            except Exception:
+                pass
+        try:
+            con.execute("ALTER TABLE promo_codes ADD COLUMN plan_restriction TEXT")
+        except Exception:
+            pass
 
 
 def save_lead(tg_user_id, tg_username, name, phone, city, result_kw, payload):
@@ -224,18 +256,39 @@ def validate_promo(code, tg_user_id):
             (code, tg_user_id)).fetchone()
         if used:
             return {"ok": False, "reason": "already_used"}
-        return {"ok": True, "discount": row["discount"]}
+        return {"ok": True, "discount": row["discount"],
+                "plan_restriction": row["plan_restriction"]}
 
 
-def add_promo(code, discount, max_uses=None, expires_ts=None):
+def add_promo(code, discount, max_uses=None, expires_ts=None, plan_restriction=None):
     code = (code or "").strip().upper()
     with _conn() as con:
         con.execute(
-            "INSERT INTO promo_codes(code,discount,max_uses,used_count,expires_ts,active,created_ts) "
-            "VALUES(?,?,?,0,?,1,?) "
+            "INSERT INTO promo_codes(code,discount,max_uses,used_count,expires_ts,active,created_ts,plan_restriction) "
+            "VALUES(?,?,?,0,?,1,?,?) "
             "ON CONFLICT(code) DO UPDATE SET discount=excluded.discount, "
-            "max_uses=excluded.max_uses, expires_ts=excluded.expires_ts, active=1",
-            (code, int(discount), max_uses, expires_ts, int(time.time())))
+            "max_uses=excluded.max_uses, expires_ts=excluded.expires_ts, active=1, "
+            "plan_restriction=excluded.plan_restriction",
+            (code, int(discount), max_uses, expires_ts, int(time.time()), plan_restriction))
+
+
+def seed_promos():
+    """Гарантирует наличие мастер-промокодов Aquality в SQLite fallback
+    (зеркалит supabase/v2-improvements.sql для установок без Supabase)."""
+    import calendar
+
+    def _ts(y, m, d, hh=23, mm=59, ss=59):
+        return calendar.timegm((y, m, d, hh, mm, ss, 0, 0, 0))
+
+    for code, disc, expires_ts, restriction in [
+        ("AQUALITY",   100, _ts(2026, 1, 8),  "max"),
+        ("AQUALITY50",  50, _ts(2027, 12, 31), None),
+        ("AQUALITY30",  30, _ts(2027, 12, 31), None),
+    ]:
+        with _conn() as con:
+            exists = con.execute("SELECT 1 FROM promo_codes WHERE code=?", (code,)).fetchone()
+        if not exists:
+            add_promo(code, disc, max_uses=None, expires_ts=expires_ts, plan_restriction=restriction)
 
 
 def del_promo(code):
@@ -247,3 +300,75 @@ def list_promos():
     with _conn() as con:
         rows = con.execute("SELECT * FROM promo_codes ORDER BY created_ts DESC").fetchall()
         return [dict(r) for r in rows]
+
+
+# ── Orders (subscription shop) ─────────────────────────────────────────────
+
+def order_id_str(n: int) -> str:
+    return f"#AQ-{n:04d}"
+
+
+def create_order(tg_user_id, username, plan, months,
+                 base_price, promo_code, promo_disc, final_price, email) -> int:
+    with _conn() as con:
+        cur = con.execute(
+            "INSERT INTO orders(tg_user_id,tg_username,plan,months,base_price,"
+            "promo_code,promo_disc,final_price,email,status,created_ts) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+            (tg_user_id, username, plan, months, base_price,
+             promo_code, promo_disc or 0, final_price, email.lower(),
+             "draft", int(time.time())))
+        return cur.lastrowid
+
+
+def get_order(order_id: int):
+    with _conn() as con:
+        row = con.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def get_pending_order(tg_user_id: int):
+    """Most recent non-finished order for this user."""
+    with _conn() as con:
+        row = con.execute(
+            "SELECT * FROM orders WHERE tg_user_id=? "
+            "AND status NOT IN ('completed','cancelled') "
+            "ORDER BY id DESC LIMIT 1", (tg_user_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def update_order(order_id: int, status=None, screenshot_id=None,
+                 confirmed_ts=None, reject_reason=None):
+    fields, vals = [], []
+    if status is not None:
+        fields.append("status=?"); vals.append(status)
+        if status == "under_review":
+            fields.append("review_started_ts=?"); vals.append(int(time.time()))
+    if screenshot_id is not None:
+        fields.append("screenshot_id=?"); vals.append(screenshot_id)
+    if confirmed_ts is not None:
+        fields.append("confirmed_ts=?"); vals.append(confirmed_ts)
+    if reject_reason is not None:
+        fields.append("reject_reason=?"); vals.append(reject_reason)
+    if not fields:
+        return
+    vals.append(order_id)
+    with _conn() as con:
+        con.execute(f"UPDATE orders SET {','.join(fields)} WHERE id=?", vals)
+
+
+def get_stale_review_orders(stale_seconds: int = 7200):
+    """Orders under_review for longer than stale_seconds and not yet notified."""
+    cutoff = int(time.time()) - stale_seconds
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT * FROM orders WHERE status='under_review' "
+            "AND review_started_ts IS NOT NULL AND review_started_ts < ? "
+            "AND delay_notified=0",
+            (cutoff,)).fetchall()
+        return [dict(r) for r in rows]
+
+
+def mark_delay_notified(order_id: int):
+    with _conn() as con:
+        con.execute("UPDATE orders SET delay_notified=1 WHERE id=?", (order_id,))

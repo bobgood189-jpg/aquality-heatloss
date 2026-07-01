@@ -1,12 +1,12 @@
 """Start, language, main menu, contact, FAQ, materials reference and demo."""
 from aiogram import Router, F
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
 from .. import engine as E
 from .. import storage
-from ..config import CONTACT, PAYWALL, SB_CONFIGURED, BOT_USERNAME, SITE_URL
+from ..config import CONTACT, PAYWALL, SB_CONFIGURED, BOT_USERNAME, SITE_URL, OWNER_USERNAME
 from ..i18n import t, loc_name, LANG_NAMES
 from ..presets import BASE_PRESETS
 from .. import keyboards as K
@@ -43,6 +43,22 @@ async def cmd_start(message: Message, state: FSMContext):
     lang = storage.get_user_lang(message.from_user.id)
     if lang:
         await state.update_data(lang=lang)
+        # Resume interrupted purchase if one exists
+        pending = storage.get_pending_order(message.from_user.id)
+        if pending and pending["status"] in ("awaiting_screenshot", "under_review", "rejected"):
+            oid_str = storage.order_id_str(pending["id"])
+            if pending["status"] == "under_review":
+                await message.answer(
+                    f"⏳ Заказ <b>{oid_str}</b> уже на проверке у администратора.\n"
+                    "Как только оплата подтвердится — я напишу вам."
+                )
+            else:
+                await message.answer(
+                    f"У вас есть незавершённый заказ <b>{oid_str}</b>.\n\n"
+                    "Продолжить или начать новый?",
+                    reply_markup=K.shop_resume_kb(oid_str, pending["id"])
+                )
+            return
         if await _maybe_start_registration(message, state, lang):
             return
         await show_menu(message, lang, is_owner(message.from_user))
@@ -192,3 +208,24 @@ async def cmd_link(message: Message, state: FSMContext):
         await message.answer(t("link_bad_token", lang))
     else:
         await message.answer(t("link_error", lang))
+
+
+@router.message(Command("help"))
+async def cmd_help(message: Message, state: FSMContext):
+    contact = f"@{OWNER_USERNAME}" if OWNER_USERNAME else "администратору"
+    await message.answer(
+        "📖 <b>Aquality — справка</b>\n\n"
+        "Команды:\n"
+        "• /start — главное меню\n"
+        "• /buy — купить подписку\n"
+        "• /status — статус текущего заказа\n"
+        "• /mysub — информация о подписке\n"
+        "• /cancel — отменить текущий расчёт\n\n"
+        f"Вопросы и поддержка: {contact}"
+    )
+
+
+@router.message(StateFilter(None))
+async def fallback_unknown_message(message: Message):
+    if message.text and not message.text.startswith("/"):
+        await message.answer("Не понял 🤔 Используйте кнопки или /start")
