@@ -196,7 +196,8 @@ async def cmd_grant(message: Message):
     if SB_CONFIGURED:
         from .. import supabase_db as _sb
         res = await _sb.activate_sub(uid, plan,
-                                     amount=p["price"], promo=promo, source="manual")
+                                     amount=p["price"], promo=promo, source="manual",
+                                     actor_tg=message.from_user.id)
         if not res.get("ok"):
             reason = res.get("reason", "")
             if reason == "not_registered":
@@ -289,3 +290,25 @@ async def cmd_promo_list(message: Message):
         off = "" if p["active"] else " (выкл)"
         lines.append(f"• {p['code']} −{p['discount']}% · {lim} · до {exp}{off}")
     await message.answer("\n".join(lines))
+
+
+@router.message(Command("stats"))
+async def cmd_stats(message: Message):
+    if not is_owner(message.from_user):
+        return
+    if SB_CONFIGURED:
+        from .. import supabase_db as _sb
+        s = await _sb.get_stats()
+        if s:
+            def fmt(n): return f"{int(n):,}".replace(",", " ")
+            return await message.answer(
+                f"📊 <b>Статистика Aquality</b>\n\n"
+                f"👤 Пользователи: <b>{s.get('total_users', 0)}</b>\n"
+                f"🤖 В боте: <b>{s.get('bot_users', 0)}</b>\n"
+                f"✅ Активных подписок: <b>{s.get('active_subs', 0)}</b>\n"
+                f"💰 Выручка за 30 дней: <b>{fmt(s.get('revenue_30d', 0))} сум</b>\n"
+                f"📬 Лидов за 30 дней: <b>{s.get('leads_30d', 0)}</b>"
+            )
+    # SQLite fallback
+    subs = storage.list_active_subs()
+    await message.answer(f"📊 Активных подписок (SQLite): <b>{len(subs)}</b>")

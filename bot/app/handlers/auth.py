@@ -44,44 +44,42 @@ async def reg_email(message: Message, state: FSMContext):
 
     tg_id = message.from_user.id
 
-    # Try to link to an existing account by email
-    res = await sb.link_telegram(email, tg_id,
-                                 name=message.from_user.full_name or "",
-                                 phone="")
+    # Atomic upsert — single round-trip instead of 4
+    res = await sb.upsert_user(
+        email=email, tg_id=tg_id,
+        name=message.from_user.full_name or "",
+        username=message.from_user.username or "",
+    )
+
     if res.get("ok"):
-        await message.answer(t("reg_account_found" if res.get("existed") else "reg_created", lang))
+        await message.answer(t("reg_account_found", lang))
         await state.update_data(reg_email=email, reg_user_id=res.get("user_id"))
         await state.set_state(Register.name)
         return await message.answer(t("reg_ask_name", lang), reply_markup=K.reg_skip_kb(lang))
 
     reason = res.get("reason", "")
-    if reason == "already_linked":
-        # tg_id already linked to a different email — skip to menu
-        await _finish_registration(message, state, lang, name="", phone="")
-        return
 
     if reason == "email_not_found":
-        # New user — create auth.users entry
+        # New user — create via Admin API, then create profile row
         uid = await sb.create_auth_user(email, tg_id,
-                                        name=message.from_user.full_name or "",
-                                        phone="")
+                                        name=message.from_user.full_name or "")
         if uid is None:
-            # Email might already exist in auth.users but not in profiles
             uid = await sb.find_auth_user_by_email(email)
-
         if uid:
-            ok = await sb.upsert_profile(uid, tg_id, email,
-                                         name=message.from_user.full_name or "")
+            ok = await sb.create_profile(uid, tg_id, email,
+                                         name=message.from_user.full_name or "",
+                                         username=message.from_user.username or "")
             if ok:
-                await message.answer(t("reg_created", lang))
+                await sb.log_event(tg_id, "reg_start", {"email": email})
                 await state.update_data(reg_email=email, reg_user_id=uid)
                 await state.set_state(Register.name)
+                await message.answer(t("reg_created", lang))
                 return await message.answer(t("reg_ask_name", lang),
                                             reply_markup=K.reg_skip_kb(lang))
         await message.answer(t("reg_email_error", lang))
         return
 
-    log.error("link_telegram unexpected reason=%s for tg_id=%s", reason, tg_id)
+    log.error("upsert_user unexpected reason=%s tg_id=%s", reason, tg_id)
     await message.answer(t("reg_error", lang))
 
 

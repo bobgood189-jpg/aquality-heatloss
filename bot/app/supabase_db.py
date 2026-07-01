@@ -1,7 +1,7 @@
 """Async Supabase client for the bot. Uses httpx + service_role key.
 
-All public functions are safe to call even when SB_CONFIGURED is False —
-they simply return None / empty dict so callers don't need guards everywhere.
+All public functions return None / empty dict when SB_CONFIGURED is False
+so callers need no extra guards.
 """
 import logging
 from typing import Optional
@@ -19,59 +19,70 @@ _HEADERS = {
     "Accept": "application/json",
 }
 
+_TIMEOUT = httpx.Timeout(12.0, connect=5.0)
+
 
 async def _rpc(fn: str, payload: dict) -> Optional[dict]:
     if not SB_CONFIGURED:
         return None
     url = f"{SUPABASE_URL}/rest/v1/rpc/{fn}"
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
             r = await c.post(url, json=payload, headers=_HEADERS)
             if r.status_code == 200:
                 return r.json()
-            log.warning("rpc %s → %s %s", fn, r.status_code, r.text[:200])
+            log.warning("rpc %s → %s %s", fn, r.status_code, r.text[:300])
     except Exception as e:
         log.error("rpc %s error: %s", fn, e)
     return None
 
 
+# ── Profile ──────────────────────────────────────────────────────────────────
+
 async def get_profile(tg_id: int) -> Optional[dict]:
-    """Returns profile dict if telegram_id is linked, else None."""
+    """Profile + active sub in one call. Returns dict or None."""
     res = await _rpc("bot_get_profile", {"p_telegram_id": tg_id})
-    if res and res.get("ok"):
-        return res
-    return None
+    return res if res and res.get("ok") else None
 
 
-async def link_telegram(email: str, tg_id: int, name: str = "", phone: str = "") -> dict:
-    """Link telegram_id to an existing account found by email, or report not_found."""
-    res = await _rpc("bot_link_telegram", {
-        "p_email": email.lower().strip(),
+async def upsert_user(email: str, tg_id: int,
+                      name: str = "", phone: str = "",
+                      username: str = "") -> dict:
+    """Atomic: find existing profile by telegram_id or email and link it.
+    Returns {ok, status, user_id, email} or {ok:False, reason}.
+    """
+    res = await _rpc("bot_upsert_user", {
         "p_telegram_id": tg_id,
-        "p_name": name,
-        "p_phone": phone,
+        "p_email":       email.lower().strip(),
+        "p_name":        name,
+        "p_phone":       phone,
+        "p_username":    username,
     })
     return res or {"ok": False, "reason": "rpc_error"}
 
 
-async def create_auth_user(email: str, tg_id: int, name: str = "", phone: str = "") -> Optional[str]:
-    """Create a new Supabase Auth user. Returns user_id or None on failure."""
+async def create_auth_user(email: str, tg_id: int,
+                           name: str = "", phone: str = "") -> Optional[str]:
+    """Create Supabase Auth user via Admin API. Returns user_id or None."""
     if not SB_CONFIGURED:
         return None
     url = f"{SUPABASE_URL}/auth/v1/admin/users"
     payload = {
         "email": email.lower().strip(),
         "email_confirm": True,
-        "user_metadata": {"full_name": name, "phone": phone, "telegram_id": tg_id},
+        "user_metadata": {
+            "full_name":   name,
+            "phone":       phone,
+            "telegram_id": tg_id,
+        },
     }
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
             r = await c.post(url, json=payload, headers=_HEADERS)
             if r.status_code in (200, 201):
-                data = r.json()
-                return data.get("id")
+                return r.json().get("id")
             if r.status_code == 422:
-                log.info("create_auth_user: email already exists — %s", email)
+                log.info("create_auth_user: already exists — %s", email)
                 return None
             log.warning("create_auth_user %s → %s %s", email, r.status_code, r.text[:200])
     except Exception as e:
@@ -80,104 +91,117 @@ async def create_auth_user(email: str, tg_id: int, name: str = "", phone: str = 
 
 
 async def find_auth_user_by_email(email: str) -> Optional[str]:
-    """Look up an existing auth.users row by email. Returns user_id or None."""
+    """Lookup existing auth user by email. Returns user_id or None."""
     if not SB_CONFIGURED:
         return None
     url = f"{SUPABASE_URL}/auth/v1/admin/users"
-    params = {"filter": f"email:{email.lower().strip()}"}
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.get(url, params=params, headers=_HEADERS)
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
+            r = await c.get(url, params={"filter": f"email:{email.lower().strip()}"},
+                            headers=_HEADERS)
             if r.status_code == 200:
-                data = r.json()
-                users = data.get("users") or []
-                if users:
-                    return users[0].get("id")
+                users = r.json().get("users") or []
+                return users[0].get("id") if users else None
     except Exception as e:
         log.error("find_auth_user_by_email error: %s", e)
     return None
 
 
-async def upsert_profile(user_id: str, tg_id: int, email: str,
-                         name: str = "", phone: str = "") -> bool:
-    """Insert or merge a profile row. Returns True on success."""
-    if not SB_CONFIGURED:
-        return False
-    url = f"{SUPABASE_URL}/rest/v1/profiles"
-    payload = {
-        "id": user_id,
-        "telegram_id": tg_id,
-        "email": email.lower().strip(),
-        "full_name": name or None,
-        "phone": phone or None,
-    }
-    hdrs = {**_HEADERS, "Prefer": "resolution=merge-duplicates,return=minimal"}
-    try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.post(url, json=payload, headers=hdrs)
-            return r.status_code in (200, 201, 204)
-    except Exception as e:
-        log.error("upsert_profile error: %s", e)
-    return False
+async def create_profile(user_id: str, tg_id: int, email: str,
+                         name: str = "", phone: str = "",
+                         username: str = "") -> bool:
+    """Create or merge profile row after auth user was created. Returns True on success."""
+    res = await _rpc("bot_create_profile", {
+        "p_user_id":     user_id,
+        "p_telegram_id": tg_id,
+        "p_email":       email,
+        "p_name":        name,
+        "p_phone":       phone,
+        "p_username":    username,
+    })
+    return bool(res and res.get("ok"))
 
 
 async def update_profile(tg_id: int, name: str = "", phone: str = "") -> bool:
-    """Update name/phone on an existing profile by telegram_id."""
+    """Update name/phone on existing profile by telegram_id."""
     if not SB_CONFIGURED:
         return False
+    if not name and not phone:
+        return True
     url = f"{SUPABASE_URL}/rest/v1/profiles"
-    params = {"telegram_id": f"eq.{tg_id}"}
     payload = {}
     if name:
         payload["full_name"] = name
     if phone:
         payload["phone"] = phone
-    if not payload:
-        return True
     try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.patch(url, json=payload, params=params, headers=_HEADERS)
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
+            r = await c.patch(url, json=payload,
+                              params={"telegram_id": f"eq.{tg_id}"},
+                              headers=_HEADERS)
             return r.status_code in (200, 204)
     except Exception as e:
         log.error("update_profile error: %s", e)
     return False
 
 
+# ── Subscriptions ─────────────────────────────────────────────────────────────
+
 async def get_active_sub(tg_id: int) -> Optional[dict]:
-    """Returns subscription dict if active, else None."""
+    """Returns active subscription dict or None."""
     res = await _rpc("bot_get_active_sub", {"p_telegram_id": tg_id})
-    if res and res.get("ok"):
-        return res
-    return None
+    return res if res and res.get("ok") else None
 
 
 async def activate_sub(tg_id: int, plan: str, amount=None,
-                       promo: str = None, source: str = "telegram") -> dict:
-    """Activate a subscription plan for a telegram user. Returns {ok, sub_id, expires_at, plan}."""
+                       promo: str = None, source: str = "telegram",
+                       actor_tg: int = None) -> dict:
+    """Activate subscription. Returns {ok, sub_id, expires_at, plan}."""
     res = await _rpc("bot_activate_sub", {
         "p_telegram_id": tg_id,
-        "p_plan": plan,
-        "p_amount": amount,
-        "p_promo": promo,
-        "p_source": source,
+        "p_plan":        plan,
+        "p_amount":      amount,
+        "p_promo":       promo,
+        "p_source":      source,
+        "p_actor_tg":    actor_tg,
     })
     return res or {"ok": False, "reason": "rpc_error"}
 
+
+# ── Promo codes ───────────────────────────────────────────────────────────────
 
 async def validate_promo(tg_id: int, code: str) -> dict:
-    """Validate a promo code for a telegram user. Returns {ok, discount, reason}."""
+    """Validate promo code without redeeming. Returns {ok, discount, reason}."""
     res = await _rpc("bot_validate_promo", {
         "p_telegram_id": tg_id,
-        "p_code": code.strip().upper(),
+        "p_code":        code.strip().upper(),
     })
     return res or {"ok": False, "reason": "rpc_error"}
 
+
+# ── Token linking ─────────────────────────────────────────────────────────────
 
 async def link_by_token(tg_id: int, username: str, token: str) -> dict:
-    """Claim a one-time token from the website to link this Telegram account."""
+    """Claim a one-time website token to link Telegram account."""
     res = await _rpc("link_tg_account", {
-        "p_token": token.strip().upper(),
+        "p_token":       token.strip().upper(),
         "p_telegram_id": tg_id,
-        "p_username": username or "",
+        "p_username":    username or "",
     })
     return res or {"ok": False, "reason": "rpc_error"}
+
+
+# ── Analytics & audit ─────────────────────────────────────────────────────────
+
+async def log_event(tg_id: int, event: str, data: dict = None) -> None:
+    """Fire-and-forget: log a bot event to bot_events table."""
+    await _rpc("bot_log_event", {
+        "p_tg_id": tg_id,
+        "p_event": event,
+        "p_data":  data,
+    })
+
+
+async def get_stats() -> Optional[dict]:
+    """Return admin stats dict: users, subs, revenue, leads."""
+    return await _rpc("bot_get_stats", {})

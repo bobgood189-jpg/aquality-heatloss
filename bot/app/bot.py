@@ -41,7 +41,8 @@ async def _set_commands(bot):
         BotCommand(command="mysub", description="Моя подписка / Mening obuna"),
         BotCommand(command="link", description="Привязать аккаунт / Akkaunt bog'lash"),
         BotCommand(command="reset", description="Сбросить расчёт"),
-        BotCommand(command="myid", description="Мой Telegram ID"),
+        BotCommand(command="myid",  description="Мой Telegram ID"),
+        BotCommand(command="stats", description="Статистика (владелец)"),
     ])
 
 
