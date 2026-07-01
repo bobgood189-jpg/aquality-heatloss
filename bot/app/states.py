@@ -1,5 +1,11 @@
-"""FSM states for the calculation wizard (aiogram 3.x)."""
+"""FSM states for the calculation wizard and registration flow (aiogram 3.x)."""
 from aiogram.fsm.state import State, StatesGroup
+
+
+class Register(StatesGroup):
+    email = State()
+    name  = State()
+    phone = State()
 
 
 class Wizard(StatesGroup):

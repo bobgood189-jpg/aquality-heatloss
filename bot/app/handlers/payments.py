@@ -5,7 +5,6 @@
 командой /grant. Промокоды (10/30/50/100 %) проверяются командой /promo.
 """
 import time
-import math
 from datetime import datetime
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -29,6 +28,10 @@ def _fmt_sum(n):
 
 def _plan_name(plan_id, lang):
     return t(PLAN_NAME_KEY.get(plan_id, plan_id), lang)
+
+
+def _days_left(expires_ts: float) -> int:
+    return max(0, int((expires_ts - time.time()) / 86400) + 1)
 
 
 async def has_access(user) -> bool:
@@ -160,25 +163,12 @@ async def cmd_mysub(message: Message, state: FSMContext):
         return await message.answer(t("pay_locked", lang),
                                     reply_markup=K.tariffs_kb(lang, PAY_TG))
     sub = storage.get_active_sub(message.from_user.id)
-    if sub:
-        date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
-        return await message.answer(
-            f"✅ Подписка <b>{sub['plan']}</b> активна до <b>{date}</b>.",
-            reply_markup=K.back_menu_kb(lang))
-    await message.answer(t("pay_locked", lang), reply_markup=K.tariffs_kb(lang, PAY_TG))
-
-
-# ── админ-команды (только владелец) ────────────────────────────────────────
-@router.message(Command("mysub"))
-async def cmd_mysub(message: Message, state: FSMContext):
-    lang = await get_lang(state, message.from_user.id)
-    sub = storage.get_active_sub(message.from_user.id)
     if not sub:
         await message.answer(t("sub_none_user", lang))
         return
     date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
     days = _days_left(sub["expires_ts"])
-    plan_str = t(PLAN_NAME_KEY.get(sub["plan"], sub["plan"]), lang)
+    plan_str = _plan_name(sub["plan"], lang)
     if days <= 1:
         status = f"⚠️ {t('sub_expiry_tomorrow', lang, date=date)}"
     elif days <= 3:
@@ -188,6 +178,7 @@ async def cmd_mysub(message: Message, state: FSMContext):
     await message.answer(f"<b>{plan_str}</b>\n\n{status}")
 
 
+# ── админ-команды (только владелец) ────────────────────────────────────────
 @router.message(Command("grant"))
 async def cmd_grant(message: Message):
     if not is_owner(message.from_user):

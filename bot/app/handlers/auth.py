@@ -9,6 +9,8 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
+from aiogram.filters import Command
+
 from .. import storage
 from ..config import SB_CONFIGURED
 from .. import supabase_db as sb
@@ -130,6 +132,22 @@ async def reg_phone(message: Message, state: FSMContext):
             phone = ""
     await _finish_registration(message, state, lang,
                                 name=data.get("reg_name", ""), phone=phone)
+
+
+# ── /link command (alias for registration / re-link) ─────────────────────────
+
+@router.message(Command("link"))
+async def cmd_link(message: Message, state: FSMContext):
+    from .util import get_lang
+    lang = await get_lang(state, message.from_user.id)
+    if not SB_CONFIGURED:
+        return await message.answer(t("reg_no_sb", lang))
+    profile = await sb.get_profile(message.from_user.id)
+    if profile:
+        email = profile.get("email", "")
+        return await message.answer(
+            f"✅ Аккаунт уже привязан: <b>{email}</b>\n\nЧтобы сменить привязку — напишите /start.")
+    await start_registration(message, state, lang)
 
 
 # ── finish ────────────────────────────────────────────────────────────────────

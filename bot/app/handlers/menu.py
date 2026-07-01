@@ -6,14 +6,29 @@ from aiogram.fsm.context import FSMContext
 
 from .. import engine as E
 from .. import storage
-from ..config import CONTACT, PAYWALL
+from ..config import CONTACT, PAYWALL, SB_CONFIGURED, BOT_USERNAME, SITE_URL
 from ..i18n import t, loc_name, LANG_NAMES
 from ..presets import BASE_PRESETS
 from .. import keyboards as K
 from .util import get_lang, is_owner
 from .results import send_results
 
+if SB_CONFIGURED:
+    from .. import supabase_db as _sb
+    from .auth import start_registration as _start_registration
+
 router = Router()
+
+
+async def _maybe_start_registration(message, state, lang) -> bool:
+    """Returns True if registration was triggered (caller should stop)."""
+    if not SB_CONFIGURED:
+        return False
+    profile = await _sb.get_profile(message.from_user.id)
+    if profile:
+        return False
+    await _start_registration(message, state, lang)
+    return True
 
 
 async def show_menu(message, lang, owner=False):
@@ -28,6 +43,8 @@ async def cmd_start(message: Message, state: FSMContext):
     lang = storage.get_user_lang(message.from_user.id)
     if lang:
         await state.update_data(lang=lang)
+        if await _maybe_start_registration(message, state, lang):
+            return
         await show_menu(message, lang, is_owner(message.from_user))
     else:
         await message.answer(t("choose_lang", "ru"), reply_markup=K.lang_kb())
@@ -63,9 +80,11 @@ async def set_lang(cb: CallbackQuery, state: FSMContext):
         return await cb.answer()
     storage.set_user_lang(cb.from_user.id, lang)
     await state.update_data(lang=lang)
+    await cb.answer()
+    if await _maybe_start_registration(cb.message, state, lang):
+        return
     await cb.message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, is_owner(cb.from_user), PAYWALL),
                             disable_web_page_preview=True)
-    await cb.answer()
 
 
 @router.callback_query(F.data == "menu:home")
@@ -153,3 +172,23 @@ async def menu_demo(cb: CallbackQuery, state: FSMContext):
     await cb.message.answer("🏡 <b>Демо: типовой дом ~60 м² (Фергана)</b>")
     await send_results(cb.message, res, lang, state)
     await cb.answer()
+
+
+@router.message(Command("link"))
+async def cmd_link(message: Message, state: FSMContext):
+    lang = await get_lang(state, message.from_user.id)
+    if not SB_CONFIGURED:
+        return await message.answer(t("link_error", lang))
+    token = message.text.partition(" ")[2].strip().upper()
+    if not token:
+        return await message.answer(t("link_usage", lang, site=SITE_URL))
+    result = await _sb.link_by_token(message.from_user.id,
+                                     message.from_user.username or "", token)
+    if result.get("ok"):
+        await message.answer(t("link_success", lang))
+    elif result.get("reason") == "already_linked":
+        await message.answer(t("link_already", lang))
+    elif result.get("reason") == "bad_token":
+        await message.answer(t("link_bad_token", lang))
+    else:
+        await message.answer(t("link_error", lang))

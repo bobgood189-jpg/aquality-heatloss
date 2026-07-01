@@ -171,3 +171,13 @@ async def validate_promo(tg_id: int, code: str) -> dict:
         "p_code": code.strip().upper(),
     })
     return res or {"ok": False, "reason": "rpc_error"}
+
+
+async def link_by_token(tg_id: int, username: str, token: str) -> dict:
+    """Claim a one-time token from the website to link this Telegram account."""
+    res = await _rpc("link_tg_account", {
+        "p_token": token.strip().upper(),
+        "p_telegram_id": tg_id,
+        "p_username": username or "",
+    })
+    return res or {"ok": False, "reason": "rpc_error"}

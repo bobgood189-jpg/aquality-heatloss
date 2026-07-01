@@ -61,6 +61,14 @@ CONTACT = {
     "address": "Tadbirkorlar ko'chasi 277 (польский базар, магазин 27)",
 }
 
+# ── Supabase (общая БД с сайтом) ──────────────────────────────────────────
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://uhyomjdsswasmlycpoyh.supabase.co").strip().rstrip("/")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "").strip()
+SB_CONFIGURED = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
+
+BOT_USERNAME = os.getenv("BOT_USERNAME", "aqualityHL_bot").lstrip("@")
+SITE_URL = os.getenv("SITE_URL", "https://aquality-hl.netlify.app").rstrip("/")
+
 
 def require_token():
     if not BOT_TOKEN:

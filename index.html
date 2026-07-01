@@ -69,8 +69,8 @@
 ════════════════════════════════════════════════════════════════════ -->
 <script>
   window.AQ_CONFIG = {
-    SUPABASE_URL: 'https://uhyomjdsswasmlycpoyh.supabase.co',
-    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoeW9tamRzc3dhc21seWNwb3loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NTg4MDgsImV4cCI6MjA5ODMzNDgwOH0.vFCtO_B9RxKLlm-FvZx3qcAeurDI7H6Pf-YlL8bivu8',
+    SUPABASE_URL: 'https://ocrgpmlhtjghiamhbrhv.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jcmdwbWxodGpnaGlhbWhicmh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzUzOTYsImV4cCI6MjA5NjI1MTM5Nn0.XQhN3Yk8Hp5fG4g-0qhW0q0787g34tmX9VUTpdMfhKs',
     // Платный доступ (подписка). true/false — явно; не задано — авто:
     // включается сам, когда настроен Supabase (чтобы офлайн-сайт не запереть).
     // Схема БД: supabase/payment-schema.sql
@@ -85,7 +85,8 @@
     PAY_CARD_VISA:   '',    // '4XXX XXXX XXXX XXXX'
     PAY_CARD_MASTER: '',    // '5XXX XXXX XXXX XXXX'
     PAY_PAYPAL:      '',    // 'your@paypal.email'
-    PAY_CARD_SBP:    ''     // '+7 XXX XXX-XX-XX (Тинькофф)'
+    PAY_CARD_SBP:    '',    // '+7 XXX XXX-XX-XX (Тинькофф)'
+    BOT_USERNAME:    'aqualityHL_bot'
   };
 </script>
 <!-- Supabase JS подгружается ДИНАМИЧЕСКИ и только если заданы ключи (см. loadSupabaseLib).
@@ -1542,6 +1543,21 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 [data-theme="light"] .auth-tab.active{color:var(--aq-accent);}
 [data-theme="light"] .auth-lbl{color:rgba(71,85,105,.7);}
 [data-theme="light"] .auth-link-row{color:rgba(71,85,105,.7);}
+/* ── OTP 6-digit boxes ── */
+.otp-boxes{display:flex;gap:.5rem;justify-content:center;margin:.75rem 0}
+.otp-box{width:46px;height:56px;border-radius:.75rem;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#ECF0FA;font-size:1.5rem;font-weight:700;text-align:center;caret-color:transparent;outline:none;transition:border-color .15s,background .15s,box-shadow .15s;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+.otp-box::-webkit-outer-spin-button,.otp-box::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.otp-box:focus{border-color:rgba(245,158,11,.7);background:rgba(245,158,11,.06);box-shadow:0 0 0 3px rgba(245,158,11,.12)}
+.otp-box.filled{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
+.otp-box.error{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.07);animation:otpShake .35s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes otpShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-3px)}40%,60%{transform:translateX(3px)}}
+.otp-timer{font-size:.72rem;color:rgba(148,163,184,.4);text-align:center;margin-top:.5rem;min-height:1.1rem;transition:color .3s}
+.otp-timer.urgent{color:rgba(239,68,68,.65)}
+.otp-success-icon{display:none;width:52px;height:52px;border-radius:50%;background:rgba(34,197,94,.12);border:2px solid rgba(34,197,94,.35);align-items:center;justify-content:center;margin:0 auto .75rem;animation:otpSuccessPop .4s cubic-bezier(.22,1,.36,1)}
+@keyframes otpSuccessPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+[data-theme="light"] .otp-box{border-color:rgba(0,0,0,.12);background:rgba(0,0,0,.03);color:#1e293b}
+[data-theme="light"] .otp-box:focus{border-color:rgba(217,119,6,.6);background:rgba(217,119,6,.06)}
+[data-theme="light"] .otp-box.filled{border-color:rgba(217,119,6,.4);background:rgba(217,119,6,.07)}
 </style>
 </head>
 <body class="bg-w950">
@@ -2417,32 +2433,32 @@ async function aqHydrate(){
 
 /* ── Auth actions (Supabase) ── */
 async function sbSignUp(data){
-  const c = sb(); if(!c) return {ok:false, err:'Supabase не настроен'};
-  const { error } = await c.auth.signUp({
-    email: data.email,
-    password: data.password,
-    options:{ data:{ full_name:data.login, phone:data.phone, phone2:data.phone2||'',
-      city:data.city||'', client_type:data.clientType||'client' } }
-  });
-  if(error){
-    const m = /already registered|exists/i.test(error.message) ? t('auth-err-email-taken')
-      : /password/i.test(error.message) ? t('auth-err-pass-short')
-      : /valid email|invalid/i.test(error.message) ? t('auth-err-email-invalid')
-      : error.message;
-    return {ok:false, err:m};
+  // Регистрация через Edge Function — Admin API создаёт пользователя без письма Supabase,
+  // а сам Edge Function отправляет 6-значный OTP через Resend.
+  try{
+    const res=await fetch(AQ_CFG.SUPABASE_URL+'/functions/v1/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':AQ_CFG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+AQ_CFG.SUPABASE_ANON_KEY},
+      body:JSON.stringify({
+        email:data.email, password:data.password,
+        full_name:data.login, phone:data.phone,
+        phone2:data.phone2||'', city:data.city||'',
+        client_type:data.clientType||'client'
+      })
+    });
+    const json=await res.json();
+    if(!res.ok||json.error) return {ok:false,err:json.error||t('auth-err-email-taken')};
+    return {ok:true,needsConfirm:true};
+  }catch(e){
+    return {ok:false,err:'Ошибка сети: '+e.message};
   }
-  // Если в проекте включён «Confirm email», сессии сразу не будет.
-  const { data:{ session } } = await c.auth.getSession();
-  if(session) await aqLoadSession(session);
-  return {ok:true, needsConfirm: !session};
 }
 async function sbSignIn(email, password){
   const c = sb(); if(!c) return {ok:false, err:'Supabase не настроен'};
   const { data, error } = await c.auth.signInWithPassword({ email, password });
   if(error){
-    const m = /Email not confirmed/i.test(error.message) ? 'Подтвердите email по ссылке из письма'
-      : /Invalid login/i.test(error.message) ? 'Неверный email или пароль'
-      : error.message;
+    if(/Email not confirmed/i.test(error.message)) return {ok:false,err:t('auth-err-email-not-confirmed'),needsConfirm:true,email};
+    const m = /Invalid login/i.test(error.message) ? 'Неверный email или пароль' : error.message;
     return {ok:false, err:m};
   }
   await aqLoadSession(data.session);
@@ -2472,6 +2488,27 @@ async function sbVerifyOtpAndReset(email,otp,newPass){
   const {error:ue}=await c.auth.updateUser({password:newPass});
   if(ue) return {ok:false,err:ue.message};
   return {ok:true};
+}
+async function sbVerifySignupOtp(email,otp){
+  const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
+  const {data,error}=await c.auth.verifyOtp({email,token:otp,type:'signup'});
+  if(error) return {ok:false,err:t('forgot-err-otp-invalid')};
+  if(data&&data.session) await aqLoadSession(data.session);
+  return {ok:true};
+}
+async function sbResendSignupOtp(email){
+  try{
+    const res=await fetch(AQ_CFG.SUPABASE_URL+'/functions/v1/send-signup-otp',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':AQ_CFG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+AQ_CFG.SUPABASE_ANON_KEY},
+      body:JSON.stringify({email})
+    });
+    const json=await res.json();
+    if(!res.ok||json.error) return {ok:false,err:json.error||'Ошибка отправки кода'};
+    return {ok:true};
+  }catch(e){
+    return {ok:false,err:'Ошибка сети: '+e.message};
+  }
 }
 
 /* ── Профиль: сохранение в Supabase ── */
@@ -2574,6 +2611,7 @@ const AQ_PLANS = [
 ];
 // Включён ли paywall: явный флаг приоритетнее; иначе авто (вкл. при Supabase).
 const PAYWALL_ON = (typeof AQ_CFG.PAYWALL === 'boolean') ? AQ_CFG.PAYWALL : SB_CONFIGURED;
+const BOT_USERNAME  = (AQ_CFG.BOT_USERNAME || 'aqualityHL_bot').replace(/^@/,'');
 const PAY_TG        = (AQ_CFG.PAY_TG  || 'aqualityHL').replace(/^@/,'');
 const PAY_TG2       = (AQ_CFG.PAY_TG2 || 'ibrokh1movv7').replace(/^@/,'');
 const PAY_REQ       = AQ_CFG.PAY_REQUISITES || '';
@@ -2884,27 +2922,89 @@ function _payMethodDetailHTML(m){
   const label=labelMap[m]||m.toUpperCase();
   const cardNum=(cardMap[m]||'').trim();
   const esc=cardNum.replace(/'/g,"\\'");
+  const chipSVG=`<svg width="38" height="30" viewBox="0 0 38 30" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="38" height="30" rx="5" fill="#C8A84B"/><rect width="38" height="30" rx="5" stroke="rgba(255,255,255,.15)" stroke-width="0.8"/><rect x="13" y="0" width="1.5" height="30" fill="rgba(0,0,0,.18)"/><rect x="23.5" y="0" width="1.5" height="30" fill="rgba(0,0,0,.18)"/><rect x="0" y="10" width="38" height="1.5" fill="rgba(0,0,0,.18)"/><rect x="0" y="18.5" width="38" height="1.5" fill="rgba(0,0,0,.18)"/><rect x="13" y="10" width="12" height="10" rx="2" fill="rgba(200,168,75,.35)" stroke="rgba(0,0,0,.1)"/></svg>`;
+  const wifiSVG=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="rgba(255,255,255,.5)" stroke="none"/></svg>`;
+  const cardLogoMap={
+    humo:`<svg viewBox="0 0 64 28" width="54" height="22"><rect width="64" height="28" rx="4" fill="#00A651"/><text x="32" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="12" fill="#fff" letter-spacing="1.5">HUMO</text></svg>`,
+    uzcard:`<svg viewBox="0 0 68 28" width="58" height="22"><rect width="68" height="28" rx="4" fill="#1B4FA3"/><text x="34" y="15" dominant-baseline="central" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="11" fill="#fff">Uzcard</text></svg>`,
+    visa:`<svg viewBox="-3 0 57 22" width="48" height="18" fill="none"><text x="0" y="18" font-size="20" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="white" letter-spacing="1.5">VISA</text></svg>`,
+    master:`<svg viewBox="0 0 38 24" width="42" height="26"><circle cx="14" cy="12" r="10" fill="#EB001B"/><circle cx="24" cy="12" r="10" fill="#F79E1B"/><path d="M19 5.3a10 10 0 0 1 0 13.4A10 10 0 0 1 19 5.3z" fill="#FF5F00"/></svg>`
+  };
+  const gradMap={
+    humo:'linear-gradient(135deg,#0d2e1a 0%,#071a0d 55%,#051408 100%)',
+    uzcard:'linear-gradient(135deg,#0d1a38 0%,#07102a 55%,#04091e 100%)',
+    visa:'linear-gradient(135deg,#0a1240 0%,#060a2c 55%,#030720 100%)',
+    master:'linear-gradient(135deg,#2a1010 0%,#190808 55%,#100404 100%)'
+  };
+  const cardLogo=cardLogoMap[m]||'';
+  const cardGrad=gradMap[m]||gradMap.uzcard;
+  const rawNum=cardNum.replace(/\s/g,'');
+  const displayNum=cardNum
+    ?rawNum.replace(/(\d{4})(?=\d)/g,'$1 ')
+    :'•••• •••• •••• ••••';
+  const maskedNum=cardNum
+    ?(rawNum.slice(0,4).replace(/\d/g,'•')+'  '+rawNum.slice(4,8).replace(/\d/g,'•')+'  '+rawNum.slice(8,12).replace(/\d/g,'•')+'  '+rawNum.slice(12))
+    :'••••  ••••  ••••  ••••';
+  const icoCard=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
+  const icoSum=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>`;
+  const icoCopy=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
   if(!cardNum){
     return `<div class="pw-method-detail">
-      <p class="pw-method-hint">Реквизиты ${label} уточните у менеджера:</p>
+      <div class="pw-card-form">
+        <div class="pw-card-preview" style="background:${cardGrad}">
+          <div class="pw-card-top-row"><div class="pw-card-chip">${chipSVG}</div><div style="margin-left:auto">${wifiSVG}</div></div>
+          <div class="pw-cprev-num">••••  ••••  ••••  ••••</div>
+          <div class="pw-cprev-bottom">
+            <div><div class="pw-cprev-lbl">ДЕРЖАТЕЛЬ</div><div class="pw-cprev-val">AQUALITY WATERPRO</div></div>
+            <div style="margin-left:auto;margin-bottom:2px">${cardLogo}</div>
+          </div>
+        </div>
+      </div>
+      <p class="pw-method-hint" style="margin-top:14px">Реквизиты ${label} уточните у менеджера — он пришлёт номер карты и активирует подписку:</p>
       <button class="pw-pay-btn blue" onclick="payViaTelegram()">${tgIco} Написать менеджеру</button>
-      <p class="pw-pay-note">Менеджер пришлёт номер карты и активирует подписку после оплаты</p>
+      <p class="pw-pay-note">🔒 Платёж защищён. Доступ активируется после проверки перевода</p>
     </div>`;
   }
   return `<div class="pw-method-detail">
-    <div class="pw-transfer-box">
-      <div class="pw-tr-step-row"><span class="pw-tr-step-n">1</span><span class="pw-tr-step-t">Откройте приложение своего банка</span></div>
-      <div class="pw-tr-step-row"><span class="pw-tr-step-n">2</span><span class="pw-tr-step-t">Переведите <strong>${priceFmt}</strong> на карту ${label}:</span></div>
-      <div class="pw-card-num">${cardNum}</div>
-      <button class="pw-copy-btn" onclick="_copyPayText('${esc}')">Скопировать номер</button>
-      <div class="pw-tr-step-row" style="margin-top:6px"><span class="pw-tr-step-n">3</span><span class="pw-tr-step-t">Вернитесь и нажмите кнопку ниже</span></div>
+    <div class="pw-card-form">
+      <div class="pw-card-preview" style="background:${cardGrad}">
+        <div class="pw-card-top-row"><div class="pw-card-chip">${chipSVG}</div><div style="margin-left:auto">${wifiSVG}</div></div>
+        <div class="pw-cprev-num">${maskedNum}</div>
+        <div class="pw-cprev-bottom">
+          <div>
+            <div class="pw-cprev-lbl">ДЕРЖАТЕЛЬ</div>
+            <div class="pw-cprev-val">AQUALITY WATERPRO</div>
+          </div>
+          <div style="margin-left:auto;margin-bottom:2px">${cardLogo}</div>
+        </div>
+      </div>
+      <div class="pw-field-wrap">
+        <div class="pw-field-lbl">Номер карты получателя</div>
+        <div class="pw-field-inner">
+          <span class="pw-field-ico">${icoCard}</span>
+          <input class="pw-inp2 has-copy" readonly value="${displayNum}" style="cursor:pointer;letter-spacing:.12em;font-family:'JetBrains Mono',monospace,sans-serif" title="Нажмите для копирования" onclick="this.select();_copyPayText('${esc}');this.style.borderColor='rgba(245,158,11,.6)'"/>
+          <button class="pw-field-copy" onclick="_copyPayText('${esc}');this.innerHTML='${icoCopy.replace(/'/g,"\\'")} <span style=\\'font-size:9px;font-weight:700;color:#34d399\\'>✓</span>'" title="Скопировать">${icoCopy}</button>
+        </div>
+      </div>
+      <div class="pw-field-wrap">
+        <div class="pw-field-lbl">Сумма к переводу</div>
+        <div class="pw-field-inner">
+          <span class="pw-field-ico">${icoSum}</span>
+          <input class="pw-inp2" readonly value="${priceFmt}" style="color:#F59E0B;font-weight:800;cursor:default;font-variant-numeric:tabular-nums"/>
+        </div>
+      </div>
     </div>
-    <button class="pw-pay-btn amber" onclick="payIHavePaid('${m}')">
+    <div class="pw-transfer-box" style="margin-top:12px">
+      <div class="pw-tr-step-row"><span class="pw-tr-step-n">1</span><span class="pw-tr-step-t">Откройте приложение своего банка</span></div>
+      <div class="pw-tr-step-row"><span class="pw-tr-step-n">2</span><span class="pw-tr-step-t">Переведите <strong>${priceFmt}</strong> на карту ${label} выше</span></div>
+      <div class="pw-tr-step-row"><span class="pw-tr-step-n">3</span><span class="pw-tr-step-t">Вернитесь и нажмите кнопку ниже</span></div>
+    </div>
+    <button class="pw-pay-btn amber" style="margin-top:12px" onclick="payIHavePaid('${m}')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-      Я перевёл деньги
+      Я перевёл ${priceFmt}
     </button>
     <button class="pw-confirm-btn" onclick="payViaTelegram()">${tgIco} Написать менеджеру</button>
-    <p class="pw-pay-note">🔒 Менеджер активирует подписку в течение рабочего дня после проверки перевода</p>
+    <p class="pw-pay-note">🔒 Платёж защищён. Доступ активируется менеджером в течение рабочего дня.</p>
   </div>`;
 }
 async function payRefresh(){ await aqRefreshSub(); renderPaywall(); initAuthNav(); if(aqHasAccess()){ closePaywall(); toast(pt('active')); if(typeof renderStep==='function'&&ST&&ST.step) renderStep(); } }
@@ -3168,11 +3268,15 @@ function aqLockedStepHTML(){
   .pw-card-form{display:flex;flex-direction:column;gap:10px}
   .pw-card-preview{position:relative;border-radius:16px;padding:20px 22px 18px;background:linear-gradient(135deg,#1a2540 0%,#0e1628 60%,#12192e 100%);border:1px solid rgba(245,158,11,.22);box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;min-height:128px}
   .pw-card-preview::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(245,158,11,.1) 0%,transparent 70%);pointer-events:none}
-  .pw-card-chip{margin-bottom:14px}
-  .pw-cprev-num{font-size:17px;font-weight:700;color:#E8EEF8;letter-spacing:.17em;font-family:'JetBrains Mono',monospace,sans-serif;margin-bottom:16px;text-shadow:0 1px 4px rgba(0,0,0,.4)}
-  .pw-cprev-bottom{display:flex;gap:24px}
+  .pw-card-top-row{display:flex;align-items:center;margin-bottom:14px}
+  .pw-card-chip{flex-shrink:0}
+  .pw-cprev-num{font-size:18px;font-weight:700;color:#E8EEF8;letter-spacing:.2em;font-family:'JetBrains Mono',monospace,sans-serif;margin-bottom:18px;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .pw-cprev-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .pw-cprev-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#5A6B8E;margin-bottom:3px}
   .pw-cprev-val{font-size:11px;font-weight:700;color:#B0C0DC;letter-spacing:.06em;text-transform:uppercase}
+  .pw-field-copy{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:5px 8px;color:#F59E0B;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s;flex-shrink:0}
+  .pw-field-copy:hover{background:rgba(245,158,11,.22);border-color:rgba(245,158,11,.45)}
+  .pw-inp2.has-copy{padding-right:72px}
   .pw-field-wrap{display:flex;flex-direction:column;gap:5px}
   .pw-field-lbl{font-size:11px;font-weight:700;color:#8A9BBF;letter-spacing:.03em}
   .pw-field-inner{position:relative;display:flex;align-items:center}
@@ -3586,6 +3690,7 @@ let _authTab='login';
 let _authClientType='client';
 let _forgotStep=1;
 let _forgotEmail='';
+let _signupEmail='';
 
 let _authCanvasRaf=null;
 
@@ -3641,10 +3746,13 @@ function closeAuth(){
   _unlockBodyScroll();
   _showPageWidgets();
   _stopAuthCanvas();
+  clearInterval(_otpTimerIv); clearInterval(_otpResendIv);
 }
 function renderAuthBody(){
   const el=document.getElementById('auth-body'); if(!el) return;
-  if(_authTab==='login') el.innerHTML=renderLoginForm();
+  clearInterval(_otpTimerIv); clearInterval(_otpResendIv);
+  if(_authTab==='confirm'){ el.innerHTML=renderSignupConfirmForm(); requestAnimationFrame(initOtpBoxes); }
+  else if(_authTab==='login') el.innerHTML=renderLoginForm();
   else if(_authTab==='forgot'){ _forgotStep=1; el.innerHTML=renderForgotForm(); }
   else el.innerHTML=renderRegisterForm();
 }
@@ -3755,6 +3863,100 @@ function renderRegisterForm(){
   <p class="auth-link-row">${t('auth-has-account')} <button onclick="authSwitchTab('login')" class="auth-link-btn">${t('auth-login-link')}</button></p>`;
 }
 
+let _otpTimerIv=null, _otpResendIv=null;
+
+function renderSignupConfirmForm(){
+  return `
+  <div style="text-align:center;margin-bottom:1.25rem">
+    <div class="otp-success-icon" id="otp-success-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div id="otp-email-icon" style="width:54px;height:54px;border-radius:1rem;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(249,115,22,.08));display:inline-flex;align-items:center;justify-content:center;margin-bottom:.7rem;border:1px solid rgba(245,158,11,.2)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+    </div>
+    <h2 id="otp-title" class="text-lg font-extrabold" style="color:#ECF0FA;margin-bottom:.3rem">${t('signup-confirm-title')}</h2>
+    <p class="text-xs" style="color:rgba(148,163,184,.5);line-height:1.6">${t('signup-confirm-hint').replace('%email%','<b style="color:rgba(245,158,11,.75)">'+ _signupEmail +'</b>')}</p>
+  </div>
+  <div class="otp-boxes" id="otp-boxes">
+    ${[0,1,2,3,4,5].map(i=>`<input class="otp-box" id="otp-d${i}" type="number" inputmode="numeric" maxlength="1" min="0" max="9" autocomplete="${i===0?'one-time-code':'off'}">`).join('')}
+  </div>
+  <div class="otp-timer" id="otp-timer"></div>
+  <p id="auth-err" class="text-xs text-ember mt-2 hidden" style="text-align:center"></p>
+  <button id="otp-submit-btn" onclick="doSignupVerify()" class="auth-submit-btn" style="margin-top:.9rem">${t('signup-confirm-btn')} →</button>
+  <p class="auth-link-row" style="margin-top:.75rem">
+    <button id="otp-resend-btn" onclick="doResendSignupOtp()" class="auth-link-btn">${t('signup-confirm-resend')}</button>
+  </p>
+  <p class="auth-link-row"><button onclick="authSwitchTab('register')" class="auth-link-btn" style="color:rgba(148,163,184,.3);font-weight:500;font-size:.7rem">${t('forgot-back')}</button></p>`;
+}
+
+function initOtpBoxes(){
+  const boxes=[...document.querySelectorAll('.otp-box')];
+  if(!boxes.length) return;
+  boxes[0].focus();
+  boxes.forEach((box,i)=>{
+    box.addEventListener('input',e=>{
+      const v=e.target.value.replace(/\D/g,'');
+      box.value=v.slice(-1);
+      box.classList.toggle('filled',!!box.value);
+      const errEl=document.getElementById('auth-err');
+      if(errEl){ errEl.textContent=''; errEl.classList.add('hidden'); }
+      boxes.forEach(b=>b.classList.remove('error'));
+      if(box.value&&i<5) boxes[i+1].focus();
+      if(boxes.every(b=>b.value)) setTimeout(doSignupVerify,160);
+    });
+    box.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'){
+        if(box.value){ box.value=''; box.classList.remove('filled'); }
+        else if(i>0){ boxes[i-1].focus(); boxes[i-1].value=''; boxes[i-1].classList.remove('filled'); }
+      } else if(e.key==='ArrowLeft'&&i>0){ boxes[i-1].focus(); }
+        else if(e.key==='ArrowRight'&&i<5){ boxes[i+1].focus(); }
+        else if(e.key==='Enter'){ doSignupVerify(); }
+    });
+    box.addEventListener('paste',e=>{
+      e.preventDefault();
+      const paste=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+      paste.split('').forEach((ch,j)=>{ if(boxes[j]){ boxes[j].value=ch; boxes[j].classList.toggle('filled',!!ch); } });
+      const next=Math.min(paste.length,5); boxes[next].focus();
+      if(paste.length===6) setTimeout(doSignupVerify,160);
+    });
+    box.addEventListener('focus',()=>box.select());
+  });
+  startOtpTimer(3600);
+  startResendCooldown(30);
+}
+
+function getOtpValue(){
+  return [...document.querySelectorAll('.otp-box')].map(b=>b.value).join('');
+}
+
+function startOtpTimer(seconds){
+  clearInterval(_otpTimerIv);
+  const el=document.getElementById('otp-timer'); if(!el) return;
+  let rem=seconds;
+  const update=()=>{
+    if(!document.getElementById('otp-timer')){ clearInterval(_otpTimerIv); return; }
+    const m=String(Math.floor(rem/60)).padStart(2,'0'), s=String(rem%60).padStart(2,'0');
+    el.textContent=`Код действует: ${m}:${s}`;
+    el.classList.toggle('urgent',rem<=60);
+    if(rem<=0){ clearInterval(_otpTimerIv); el.textContent='Срок кода истёк — запросите новый'; el.classList.add('urgent'); }
+    rem--;
+  };
+  update();
+  _otpTimerIv=setInterval(update,1000);
+}
+
+function startResendCooldown(sec){
+  clearInterval(_otpResendIv);
+  const btn=document.getElementById('otp-resend-btn'); if(!btn) return;
+  let rem=sec;
+  const update=()=>{
+    if(!document.getElementById('otp-resend-btn')){ clearInterval(_otpResendIv); return; }
+    if(rem>0){ btn.disabled=true; btn.style.opacity='.4'; btn.style.cursor='default'; btn.textContent=t('signup-confirm-resend')+` (${rem}с)`; rem--; }
+    else{ clearInterval(_otpResendIv); btn.disabled=false; btn.style.opacity=''; btn.style.cursor=''; btn.textContent=t('signup-confirm-resend'); }
+  };
+  update();
+  _otpResendIv=setInterval(update,1000);
+}
 function setClientType(t){ _authClientType=t; document.querySelectorAll('.ctype-btn').forEach(b=>{ const oc=b.getAttribute('onclick')||''; b.classList.toggle('active',oc.includes(`'${t}'`)); }); }
 
 async function doLogin(){
@@ -3765,7 +3967,10 @@ async function doLogin(){
     const btn=event&&event.target; if(btn) btn.disabled=true;
     const r=await sbSignIn(login,pass);
     if(btn) btn.disabled=false;
-    if(!r.ok){ showAuthErr(r.err); return; }
+    if(!r.ok){
+      if(r.needsConfirm){ _signupEmail=r.email||login; authSwitchTab('confirm'); return; }
+      showAuthErr(r.err); return;
+    }
     closeAuth(); toast(t('toast-welcome'));
     return;
   }
@@ -3787,8 +3992,9 @@ async function doRegister(){
     const r=await sbSignUp(data);
     if(btn) btn.disabled=false;
     if(!r.ok){ showAuthErr(r.err); return; }
+    if(r.needsConfirm){ _signupEmail=data.email; authSwitchTab('confirm'); return; }
     closeAuth();
-    toast(t(r.needsConfirm?'toast-account-confirm':'toast-account-ok'));
+    toast(t('toast-account-ok'));
     return;
   }
   if(!data.login){ showAuthErr(t('auth-err-no-name')); return; }
@@ -3865,6 +4071,45 @@ async function doForgotVerify(){
   closeAuth();
   toast(t('forgot-success'));
   initAuthNav();
+}
+
+async function doSignupVerify(){
+  const otp=getOtpValue();
+  if(otp.length<6){
+    document.querySelectorAll('.otp-box').forEach(b=>b.classList.add('error'));
+    showAuthErr(t('forgot-err-otp-invalid')); return;
+  }
+  const submitBtn=document.getElementById('otp-submit-btn');
+  if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='...'; }
+  const r=await sbVerifySignupOtp(_signupEmail,otp);
+  if(!r.ok){
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent=t('signup-confirm-btn')+' →'; }
+    document.querySelectorAll('.otp-box').forEach(b=>{ b.classList.add('error'); b.value=''; b.classList.remove('filled'); });
+    document.querySelectorAll('.otp-box')[0]?.focus();
+    showAuthErr(r.err); return;
+  }
+  // Успех — анимация зелёной галочки, затем закрываем
+  clearInterval(_otpTimerIv); clearInterval(_otpResendIv);
+  const icon=document.getElementById('otp-email-icon');
+  const successIcon=document.getElementById('otp-success-icon');
+  const title=document.getElementById('otp-title');
+  if(icon) icon.style.display='none';
+  if(successIcon) successIcon.style.display='inline-flex';
+  if(title) title.textContent='Email подтверждён ✓';
+  if(submitBtn){ submitBtn.textContent='Вхожу...'; }
+  _signupEmail='';
+  setTimeout(()=>{ closeAuth(); initAuthNav(); toast(t('toast-account-ok')); }, 900);
+}
+async function doResendSignupOtp(){
+  const r=await sbResendSignupOtp(_signupEmail);
+  const errEl=document.getElementById('auth-err');
+  if(errEl){ errEl.textContent=''; errEl.classList.add('hidden'); }
+  if(!r.ok){ showAuthErr(r.err); return; }
+  document.querySelectorAll('.otp-box').forEach(b=>{ b.value=''; b.classList.remove('filled','error'); });
+  document.querySelectorAll('.otp-box')[0]?.focus();
+  startOtpTimer(3600);
+  startResendCooldown(30);
+  toast(t('signup-confirm-resent'));
 }
 
 /* ── Nav auth button ── */
@@ -4118,6 +4363,8 @@ function openProfile(){
           </div>`).join('')}
       </div>` : `<p class="text-xs text-muted">${t('pf-activity-empty')}</p>`}
     </div>
+    <!-- Telegram привязка (загружается асинхронно) -->
+    <div id="pf-tg-link"><div class="pf-skel" style="height:80px;margin-bottom:.5rem;border-radius:.75rem;background:rgba(197,208,232,.06);animation:pfSkel 1.4s ease-in-out infinite"></div></div>
     <!-- Действия -->
     <div class="sec-card">
       <p class="sec-label mb-3">${t('pf-actions')}</p>
@@ -4140,6 +4387,7 @@ function openProfile(){
       </div>
     </div>`;
     requestAnimationFrame(()=>{ const pf=document.getElementById('pf-prog-fill'); if(pf) pf.style.width=pf.dataset.w; });
+    _pfLoadTgLink(u);
   });
 }
 function closeProfile(){ _closeSec('profile-overlay'); }
@@ -4156,6 +4404,53 @@ function _pfAvatarChange(e, userId){
   };
   reader.readAsDataURL(f);
 }
+// ── Telegram linking ─────────────────────────────────────────────────────────
+async function _pfLoadTgLink(u){
+  const wrap = document.getElementById('pf-tg-link');
+  if(!wrap || !SB_CONFIGURED) return (wrap && (wrap.innerHTML = ''));
+  try {
+    const { data } = await sb().from('profiles').select('telegram_id,telegram_username').eq('id', u.id).single();
+    const tgId = data?.telegram_id;
+    if(tgId){
+      const name = data?.telegram_username ? ('@' + data.telegram_username) : ('id' + tgId);
+      wrap.innerHTML = `<div class="sec-card" style="margin-bottom:.5rem">
+        <p class="text-sm font-bold text-cream mb-1">✅ ${t('pf-tg-linked')}</p>
+        <p class="text-xs text-sand mb-2">${t('pf-tg-linked-as')}: <b>${name}</b></p>
+        <button onclick="_pfUnlinkTg()" class="lg-btn-sec text-xs px-3 py-1.5">${t('pf-tg-unlink')}</button>
+      </div>`;
+    } else {
+      wrap.innerHTML = `<div class="sec-card" style="margin-bottom:.5rem">
+        <p class="text-sm font-bold text-cream mb-1">🔗 ${t('pf-tg-title')}</p>
+        <p class="text-xs text-sand mb-2">${t('pf-tg-desc', {bot: BOT_USERNAME})}</p>
+        <div id="pf-tg-code-area"></div>
+        <button onclick="_pfGenTgToken()" class="lg-btn-sec text-xs px-3 py-1.5">${t('pf-tg-get-code')}</button>
+      </div>`;
+    }
+  } catch(e){ wrap.innerHTML = ''; }
+}
+async function _pfGenTgToken(){
+  const btn = document.querySelector('#pf-tg-link button');
+  if(btn) btn.disabled = true;
+  try {
+    const { data, error } = await sb().rpc('create_tg_link_token');
+    if(error || !data) throw error;
+    const area = document.getElementById('pf-tg-code-area');
+    if(area) area.innerHTML = `<div class="flex items-center gap-2 mb-2 p-2 rounded-lg" style="background:rgba(197,208,232,.06)">
+      <code class="text-lg font-extrabold text-ember tracking-widest">${data}</code>
+    </div>
+    <p class="text-xs text-muted mb-2">${t('pf-tg-instruction', {bot: BOT_USERNAME, code: data})}</p>`;
+  } catch(e){ toast(t('pf-tg-error'), 'error'); }
+  if(btn) btn.disabled = false;
+}
+async function _pfUnlinkTg(){
+  if(!confirm(t('pf-tg-unlink-confirm'))) return;
+  try {
+    await sb().rpc('unlink_tg_account');
+    const u = authCurrentUser();
+    if(u) _pfLoadTgLink(u);
+  } catch(e){ toast(t('pf-tg-error'), 'error'); }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 function _pfAddAddress(userId){
   const a = prompt(t('pf-prompt-address')); if(!a?.trim()) return;
   const arr = JSON.parse(localStorage.getItem('aq_addresses_'+userId)||'[]');
@@ -7714,6 +8009,11 @@ const _i18n = {
     'pf-edit-title':'Редактировать профиль','pf-lbl-company':'Компания','pf-save-btn':'Сохранить профиль',
     'pf-plan-title':'Тариф','pf-plan-pro':'Профессиональный','pf-plan-free':'Бесплатный','pf-plan-sub':'Все функции калькулятора бесплатны',
     'pf-actions':'Действия','pf-logout':'Выйти из аккаунта','pf-delete-account':'Удалить аккаунт',
+    'pf-tg-title':'Привязать Telegram','pf-tg-linked':'Telegram привязан','pf-tg-linked-as':'Аккаунт',
+    'pf-tg-desc':'Привяжите Telegram-бот @{bot} к аккаунту — проверяйте подписку прямо в боте.',
+    'pf-tg-get-code':'Получить код привязки','pf-tg-unlink':'Отвязать','pf-tg-unlink-confirm':'Отвязать Telegram от аккаунта?',
+    'pf-tg-instruction':'Отправьте боту @{bot}:\n/link {code}\n\nКод действителен 15 минут.',
+    'pf-tg-error':'Ошибка. Попробуйте позже.',
     'pf-activity':'Последняя активность','pf-activity-empty':'Активность появится после первого расчёта',
     'pf-no-addresses':'Нет сохранённых адресов',
     'adm-nav-lbl':'Навигация','adm-dashboard':'Дашборд','adm-users':'Пользователи','adm-leads':'Заявки',
@@ -7981,6 +8281,13 @@ const _i18n = {
     'toast-welcome':'Добро пожаловать ✓',
     'toast-account-ok':'Добро пожаловать! Аккаунт создан ✓',
     'toast-account-confirm':'Аккаунт создан — подтвердите email по ссылке из письма ✓',
+    'signup-confirm-title':'Подтвердите email',
+    'signup-confirm-hint':'Код отправлен на %email%. Введите 6-значный код из письма.',
+    'signup-confirm-lbl':'Код подтверждения (6 цифр)',
+    'signup-confirm-btn':'Подтвердить',
+    'signup-confirm-resend':'Отправить код повторно',
+    'signup-confirm-resent':'Код отправлен повторно ✓',
+    'auth-err-email-not-confirmed':'Email не подтверждён — введите код из письма',
     'auth-err-fill-all':'Введите email и пароль','auth-err-no-name':'Укажите имя',
     'auth-err-no-email':'Укажите email','auth-err-pass-short':'Пароль минимум 6 символов',
     'auth-err-no-phone':'Укажите номер телефона','auth-err-email-taken':'Этот email уже зарегистрирован',
@@ -8209,6 +8516,11 @@ const _i18n = {
     "pf-edit-title":"Profilni tahrirlash","pf-lbl-company":"Kompaniya","pf-save-btn":"Profilni saqlash",
     "pf-plan-title":"Tarif","pf-plan-pro":"Professional","pf-plan-free":"Bepul","pf-plan-sub":"Kalkulyatorning barcha funksiyalari bepul",
     "pf-actions":"Harakatlar","pf-logout":"Akkauntdan chiqish","pf-delete-account":"Akkauntni o'chirish",
+    "pf-tg-title":"Telegram bog'lash","pf-tg-linked":"Telegram bog'langan","pf-tg-linked-as":"Akkaunt",
+    "pf-tg-desc":"@{bot} botini profilingizga bog'lang — obunani to'g'ridan-to'g'ri botda tekshiring.",
+    "pf-tg-get-code":"Bog'lash kodi olish","pf-tg-unlink":"Uzish","pf-tg-unlink-confirm":"Telegramni akkauntdan uzasizmi?",
+    "pf-tg-instruction":"@{bot} botiga yuboring:\n/link {code}\n\nKod 15 daqiqa amal qiladi.",
+    "pf-tg-error":"Xatolik. Keyinroq urinib ko'ring.",
     "pf-activity":"So'nggi faollik","pf-activity-empty":"Faollik birinchi hisob-kitobdan keyin paydo bo'ladi",
     "pf-no-addresses":"Saqlangan manzillar yo'q",
     "adm-nav-lbl":"Navigatsiya","adm-dashboard":"Boshqaruv paneli","adm-users":"Foydalanuvchilar","adm-leads":"Arizalar",
@@ -8476,6 +8788,13 @@ const _i18n = {
     'toast-welcome':'Xush kelibsiz ✓',
     'toast-account-ok':'Xush kelibsiz! Akkaunt yaratildi ✓',
     'toast-account-confirm':'Akkaunt yaratildi — emailni tasdiqlang ✓',
+    'signup-confirm-title':'Emailni tasdiqlang',
+    'signup-confirm-hint':"Kod %email% manziliga yuborildi. Xatdagi 6 raqamli kodni kiriting.",
+    'signup-confirm-lbl':'Tasdiqlash kodi (6 raqam)',
+    'signup-confirm-btn':'Tasdiqlash',
+    'signup-confirm-resend':'Kodni qayta yuborish',
+    'signup-confirm-resent':'Kod qayta yuborildi ✓',
+    'auth-err-email-not-confirmed':"Email tasdiqlanmagan — xatdagi kodni kiriting",
     "auth-err-fill-all":"Email va parol kiriting","auth-err-no-name":"Ismingizni kiriting",
     "auth-err-no-email":"Emailni kiriting","auth-err-pass-short":"Parol kamida 6 ta belgi",
     "auth-err-no-phone":"Telefon raqamini kiriting","auth-err-email-taken":"Bu email allaqachon ro'yxatdan o'tgan",
@@ -8704,6 +9023,11 @@ const _i18n = {
     'pf-edit-title':'Edit profile','pf-lbl-company':'Company','pf-save-btn':'Save profile',
     'pf-plan-title':'Plan','pf-plan-pro':'Professional','pf-plan-free':'Free','pf-plan-sub':'All calculator features are free',
     'pf-actions':'Actions','pf-logout':'Log out','pf-delete-account':'Delete account',
+    'pf-tg-title':'Link Telegram','pf-tg-linked':'Telegram linked','pf-tg-linked-as':'Account',
+    'pf-tg-desc':'Link the @{bot} bot to your account — check subscription right in the bot.',
+    'pf-tg-get-code':'Get linking code','pf-tg-unlink':'Unlink','pf-tg-unlink-confirm':'Unlink Telegram from this account?',
+    'pf-tg-instruction':'Send to @{bot}:\n/link {code}\n\nCode is valid for 15 minutes.',
+    'pf-tg-error':'Error. Please try again later.',
     'pf-activity':'Recent activity','pf-activity-empty':'Activity will appear after your first calculation',
     'pf-no-addresses':'No saved addresses',
     'adm-nav-lbl':'Navigation','adm-dashboard':'Dashboard','adm-users':'Users','adm-leads':'Requests',
@@ -8989,6 +9313,13 @@ const _i18n = {
     'toast-welcome':'Welcome ✓',
     'toast-account-ok':'Welcome! Account created ✓',
     'toast-account-confirm':'Account created — confirm email ✓',
+    'signup-confirm-title':'Confirm your email',
+    'signup-confirm-hint':'Code sent to %email%. Enter the 6-digit code from the email.',
+    'signup-confirm-lbl':'Confirmation code (6 digits)',
+    'signup-confirm-btn':'Confirm',
+    'signup-confirm-resend':'Resend code',
+    'signup-confirm-resent':'Code resent ✓',
+    'auth-err-email-not-confirmed':'Email not confirmed — enter the code from email',
     'auth-err-fill-all':'Enter email and password','auth-err-no-name':'Enter your name',
     'auth-err-no-email':'Enter email','auth-err-pass-short':'Password must be at least 6 characters',
     'auth-err-no-phone':'Enter phone number','auth-err-email-taken':'This email is already registered',

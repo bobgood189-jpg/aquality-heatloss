@@ -186,6 +186,69 @@ STR = {
         "uz": "❓ <b>Qanday hisoblanadi?</b>\n\nKMK 2.01.04-18 va KMK 2.01.01-94 (parametr B) bo'yicha muhandislik hisobi:\n\n<b>Q = (Δt / R) · S · n · (1 + Σβ)</b> har bir to'siq uchun + infiltratsiya.\n\nQozon 25% zaxira bilan olinadi. Natija taxminiy; aniq loyihani mutaxassis bepul aniqlaydi.",
         "en": "❓ <b>How it works</b>\n\nEngineering calc per KMK 2.01.04-18 & KMK 2.01.01-94 (parameter B):\n\n<b>Q = (Δt / R) · S · n · (1 + Σβ)</b> for each enclosure + infiltration.\n\nBoiler sized with a 25% margin. Result is approximate; a specialist refines the exact project for free."},
     "restart_hint": {"ru": "Расчёт сброшен. /start — начать заново.", "uz": "Hisob tozalandi. /start — qaytadan.", "en": "Calculation reset. /start to begin again."},
+    # ── registration flow ──
+    "reg_prompt": {
+        "ru": "📧 Введите email вашего аккаунта на сайте (или новый email для создания аккаунта):",
+        "uz": "📧 Saytdagi akkauntingiz emailini kiriting (yoki yangi akkaunt uchun yangi email):",
+        "en": "📧 Enter your site account email (or a new email to create an account):"},
+    "reg_invalid_email": {
+        "ru": "⚠️ Некорректный email. Попробуйте ещё раз:",
+        "uz": "⚠️ Noto'g'ri email. Qayta urinib ko'ring:",
+        "en": "⚠️ Invalid email. Please try again:"},
+    "reg_account_found": {
+        "ru": "✅ Аккаунт найден. Telegram привязан!",
+        "uz": "✅ Akkaunt topildi. Telegram bog'landi!",
+        "en": "✅ Account found. Telegram linked!"},
+    "reg_created": {
+        "ru": "✅ Аккаунт создан и Telegram привязан!",
+        "uz": "✅ Akkaunt yaratildi va Telegram bog'landi!",
+        "en": "✅ Account created and Telegram linked!"},
+    "reg_ask_name": {
+        "ru": "Как вас зовут? (или /skip)",
+        "uz": "Ismingiz nima? (yoki /skip)",
+        "en": "What's your name? (or /skip)"},
+    "reg_ask_phone": {
+        "ru": "📱 Ваш номер телефона? (или /skip)",
+        "uz": "📱 Telefon raqamingiz? (yoki /skip)",
+        "en": "📱 Your phone number? (or /skip)"},
+    "reg_done": {
+        "ru": "🎉 Готово! Добро пожаловать.",
+        "uz": "🎉 Tayyor! Xush kelibsiz.",
+        "en": "🎉 Done! Welcome."},
+    "reg_email_error": {
+        "ru": "⚠️ Не удалось обработать email. Попробуйте другой адрес:",
+        "uz": "⚠️ Emailni qayta ishlashda xatolik. Boshqa manzil kiriting:",
+        "en": "⚠️ Could not process email. Try a different address:"},
+    "reg_error": {
+        "ru": "⚠️ Ошибка привязки. Попробуйте позже.",
+        "uz": "⚠️ Bog'lashda xatolik. Keyinroq urinib ko'ring.",
+        "en": "⚠️ Linking error. Please try again later."},
+    # ── telegram account linking ──
+    "link_usage": {
+        "ru": "ℹ️ Чтобы привязать Telegram к аккаунту на сайте:\n\n1. Откройте профиль на {site}\n2. Вкладка «Аккаунт» → «Привязать Telegram»\n3. Нажмите «Получить код» и отправьте:\n\n<code>/link КОД</code>",
+        "uz": "ℹ️ Telegram-ni saytdagi profilingizga bog'lash uchun:\n\n1. {site} saytida profilni oching\n2. «Akkaunt» → «Telegram bog'lash»\n3. «Kod olish» tugmasini bosib yuboring:\n\n<code>/link KOD</code>",
+        "en": "ℹ️ To link Telegram to your site account:\n\n1. Open your profile at {site}\n2. Account tab → 'Link Telegram'\n3. Click 'Get code' and send:\n\n<code>/link CODE</code>",
+    },
+    "link_success": {
+        "ru": "✅ Telegram успешно привязан к вашему аккаунту!",
+        "uz": "✅ Telegram muvaffaqiyatli bog'landi!",
+        "en": "✅ Telegram successfully linked to your account!",
+    },
+    "link_bad_token": {
+        "ru": "❌ Код недействителен или истёк (15 мин.). Получите новый код в профиле на сайте.",
+        "uz": "❌ Kod noto'g'ri yoki muddati o'tgan (15 daq.). Saytdagi profildan yangi kod oling.",
+        "en": "❌ Code is invalid or expired (15 min.). Get a new code from your site profile.",
+    },
+    "link_already": {
+        "ru": "⚠️ Этот Telegram уже привязан к другому аккаунту.",
+        "uz": "⚠️ Bu Telegram allaqachon boshqa akkauntga bog'langan.",
+        "en": "⚠️ This Telegram is already linked to another account.",
+    },
+    "link_error": {
+        "ru": "⚠️ Привязка временно недоступна. Попробуйте позже.",
+        "uz": "⚠️ Bog'lash vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+        "en": "⚠️ Linking is temporarily unavailable. Please try again later.",
+    },
 }
 
 
