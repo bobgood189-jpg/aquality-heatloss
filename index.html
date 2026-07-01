@@ -2467,10 +2467,20 @@ function _friendlyAuthErr(msg){
   return msg;
 }
 async function sbSignUp(data){
-  // Нативная регистрация Supabase: письмо с подтверждением отправляет сам Supabase.
-  // Шаблон письма настроен на 6-значный код {{ .Token }} (не ссылку) — см. supabase/email-templates/.
-  // Профиль создаётся триггером handle_new_user из user_metadata.
+  // Регистрация через нативный Supabase Auth. Профиль создаётся триггером
+  // handle_new_user из user_metadata. Когда в Supabase выключено «Confirm email»,
+  // signUp сразу возвращает session (мгновенный вход, письмо не шлётся) — это
+  // рекомендуемый режим для бесплатного тарифа (встроенная почта Supabase лимитирована).
   const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
+  // Пробуем сразу войти после регистрации — чтобы при выключенном подтверждении
+  // всё проходило без письма. Возвращает true, если вход удался.
+  async function _trySignIn(){
+    try{
+      const si = await c.auth.signInWithPassword({ email:data.email, password:data.password });
+      if(!si.error && si.data && si.data.session){ await aqLoadSession(si.data.session); return true; }
+    }catch(e){}
+    return false;
+  }
   try{
     const { data:res, error } = await c.auth.signUp({
       email:data.email,
@@ -2484,16 +2494,25 @@ async function sbSignUp(data){
       }}
     });
     if(error){
-      const m = /already registered|already been registered|already exists|duplicate/i.test(error.message)
-        ? t('auth-err-email-taken') : _friendlyAuthErr(error.message);
-      return {ok:false, err:m};
+      if(/already registered|already been registered|already exists|duplicate/i.test(error.message))
+        return {ok:false, err:t('auth-err-email-taken')};
+      // Лимит встроенной почты Supabase / письмо не отправилось. Аккаунт всё равно
+      // мог создаться — пробуем войти сразу (сработает, если подтверждение выключено).
+      if(/email rate limit|rate limit|sending.*email|error sending|smtp|confirmation (mail|email)/i.test(error.message)){
+        if(await _trySignIn()) return {ok:true, needsConfirm:false};
+        return {ok:false, err:t('auth-err-email-limit')};
+      }
+      return {ok:false, err:_friendlyAuthErr(error.message)};
     }
     // Supabase не выдаёт identities для уже существующего email (защита от перебора)
     if(res && res.user && Array.isArray(res.user.identities) && res.user.identities.length===0){
       return {ok:false, err:t('auth-err-email-taken')};
     }
-    // Подтверждение почты включено → session ещё нет, нужен код из письма
+    // Подтверждение выключено → session есть сразу
     if(res && res.session){ await aqLoadSession(res.session); return {ok:true, needsConfirm:false}; }
+    // Нет session и нет ошибки → возможно подтверждение включено. Пробуем войти сразу
+    // (мгновенно сработает, как только владелец выключит «Confirm email» в Supabase).
+    if(await _trySignIn()) return {ok:true, needsConfirm:false};
     return {ok:true, needsConfirm:true};
   }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
@@ -8563,6 +8582,7 @@ const _i18n = {
     'auth-err-no-phone':'Укажите номер телефона','auth-err-email-taken':'Этот email уже зарегистрирован',
     'auth-err-email-invalid':'Введите корректный email',
     'auth-err-network':'Проблема с подключением к серверу. Проверьте интернет и попробуйте ещё раз.',
+    'auth-err-email-limit':'Слишком много попыток. Подождите пару минут и попробуйте снова, либо войдите, если аккаунт уже создан.',
     'forgot-link':'Забыли пароль?','forgot-title':'Восстановление пароля',
     'forgot-step1-hint':'Введите email — вышлем 6-значный код подтверждения.',
     'forgot-step2-hint':'Код отправлен на %email%. Введите его ниже.',
@@ -9072,6 +9092,7 @@ const _i18n = {
     "auth-err-no-phone":"Telefon raqamini kiriting","auth-err-email-taken":"Bu email allaqachon ro'yxatdan o'tgan",
     "auth-err-email-invalid":"To'g'ri email kiriting",
     'auth-err-network':"Serverga ulanishda muammo. Internetni tekshirib, qayta urinib ko'ring.",
+    'auth-err-email-limit':"Juda ko'p urinish. Bir-ikki daqiqa kuting va qayta urinib ko'ring, yoki akkaunt yaratilgan bo'lsa — kiring.",
     'forgot-link':"Parolni unutdingizmi?",'forgot-title':'Parolni tiklash',
     'forgot-step1-hint':"Emailingizni kiriting — 6 xonali tasdiqlash kodi yuboramiz.",
     'forgot-step2-hint':"%email% manziliga kod yuborildi. Quyida kiriting.",
@@ -9599,6 +9620,7 @@ const _i18n = {
     'auth-err-no-phone':'Enter phone number','auth-err-email-taken':'This email is already registered',
     'auth-err-email-invalid':'Enter a valid email',
     'auth-err-network':'Connection problem. Check your internet and try again.',
+    'auth-err-email-limit':'Too many attempts. Wait a couple of minutes and try again, or sign in if the account was already created.',
     'forgot-link':'Forgot password?','forgot-title':'Reset password',
     'forgot-step1-hint':'Enter your email — we\'ll send a 6-digit confirmation code.',
     'forgot-step2-hint':'Code sent to %email%. Enter it below.',
