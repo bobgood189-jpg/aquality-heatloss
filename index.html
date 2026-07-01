@@ -51,7 +51,7 @@
       },
       fontFamily: { sans:['Manrope','system-ui','sans-serif'], mono:['JetBrains Mono','monospace'] }
     }}
-  };
+  } };
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -1643,7 +1643,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
     <div class="flex items-center gap-2.5">
       <a href="tel:+998772941555" class="lg-btn-sec text-xs font-semibold text-amber px-4 py-1.5 hidden sm:inline-flex" style="border-radius:100px;color:#f59e0b;border-color:rgba(245,158,11,.3);">+998 77-294-15-55</a>
       <!-- Язык и тема перенесены в Настройки (Фаза 5) -->
-      <button onclick="openEquipmentWorkshop()" class="lg-btn-sec px-2.5 py-1.5 hidden sm:inline-flex items-center gap-1.5 text-xs" title="Мастерская оборудования" style="border-radius:100px;">
+      <button id="eq-nav-btn" onclick="openEquipmentWorkshop()" class="lg-btn-sec px-2.5 py-1.5 sm:inline-flex items-center gap-1.5 text-xs" title="Мастерская оборудования (только для администраторов)" style="border-radius:100px;display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         Оборудование
       </button>
@@ -2361,7 +2361,12 @@ function sb(){
     console.warn('[AQ] Supabase JS ещё не загружен');
     return null;
   }
-  _sbClient = window.supabase.createClient(AQ_CFG.SUPABASE_URL, AQ_CFG.SUPABASE_ANON_KEY);
+  // Таймаут 20с на все запросы к Supabase — чтобы UI не «зависал» бесконечно
+  // при обрыве сети, а быстро показывал понятную ошибку (см. _friendlyAuthErr).
+  const timeoutFetch=(url,opts={})=>fetch(url,{...opts,signal:opts.signal||AbortSignal.timeout(20000)});
+  _sbClient = window.supabase.createClient(AQ_CFG.SUPABASE_URL, AQ_CFG.SUPABASE_ANON_KEY, {
+    global:{ fetch:timeoutFetch }
+  });
   return _sbClient;
 }
 /* Синхронный кэш текущего пользователя — чтобы синхронные authCurrentUser()
@@ -2391,32 +2396,39 @@ async function aqLoadSession(session){
   if(!session || !session.user || !c){ _AQ.user = null; _aqSub = null; initAuthNav(); return; }
   const u = session.user;
   let prof = null, projects = [];
-  try{
-    const { data } = await c.from('profiles').select('*').eq('id', u.id).maybeSingle();
-    prof = data;
+  // Три независимых запроса — запускаем параллельно вместо 3 последовательных round-trip'ов.
+  const [profRes, calcRes, subRes] = await Promise.allSettled([
+    c.from('profiles').select('*').eq('id', u.id).maybeSingle(),
+    c.from('calculations').select('id,name,payload,created_at,result_kw')
+      .eq('user_id', u.id).order('created_at',{ascending:false}),
+    c.from('subscriptions').select('*')
+      .eq('user_id', u.id).eq('status','active').order('expires_at',{ascending:false}).limit(1)
+  ]);
+  if(profRes.status==='fulfilled'){
+    prof = profRes.value.data;
     // Если профиля нет (триггер не отработал) — создаём из метаданных.
     if(!prof){
       const m = u.user_metadata || {};
       const ins = { id:u.id, full_name:m.full_name||u.email, phone:m.phone||'', phone2:m.phone2||'',
         email:u.email, city:m.city||'', client_type:m.client_type||'client', role:'user' };
-      const { data:created } = await c.from('profiles').upsert(ins).select().maybeSingle();
-      prof = created || ins;
+      try{
+        const { data:created } = await c.from('profiles').upsert(ins).select().maybeSingle();
+        prof = created || ins;
+      }catch(e){ console.warn('[AQ] профиль не создан', e); prof = ins; }
     }
-  }catch(e){ console.warn('[AQ] профиль не загружен', e); }
-  try{
-    const { data } = await c.from('calculations').select('id,name,payload,created_at,result_kw')
-      .eq('user_id', u.id).order('created_at',{ascending:false});
-    projects = (data||[]).map(r=>({ id:r.id, label:r.name, createdAt:r.created_at,
+  } else { console.warn('[AQ] профиль не загружен', profRes.reason); }
+  if(calcRes.status==='fulfilled'){
+    projects = (calcRes.value.data||[]).map(r=>({ id:r.id, label:r.name, createdAt:r.created_at,
       state:(r.payload && r.payload.state) || null }));
-  }catch(e){ console.warn('[AQ] расчёты не загружены', e); }
-  try{
-    const { data:subs } = await c.from('subscriptions').select('*')
-      .eq('user_id', u.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);
+  } else { console.warn('[AQ] расчёты не загружены', calcRes.reason); }
+  if(subRes.status==='fulfilled'){
+    const subs = subRes.value.data;
     _aqSub = (subs && subs[0]) ? subs[0] : null;
-  }catch(e){ _aqSub = null; }
+  } else { _aqSub = null; }
   _AQ.user = aqMapUser(u, prof, projects);
   aqCheckSubExpiry();
   initAuthNav();
+  await _checkJustActivated(c);
 }
 
 async function aqHydrate(){
@@ -2434,84 +2446,94 @@ async function aqHydrate(){
   if(_AQ.user) aqMaybeMigrate();
 }
 
-/* ── Auth actions (Supabase) ── */
-async function sbSignUp(data){
-  // Регистрация через Edge Function — Admin API создаёт пользователя без письма Supabase,
-  // а сам Edge Function отправляет 6-значный OTP через Resend.
-  try{
-    const res=await fetch(AQ_CFG.SUPABASE_URL+'/functions/v1/register',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':AQ_CFG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+AQ_CFG.SUPABASE_ANON_KEY},
-      body:JSON.stringify({
-        email:data.email, password:data.password,
-        full_name:data.login, phone:data.phone,
-        phone2:data.phone2||'', city:data.city||'',
-        client_type:data.clientType||'client'
-      })
-    });
-    const json=await res.json();
-    if(!res.ok||json.error) return {ok:false,err:json.error||t('auth-err-email-taken')};
-    return {ok:true,needsConfirm:true};
-  }catch(e){
-    return {ok:false,err:'Ошибка сети: '+e.message};
+/* ── Auth actions (Supabase) ──
+   Все сетевые ошибки (Load failed / Failed to fetch / NetworkError) переводим
+   в понятное сообщение — чтобы пользователь не видел сырой текст браузера. */
+function _friendlyAuthErr(msg){
+  if(/load failed|failed to fetch|networkerror|network request failed|timeout|timed out|abort/i.test(msg||'')){
+    return t('auth-err-network')||'Проблема с подключением к серверу. Проверьте интернет и попробуйте ещё раз.';
   }
+  return msg;
+}
+async function sbSignUp(data){
+  // Нативная регистрация Supabase: письмо с подтверждением отправляет сам Supabase.
+  // Шаблон письма настроен на 6-значный код {{ .Token }} (не ссылку) — см. supabase/email-templates/.
+  // Профиль создаётся триггером handle_new_user из user_metadata.
+  const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
+  try{
+    const { data:res, error } = await c.auth.signUp({
+      email:data.email,
+      password:data.password,
+      options:{ data:{
+        full_name:data.login,
+        phone:data.phone,
+        phone2:data.phone2||'',
+        city:data.city||'',
+        client_type:data.clientType||'client'
+      }}
+    });
+    if(error){
+      const m = /already registered|already been registered|already exists|duplicate/i.test(error.message)
+        ? t('auth-err-email-taken') : _friendlyAuthErr(error.message);
+      return {ok:false, err:m};
+    }
+    // Supabase не выдаёт identities для уже существующего email (защита от перебора)
+    if(res && res.user && Array.isArray(res.user.identities) && res.user.identities.length===0){
+      return {ok:false, err:t('auth-err-email-taken')};
+    }
+    // Подтверждение почты включено → session ещё нет, нужен код из письма
+    if(res && res.session){ await aqLoadSession(res.session); return {ok:true, needsConfirm:false}; }
+    return {ok:true, needsConfirm:true};
+  }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
 async function sbSignIn(email, password){
   const c = sb(); if(!c) return {ok:false, err:'Supabase не настроен'};
-  const { data, error } = await c.auth.signInWithPassword({ email, password });
-  if(error){
-    if(/Email not confirmed/i.test(error.message)) return {ok:false,err:t('auth-err-email-not-confirmed'),needsConfirm:true,email};
-    const m = /Invalid login/i.test(error.message) ? 'Неверный email или пароль' : error.message;
-    return {ok:false, err:m};
-  }
-  await aqLoadSession(data.session);
-  return {ok:true};
+  try{
+    const { data, error } = await c.auth.signInWithPassword({ email, password });
+    if(error){
+      if(/Email not confirmed/i.test(error.message)) return {ok:false,err:t('auth-err-email-not-confirmed'),needsConfirm:true,email};
+      const m = /Invalid login/i.test(error.message) ? 'Неверный email или пароль' : _friendlyAuthErr(error.message);
+      return {ok:false, err:m};
+    }
+    await aqLoadSession(data.session);
+    return {ok:true};
+  }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
 async function sbSendOtp(email){
+  // Восстановление пароля: Supabase шлёт письмо с 6-значным кодом {{ .Token }} (шаблон Reset Password)
+  const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
   try{
-    const res=await fetch(AQ_CFG.SUPABASE_URL+'/functions/v1/send-otp',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':AQ_CFG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+AQ_CFG.SUPABASE_ANON_KEY},
-      body:JSON.stringify({email})
-    });
-    const json=await res.json();
-    if(!res.ok||json.error){
-      const msg=json.error||'Ошибка отправки кода';
-      return {ok:false,err:msg};
-    }
+    const {error}=await c.auth.resetPasswordForEmail(email);
+    // resetPasswordForEmail не раскрывает существование пользователя — считаем успехом при отсутствии ошибки
+    if(error) return {ok:false,err:_friendlyAuthErr(error.message)};
     return {ok:true};
-  }catch(e){
-    return {ok:false,err:'Ошибка сети: '+e.message};
-  }
+  }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
 async function sbVerifyOtpAndReset(email,otp,newPass){
   const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
-  const {data,error}=await c.auth.verifyOtp({email,token:otp,type:'email'});
-  if(error) return {ok:false,err:t('forgot-err-otp-invalid')};
-  const {error:ue}=await c.auth.updateUser({password:newPass});
-  if(ue) return {ok:false,err:ue.message};
-  return {ok:true};
+  try{
+    const {data,error}=await c.auth.verifyOtp({email,token:otp,type:'recovery'});
+    if(error) return {ok:false,err:/load failed|failed to fetch|networkerror/i.test(error.message)?_friendlyAuthErr(error.message):t('forgot-err-otp-invalid')};
+    const {error:ue}=await c.auth.updateUser({password:newPass});
+    if(ue) return {ok:false,err:_friendlyAuthErr(ue.message)};
+    return {ok:true};
+  }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
 async function sbVerifySignupOtp(email,otp){
   const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
-  const {data,error}=await c.auth.verifyOtp({email,token:otp,type:'signup'});
-  if(error) return {ok:false,err:t('forgot-err-otp-invalid')};
-  if(data&&data.session) await aqLoadSession(data.session);
-  return {ok:true};
+  try{
+    const {data,error}=await c.auth.verifyOtp({email,token:otp,type:'signup'});
+    if(error) return {ok:false,err:/load failed|failed to fetch|networkerror/i.test(error.message)?_friendlyAuthErr(error.message):t('forgot-err-otp-invalid')};
+    if(data&&data.session) await aqLoadSession(data.session);
+    return {ok:true};
+  }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
 async function sbResendSignupOtp(email){
-  try{
-    const res=await fetch(AQ_CFG.SUPABASE_URL+'/functions/v1/send-signup-otp',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':AQ_CFG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+AQ_CFG.SUPABASE_ANON_KEY},
-      body:JSON.stringify({email})
-    });
-    const json=await res.json();
-    if(!res.ok||json.error) return {ok:false,err:json.error||'Ошибка отправки кода'};
-    return {ok:true};
-  }catch(e){
-    return {ok:false,err:'Ошибка сети: '+e.message};
-  }
+  // Повторная отправка кода подтверждения регистрации — нативным Supabase
+  const c=sb(); if(!c) return {ok:false,err:'Supabase не настроен'};
+  const {error}=await c.auth.resend({type:'signup', email});
+  if(error) return {ok:false,err:_friendlyAuthErr(error.message)};
+  return {ok:true};
 }
 
 /* ── Профиль: сохранение в Supabase ── */
@@ -2722,6 +2744,11 @@ function aqTier(){
 }
 function aqHasAccess(){ return !PAYWALL_ON || aqTier()!=='none'; }
 function aqHasMax(){ return !PAYWALL_ON || aqTier()==='max'; }
+async function _checkJustActivated(c){
+  if(!c || !_aqSub || !_aqSub.just_activated) return;
+  _showActivationCongrats(_aqSub);
+  try{ await c.from('subscriptions').update({just_activated:false}).eq('id',_aqSub.id); _aqSub.just_activated=false; }catch(e){}
+}
 async function aqRefreshSub(){
   const u = authCurrentUser();
   if(!u || !SB_CONFIGURED){ return; }
@@ -2730,10 +2757,7 @@ async function aqRefreshSub(){
     const { data:subs } = await c.from('subscriptions').select('*')
       .eq('user_id', u.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);
     _aqSub = (subs && subs[0]) ? subs[0] : null;
-    if(_aqSub && _aqSub.just_activated){
-      _showActivationCongrats(_aqSub);
-      try{ await c.from('subscriptions').update({just_activated:false}).eq('id',_aqSub.id); _aqSub.just_activated=false; }catch(e){}
-    }
+    await _checkJustActivated(c);
   }catch(e){}
 }
 function aqCheckSubExpiry(){
@@ -2914,6 +2938,7 @@ async function payIHavePaid(method){
           <button class="pw-refresh" onclick="payRefresh()">↻ Проверить статус подписки</button>
         </div>
       </div>`;
+      _payStartPendingPoll();
       return;
     }
   }
@@ -3079,6 +3104,17 @@ function _payMethodDetailHTML(m){
   </div>`;
 }
 async function payRefresh(){ await aqRefreshSub(); renderPaywall(); initAuthNav(); if(aqHasAccess()){ closePaywall(); toast(pt('active')); if(typeof renderStep==='function'&&ST&&ST.step) renderStep(); } }
+let _payPendingTimer=null;
+function _payStartPendingPoll(){
+  if(_payPendingTimer) clearInterval(_payPendingTimer);
+  _payPendingTimer=setInterval(async ()=>{
+    const ov=document.getElementById('paywall-overlay');
+    if(!ov || !ov.classList.contains('open') || !document.querySelector('.pw-pending-screen')){
+      clearInterval(_payPendingTimer); _payPendingTimer=null; return;
+    }
+    await payRefresh();
+  }, 8000);
+}
 
 async function payActivateFree(){
   const u=authCurrentUser(); if(!u){ toast(pt('loginFirst')||'Войдите в аккаунт','err'); return; }
@@ -4281,12 +4317,15 @@ async function doResendSignupOtp(){
 function initAuthNav(){
   const wrap=document.getElementById('nav-auth-wrap'); if(!wrap) return;
   const u=authCurrentUser();
+  const eqBtn=document.getElementById('eq-nav-btn');
   if(!u){
+    if(eqBtn) eqBtn.style.display='none';
     wrap.innerHTML=`<div class="flex gap-2"><button onclick="openAuth('login')" id="user-nav-btn" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07)">${t('login')}</button><button onclick="openAuth('register')" class="lg-btn text-xs px-3 py-1.5">${t('register')}</button></div>`;
     return;
   }
   const roleLabel=u.role==='owner'?t('owner'):u.role==='admin'?t('admin-role'):t('user-role');
   const canAdmin=u.role==='owner'||u.role==='admin';
+  if(eqBtn) eqBtn.style.display=canAdmin?'':'none';
   wrap.innerHTML=`
   <div id="nav-auth-wrap-inner" class="relative">
     <button id="user-nav-btn" onclick="toggleUserDropdown()">
@@ -5794,17 +5833,24 @@ let _eqFilter = 'all';
 let _eqSearch = '';
 
 function openEquipmentWorkshop(){
+  const u=authCurrentUser();
+  if(!u||!(u.role==='owner'||u.role==='admin')){ toast(t('toast-access-denied'),'err'); return; }
   _openSec('equipment-overlay', ()=>{ _renderEquipment(); });
 }
 function closeEquipment(){ _closeSec('equipment-overlay'); }
 
 /* ── Custom equipment (admin-added) storage ── */
 const _EQ_CUSTOM_KEY = 'aq_eq_custom_v1';
+const _EQ_HIDDEN_KEY = 'aq_eq_hidden_v1';
 function _loadEqCustom(){ try{ return JSON.parse(localStorage.getItem(_EQ_CUSTOM_KEY)||'{}'); }catch(e){ return {}; } }
 function _saveEqCustom(d){ localStorage.setItem(_EQ_CUSTOM_KEY, JSON.stringify(d)); }
+function _loadEqHidden(){ try{ return JSON.parse(localStorage.getItem(_EQ_HIDDEN_KEY)||'{}'); }catch(e){ return {}; } }
+function _saveEqHidden(d){ localStorage.setItem(_EQ_HIDDEN_KEY, JSON.stringify(d)); }
 function _eqAllItems(cat){
   const custom=_loadEqCustom();
-  return [...(EQUIPMENT_DB[cat]||[]), ...(custom[cat]||[])];
+  const hidden=(_loadEqHidden()[cat]||[]);
+  const base=(EQUIPMENT_DB[cat]||[]).filter(it=>!hidden.includes(it.id));
+  return [...base, ...(custom[cat]||[])];
 }
 
 function _renderEquipment(){
@@ -5888,7 +5934,7 @@ function _renderEquipment(){
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.4rem;flex-shrink:0;padding-top:.15rem">
               <button onclick="_eqToggleEstimate('${it.id}','${_eqTab}')" class="eq-add-btn${inEst?' in':''}">${inEst?'✓ Выбрано':'+ Выбрать'}</button>
-              ${isCustom&&isAdmin?`<button onclick="_eqDeleteCustom('${it.id}','${_eqTab}')" style="font-size:.65rem;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;opacity:.7">🗑 удалить</button>`:''}
+              ${isAdmin?`<button onclick="_eqDeleteCustom('${it.id}','${_eqTab}')" style="font-size:.65rem;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;opacity:.7">🗑 удалить</button>`:''}
             </div>
           </div>
         </div>`;
@@ -5986,9 +6032,19 @@ function _eqClearEstimate(){ _saveEstimate([]); _renderEquipment(); }
 
 function _eqDeleteCustom(id, cat){
   if(!confirm('Удалить товар из каталога?')) return;
-  const d=_loadEqCustom();
-  if(d[cat]) d[cat]=d[cat].filter(x=>x.id!==id);
-  _saveEqCustom(d);
+  const custom=_loadEqCustom();
+  const isCustom=(custom[cat]||[]).some(x=>x.id===id);
+  if(isCustom){
+    custom[cat]=custom[cat].filter(x=>x.id!==id);
+    _saveEqCustom(custom);
+  } else {
+    const hidden=_loadEqHidden();
+    if(!hidden[cat]) hidden[cat]=[];
+    if(!hidden[cat].includes(id)) hidden[cat].push(id);
+    _saveEqHidden(hidden);
+  }
+  const est=_loadEstimate().filter(e=>e.id!==id);
+  _saveEstimate(est);
   _renderEquipment();
 }
 
@@ -8445,7 +8501,7 @@ const _i18n = {
     'toast-synced':'Локальные расчёты перенесены в аккаунт ✓',
     'toast-welcome':'Добро пожаловать ✓',
     'toast-account-ok':'Добро пожаловать! Аккаунт создан ✓',
-    'toast-account-confirm':'Аккаунт создан — подтвердите email по ссылке из письма ✓',
+    'toast-account-confirm':'Аккаунт создан — введите 6-значный код из письма ✓',
     'signup-confirm-title':'Подтвердите email',
     'signup-confirm-hint':'Код отправлен на %email%. Введите 6-значный код из письма.',
     'signup-confirm-lbl':'Код подтверждения (6 цифр)',
@@ -8457,6 +8513,7 @@ const _i18n = {
     'auth-err-no-email':'Укажите email','auth-err-pass-short':'Пароль минимум 6 символов',
     'auth-err-no-phone':'Укажите номер телефона','auth-err-email-taken':'Этот email уже зарегистрирован',
     'auth-err-email-invalid':'Введите корректный email',
+    'auth-err-network':'Проблема с подключением к серверу. Проверьте интернет и попробуйте ещё раз.',
     'forgot-link':'Забыли пароль?','forgot-title':'Восстановление пароля',
     'forgot-step1-hint':'Введите email — вышлем 6-значный код подтверждения.',
     'forgot-step2-hint':'Код отправлен на %email%. Введите его ниже.',
@@ -8952,7 +9009,7 @@ const _i18n = {
     "toast-synced":"Hisob-kitoblar akkauntga ko'chirildi ✓",
     'toast-welcome':'Xush kelibsiz ✓',
     'toast-account-ok':'Xush kelibsiz! Akkaunt yaratildi ✓',
-    'toast-account-confirm':'Akkaunt yaratildi — emailni tasdiqlang ✓',
+    'toast-account-confirm':'Akkaunt yaratildi — xatdagi 6 raqamli kodni kiriting ✓',
     'signup-confirm-title':'Emailni tasdiqlang',
     'signup-confirm-hint':"Kod %email% manziliga yuborildi. Xatdagi 6 raqamli kodni kiriting.",
     'signup-confirm-lbl':'Tasdiqlash kodi (6 raqam)',
@@ -8964,6 +9021,7 @@ const _i18n = {
     "auth-err-no-email":"Emailni kiriting","auth-err-pass-short":"Parol kamida 6 ta belgi",
     "auth-err-no-phone":"Telefon raqamini kiriting","auth-err-email-taken":"Bu email allaqachon ro'yxatdan o'tgan",
     "auth-err-email-invalid":"To'g'ri email kiriting",
+    'auth-err-network':"Serverga ulanishda muammo. Internetni tekshirib, qayta urinib ko'ring.",
     'forgot-link':"Parolni unutdingizmi?",'forgot-title':'Parolni tiklash',
     'forgot-step1-hint':"Emailingizni kiriting — 6 xonali tasdiqlash kodi yuboramiz.",
     'forgot-step2-hint':"%email% manziliga kod yuborildi. Quyida kiriting.",
@@ -9477,7 +9535,7 @@ const _i18n = {
     'toast-synced':'Local calculations synced to account ✓',
     'toast-welcome':'Welcome ✓',
     'toast-account-ok':'Welcome! Account created ✓',
-    'toast-account-confirm':'Account created — confirm email ✓',
+    'toast-account-confirm':'Account created — enter the 6-digit code from the email ✓',
     'signup-confirm-title':'Confirm your email',
     'signup-confirm-hint':'Code sent to %email%. Enter the 6-digit code from the email.',
     'signup-confirm-lbl':'Confirmation code (6 digits)',
@@ -9489,6 +9547,7 @@ const _i18n = {
     'auth-err-no-email':'Enter email','auth-err-pass-short':'Password must be at least 6 characters',
     'auth-err-no-phone':'Enter phone number','auth-err-email-taken':'This email is already registered',
     'auth-err-email-invalid':'Enter a valid email',
+    'auth-err-network':'Connection problem. Check your internet and try again.',
     'forgot-link':'Forgot password?','forgot-title':'Reset password',
     'forgot-step1-hint':'Enter your email — we\'ll send a 6-digit confirmation code.',
     'forgot-step2-hint':'Code sent to %email%. Enter it below.',
