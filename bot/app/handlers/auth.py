@@ -237,7 +237,7 @@ async def _finish_registration(message: Message, state: FSMContext,
 
     from .. import keyboards as _K
     from .util import is_owner
-    from ..config import PAYWALL
+    from ..config import PAYWALL, SITE_URL
     await message.answer(t("welcome", lang),
-                         reply_markup=_K.menu_kb(lang, is_owner(message.from_user), PAYWALL),
+                         reply_markup=_K.menu_kb(lang, is_owner(message.from_user), PAYWALL, SITE_URL),
                          disable_web_page_preview=True)

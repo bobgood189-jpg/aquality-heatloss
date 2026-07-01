@@ -5,16 +5,20 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import test_engine as T  # noqa: E402
+import test_engine  # noqa: E402
+import test_tools  # noqa: E402
+import test_routing  # noqa: E402
 
-fns = [n for n in dir(T) if n.startswith("test_")]
-failed = 0
-for n in fns:
-    try:
-        getattr(T, n)()
-        print("  ✓", n)
-    except Exception as e:
-        failed += 1
-        print("  ✗", n, "—", e)
-print(f"{len(fns) - failed}/{len(fns)} passed")
+total = failed = 0
+for mod in (test_engine, test_tools, test_routing):
+    print(f"[{mod.__name__}]")
+    for n in [x for x in dir(mod) if x.startswith("test_")]:
+        total += 1
+        try:
+            getattr(mod, n)()
+            print("  ✓", n)
+        except Exception as e:
+            failed += 1
+            print("  ✗", n, "—", e)
+print(f"{total - failed}/{total} passed")
 sys.exit(1 if failed else 0)

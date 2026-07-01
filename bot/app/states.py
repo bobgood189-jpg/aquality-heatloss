@@ -23,6 +23,19 @@ class Reset(StatesGroup):
     password = State()   # email-free password reset via the bot (/resetpass)
 
 
+class Tools(StatesGroup):
+    """Standalone engineering calculators reachable straight from the menu —
+    each one takes a single (or a couple of) plain-number inputs, no wizard."""
+    quick_area     = State()   # quick estimate: heated area, m²
+    boiler_kw      = State()   # boiler selector: peak heat loss, kW
+    rad_kw         = State()   # radiator sections: room heat loss, kW
+    fuel_kw        = State()   # heating cost: peak heat loss, kW
+    conv_value     = State()   # power converter: value in kW
+    insul_current  = State()   # insulation thickness: current wall R
+    insul_target   = State()   # insulation thickness: target R
+    promo_code     = State()   # promo checker: the code
+
+
 class Wizard(StatesGroup):
     lang = State()
     # object-level params

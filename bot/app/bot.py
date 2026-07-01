@@ -16,7 +16,7 @@ from .config import require_token, SB_CONFIGURED, ADMIN_CHAT_ID
 from . import storage
 from . import supabase_db as _sb
 from . import keyboards as K
-from .handlers import menu, admin, wizard, results, payments, auth, shop, review, site_payments, account
+from .handlers import menu, admin, wizard, results, payments, auth, shop, review, site_payments, account, tools
 from .i18n import t
 
 logging.basicConfig(level=logging.INFO,
@@ -39,6 +39,7 @@ def _make_bot(token):
 async def _set_commands(bot):
     await bot.set_my_commands([
         BotCommand(command="start",  description="Меню / Menyu / Menu"),
+        BotCommand(command="tools",  description="Инженерные калькуляторы 🧰"),
         BotCommand(command="buy",    description="Купить подписку 🛒"),
         BotCommand(command="status", description="Статус текущего заказа 📋"),
         BotCommand(command="mysub",  description="Моя подписка / Mening obuna"),
@@ -202,6 +203,7 @@ async def main():
     dp.include_router(menu.router)
     dp.include_router(auth.router)      # registration — before wizard
     dp.include_router(account.router)   # "Мой аккаунт" screen
+    dp.include_router(tools.router)     # engineering calculators (menu tools)
     dp.include_router(admin.router)
     dp.include_router(payments.router)
     dp.include_router(shop.router)      # purchase wizard
@@ -209,6 +211,7 @@ async def main():
     dp.include_router(site_payments.router)  # site paywall payment review
     dp.include_router(wizard.router)
     dp.include_router(results.router)
+    dp.include_router(menu.fallback_router)  # stateless catch-all — MUST be last
     await _set_commands(bot)
     me = await bot.get_me()
     log.info("Starting @%s (id=%s)", me.username, me.id)

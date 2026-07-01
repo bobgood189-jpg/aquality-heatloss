@@ -139,12 +139,12 @@ async def cmd_promo(message: Message, state: FSMContext):
     await show_tariffs(message, state, message.from_user, lang)
 
 
-@router.message(Command("mysub"))
-async def cmd_mysub(message: Message, state: FSMContext):
-    lang = await get_lang(state, message.from_user.id)
+async def send_mysub(target, uid, lang):
+    """Render the caller's subscription status. `target` needs `.answer` and is
+    the user-facing chat (a Message, or the .message of a CallbackQuery)."""
     if SB_CONFIGURED:
         from .. import supabase_db as _sb
-        sub = await _sb.get_active_sub(message.from_user.id)
+        sub = await _sb.get_active_sub(uid)
         if sub:
             expires = sub.get("expires_at", "")
             try:
@@ -153,19 +153,18 @@ async def cmd_mysub(message: Message, state: FSMContext):
             except Exception:
                 date = expires[:10]
             plan = sub.get("plan", "")
-            return await message.answer(
+            return await target.answer(
                 f"✅ Подписка <b>{plan}</b> активна до <b>{date}</b>.",
                 reply_markup=K.back_menu_kb(lang))
-        profile = await _sb.get_profile(message.from_user.id)
+        profile = await _sb.get_profile(uid)
         if profile and profile.get("role") in ("admin", "owner"):
-            return await message.answer("👑 У вас администраторский доступ.",
-                                        reply_markup=K.back_menu_kb(lang))
-        return await message.answer(t("pay_locked", lang),
-                                    reply_markup=K.tariffs_kb(lang, PAY_TG))
-    sub = storage.get_active_sub(message.from_user.id)
+            return await target.answer("👑 У вас администраторский доступ.",
+                                       reply_markup=K.back_menu_kb(lang))
+        return await target.answer(t("pay_locked", lang),
+                                   reply_markup=K.tariffs_kb(lang, PAY_TG))
+    sub = storage.get_active_sub(uid)
     if not sub:
-        await message.answer(t("sub_none_user", lang))
-        return
+        return await target.answer(t("sub_none_user", lang), reply_markup=K.back_menu_kb(lang))
     date = datetime.fromtimestamp(sub["expires_ts"]).strftime("%d.%m.%Y")
     days = _days_left(sub["expires_ts"])
     plan_str = _plan_name(sub["plan"], lang)
@@ -175,7 +174,20 @@ async def cmd_mysub(message: Message, state: FSMContext):
         status = f"⚠️ {t('sub_expiry_warn', lang, n=days, date=date)}"
     else:
         status = f"✅ {t('sub_active', lang, date=date).strip()} ({t('sub_days_left', lang, n=days)})"
-    await message.answer(f"<b>{plan_str}</b>\n\n{status}")
+    await target.answer(f"<b>{plan_str}</b>\n\n{status}", reply_markup=K.back_menu_kb(lang))
+
+
+@router.message(Command("mysub"))
+async def cmd_mysub(message: Message, state: FSMContext):
+    lang = await get_lang(state, message.from_user.id)
+    await send_mysub(message, message.from_user.id, lang)
+
+
+@router.callback_query(F.data == "menu:mysub")
+async def cb_mysub(cb: CallbackQuery, state: FSMContext):
+    lang = await get_lang(state, cb.from_user.id)
+    await cb.answer()
+    await send_mysub(cb.message, cb.from_user.id, lang)
 
 
 # ── админ-команды (только владелец) ────────────────────────────────────────

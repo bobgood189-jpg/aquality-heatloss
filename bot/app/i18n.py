@@ -23,9 +23,9 @@ STR = {
                     "uz": "Tilni tanlang / Выберите язык / Choose language:",
                     "en": "Choose language / Выберите язык / Tilni tanlang:"},
     "welcome": {
-        "ru": "🔥 <b>Aquality | WaterPro</b>\n\nЗдесь можно оформить подписку на калькулятор теплопотерь Aquality — расчёт выполняется на сайте.\n\nВыберите действие:",
-        "uz": "🔥 <b>Aquality | WaterPro</b>\n\nBu yerda Aquality issiqlik yo'qotish kalkulyatoriga obuna rasmiylashtiriladi — hisob-kitob saytda amalga oshiriladi.\n\nAmalni tanlang:",
-        "en": "🔥 <b>Aquality | WaterPro</b>\n\nSubscribe to the Aquality heat-loss calculator here — the calculation itself runs on the website.\n\nChoose an action:"},
+        "ru": "🔥 <b>Aquality | WaterPro</b>\n\nКалькулятор теплопотерь, инженерные инструменты (котёл, радиаторы, топливо, утеплитель) и подписка — всё в одном боте.\n\nВыберите действие:",
+        "uz": "🔥 <b>Aquality | WaterPro</b>\n\nIssiqlik yo'qotish kalkulyatori, muhandislik vositalari (qozon, radiator, yoqilg'i, uteplitel) va obuna — hammasi bitta botda.\n\nAmalni tanlang:",
+        "en": "🔥 <b>Aquality | WaterPro</b>\n\nHeat-loss calculator, engineering tools (boiler, radiators, fuel, insulation) and subscription — all in one bot.\n\nChoose an action:"},
     "menu_materials": {"ru": "📚 Справочник материалов", "uz": "📚 Materiallar ma'lumotnomasi", "en": "📚 Materials library"},
     "menu_contact": {"ru": "📞 Контакты", "uz": "📞 Aloqa", "en": "📞 Contacts"},
     "menu_faq": {"ru": "❓ Как считается?", "uz": "❓ Qanday hisoblanadi?", "en": "❓ How it works"},
@@ -337,6 +337,113 @@ STR = {
         "uz": "⚠️ Uzib bo'lmadi. Keyinroq urinib ko'ring.",
         "en": "⚠️ Could not unlink. Please try again later.",
     },
+    # ── menu labels (extended menu) ──
+    "menu_quick": {"ru": "🧮 Быстрая оценка", "uz": "🧮 Tez baholash", "en": "🧮 Quick estimate"},
+    "menu_demo": {"ru": "🏠 Демо-расчёт", "uz": "🏠 Demo hisob", "en": "🏠 Demo estimate"},
+    "menu_calc": {"ru": "📐 Полный расчёт", "uz": "📐 To'liq hisob", "en": "📐 Full calculation"},
+    "menu_calc_new": {"ru": "🔁 Новый расчёт", "uz": "🔁 Yangi hisob", "en": "🔁 New calculation"},
+    "menu_tools": {"ru": "🧰 Инженерные инструменты", "uz": "🧰 Muhandislik vositalari", "en": "🧰 Engineering tools"},
+    "menu_mysub": {"ru": "💳 Моя подписка", "uz": "💳 Mening obunam", "en": "💳 My subscription"},
+    "menu_status": {"ru": "📋 Мой заказ", "uz": "📋 Buyurtmam", "en": "📋 My order"},
+    "menu_promo": {"ru": "🎁 Промокод", "uz": "🎁 Promokod", "en": "🎁 Promo code"},
+    "menu_site": {"ru": "🌐 Открыть сайт", "uz": "🌐 Saytni ochish", "en": "🌐 Open site"},
+    "menu_buy": {"ru": "🛒 Купить подписку", "uz": "🛒 Obuna sotib olish", "en": "🛒 Buy subscription"},
+    "menu_admin": {"ru": "👑 Админ-панель", "uz": "👑 Admin panel", "en": "👑 Admin panel"},
+    # ── tools submenu ──
+    "tools_title": {
+        "ru": "🧰 <b>Инженерные инструменты</b>\n\nБыстрые расчёты без визарда — выберите инструмент:",
+        "uz": "🧰 <b>Muhandislik vositalari</b>\n\nSehrgarsiz tez hisoblar — vositani tanlang:",
+        "en": "🧰 <b>Engineering tools</b>\n\nQuick calculators, no wizard — pick a tool:"},
+    "tool_boiler": {"ru": "⚙️ Подбор котла", "uz": "⚙️ Qozon tanlash", "en": "⚙️ Boiler selector"},
+    "tool_rad": {"ru": "🔧 Расчёт радиаторов", "uz": "🔧 Radiator hisobi", "en": "🔧 Radiator sizing"},
+    "tool_fuel": {"ru": "💰 Стоимость отопления", "uz": "💰 Isitish narxi", "en": "💰 Heating cost"},
+    "tool_insul": {"ru": "❄️ Толщина утеплителя", "uz": "❄️ Uteplitel qalinligi", "en": "❄️ Insulation thickness"},
+    "tool_conv": {"ru": "📏 Конвертер мощности", "uz": "📏 Quvvat konverteri", "en": "📏 Power converter"},
+    "tool_cities": {"ru": "🌡 Города и температуры", "uz": "🌡 Shaharlar va harorat", "en": "🌡 Cities & temps"},
+    "back_tools": {"ru": "◀️ К инструментам", "uz": "◀️ Vositalarga", "en": "◀️ To tools"},
+    # ── quick estimate ──
+    "quick_ask_area": {
+        "ru": "🧮 <b>Быстрая оценка теплопотерь</b>\n\nВведите отапливаемую площадь объекта в м² (например 120):",
+        "uz": "🧮 <b>Tez baholash</b>\n\nIsitiladigan maydonni m² da kiriting (masalan 120):",
+        "en": "🧮 <b>Quick heat-loss estimate</b>\n\nEnter the heated area in m² (e.g. 120):"},
+    "quick_ask_quality": {
+        "ru": "🏗 Площадь: <b>{area} м²</b>.\n\nКакое утепление у здания?",
+        "uz": "🏗 Maydon: <b>{area} m²</b>.\n\nBino qanday uteplangan?",
+        "en": "🏗 Area: <b>{area} m²</b>.\n\nHow well is the building insulated?"},
+    "quick_q_good": {"ru": "🟢 Хорошее (новое, утеплён)", "uz": "🟢 Yaxshi (yangi, uteplangan)", "en": "🟢 Good (new, insulated)"},
+    "quick_q_avg": {"ru": "🟡 Среднее (кирпич/блок)", "uz": "🟡 O'rtacha (g'isht/blok)", "en": "🟡 Average (brick/block)"},
+    "quick_q_poor": {"ru": "🔴 Слабое (старое, щели)", "uz": "🔴 Zaif (eski, g'ovak)", "en": "🔴 Poor (old, drafty)"},
+    "quick_result": {
+        "ru": "🧮 <b>Быстрая оценка</b>\n\n📐 Площадь: <b>{area} м²</b> · {qlabel}\n🔥 Теплопотери: <b>≈ {kw} кВт</b> ({wm2} Вт/м²)\n⚙️ Котёл с запасом: <b>{boiler} кВт</b>\n🔧 Радиаторы: <b>≈ {sections} секц.</b> (80/60)\n💰 Газ: ≈ <b>{gas} сум/мес</b>\n\n<i>Ориентировочно. Точный расчёт — «📐 Полный расчёт» или заявка специалисту.</i>",
+        "uz": "🧮 <b>Tez baholash</b>\n\n📐 Maydon: <b>{area} m²</b> · {qlabel}\n🔥 Issiqlik yo'qotishi: <b>≈ {kw} kVt</b> ({wm2} Vt/m²)\n⚙️ Qozon zaxira bilan: <b>{boiler} kVt</b>\n🔧 Radiatorlar: <b>≈ {sections} seksiya</b> (80/60)\n💰 Gaz: ≈ <b>{gas} so'm/oy</b>\n\n<i>Taxminiy. Aniq hisob — «📐 To'liq hisob» yoki mutaxassisga ariza.</i>",
+        "en": "🧮 <b>Quick estimate</b>\n\n📐 Area: <b>{area} m²</b> · {qlabel}\n🔥 Heat loss: <b>≈ {kw} kW</b> ({wm2} W/m²)\n⚙️ Boiler with margin: <b>{boiler} kW</b>\n🔧 Radiators: <b>≈ {sections} sec.</b> (80/60)\n💰 Gas: ≈ <b>{gas} sum/mo</b>\n\n<i>Approximate. For an exact figure use “📐 Full calculation” or request a specialist.</i>"},
+    # ── boiler selector ──
+    "boiler_ask_kw": {
+        "ru": "⚙️ <b>Подбор котла</b>\n\nВведите теплопотери объекта в кВт (например 12.5).\nНе знаете? Сначала сделайте «🧮 Быструю оценку».",
+        "uz": "⚙️ <b>Qozon tanlash</b>\n\nIssiqlik yo'qotishini kVt da kiriting (masalan 12.5).",
+        "en": "⚙️ <b>Boiler selector</b>\n\nEnter the object's heat loss in kW (e.g. 12.5)."},
+    "boiler_result": {
+        "ru": "⚙️ <b>Подбор котла</b>\n\n🔥 Теплопотери: <b>{kw} кВт</b>\n➕ С запасом 25%: <b>{margin} кВт</b>\n📦 Типоразмер котла: <b>{size} кВт</b>\n🔩 Модель: <b>{model}</b>\n   <i>{type}</i>\n🟦 Магистраль: труба Ø <b>{pipe} мм</b>",
+        "uz": "⚙️ <b>Qozon tanlash</b>\n\n🔥 Issiqlik yo'qotishi: <b>{kw} kVt</b>\n➕ 25% zaxira bilan: <b>{margin} kVt</b>\n📦 Qozon o'lchami: <b>{size} kVt</b>\n🔩 Model: <b>{model}</b>\n   <i>{type}</i>\n🟦 Magistral: quvur Ø <b>{pipe} mm</b>",
+        "en": "⚙️ <b>Boiler selector</b>\n\n🔥 Heat loss: <b>{kw} kW</b>\n➕ +25% margin: <b>{margin} kW</b>\n📦 Boiler size: <b>{size} kW</b>\n🔩 Model: <b>{model}</b>\n   <i>{type}</i>\n🟦 Main line: pipe Ø <b>{pipe} mm</b>"},
+    # ── radiator sizing ──
+    "rad_ask_kw": {
+        "ru": "🔧 <b>Расчёт радиаторов</b>\n\nВведите теплопотери <b>помещения</b> в кВт (например 1.6):",
+        "uz": "🔧 <b>Radiator hisobi</b>\n\n<b>Xona</b> issiqlik yo'qotishini kVt da kiriting (masalan 1.6):",
+        "en": "🔧 <b>Radiator sizing</b>\n\nEnter the <b>room</b> heat loss in kW (e.g. 1.6):"},
+    "rad_result": {
+        "ru": "🔧 <b>Секции радиатора</b> (t возд. 20°C, +15% запас)\n\n🔥 Нагрузка: <b>{kw} кВт</b>\n\n♨️ 90/70: <b>{s9070} секц.</b>\n♨️ 80/60: <b>{s8060} секц.</b>\n♨️ 75/65: <b>{s7565} секц.</b>\n\n🔩 Модель: <b>{model}</b>\n<i>{spec}</i>",
+        "uz": "🔧 <b>Radiator seksiyalari</b> (havo 20°C, +15% zaxira)\n\n🔥 Yuklama: <b>{kw} kVt</b>\n\n♨️ 90/70: <b>{s9070} sek.</b>\n♨️ 80/60: <b>{s8060} sek.</b>\n♨️ 75/65: <b>{s7565} sek.</b>\n\n🔩 Model: <b>{model}</b>\n<i>{spec}</i>",
+        "en": "🔧 <b>Radiator sections</b> (air 20°C, +15% margin)\n\n🔥 Load: <b>{kw} kW</b>\n\n♨️ 90/70: <b>{s9070} sec.</b>\n♨️ 80/60: <b>{s8060} sec.</b>\n♨️ 75/65: <b>{s7565} sec.</b>\n\n🔩 Model: <b>{model}</b>\n<i>{spec}</i>"},
+    # ── heating cost ──
+    "fuel_ask_kw": {
+        "ru": "💰 <b>Стоимость отопления</b>\n\nВведите теплопотери объекта в кВт (например 12.5):",
+        "uz": "💰 <b>Isitish narxi</b>\n\nIssiqlik yo'qotishini kVt da kiriting (masalan 12.5):",
+        "en": "💰 <b>Heating cost</b>\n\nEnter the object's heat loss in kW (e.g. 12.5):"},
+    "fuel_result": {
+        "ru": "💰 <b>Стоимость отопления</b> (тарифы UZ, нагрузка {load}%)\n\n🔥 Мощность: <b>{kw} кВт</b>\n📊 Расход: ~{kwh} кВт·ч/мес\n\n{lines}\n\n<i>За сезон (~4 мес) — примерно ×4. Оценочно.</i>",
+        "uz": "💰 <b>Isitish narxi</b> (UZ tariflari, yuklama {load}%)\n\n🔥 Quvvat: <b>{kw} kVt</b>\n📊 Sarf: ~{kwh} kVt·s/oy\n\n{lines}\n\n<i>Mavsumga (~4 oy) — taxminan ×4.</i>",
+        "en": "💰 <b>Heating cost</b> (UZ tariffs, load {load}%)\n\n🔥 Power: <b>{kw} kW</b>\n📊 Use: ~{kwh} kWh/mo\n\n{lines}\n\n<i>Per season (~4 mo) ≈ ×4. Approximate.</i>"},
+    # ── insulation thickness ──
+    "insul_ask_current": {
+        "ru": "❄️ <b>Толщина утеплителя</b>\n\nШаг 1/2. Текущее сопротивление стены R, м²·°C/Вт (например 0.75 для кирпича 380).\n\nПодсказка: R стены есть в «📚 Справочнике материалов».",
+        "uz": "❄️ <b>Uteplitel qalinligi</b>\n\n1/2-qadam. Devorning joriy R qarshiligi (masalan 0.75):",
+        "en": "❄️ <b>Insulation thickness</b>\n\nStep 1/2. Current wall R, m²·°C/W (e.g. 0.75 for 380 brick):"},
+    "insul_ask_target": {
+        "ru": "🎯 Шаг 2/2. Целевое R, м²·°C/Вт.\n\nНорма для стен в UZ ≈ <b>2.5–3.0</b>. Введите, например 2.8:",
+        "uz": "🎯 2/2-qadam. Maqsadli R.\n\nUZ devorlar normasi ≈ <b>2.5–3.0</b>. Masalan 2.8:",
+        "en": "🎯 Step 2/2. Target R.\n\nUZ wall norm ≈ <b>2.5–3.0</b>. Enter e.g. 2.8:"},
+    "insul_result": {
+        "ru": "❄️ <b>Нужная толщина утеплителя</b>\n\nR: <b>{cur}</b> → <b>{tgt}</b> (ΔR = {dr})\n\n{lines}\n\n<i>Толщина ≈ ΔR · λ. Берите ближайшую большую плиту.</i>",
+        "uz": "❄️ <b>Kerakli uteplitel qalinligi</b>\n\nR: <b>{cur}</b> → <b>{tgt}</b> (ΔR = {dr})\n\n{lines}\n\n<i>Qalinlik ≈ ΔR · λ.</i>",
+        "en": "❄️ <b>Required insulation thickness</b>\n\nR: <b>{cur}</b> → <b>{tgt}</b> (ΔR = {dr})\n\n{lines}\n\n<i>Thickness ≈ ΔR · λ. Round up to the next board.</i>"},
+    "insul_already": {
+        "ru": "✅ Текущее R уже не меньше целевого — дополнительный утеплитель не нужен.",
+        "uz": "✅ Joriy R maqsaddan kam emas — qo'shimcha uteplitel kerak emas.",
+        "en": "✅ Current R already meets the target — no extra insulation needed."},
+    # ── power converter ──
+    "conv_ask_kw": {
+        "ru": "📏 <b>Конвертер мощности</b>\n\nВведите мощность в кВт (например 12.5):",
+        "uz": "📏 <b>Quvvat konverteri</b>\n\nQuvvatni kVt da kiriting (masalan 12.5):",
+        "en": "📏 <b>Power converter</b>\n\nEnter power in kW (e.g. 12.5):"},
+    "conv_result": {
+        "ru": "📏 <b>{kw} кВт</b> =\n\n• <b>{kcal}</b> ккал/ч\n• <b>{btu}</b> BTU/ч\n• <b>{hp}</b> л.с.\n• <b>{w}</b> Вт",
+        "uz": "📏 <b>{kw} kVt</b> =\n\n• <b>{kcal}</b> kkal/s\n• <b>{btu}</b> BTU/s\n• <b>{hp}</b> o.k.\n• <b>{w}</b> Vt",
+        "en": "📏 <b>{kw} kW</b> =\n\n• <b>{kcal}</b> kcal/h\n• <b>{btu}</b> BTU/h\n• <b>{hp}</b> hp\n• <b>{w}</b> W"},
+    # ── cities & design temps ──
+    "cities_title": {
+        "ru": "🌡 <b>Расчётные зимние температуры (параметр Б)</b>\nпо КМК 2.01.01-94:\n",
+        "uz": "🌡 <b>Hisobiy qishki haroratlar (parametr B)</b>\nKMK 2.01.01-94 bo'yicha:\n",
+        "en": "🌡 <b>Design winter temperatures (parameter B)</b>\nper KMK 2.01.01-94:\n"},
+    # ── promo checker ──
+    "promo_ask": {
+        "ru": "🎁 <b>Проверка промокода</b>\n\nОтправьте промокод одним сообщением:",
+        "uz": "🎁 <b>Promokodni tekshirish</b>\n\nPromokodni bitta xabar bilan yuboring:",
+        "en": "🎁 <b>Check a promo code</b>\n\nSend the promo code in one message:"},
+    "promo_ok": {
+        "ru": "✅ Промокод <b>{code}</b> действует: скидка <b>−{disc}%</b>.\nПрименится при оформлении в «🛒 Купить подписку».",
+        "uz": "✅ <b>{code}</b> promokod amal qiladi: <b>−{disc}%</b> chegirma.\n«🛒 Obuna sotib olish» da qo'llanadi.",
+        "en": "✅ Promo <b>{code}</b> is valid: <b>−{disc}%</b> off.\nApplies at checkout in “🛒 Buy subscription”."},
 }
 
 
