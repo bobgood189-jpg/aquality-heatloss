@@ -476,20 +476,33 @@ _STATUS_LABELS = {
 }
 
 
-@router.message(Command("status"))
-async def cmd_status(message: Message, state: FSMContext):
-    order = storage.get_pending_order(message.from_user.id)
+async def send_status(target, uid):
+    """Render the caller's current order status. `target` is the user-facing chat."""
+    order = storage.get_pending_order(uid)
     if not order:
-        return await message.answer(
-            "Активных заказов нет.\n/buy — оформить подписку."
+        return await target.answer(
+            "📋 Активных заказов нет.\n\n🛒 «Купить подписку» — оформить новый.",
+            reply_markup=K.back_menu_kb("ru")
         )
     oid_str = storage.order_id_str(order["id"])
     p = SHOP_PLANS.get(order["plan"], {})
-    await message.answer(
+    await target.answer(
         f"📋 <b>Заказ {oid_str}</b>\n\n"
         f"Статус: {_STATUS_LABELS.get(order['status'], order['status'])}\n"
         f"Тариф: {p.get('emoji','')} {p.get('name_ru', order['plan'].upper())}, "
         f"{_months_ru(order['months'])}\n"
         f"Email: <code>{order['email']}</code>\n"
-        f"К оплате: {_fmt(order['final_price'])}"
+        f"К оплате: {_fmt(order['final_price'])}",
+        reply_markup=K.back_menu_kb("ru")
     )
+
+
+@router.message(Command("status"))
+async def cmd_status(message: Message, state: FSMContext):
+    await send_status(message, message.from_user.id)
+
+
+@router.callback_query(F.data == "menu:status")
+async def cb_status(cb: CallbackQuery, state: FSMContext):
+    await cb.answer()
+    await send_status(cb.message, cb.from_user.id)

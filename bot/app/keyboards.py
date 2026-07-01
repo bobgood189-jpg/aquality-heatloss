@@ -42,16 +42,47 @@ def lang_kb():
 
 
 # ── main menu ──
-def menu_kb(lang, is_owner=False, paywall=False):
+def menu_kb(lang, is_owner=False, paywall=False, site_url=""):
     rows = [
-        [btn("🛒 Купить подписку", "menu:buy")],
-        [btn(t("menu_account", lang), "menu:account")],
-        [btn(t("menu_materials", lang), "menu:materials"), btn(t("menu_faq", lang), "menu:faq")],
+        [btn(t("menu_quick", lang), "menu:quick"), btn(t("menu_demo", lang), "menu:demo")],
+        [btn(t("menu_calc", lang), "menu:calc")],
+        [btn(t("menu_tools", lang), "menu:tools")],
+        [btn(t("menu_buy", lang), "menu:buy"), btn(t("menu_account", lang), "menu:account")],
+        [btn(t("menu_mysub", lang), "menu:mysub"), btn(t("menu_status", lang), "menu:status")],
+        [btn(t("menu_promo", lang), "menu:promo"), btn(t("menu_materials", lang), "menu:materials")],
+        [btn(t("menu_faq", lang), "menu:faq"), btn(t("menu_lead", lang), "menu:lead")],
         [btn(t("menu_contact", lang), "menu:contact"), btn(t("menu_lang", lang), "menu:lang")],
     ]
+    if site_url:
+        rows.append([InlineKeyboardButton(text=t("menu_site", lang), url=site_url)])
     if is_owner:
-        rows.append([btn("👑 Админ-панель", "menu:admin")])
+        rows.append([btn(t("menu_admin", lang), "menu:admin")])
     return kb(rows)
+
+
+# ── engineering tools submenu ──
+def tools_menu_kb(lang):
+    rows = [
+        [btn(t("tool_boiler", lang), "tool:boiler"), btn(t("tool_rad", lang), "tool:rad")],
+        [btn(t("tool_fuel", lang), "tool:fuel"), btn(t("tool_insul", lang), "tool:insul")],
+        [btn(t("tool_conv", lang), "tool:conv"), btn(t("tool_cities", lang), "tool:cities")],
+        [btn(t("menu", lang), "menu:home")],
+    ]
+    return kb(rows)
+
+
+def back_tools_kb(lang):
+    """A single row: back to the tools submenu (for text-input tool steps)."""
+    return kb([[btn(t("back_tools", lang), "menu:tools")]])
+
+
+def quick_quality_kb(lang):
+    return kb([
+        [btn(t("quick_q_good", lang), "quick:good")],
+        [btn(t("quick_q_avg", lang), "quick:avg")],
+        [btn(t("quick_q_poor", lang), "quick:poor")],
+        [btn(t("menu", lang), "menu:home")],
+    ])
 
 
 # ── account ──

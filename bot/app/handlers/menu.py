@@ -19,6 +19,12 @@ if SB_CONFIGURED:
     from .auth import start_password_reset as _start_password_reset
 
 router = Router()
+# Included LAST in the dispatcher (see bot.py). Keeping the stateless catch-all
+# in its own trailing router is critical: a `@router.message(StateFilter(None))`
+# living in the first router would match — and thereby swallow — every command
+# defined in later routers (/buy, /status, /stats, /broadcast, /resetpass, …),
+# stopping propagation before those handlers ever run.
+fallback_router = Router()
 
 
 async def _maybe_start_registration(message, state, lang) -> bool:
@@ -33,7 +39,7 @@ async def _maybe_start_registration(message, state, lang) -> bool:
 
 
 async def show_menu(message, lang, owner=False):
-    await message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, owner, PAYWALL),
+    await message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, owner, PAYWALL, SITE_URL),
                          disable_web_page_preview=True)
 
 
@@ -105,7 +111,7 @@ async def set_lang(cb: CallbackQuery, state: FSMContext):
     await cb.answer()
     if await _maybe_start_registration(cb.message, state, lang):
         return
-    await cb.message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, is_owner(cb.from_user), PAYWALL),
+    await cb.message.answer(t("welcome", lang), reply_markup=K.menu_kb(lang, is_owner(cb.from_user), PAYWALL, SITE_URL),
                             disable_web_page_preview=True)
 
 
@@ -223,15 +229,23 @@ async def cmd_help(message: Message, state: FSMContext):
         "📖 <b>Aquality — справка</b>\n\n"
         "Команды:\n"
         "• /start — главное меню\n"
+        "• /tools — инженерные калькуляторы 🧰\n"
         "• /buy — купить подписку\n"
         "• /status — статус текущего заказа\n"
         "• /mysub — информация о подписке\n"
+        "• /account — мой аккаунт\n"
         "• /cancel — отменить текущий расчёт\n\n"
+        "🧰 <b>Инструменты бота:</b>\n"
+        "быстрая оценка · демо · полный расчёт · подбор котла · "
+        "радиаторы · стоимость отопления · толщина утеплителя · "
+        "конвертер мощности · города и температуры.\n\n"
         f"Вопросы и поддержка: {contact}"
     )
 
 
-@router.message(StateFilter(None))
+@fallback_router.message(StateFilter(None))
 async def fallback_unknown_message(message: Message):
+    # Reached only after every real handler (all other routers) has declined the
+    # update. Reply to stray text; stay silent on unknown commands.
     if message.text and not message.text.startswith("/"):
         await message.answer("Не понял 🤔 Используйте кнопки или /start")
