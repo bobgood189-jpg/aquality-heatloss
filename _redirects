@@ -7,14 +7,16 @@
 # этот блок закрывает публичный доступ к нему и к остальным докам.
 #
 # Формат: <путь>  <куда>  <статус>. 404.html отдаётся с кодом 404.
-# Первое совпадение выигрывает; ассеты сайта (index.html, og-image.svg,
-# shop.jpg, nano-fx.*, _headers) сюда НЕ попадают и остаются доступны.
+# ВАЖНО: флаг «!» (force) обязателен — без него Netlify видит, что файл
+# реально существует в раздаче, и отдаёт его, ИГНОРИРУЯ правило. С «!»
+# правило перекрывает существующий файл. Ассеты сайта (index.html,
+# og-image.svg, nano-fx.*, _headers) сюда НЕ попадают и остаются доступны.
 # ════════════════════════════════════════════════════════════════════════
 
-/BACKEND_AUDIT.md     /404.html   404
-/SECURITY.md          /404.html   404
-/PROGRESS.md          /404.html   404
-/README-SUPABASE.md   /404.html   404
-/CLAUDE.md            /404.html   404
-/config.js            /404.html   404
-/skills-lock.json     /404.html   404
+/BACKEND_AUDIT.md     /404.html   404!
+/SECURITY.md          /404.html   404!
+/PROGRESS.md          /404.html   404!
+/README-SUPABASE.md   /404.html   404!
+/CLAUDE.md            /404.html   404!
+/config.js            /404.html   404!
+/skills-lock.json     /404.html   404!
