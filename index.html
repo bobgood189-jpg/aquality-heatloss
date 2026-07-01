@@ -1804,6 +1804,12 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
       <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-amber/70" data-i18n="calc-section-tag">Калькулятор объекта</p>
       <h2 class="text-3xl font-extrabold tracking-tight text-cream sm:text-4xl" data-i18n-html="calc-section-h2">Расчёт теплопотерь <span class="text-amber">всего здания</span></h2>
       <p class="mt-3 text-sm text-muted max-w-2xl mx-auto" data-i18n="calc-section-sub">Город → участок и солнце → этажи → планировка комнат → материалы → итог по всему объекту.</p>
+      <div class="mt-6 flex justify-center">
+        <button class="sx-launch" onclick="sxOpenApp()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span data-i18n="sx-launch-btn">Рабочая область: объекты и модули</span>
+        </button>
+      </div>
     </div>
 
     <!-- Progress -->
@@ -8726,19 +8732,26 @@ const _i18n = {
     'simple-s3-sub':'Выберите или введите количество отапливаемых помещений',
     'simple-room-n-of-m':'Помещение {n} из {m}',
     'simple-room-name-ph':'Комната {n}',
-    'simple-room-ext-walls':'Наружные стены',
-    'simple-room-windows':'Окна',
-    'simple-room-doors':'Наружные двери',
-    'simple-room-ground':'Пол на грунте (нижний этаж)',
-    'simple-room-top':'Верхний этаж / под чердаком',
-    'simple-select-dir':'Отметьте хотя бы одну наружную стену',
     'simple-dir-N':'С (Север)','simple-dir-S':'Ю (Юг)','simple-dir-E':'В (Восток)','simple-dir-W':'З (Запад)',
-    'simple-wall-len':'Длина стены, м',
-    'simple-door-count':'Кол-во дверей',
-    'simple-door-dir':'На какой стене',
-    'simple-door-type-lbl':'Тип открывания',
+    'simple-step-enter-sub':'Добавьте по каждому помещению стены, окна, двери, пол и потолок отдельными пунктами.',
+    'simple-sec-walls':'Стены','simple-sec-windows':'Окна','simple-sec-doors':'Двери','simple-sec-floors':'Полы','simple-sec-ceilings':'Потолок / крыша',
+    'simple-item-wall':'Стена','simple-item-window':'Окно','simple-item-door':'Дверь','simple-item-floor':'Пол','simple-item-ceiling':'Потолок',
+    'simple-item-add':'Добавить','simple-item-none':'Пока не добавлено — нажмите «Добавить»',
+    'simple-ceil-h':'Высота потолка',
+    'simple-corner-lbl':'Положение комнаты',
+    'simple-corner-one':'Одна наружная стена',
+    'simple-corner-corner':'Угловая комната (2 стены)',
+    'simple-corner-two':'Две и более наружных стены',
+    'simple-basement':'В подвал / грунт',
+    'simple-same-floor':'Размер как у пола (авто)',
+    'simple-door-type-lbl':'Тип двери',
+    'simple-mat-lbl':'Материал',
+    'simple-len':'Длина, м','simple-wid':'Ширина, м','simple-hgt':'Высота, м',
+    'simple-room-height':'Высота потолка, м','simple-room-tint':'t внутри, °C',
+    'simple-attic-lbl':'Чердак / кровля',
+    'simple-name-lbl':'Название','simple-opt-lbl':'(необязательно)','simple-add-room':'Добавить комнату',
     'hint-simple-3':'Укажите количество помещений',
-    'hint-simple-4':'Заполните данные помещения (длина, ширина и хотя бы одна наружная стена)',
+    'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
   },
   uz:{
@@ -9239,19 +9252,26 @@ const _i18n = {
     'simple-s3-sub':"Isintirilgan xonalar sonini tanlang yoki kiriting",
     'simple-room-n-of-m':"Xona {n} / {m}",
     'simple-room-name-ph':"Xona {n}",
-    'simple-room-ext-walls':"Tashqi devorlar",
-    'simple-room-windows':"Derazalar",
-    'simple-room-doors':"Tashqi eshiklar",
-    'simple-room-ground':"Zamin poli (quyi qavat)",
-    'simple-room-top':"Yuqori qavat / tom ostida",
-    'simple-select-dir':"Kamida bitta tashqi devorni belgilang",
     'simple-dir-N':"S (Shimol)",'simple-dir-S':"J (Janub)",'simple-dir-E':"Sh (Sharq)",'simple-dir-W':"G (G'arb)",
-    'simple-wall-len':"Devor uzunligi, m",
-    'simple-door-count':"Eshik soni",
-    'simple-door-dir':"Qaysi devorda",
-    'simple-door-type-lbl':"Ochilish turi",
+    'simple-step-enter-sub':"Har bir xona uchun devor, deraza, eshik, pol va shiftni alohida qo'shing.",
+    'simple-sec-walls':"Devorlar",'simple-sec-windows':"Derazalar",'simple-sec-doors':"Eshiklar",'simple-sec-floors':"Pollar",'simple-sec-ceilings':"Shift / tom",
+    'simple-item-wall':"Devor",'simple-item-window':"Deraza",'simple-item-door':"Eshik",'simple-item-floor':"Pol",'simple-item-ceiling':"Shift",
+    'simple-item-add':"Qo'shish",'simple-item-none':"Hozircha qo'shilmagan — «Qo'shish»ni bosing",
+    'simple-ceil-h':"Shift balandligi",
+    'simple-corner-lbl':"Xona holati",
+    'simple-corner-one':"Bitta tashqi devor",
+    'simple-corner-corner':"Burchak xona (2 devor)",
+    'simple-corner-two':"Ikki va undan ortiq tashqi devor",
+    'simple-basement':"Podval / zamin",
+    'simple-same-floor':"Pol bilan bir xil o'lcham (avto)",
+    'simple-door-type-lbl':"Eshik turi",
+    'simple-mat-lbl':"Material",
+    'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
+    'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
+    'simple-attic-lbl':"Cherdak / tom",
+    'simple-name-lbl':"Nomi",'simple-opt-lbl':"(ixtiyoriy)",'simple-add-room':"Xona qo'shish",
     'hint-simple-3':"Xonalar sonini kiriting",
-    'hint-simple-4':"Xona ma'lumotlarini to'ldiring (uzunlik, kenglik va kamida bitta tashqi devor)",
+    'hint-simple-4':"Har bir xonaga kamida bitta devor qo'shing",
 
   },
   en:{
@@ -9770,19 +9790,26 @@ const _i18n = {
     'simple-s3-sub':'Select or enter the number of heated rooms',
     'simple-room-n-of-m':'Room {n} of {m}',
     'simple-room-name-ph':'Room {n}',
-    'simple-room-ext-walls':'Exterior walls',
-    'simple-room-windows':'Windows',
-    'simple-room-doors':'Exterior doors',
-    'simple-room-ground':'Ground floor (lowest level)',
-    'simple-room-top':'Top floor / under attic',
-    'simple-select-dir':'Tag at least one exterior wall',
     'simple-dir-N':'N (North)','simple-dir-S':'S (South)','simple-dir-E':'E (East)','simple-dir-W':'W (West)',
-    'simple-wall-len':'Wall length, m',
-    'simple-door-count':'Number of doors',
-    'simple-door-dir':'On which wall',
-    'simple-door-type-lbl':'Opening type',
+    'simple-step-enter-sub':'Add walls, windows, doors, floor and ceiling as separate items for each room.',
+    'simple-sec-walls':'Walls','simple-sec-windows':'Windows','simple-sec-doors':'Doors','simple-sec-floors':'Floors','simple-sec-ceilings':'Ceiling / roof',
+    'simple-item-wall':'Wall','simple-item-window':'Window','simple-item-door':'Door','simple-item-floor':'Floor','simple-item-ceiling':'Ceiling',
+    'simple-item-add':'Add','simple-item-none':'Nothing added yet — click "Add"',
+    'simple-ceil-h':'Ceiling height',
+    'simple-corner-lbl':'Room position',
+    'simple-corner-one':'One exterior wall',
+    'simple-corner-corner':'Corner room (2 walls)',
+    'simple-corner-two':'Two or more exterior walls',
+    'simple-basement':'To basement / ground',
+    'simple-same-floor':'Same size as floor (auto)',
+    'simple-door-type-lbl':'Door type',
+    'simple-mat-lbl':'Material',
+    'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
+    'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
+    'simple-attic-lbl':'Attic / roof',
+    'simple-name-lbl':'Name','simple-opt-lbl':'(optional)','simple-add-room':'Add room',
     'hint-simple-3':'Enter room count',
-    'hint-simple-4':'Fill in room data (length, width and at least one exterior wall)',
+    'hint-simple-4':'Add at least one wall in each room',
   }
 };
 function t(k){ return (_i18n[_lang]||_i18n.ru)[k] || _i18n.ru[k] || k; }
@@ -10926,20 +10953,15 @@ function setCalcMode(mode){
 function simpleRoomValid(idx){
   const r=ST.simpleRooms[idx];
   if(!r) return false;
-  return (r.length||0)>0 && (r.width||0)>0 && r.extWalls && r.extWalls.length>0;
+  return (r.walls||[]).length>0 && r.walls.every(w=>(w.length||0)>0 && (w.height||0)>0);
 }
 
 function initSimpleRooms(){
   const n=ST.simpleRoomCount;
   const ex=ST.simpleRooms||[];
   ST.simpleRooms=Array.from({length:n},(_,i)=>ex[i]||{
-    name:'', typeId:'living_room', tInt:20,
-    length:5, width:4, height:2.7,
-    extWalls:['N'],
-    wallLengths:{N:4,S:4,E:5,W:5},
-    windows:{N:{count:1,w:1.2,h:1.4},S:{count:0,w:1.2,h:1.4},E:{count:0,w:1.2,h:1.4},W:{count:0,w:1.2,h:1.4}},
-    doors:{count:i===0?1:0, w:0.9, h:2.1, dir:'N', doorType:'none'},
-    is_ground:i===0, is_top:false
+    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'corner',
+    walls:[], windows:[], doors:[], floors:[], ceilings:[]
   });
 }
 
@@ -10958,47 +10980,74 @@ function srSetType(i,typeId){
   _srFocusRoom=i;
   const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); updateNavHint();
 }
-function srToggleWall(i,dir){
-  const r=ST.simpleRooms[i]; if(!r) return;
-  const idx=r.extWalls.indexOf(dir);
-  if(idx>=0) r.extWalls.splice(idx,1); else r.extWalls.push(dir);
-  if(r.doors&&r.doors.dir&&!r.extWalls.includes(r.doors.dir)&&r.extWalls.length>0) r.doors.dir=r.extWalls[0];
-  _srFocusRoom=i;
-  const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); updateNavHint();
-}
 function srSetDim(i,field,val){
   const r=ST.simpleRooms[i]; if(!r) return;
   r[field]=Math.max(0.5,parseFloat(val)||1);
-  r.wallLengths={N:r.width,S:r.width,E:r.length,W:r.length};
 }
-function srSetWallLen(i,dir,val){ const r=ST.simpleRooms[i]; if(r&&r.wallLengths) r.wallLengths[dir]=Math.max(0.1,parseFloat(val)||1); }
-function srSetWin(i,dir,field,val){
-  const r=ST.simpleRooms[i]; if(!r) return;
-  if(!r.windows[dir]) r.windows[dir]={count:0,w:1.2,h:1.4};
-  r.windows[dir][field]=field==='count'?Math.max(0,Math.round(+val||0)):Math.max(0.1,parseFloat(val)||1);
-  if(field==='count'){ _srFocusRoom=i; const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); }
+const SR_ITEM_DEFAULTS = {
+  walls:   r=>({length:5, height:r.height||2.7, basement:false, presetId:ST.mat.wallId}),
+  windows: r=>({length:1.2, height:1.4, presetId:ST.mat.windowId}),
+  doors:   r=>({length:0.9, height:2.1, doorType:'none', presetId:ST.mat.doorId}),
+  floors:  r=>({length:5, width:4, presetId:ST.mat.floorId}),
+  ceilings:r=>({length:5, width:4, sameAsFloor:true, attic:ST.attic||'closed', presetId:ST.mat.ceilingId}),
+};
+/* Shared re-render for the item editor — works both in the wizard (#sr-editor lives
+   inside #step-panel) and in the Santex workspace (#sr-editor lives in the page body). */
+function srRerender(){
+  const el=document.getElementById('sr-editor');
+  if(el) el.innerHTML=simpleRoomsEditorInner();
+  if(typeof updateNavHint==='function') updateNavHint();
+  srResults();
 }
-function srSetDoor(i,field,val){
+function srResults(){
+  if(window.SW && window.SW.open){ try{ sxRenderResults(); }catch(e){} return; }
+  try{ if(typeof updateLivePanel==='function') updateLivePanel(); }catch(e){}
+}
+function srAddItem(i,kind){
   const r=ST.simpleRooms[i]; if(!r) return;
-  if(!r.doors) r.doors={count:0,w:0.9,h:2.1,dir:'N',doorType:'none'};
-  r.doors[field]=field==='count'?Math.max(0,Math.round(+val||0)):val;
-  if(field==='count'){ _srFocusRoom=i; const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); }
+  if(!r[kind]) r[kind]=[];
+  r[kind].push(SR_ITEM_DEFAULTS[kind](r));
+  _srFocusRoom=i; srRerender();
+}
+function srRemoveItem(i,kind,ii){
+  const r=ST.simpleRooms[i]; if(!r||!r[kind]) return;
+  r[kind].splice(ii,1);
+  _srFocusRoom=i; srRerender();
+}
+function srSetItemNum(i,kind,ii,field,val){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii]; if(!it) return;
+  it[field]=Math.max(0,parseFloat(val)||0);
+  // update just the area badge live without a full re-render (keeps focus in the input)
+  const badge=document.getElementById(`sr-area-${i}-${kind}-${ii}`);
+  if(badge) badge.textContent='S='+_srItemArea(ST.simpleRooms[i],kind,it).toFixed(2)+' м²';
+  srResults();
+}
+function srSetItemStr(i,kind,ii,field,val){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii]; if(!it) return;
+  it[field]=val;
+  _srFocusRoom=i; srRerender();
+}
+function srSetItemBool(i,kind,ii,field,val){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii]; if(!it) return;
+  it[field]=!!val;
+  _srFocusRoom=i; srRerender();
+}
+function srSetRoomField(i,field,val){
+  const r=ST.simpleRooms[i]; if(!r) return;
+  r[field]=val;
+  srResults();
 }
 function srAddRoom(){
   ST.simpleRoomCount++;
   initSimpleRooms();
-  _srFocusRoom=ST.simpleRoomCount-1;
-  const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4();
-  updateNavHint();
-  setTimeout(()=>{const d=document.querySelectorAll('#step-panel details');if(d.length)d[d.length-1].scrollIntoView({behavior:'smooth',block:'start'});},50);
+  _srFocusRoom=ST.simpleRoomCount-1; srRerender();
+  setTimeout(()=>{const d=document.querySelectorAll('#sr-editor details');if(d.length)d[d.length-1].scrollIntoView({behavior:'smooth',block:'start'});},50);
 }
 function srDeleteRoom(i){
   if(ST.simpleRooms.length<=1) return;
   ST.simpleRooms.splice(i,1);
   ST.simpleRoomCount=ST.simpleRooms.length;
-  _srFocusRoom=Math.min(_srFocusRoom,ST.simpleRoomCount-1);
-  const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4();
-  updateNavHint();
+  _srFocusRoom=Math.min(_srFocusRoom,ST.simpleRoomCount-1); srRerender();
 }
 
 /* --- Simple step renders --- */
@@ -11037,59 +11086,124 @@ function sSimple3(){
   </div>`;
 }
 
+/* Item-based room editor — mirrors @Santexprog_bot (walls/windows/doors/floors/ceilings
+   are separate line items, each with its own dimensions + material). */
+const SR_SECTIONS = [
+  {kind:'walls',    color:'#f59e0b', dims:'wh'},
+  {kind:'windows',  color:'#38bdf8', dims:'wh'},
+  {kind:'doors',    color:'#a78bfa', dims:'wh'},
+  {kind:'floors',   color:'#34d399', dims:'lw'},
+  {kind:'ceilings', color:'#fb923c', dims:'lw'},
+];
+function _srMatOpts(cat,curId){
+  return presetList(cat).map(p=>`<option value="${p.id}" ${p.id===curId?'selected':''}>${p.name} (R=${(p.r||0).toFixed(2)})</option>`).join('');
+}
+function _srItemArea(r,kind,it){
+  if(kind==='ceilings'&&it.sameAsFloor){ const f=(r.floors||[])[0]; return f?(f.length||0)*(f.width||0):0; }
+  return (it.dims==='lw'||kind==='floors'||kind==='ceilings') ? (it.length||0)*(it.width||0) : (it.length||0)*(it.height||0);
+}
 function sSimple4(){
+  return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
+  <p class="text-sm text-muted mb-4">${t('simple-step-enter-sub')}</p>
+  ${simpleRoomsEditorHTML()}`;
+}
+function simpleRoomsEditorHTML(){ return `<div id="sr-editor">${simpleRoomsEditorInner()}</div>`; }
+function simpleRoomsEditorInner(){
   if(!ST.simpleRooms||!ST.simpleRooms.length) initSimpleRooms();
-  const dirs=['N','S','E','W'];
-  const dl={N:t('simple-dir-N'),S:t('simple-dir-S'),E:t('simple-dir-E'),W:t('simple-dir-W')};
+
+  const numFld=(i,kind,ii,field,val,label,min,step)=>`
+    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${label}</label>
+      <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="${min}" step="${step}"
+        value="${val}" oninput="srSetItemNum(${i},'${kind}',${ii},'${field}',this.value)"></div>`;
+  const matFld=(i,kind,ii,cat,curId)=>`
+    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-mat-lbl')}</label>
+      <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'${kind}',${ii},'presetId',this.value)">${_srMatOpts(cat,curId)}</select></div>`;
+
+  const itemFields=(i,kind,it,ii,color)=>{
+    if(kind==='walls') return `
+      <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
+        <input type="checkbox" class="accent-amber" ${it.basement?'checked':''} onchange="srSetItemBool(${i},'walls',${ii},'basement',this.checked)">
+        <span class="text-xs text-sand">${t('simple-basement')}</span></label>
+      <div class="grid grid-cols-3 gap-2">
+        ${numFld(i,'walls',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
+        ${numFld(i,'walls',ii,'height',it.height||2.7,t('simple-hgt'),0.1,0.1)}
+        ${matFld(i,'walls',ii,'walls',it.presetId)}
+      </div>`;
+    if(kind==='windows') return `
+      <div class="grid grid-cols-3 gap-2">
+        ${numFld(i,'windows',ii,'length',it.length||1.2,t('simple-len'),0.1,0.05)}
+        ${numFld(i,'windows',ii,'height',it.height||1.4,t('simple-hgt'),0.1,0.05)}
+        ${matFld(i,'windows',ii,'windows',it.presetId)}
+      </div>`;
+    if(kind==='doors') return `
+      <div class="mb-2"><label class="block text-[11px] text-muted mb-1">${t('simple-door-type-lbl')}</label>
+        <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'doors',${ii},'doorType',this.value)">
+          ${Object.entries(BETA_DOOR).map(([id,o])=>`<option value="${id}" ${(it.doorType||'none')===id?'selected':''}>${o.name}</option>`).join('')}</select></div>
+      <div class="grid grid-cols-3 gap-2">
+        ${numFld(i,'doors',ii,'length',it.length||0.9,t('simple-len'),0.1,0.05)}
+        ${numFld(i,'doors',ii,'height',it.height||2.1,t('simple-hgt'),0.1,0.05)}
+        ${matFld(i,'doors',ii,'doors',it.presetId)}
+      </div>`;
+    if(kind==='floors') return `
+      <div class="grid grid-cols-3 gap-2">
+        ${numFld(i,'floors',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
+        ${numFld(i,'floors',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
+        ${matFld(i,'floors',ii,'floors',it.presetId)}
+      </div>`;
+    /* ceilings */
+    return `
+      <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
+        <input type="checkbox" class="accent-amber" ${it.sameAsFloor?'checked':''} onchange="srSetItemBool(${i},'ceilings',${ii},'sameAsFloor',this.checked)">
+        <span class="text-xs text-sand">${t('simple-same-floor')}</span></label>
+      ${it.sameAsFloor?'':`<div class="grid grid-cols-2 gap-2 mb-2">
+        ${numFld(i,'ceilings',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
+        ${numFld(i,'ceilings',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
+      </div>`}
+      <div class="grid grid-cols-2 gap-2">
+        <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-attic-lbl')}</label>
+          <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'ceilings',${ii},'attic',this.value)">
+            ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>
+        ${matFld(i,'ceilings',ii,'ceilings',it.presetId)}
+      </div>`;
+  };
+
+  const section=(i,r,cfg)=>{
+    const list=r[cfg.kind]||[];
+    const rows=list.length? list.map((it,ii)=>`
+      <div class="rounded-lg border border-sand/10 bg-w800/40 p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-cream">${t('simple-item-'+cfg.kind.slice(0,-1))} #${ii+1}</span>
+          <div class="flex items-center gap-2">
+            <span id="sr-area-${i}-${cfg.kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded" style="background:${cfg.color}18;color:${cfg.color}">S=${_srItemArea(r,cfg.kind,it).toFixed(2)} м²</span>
+            <button type="button" onclick="srRemoveItem(${i},'${cfg.kind}',${ii})" class="text-muted hover:text-ember transition-colors text-sm leading-none px-1.5 rounded border border-sand/10 hover:border-ember/30">×</button>
+          </div>
+        </div>
+        ${itemFields(i,cfg.kind,it,ii,cfg.color)}
+      </div>`).join('')
+      : `<p class="text-[11px] text-muted italic px-1 py-1">${t('simple-item-none')}</p>`;
+    return `<div class="rounded-xl border overflow-hidden" style="border-color:${cfg.color}30">
+      <div class="flex items-center justify-between px-3 py-2" style="background:${cfg.color}12">
+        <span class="text-sm font-semibold flex items-center gap-2" style="color:${cfg.color}">
+          ${t('simple-sec-'+cfg.kind)}
+          <span class="text-[10px] font-bold rounded-full px-1.5 py-0.5" style="background:${cfg.color}22">${list.length}</span>
+        </span>
+        <button type="button" onclick="srAddItem(${i},'${cfg.kind}')" class="text-xs font-semibold rounded-lg px-2.5 py-1 transition-colors" style="background:${cfg.color};color:#0b0b0f">+ ${t('simple-item-add')}</button>
+      </div>
+      <div class="p-3 space-y-3">${rows}</div>
+    </div>`;
+  };
 
   const cards=ST.simpleRooms.map((r,i)=>{
-    if(!r.wallLengths) r.wallLengths={N:r.width,S:r.width,E:r.length,W:r.length};
-    if(!r.windows) r.windows={N:{count:1,w:1.2,h:1.4},S:{count:0,w:1.2,h:1.4},E:{count:0,w:1.2,h:1.4},W:{count:0,w:1.2,h:1.4}};
-    if(!r.doors) r.doors={count:0,w:0.9,h:2.1,dir:'N',doorType:'none'};
-
+    ['walls','windows','doors','floors','ceilings'].forEach(k=>{ if(!Array.isArray(r[k])) r[k]=[]; });
     const rtBtns=ROOM_TYPES.slice(0,10).map(rt=>`
       <button type="button" onclick="srSetType(${i},'${rt.id}')"
         class="rounded-lg border py-1.5 px-2.5 text-xs font-semibold transition-colors ${r.typeId===rt.id?'border-amber bg-amber/15 text-amber':'border-sand/15 bg-w800/50 text-sand'}">${_pick(rt,'name','nameUz','nameEn')}</button>`).join('');
-
-    const wallBtns=dirs.map(d=>`
-      <button type="button" onclick="srToggleWall(${i},'${d}')"
-        class="rounded-lg border py-2 px-3 text-sm font-bold transition-colors ${r.extWalls.includes(d)?'border-amber bg-amber/15 text-amber':'border-sand/15 bg-w800/50 text-sand'}">${dl[d]}</button>`).join('');
-
-    const wallLenRows=(r.extWalls||[]).map(d=>`
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-sand w-28 flex-shrink-0">${dl[d]}</span>
-        <input type="number" class="wi w-20 py-1.5 text-sm text-center" min="0.5" max="100" step="0.1"
-          value="${(r.wallLengths[d]||((['N','S'].includes(d)?r.width:r.length)||4)).toFixed(1)}"
-          oninput="srSetWallLen(${i},'${d}',+this.value)">
-        <span class="text-xs text-muted">м</span>
-      </div>`).join('');
-
-    const winRows=(r.extWalls||[]).map(d=>{
-      const w=r.windows[d]||{count:0,w:1.2,h:1.4};
-      return `<div class="flex items-center gap-2 flex-wrap">
-        <span class="text-xs text-sand w-28 flex-shrink-0">${dl[d]}</span>
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-muted">кол.</span>
-          <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0" max="20" step="1"
-            value="${w.count||0}" oninput="srSetWin(${i},'${d}','count',+this.value)">
-        </div>
-        ${(w.count||0)>0?`<div class="flex items-center gap-1">
-          <span class="text-xs text-muted">Ш</span>
-          <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0.3" max="5" step="0.05"
-            value="${w.w||1.2}" oninput="srSetWin(${i},'${d}','w',+this.value)">
-          <span class="text-xs text-muted">×В</span>
-          <input type="number" class="wi w-14 py-1.5 text-sm text-center" min="0.3" max="3" step="0.05"
-            value="${w.h||1.4}" oninput="srSetWin(${i},'${d}','h',+this.value)">
-          <span class="text-xs text-muted">м</span>
-        </div>`:''}
-      </div>`;}).join('');
-
-    const dTypeOpts=Object.entries(BETA_DOOR).map(([id,o])=>`<option value="${id}" ${(r.doors.doorType||'none')===id?'selected':''}>${o.name}</option>`).join('');
-    const dDirOpts=(r.extWalls||[]).map(d=>`<option value="${d}" ${(r.doors.dir||'N')===d?'selected':''}>${dl[d]}</option>`).join('');
     const rt=ROOM_TYPES.find(x=>x.id===r.typeId);
     const rLabel=r.name||(rt?_pick(rt,'name','nameUz','nameEn'):'')||t('simple-room-name-ph').replace('{n}',i+1);
     const isOpen=i===_srFocusRoom;
     const hasErr=!simpleRoomValid(i);
+    const cornerOpts=[['one','simple-corner-one'],['corner','simple-corner-corner'],['two','simple-corner-two']]
+      .map(([v,k])=>`<option value="${v}" ${(r.corner||'corner')===v?'selected':''}>${t(k)}</option>`).join('');
 
     return `<details ${isOpen?'open':''} ontoggle="if(this.open)_srFocusRoom=${i}" class="rounded-2xl border ${hasErr?'border-ember/30':'border-sand/10'} bg-w850/40 mb-3 overflow-hidden">
       <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
@@ -11104,9 +11218,9 @@ function sSimple4(){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="h-4 w-4 text-muted transition-transform"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </summary>
-      <div class="px-4 pb-4 pt-4 space-y-5 border-t border-sand/10">
+      <div class="px-4 pb-4 pt-4 space-y-4 border-t border-sand/10">
         <div>
-          <label class="block text-xs font-semibold text-sand mb-1.5">Название <span class="text-muted font-normal">(необязательно)</span></label>
+          <label class="block text-xs font-semibold text-sand mb-1.5">${t('simple-name-lbl')} <span class="text-muted font-normal">${t('simple-opt-lbl')}</span></label>
           <input class="wi" type="text" maxlength="40" placeholder="${t('simple-room-name-ph').replace('{n}',i+1)}"
             value="${r.name||''}" oninput="ST.simpleRooms[${i}].name=this.value">
         </div>
@@ -11114,92 +11228,33 @@ function sSimple4(){
         <div>
           <label class="block text-xs font-semibold text-sand mb-2">${t('rre-room-type-label')}</label>
           <div class="flex flex-wrap gap-1.5">${rtBtns}</div>
-          <div class="mt-2 flex items-center gap-2">
-            <span class="text-xs text-muted">t внутр.</span>
-            <input type="number" class="wi w-20 py-1.5 text-sm text-center" min="5" max="35" step="1"
-              value="${r.tInt||20}" oninput="ST.simpleRooms[${i}].tInt=Math.max(5,Math.min(35,+this.value||20))">
-            <span class="text-xs text-muted">°C</span>
-          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-tint')}</label>
+            <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="5" max="35" step="1"
+              value="${r.tInt||20}" oninput="ST.simpleRooms[${i}].tInt=Math.max(5,Math.min(35,+this.value||20));srResults()"></div>
+          <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-height')}</label>
+            <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1.8" max="12" step="0.1"
+              value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7);srResults()"></div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-sand mb-2">Размеры помещения</label>
-          <div class="grid grid-cols-3 gap-2 min-w-0">
-            <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">Длина, м</label>
-              <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1" max="100" step="0.1"
-                value="${r.length||5}" oninput="srSetDim(${i},'length',+this.value)"></div>
-            <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">Ширина, м</label>
-              <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1" max="100" step="0.1"
-                value="${r.width||4}" oninput="srSetDim(${i},'width',+this.value)"></div>
-            <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">Высота, м</label>
-              <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1.8" max="12" step="0.1"
-                value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7)"></div>
-          </div>
+          <label class="block text-[11px] text-muted mb-1">${t('simple-corner-lbl')}</label>
+          <select class="wi py-1.5 text-sm" onchange="srSetRoomField(${i},'corner',this.value)">${cornerOpts}</select>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-ext-walls')} <span class="text-xs text-muted font-normal">(минимум одна)</span></label>
-          <div class="flex gap-2 flex-wrap">${wallBtns}</div>
-          ${r.extWalls.length?`<div class="mt-3 space-y-2">
-            <p class="text-[11px] text-muted">${t('simple-wall-len')}</p>${wallLenRows}</div>`:''}
-        </div>
-
-        ${r.extWalls.length?`
-        <div>
-          <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-windows')}</label>
-          <div class="space-y-3">${winRows}</div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-sand mb-2">${t('simple-room-doors')}</label>
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-muted">${t('simple-door-count')}</span>
-            <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="0" max="10" step="1"
-              value="${r.doors.count||0}" oninput="srSetDoor(${i},'count',+this.value)">
-          </div>
-          ${(r.doors.count||0)>0?`<div class="mt-2 space-y-2">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs text-muted">Ш</span>
-              <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="0.6" max="3" step="0.05"
-                value="${r.doors.w||0.9}" oninput="srSetDoor(${i},'w',+this.value)">
-              <span class="text-xs text-muted">× В</span>
-              <input type="number" class="wi w-16 py-1.5 text-sm text-center" min="1.5" max="4" step="0.05"
-                value="${r.doors.h||2.1}" oninput="srSetDoor(${i},'h',+this.value)">
-              <span class="text-xs text-muted">м</span>
-            </div>
-            ${r.extWalls.length>1?`<div class="flex items-center gap-2">
-              <span class="text-xs text-muted">${t('simple-door-dir')}</span>
-              <select class="wi py-1.5 text-sm" onchange="srSetDoor(${i},'dir',this.value)">${dDirOpts}</select>
-            </div>`:''}
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-muted">${t('simple-door-type-lbl')}</span>
-              <select class="wi py-1.5 text-sm" onchange="srSetDoor(${i},'doorType',this.value)">${dTypeOpts}</select>
-            </div>
-          </div>`:''}
-        </div>`:''}
-
-        <div class="space-y-2.5 pt-1 border-t border-sand/10">
-          <label class="flex items-center gap-2.5 cursor-pointer select-none">
-            <input type="checkbox" class="accent-amber" ${r.is_ground?'checked':''}
-              onchange="ST.simpleRooms[${i}].is_ground=this.checked">
-            <span class="text-sm text-cream">${t('simple-room-ground')}</span>
-          </label>
-          <label class="flex items-center gap-2.5 cursor-pointer select-none">
-            <input type="checkbox" class="accent-amber" ${r.is_top?'checked':''}
-              onchange="ST.simpleRooms[${i}].is_top=this.checked">
-            <span class="text-sm text-cream">${t('simple-room-top')}</span>
-          </label>
+        <div class="space-y-3 pt-1">
+          ${SR_SECTIONS.map(cfg=>section(i,r,cfg)).join('')}
         </div>
       </div>
     </details>`;
   }).join('');
 
-  return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
-  <p class="text-sm text-muted mb-4">Заполните каждое помещение. Нажмите на заголовок чтобы раскрыть.</p>
-  ${cards}
+  return `${cards}
   <button type="button" onclick="srAddRoom()"
     class="mt-1 w-full rounded-2xl border border-dashed border-amber/30 bg-amber/5 py-3 text-sm font-semibold text-amber hover:bg-amber/10 transition-colors">
-    + Добавить комнату
+    + ${t('simple-add-room')}
   </button>`;
 }
 
@@ -11226,67 +11281,64 @@ function computeSimple(){
   };
 }
 
-function computeSimpleRoom(r,tExt){
-  const tInt=r.tInt||20, dTout=tInt-tExt, H=r.height||2.7;
-  const area=(r.length||5)*(r.width||4);
-  const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
-  if(dTout<=0) return {area,qW:0,breakdown:bd,sections:0};
-  const wp=findPreset('walls',ST.mat.wallId);
-  const wallR=wp?regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT):0;
-  const extW=r.extWalls||[];
-  const cornerK=extW.length>=2?(1+CORNER_SURCHARGE):1;
-  for(const d of extW){
-    const beta=BETA_ORIENT[d]||0;
-    const wlen=(r.wallLengths&&r.wallLengths[d])||(['N','S'].includes(d)?r.width:r.length)||4;
-    const gross=wlen*H;
-    let opArea=0;
-    const win=r.windows&&r.windows[d];
-    if(win&&win.count>0){
-      const a=(win.w||1.2)*(win.h||1.4)*win.count;
-      opArea+=a;
-      const wp2=findPreset('windows',ST.mat.windowId);
-      if(wp2&&wp2.r>0) bd.window+=(dTout/wp2.r)*a*(1+beta)*cornerK;
-    }
-    const door=r.doors;
-    const doorOnWall=door&&door.count>0&&(extW.length===1||door.dir===d);
-    if(doorOnWall){
-      const a=(door.w||0.9)*(door.h||2.1)*door.count;
-      opArea+=a;
-      const dp=findPreset('doors',ST.mat.doorId);
-      const dBeta=(BETA_DOOR[door.doorType||'none']||BETA_DOOR.none).beta;
-      if(dp&&dp.r>0) bd.door+=(dTout/dp.r)*a*(1+beta+dBeta)*cornerK;
-    }
-    const net=Math.max(0,gross-opArea);
-    if(wallR>0&&net>0) bd.wall+=(dTout/wallR)*net*(1+beta)*cornerK;
-  }
-  if(r.is_ground){
-    const fp=findPreset('floors',ST.mat.floorId);
-    if(fp){
-      if(fp.ground){
-        const addR=fp.addR!=null?fp.addR:0, n=fp.n!=null?fp.n:1;
-        const perim=extW.reduce((s,d)=>s+((r.wallLengths&&r.wallLengths[d])||(['N','S'].includes(d)?r.width:r.length)||4),0);
-        for(const z of simpleZonalFloor(area,perim)) bd.floor+=(dTout/(z.r+addR))*z.a*n;
-      } else {
-        bd.floor+=(dTout/regimeR(fp.r,0.17,presetClass(fp)))*area*(fp.n!=null?fp.n:1);
-      }
-    }
-  }
-  if(r.is_top){
-    const cp=findPreset('ceilings',ST.mat.ceilingId);
-    if(cp) bd.ceiling+=(dTout/regimeR(cp.r,0.17,presetClass(cp)))*area*atticN();
-  }
-  const V=area*H, rho=(1.293*273)/(273+tExt);
-  bd.infil=0.28*1.005*V*rho*dTout*airtightAch();
-  const qW=Object.values(bd).reduce((s,v)=>s+v,0);
-  return {area,qW,breakdown:bd,sections:Math.ceil((qW*1.15)/sectionWatt(tInt))};
-}
+/* Temp deltas mirror @Santexprog_bot project settings (Pol harorati / Podval devori = 6°C). */
+const SIMPLE_FLOOR_T = 6;      // температура грунта под полом
+const SIMPLE_BASEMENT_T = 6;   // температура за подвальной стеной
 
-function simpleZonalFloor(area,perim){
-  if(perim<=0.01) return [{r:FLOOR_ZONE_R[3],a:area}];
-  const areas=[0,0,0,0]; let rem=area;
-  for(let z=0;z<3&&rem>0;z++){const s=Math.min(rem,perim*2);areas[z]=s;rem-=s;}
-  areas[3]=Math.max(0,rem);
-  return areas.map((a,i)=>({r:FLOOR_ZONE_R[i],a})).filter(z=>z.a>0.01);
+function computeSimpleRoom(r,tExt){
+  const tInt=r.tInt||20, H=r.height||2.7;
+  const dTout=tInt-tExt;                                   // к наружному воздуху
+  const dTfloor=tInt-SIMPLE_FLOOR_T;                       // к грунту под полом
+  const dTbase=tInt-SIMPLE_BASEMENT_T;                     // к подвальной стене
+  const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
+  const cornerK=(r.corner==='one')?1:(1+CORNER_SURCHARGE);
+
+  // ── Стены (каждая — отдельная строка, как в боте) ──
+  for(const w of (r.walls||[])){
+    const S=(w.length||0)*(w.height||0); if(S<=0) continue;
+    const wp=findPreset('walls',w.presetId||ST.mat.wallId); if(!wp) continue;
+    const R=regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT);
+    const dT=w.basement?dTbase:dTout;
+    if(R>0&&dT>0) bd.wall+=(dT/R)*S*cornerK;
+  }
+  // ── Окна ──
+  for(const win of (r.windows||[])){
+    const S=(win.length||0)*(win.height||0); if(S<=0) continue;
+    const wp=findPreset('windows',win.presetId||ST.mat.windowId);
+    if(wp&&wp.r>0&&dTout>0) bd.window+=(dTout/wp.r)*S*cornerK;
+  }
+  // ── Двери ──
+  for(const dr of (r.doors||[])){
+    const S=(dr.length||0)*(dr.height||0); if(S<=0) continue;
+    const dp=findPreset('doors',dr.presetId||ST.mat.doorId);
+    const dBeta=(BETA_DOOR[dr.doorType||'none']||BETA_DOOR.none).beta;
+    if(dp&&dp.r>0&&dTout>0) bd.door+=(dTout/dp.r)*S*(1+dBeta)*cornerK;
+  }
+  // ── Полы (ΔT к грунту 6°C, без зонального разбиения — как в боте) ──
+  let floorArea=0;
+  for(const fl of (r.floors||[])){
+    const S=(fl.length||0)*(fl.width||0); if(S<=0) continue;
+    floorArea+=S;
+    const fp=findPreset('floors',fl.presetId||ST.mat.floorId); if(!fp) continue;
+    const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
+    const n=fp.n!=null?fp.n:1;
+    if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
+  }
+  // ── Потолок / крыша ──
+  for(const cl of (r.ceilings||[])){
+    const S=_srItemArea(r,'ceilings',cl); if(S<=0) continue;
+    const cp=findPreset('ceilings',cl.presetId||ST.mat.ceilingId); if(!cp) continue;
+    const R=regimeR(cp.r,0.17,presetClass(cp));
+    const n=(ATTIC[cl.attic]||ATTIC.closed).n;
+    if(R>0&&dTout>0) bd.ceiling+=(dTout/R)*S*n;
+  }
+  // ── Инфильтрация (объём = площадь пола × высота) ──
+  const V=floorArea*H, rho=(1.293*273)/(273+tExt);
+  if(V>0&&dTout>0) bd.infil=0.28*1.005*V*rho*dTout*airtightAch();
+
+  const qW=Object.values(bd).reduce((s,v)=>s+v,0);
+  const area=floorArea;
+  return {area,qW,breakdown:bd,sections:Math.ceil((qW*1.15)/sectionWatt(tInt))};
 }
 
 /* ── STEP 2 — Plot + orientation + sun ── */
@@ -18940,6 +18992,409 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches) initHvizCanvas();
   }catch(e){}
 });
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SANTEX WORKSPACE — bot-style app (project list + sidebar + pages)
+     Reuses existing engines: computeSimple, room editor, autoSelectPanels,
+     sectionWatt, engineeringModulesHTML. Lives behind auth + paywall.
+════════════════════════════════════════════════════════════════ -->
+<style>
+#sx-app{position:fixed;inset:0;z-index:9000;background:#0a0f1b;color:#E8EEF8;display:none;overflow-y:auto;
+  font-family:'Manrope',system-ui,sans-serif;-webkit-overflow-scrolling:touch}
+#sx-app.sx-show{display:block}
+.sx-wrap{max-width:1180px;margin:0 auto;padding:20px 18px 80px}
+.sx-topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 18px;
+  background:rgba(10,15,27,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(140,165,210,.12)}
+.sx-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px}
+.sx-brand-ic{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#f59e0b,#f97316);
+  display:flex;align-items:center;justify-content:center;color:#0a0f1b;flex-shrink:0}
+.sx-x{margin-left:auto;background:none;border:1px solid rgba(140,165,210,.2);color:#9fb0cc;border-radius:10px;
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s}
+.sx-x:hover{color:#E8EEF8;border-color:rgba(245,158,11,.4)}
+.sx-btn{background:linear-gradient(145deg,#f59e0b,#f97316);color:#0a0f1b;border:none;border-radius:11px;
+  padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.sx-btn:hover{filter:brightness(1.07)}
+.sx-btn-sec{background:rgba(140,165,210,.08);color:#cdd8ec;border:1px solid rgba(140,165,210,.18);border-radius:11px;
+  padding:10px 16px;font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
+.sx-btn-sec:hover{border-color:rgba(245,158,11,.4);color:#E8EEF8}
+.sx-card{background:#131a2b;border:1px solid rgba(140,165,210,.13);border-radius:18px;padding:18px}
+.sx-input{width:100%;background:#0f1524;border:1px solid rgba(140,165,210,.2);color:#E8EEF8;border-radius:11px;
+  padding:11px 14px;font-size:14px;outline:none;box-sizing:border-box}
+.sx-input:focus{border-color:rgba(245,158,11,.5)}
+.sx-proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.sx-proj{background:#131a2b;border:1px solid rgba(140,165,210,.13);border-radius:16px;padding:16px;transition:.15s}
+.sx-proj:hover{border-color:rgba(245,158,11,.35);transform:translateY(-2px)}
+.sx-proj-meta{display:flex;gap:14px;color:#8ea0bd;font-size:12px;margin-top:6px}
+.sx-proj-actions{display:flex;align-items:center;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(140,165,210,.1)}
+.sx-icon-btn{background:none;border:none;color:#7f90ad;cursor:pointer;padding:6px;border-radius:8px;transition:.15s;display:flex}
+.sx-icon-btn:hover{color:#E8EEF8;background:rgba(140,165,210,.1)}
+.sx-icon-btn.dng:hover{color:#ef6a6a;background:rgba(239,106,106,.1)}
+.sx-layout{display:grid;grid-template-columns:236px 1fr;gap:20px;align-items:start}
+.sx-side{position:sticky;top:74px;background:#111827;border:1px solid rgba(140,165,210,.12);border-radius:16px;padding:10px;overflow:hidden}
+.sx-side-grp{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:#6a7b9e;font-weight:700;padding:12px 10px 6px}
+.sx-nav{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;color:#b7c4dc;font-size:13.5px;
+  font-weight:600;cursor:pointer;transition:.13s;border:1px solid transparent}
+.sx-nav:hover{background:rgba(140,165,210,.07);color:#E8EEF8}
+.sx-nav.on{background:rgba(245,158,11,.13);color:#f5b544;border-color:rgba(245,158,11,.25)}
+.sx-nav svg{width:16px;height:16px;flex-shrink:0}
+.sx-page-h{font-size:22px;font-weight:800;margin-bottom:4px}
+.sx-page-sub{color:#8ea0bd;font-size:13px;margin-bottom:18px}
+.sx-res-hd{display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:12px}
+.sx-kpi{background:linear-gradient(160deg,rgba(52,211,153,.08),rgba(52,211,153,.02));border:1px solid rgba(52,211,153,.2);
+  border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.sx-kpi-v{font-size:30px;font-weight:800;color:#5be0a0;font-family:'JetBrains Mono',monospace;line-height:1}
+.sx-mini{background:#0f1524;border:1px solid rgba(140,165,210,.13);border-radius:12px;padding:12px 14px}
+.sx-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.sx-tbl th{text-align:left;color:#6a7b9e;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid rgba(140,165,210,.14)}
+.sx-tbl td{padding:9px 10px;border-bottom:1px solid rgba(140,165,210,.07);color:#cdd8ec}
+.sx-tbl td .mono,.sx-num{font-family:'JetBrains Mono',monospace}
+.sx-empty{text-align:center;color:#7f90ad;padding:48px 20px}
+.sx-mob-side{display:none}
+@media(max-width:860px){
+  .sx-layout{grid-template-columns:1fr}
+  .sx-side{position:static;display:flex;flex-wrap:wrap;gap:6px}
+  .sx-side-grp{width:100%;padding:6px 8px 2px}
+  .sx-nav{flex:1 1 auto}
+}
+.sx-launch{display:inline-flex;align-items:center;gap:10px;margin:0 auto;padding:13px 22px;border-radius:14px;
+  background:linear-gradient(145deg,rgba(245,158,11,.14),rgba(249,115,22,.06));border:1px solid rgba(245,158,11,.3);
+  color:#f5b544;font-weight:700;font-size:14px;cursor:pointer;transition:.15s}
+.sx-launch:hover{background:linear-gradient(145deg,rgba(245,158,11,.2),rgba(249,115,22,.1));transform:translateY(-1px)}
+</style>
+
+<div id="sx-app" role="dialog" aria-modal="true" aria-label="Santex рабочая область">
+  <div class="sx-topbar">
+    <div class="sx-brand">
+      <span class="sx-brand-ic"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M13 2L3 14h7l-1 8 11-13h-8l1-7z"/></svg></span>
+      <span id="sx-brand-title">Aquality Pro</span>
+    </div>
+    <span id="sx-crumb" class="text-sm" style="color:#8ea0bd"></span>
+    <button class="sx-x" onclick="sxCloseApp()" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="sx-body" class="sx-wrap"></div>
+</div>
+
+<script>
+window.SW = { open:false, projectId:null, page:'heat' };
+
+/* ── i18n mini-dict for workspace (RU/UZ/EN) ── */
+const SX_STR = {
+  ru:{ myObjects:'Мои объекты', newProject:'Новый проект', create:'Создать', objName:'Название объекта (например: Чиланзар 12-дом, 3-комн.)',
+    noProjects:'Пока нет объектов. Создайте первый — введите название выше.', open:'Открыть', rooms:'комн.', backToList:'Все объекты',
+    grpMain:'Основное', grpEng:'Инженерия', pReport:'Сводный отчёт', pHeat:'Теплопотери', pRad:'Радиаторы', pEng:'Инженерные модули',
+    heatSub:'Добавьте по каждой комнате стены, окна, двери, пол и потолок — как в мини-приложении.',
+    genSettings:'Общие настройки', extT:'Наружная t, °C', results:'Результаты расчёта', totalLoss:'Итого теплопотери',
+    boiler:'Мощность котла', gasDay:'Расход газа (сутки)', perRoom:'По комнатам', room:'Комната', area:'Пол, м²', q:'Q, Вт',
+    addFirst:'Добавьте комнаты на вкладке «Теплопотери».', radSub:'Подбор радиаторов по нагрузке каждой комнаты.',
+    radNeed:'Нужно, Вт', radPanel:'Панельный', radSections:'Секции', delConfirm:'Удалить объект? Отменить нельзя.',
+    saved:'Сохранено', copyOf:'копия', untitled:'Объект', reportSub:'Все результаты по объекту.', engSub:'Гидравлика, тёплый пол, расширительный бак, панельные радиаторы.',
+    saveBtn:'Сохранить', share:'Итог в 1 клик' },
+  uz:{ myObjects:'Obyektlarim', newProject:'Yangi loyiha', create:'Yaratish', objName:"Obyekt nomi (masalan: Chilonzor 12-uy, 3-xona)",
+    noProjects:"Hozircha obyekt yo'q. Birinchisini yarating — yuqoriga nom kiriting.", open:'Ochish', rooms:'xona', backToList:'Barcha obyektlar',
+    grpMain:'Asosiy', grpEng:'Injenerlik', pReport:"Yig'ma hisobot", pHeat:"Issiqlik yo'qotish", pRad:'Radiatorlar', pEng:'Injener modullar',
+    heatSub:"Har bir xona uchun devor, deraza, eshik, pol va shift qo'shing — mini-ilovadagidek.",
+    genSettings:'Umumiy sozlamalar', extT:'Tashqi t, °C', results:'Hisob natijalari', totalLoss:"Jami issiqlik yo'qotishi",
+    boiler:'Qozon quvvati', gasDay:'Gaz sarfi (sutka)', perRoom:'Xonalar bo\'yicha', room:'Xona', area:'Pol, m²', q:'Q, Vt',
+    addFirst:"«Issiqlik yo'qotish» bo'limida xona qo'shing.", radSub:'Har bir xona yuki bo\'yicha radiator tanlash.',
+    radNeed:'Kerak, Vt', radPanel:'Panelli', radSections:'Seksiyalar', delConfirm:"Obyekt o'chirilsinmi? Qaytarib bo'lmaydi.",
+    saved:'Saqlandi', copyOf:'nusxa', untitled:'Obyekt', reportSub:'Obyekt bo\'yicha barcha natijalar.', engSub:'Gidravlika, issiq pol, kengayish baki, panelli radiatorlar.',
+    saveBtn:'Saqlash', share:'Natija — 1 marta bosish' },
+  en:{ myObjects:'My objects', newProject:'New project', create:'Create', objName:'Object name (e.g. Chilanzar 12, 3-room)',
+    noProjects:'No objects yet. Create the first — enter a name above.', open:'Open', rooms:'rooms', backToList:'All objects',
+    grpMain:'Main', grpEng:'Engineering', pReport:'Summary report', pHeat:'Heat loss', pRad:'Radiators', pEng:'Engineering modules',
+    heatSub:'Add walls, windows, doors, floor and ceiling for each room — like the mini-app.',
+    genSettings:'General settings', extT:'Outdoor t, °C', results:'Calculation results', totalLoss:'Total heat loss',
+    boiler:'Boiler power', gasDay:'Gas use (daily)', perRoom:'Per room', room:'Room', area:'Floor, m²', q:'Q, W',
+    addFirst:'Add rooms in the "Heat loss" tab.', radSub:'Radiator selection by each room load.',
+    radNeed:'Need, W', radPanel:'Panel', radSections:'Sections', delConfirm:'Delete object? Cannot be undone.',
+    saved:'Saved', copyOf:'copy', untitled:'Object', reportSub:'All results for the object.', engSub:'Hydraulics, warm floor, expansion tank, panel radiators.',
+    saveBtn:'Save', share:'Result in 1 tap' },
+};
+function sxt(k){ const l=(typeof _lang!=='undefined'?_lang:'ru'); return (SX_STR[l]||SX_STR.ru)[k]||SX_STR.ru[k]||k; }
+
+/* ── project storage (separate 'sxProjects' per user) ── */
+function sxLoadProjects(){
+  const u=authCurrentUser(); if(!u) return [];
+  if(u.id==='__owner__'){ const o=ownerStore(); return Array.isArray(o.sxProjects)?o.sxProjects:[]; }
+  const users=authLoadUsers(); const me=users.find(x=>x.id===u.id);
+  return (me&&Array.isArray(me.sxProjects))?me.sxProjects:[];
+}
+function sxSaveProjects(list){
+  const u=authCurrentUser(); if(!u) return;
+  if(u.id==='__owner__'){ const o=ownerStore(); o.sxProjects=list; ownerStoreSave(o); return; }
+  const users=authLoadUsers(); const i=users.findIndex(x=>x.id===u.id); if(i<0) return;
+  users[i].sxProjects=list; authSaveUsers(users);
+}
+function sxSnapshot(){
+  return { calcMode:'simple', cityId:ST.cityId, cityName:ST.cityName, tExt:ST.tExt,
+    mat:{...ST.mat}, attic:ST.attic, airtight:ST.airtight, heatRegime:ST.heatRegime, lambdaMode:ST.lambdaMode,
+    pipeType:ST.pipeType, heatingTypes:ST.heatingTypes,
+    simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])) };
+}
+function sxRestore(s){
+  ST.calcMode='simple';
+  if(s){
+    if(s.cityId){ ST.cityId=s.cityId; ST.cityName=s.cityName; }
+    if(s.tExt!=null) ST.tExt=s.tExt;
+    if(s.mat) ST.mat={...ST.mat,...s.mat};
+    ['attic','airtight','heatRegime','lambdaMode','pipeType'].forEach(k=>{ if(s[k]!=null) ST[k]=s[k]; });
+    if(Array.isArray(s.heatingTypes)) ST.heatingTypes=s.heatingTypes;
+    ST.simpleRooms=Array.isArray(s.simpleRooms)?JSON.parse(JSON.stringify(s.simpleRooms)):[];
+    ST.simpleRoomCount=s.simpleRoomCount||ST.simpleRooms.length||1;
+  }
+  if(!ST.simpleRooms||!ST.simpleRooms.length){ ST.simpleRoomCount=Math.max(1,ST.simpleRoomCount||1); initSimpleRooms(); }
+}
+function sxCurrentProject(){ return sxLoadProjects().find(p=>p.id===SW.projectId)||null; }
+function sxCommit(){
+  if(!SW.projectId) return;
+  const list=sxLoadProjects(); const p=list.find(x=>x.id===SW.projectId); if(!p) return;
+  p.sx=sxSnapshot(); p.updatedAt=new Date().toISOString();
+  let res=null; try{ res=computeSimple(); }catch(e){}
+  p.roomCount=(ST.simpleRooms||[]).length; p.kw=res?+(res.totalKw).toFixed(2):0;
+  sxSaveProjects(list);
+}
+
+/* ── open / close app ── */
+function sxOpenApp(){
+  if(!authCurrentUser()){ try{ toast(t('toast-auth-required'),'err'); }catch(e){} setTimeout(()=>{ try{ openAuth('register'); }catch(e){} },350); return; }
+  if(typeof PAYWALL_ON!=='undefined' && PAYWALL_ON && !aqHasAccess()){ try{ openPaywall(); }catch(e){} return; }
+  SW.open=true;
+  document.getElementById('sx-app').classList.add('sx-show');
+  document.body.style.overflow='hidden';
+  sxRenderHome();
+}
+function sxCloseApp(){
+  if(SW.projectId) sxCommit();
+  SW.open=false; SW.projectId=null;
+  document.getElementById('sx-app').classList.remove('sx-show');
+  document.body.style.overflow='';
+}
+
+/* ── HOME: project list ── */
+function sxRenderHome(){
+  SW.projectId=null;
+  document.getElementById('sx-crumb').textContent='';
+  const list=sxLoadProjects();
+  const fmt=(iso)=>{ try{ return new Date(iso).toLocaleDateString((_lang==='ru'?'ru-RU':_lang==='uz'?'uz-UZ':'en-US'),{day:'numeric',month:'short'}); }catch(e){ return ''; } };
+  const cards=list.length? list.map(p=>`
+    <div class="sx-proj">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <span style="width:36px;height:36px;border-radius:10px;background:rgba(140,165,210,.1);display:flex;align-items:center;justify-content:center;color:#8ea0bd">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>
+        </span>
+        <span style="font-size:11px;color:#7f90ad">${fmt(p.updatedAt||p.createdAt)}</span>
+      </div>
+      <p style="font-weight:700;margin-top:10px;font-size:15px">${sxEsc(p.label||sxt('untitled'))}</p>
+      <div class="sx-proj-meta">
+        <span>🏠 ${p.roomCount||0} ${sxt('rooms')}</span>
+        <span>🔥 ${(p.kw!=null?p.kw:0).toFixed ? (p.kw||0).toFixed(2) : p.kw} kW</span>
+      </div>
+      <div class="sx-proj-actions">
+        <button class="sx-btn-sec" style="flex:1;padding:8px" onclick="sxOpenProject('${p.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="display:inline;vertical-align:-2px;margin-right:5px"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/></svg>${sxt('open')}
+        </button>
+        <button class="sx-icon-btn" title="Копировать" onclick="sxCopyProject('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+        <button class="sx-icon-btn dng" title="Удалить" onclick="sxDeleteProject('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+      </div>
+    </div>`).join('')
+    : `<div class="sx-empty" style="grid-column:1/-1">${sxt('noProjects')}</div>`;
+  document.getElementById('sx-body').innerHTML=`
+    <div class="sx-card" style="margin-bottom:20px">
+      <p style="font-weight:700;margin-bottom:12px">${sxt('newProject')}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input id="sx-new-name" class="sx-input" style="flex:1;min-width:220px" placeholder="${sxEsc(sxt('objName'))}"
+          onkeydown="if(event.key==='Enter')sxCreateProject()">
+        <button class="sx-btn" onclick="sxCreateProject()">+ ${sxt('create')}</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <p style="font-weight:800;font-size:18px">${sxt('myObjects')}</p>
+      <span style="color:#7f90ad;font-size:13px">${list.length}</span>
+    </div>
+    <div class="sx-proj-grid">${cards}</div>`;
+}
+function sxCreateProject(){
+  const inp=document.getElementById('sx-new-name');
+  const name=(inp&&inp.value.trim())||sxt('untitled');
+  const list=sxLoadProjects();
+  ST.calcMode='simple'; ST.simpleRooms=[]; ST.simpleRoomCount=1; initSimpleRooms();
+  const proj={ id:'sx'+Date.now(), label:name, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(),
+    roomCount:1, kw:0, sx:sxSnapshot() };
+  list.unshift(proj); sxSaveProjects(list);
+  sxOpenProject(proj.id);
+}
+function sxCopyProject(id){
+  const list=sxLoadProjects(); const src=list.find(p=>p.id===id); if(!src) return;
+  const copy=JSON.parse(JSON.stringify(src));
+  copy.id='sx'+Date.now(); copy.label=(src.label||sxt('untitled'))+' ('+sxt('copyOf')+')';
+  copy.createdAt=copy.updatedAt=new Date().toISOString();
+  list.unshift(copy); sxSaveProjects(list); sxRenderHome();
+}
+function sxDeleteProject(id){
+  if(!confirm(sxt('delConfirm'))) return;
+  let list=sxLoadProjects(); list=list.filter(p=>p.id!==id); sxSaveProjects(list); sxRenderHome();
+}
+function sxOpenProject(id){
+  const p=sxLoadProjects().find(x=>x.id===id); if(!p) return;
+  SW.projectId=id; SW.page='heat';
+  sxRestore(p.sx);
+  sxRenderProject();
+}
+
+/* ── PROJECT view: sidebar + page ── */
+const SX_PAGES = [
+  {grp:'grpMain', items:[
+    {id:'report', key:'pReport', icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>'},
+    {id:'heat',   key:'pHeat',   icon:'<path d="M12 2s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 1-3s3 2 4-6z"/>'},
+    {id:'radiators', key:'pRad', icon:'<rect x="3" y="6" width="18" height="12" rx="2"/><line x1="7" y1="6" x2="7" y2="18"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="17" y1="6" x2="17" y2="18"/>'},
+  ]},
+  {grp:'grpEng', items:[
+    {id:'engineering', key:'pEng', icon:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'},
+  ]},
+];
+function sxRenderProject(){
+  const p=sxCurrentProject();
+  document.getElementById('sx-crumb').innerHTML=`<span style="cursor:pointer" onclick="sxBackHome()">← ${sxt('backToList')}</span>`;
+  const side=SX_PAGES.map(g=>`
+    <div class="sx-side-grp">${sxt(g.grp)}</div>
+    ${g.items.map(it=>`<div class="sx-nav ${SW.page===it.id?'on':''}" onclick="sxNav('${it.id}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${it.icon}</svg>${sxt(it.key)}</div>`).join('')}
+  `).join('');
+  document.getElementById('sx-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <input class="sx-input" style="max-width:340px;font-weight:700" value="${sxEsc((p&&p.label)||'')}" onchange="sxRenameProject(this.value)">
+      <button class="sx-btn-sec" onclick="sxCommit();sxFlashSaved(this)">${sxt('saveBtn')}</button>
+    </div>
+    <div class="sx-layout">
+      <aside class="sx-side">${side}</aside>
+      <main id="sx-page"></main>
+    </div>`;
+  sxRenderPage();
+}
+function sxBackHome(){ sxCommit(); sxRenderHome(); }
+function sxRenameProject(v){
+  const list=sxLoadProjects(); const p=list.find(x=>x.id===SW.projectId); if(!p) return;
+  p.label=v.trim()||sxt('untitled'); p.updatedAt=new Date().toISOString(); sxSaveProjects(list);
+}
+function sxNav(page){ SW.page=page; document.querySelectorAll('#sx-app .sx-nav').forEach(n=>n.classList.toggle('on', n.getAttribute('onclick').includes("'"+page+"'"))); sxRenderPage(); }
+function sxRenderPage(){
+  const host=document.getElementById('sx-page'); if(!host) return;
+  if(SW.page==='heat') host.innerHTML=sxHeatPage();
+  else if(SW.page==='report') host.innerHTML=sxReportPage();
+  else if(SW.page==='radiators') host.innerHTML=sxRadiatorsPage();
+  else if(SW.page==='engineering'){ host.innerHTML=sxEngineeringPage(); try{ if(typeof initEngineeringModules==='function') setTimeout(initEngineeringModules,60); }catch(e){} }
+  if(SW.page==='heat') sxRenderResults();
+}
+
+/* ── PAGE: heat loss (reuses room editor) ── */
+function sxHeatPage(){
+  return `
+  <div class="sx-page-h">${sxt('pHeat')}</div>
+  <p class="sx-page-sub">${sxt('heatSub')}</p>
+  <div class="sx-layout" style="grid-template-columns:1fr 320px">
+    <div>
+      <div class="sx-card" style="margin-bottom:16px">
+        <p style="font-weight:700;margin-bottom:12px">${sxt('genSettings')}</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
+          <div><label style="font-size:11px;color:#8ea0bd;display:block;margin-bottom:5px">${sxt('extT')}</label>
+            <input type="number" class="sx-input" value="${ST.tExt!=null?ST.tExt:-14}" onchange="ST.tExt=parseFloat(this.value)||0;srResults()"></div>
+        </div>
+      </div>
+      ${simpleRoomsEditorHTML()}
+    </div>
+    <aside id="sx-results" style="position:sticky;top:74px"></aside>
+  </div>`;
+}
+function sxRenderResults(){
+  const host=document.getElementById('sx-results'); if(!host) return;
+  let res=null; try{ res=computeSimple(); }catch(e){}
+  if(!res){ host.innerHTML=`<div class="sx-card">${sxt('addFirst')}</div>`; return; }
+  const gasDay=(res.totalKw*24/8.4);
+  const rows=(res.floors&&res.floors[0]&&res.floors[0].rooms||[]).map(r=>`
+    <tr><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.area||0).toFixed(1)}</td><td class="mono" style="text-align:right;color:#f5b544">${Math.round(r.qW||0)}</td></tr>`).join('');
+  host.innerHTML=`
+    <div class="sx-card">
+      <div class="sx-res-hd"><svg viewBox="0 0 24 24" fill="none" stroke="#5be0a0" stroke-width="2" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>${sxt('results')}</div>
+      <div class="sx-kpi">
+        <div style="font-size:12px;color:#8ea0bd;margin-bottom:4px">${sxt('totalLoss')}</div>
+        <div class="sx-kpi-v">${(res.totalKw).toFixed(2)} <span style="font-size:16px">kW</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div class="sx-mini"><div style="font-size:11px;color:#8ea0bd">${sxt('boiler')}</div><div class="sx-num" style="font-weight:700;font-size:17px">${(res.boilerKw).toFixed(1)} kW</div></div>
+        <div class="sx-mini"><div style="font-size:11px;color:#8ea0bd">${sxt('gasDay')}</div><div class="sx-num" style="font-weight:700;font-size:17px">${gasDay.toFixed(1)} m³</div></div>
+      </div>
+      <div style="font-size:11px;color:#6a7b9e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${sxt('perRoom')}</div>
+      <table class="sx-tbl"><thead><tr><th>${sxt('room')}</th><th style="text-align:right">${sxt('area')}</th><th style="text-align:right">${sxt('q')}</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+/* ── PAGE: summary report ── */
+function sxReportPage(){
+  let res=null; try{ res=computeSimple(); }catch(e){}
+  if(!res) return `<div class="sx-page-h">${sxt('pReport')}</div><div class="sx-card">${sxt('addFirst')}</div>`;
+  const gasDay=(res.totalKw*24/8.4);
+  const rooms=(res.floors[0].rooms||[]);
+  const rows=rooms.map((r,i)=>{
+    const b=r.breakdown||{};
+    return `<tr><td>${i+1}</td><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.tInt||20)}</td>
+      <td class="mono" style="text-align:right">${(r.area||0).toFixed(1)}</td>
+      <td class="mono" style="text-align:right">${Math.round(b.wall||0)}</td>
+      <td class="mono" style="text-align:right">${Math.round((b.window||0)+(b.door||0))}</td>
+      <td class="mono" style="text-align:right">${Math.round((b.floor||0)+(b.ceiling||0))}</td>
+      <td class="mono" style="text-align:right">${Math.round(b.infil||0)}</td>
+      <td class="mono" style="text-align:right;color:#f5b544;font-weight:700">${Math.round(r.qW||0)}</td></tr>`;
+  }).join('');
+  return `
+  <div class="sx-page-h">${sxt('pReport')}</div>
+  <p class="sx-page-sub">${sxt('reportSub')}</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
+    <div class="sx-card"><div style="font-size:12px;color:#8ea0bd">${sxt('totalLoss')}</div><div class="sx-kpi-v" style="font-size:26px;margin-top:4px">${res.totalKw.toFixed(2)} <span style="font-size:15px">kW</span></div></div>
+    <div class="sx-card"><div style="font-size:12px;color:#8ea0bd">${sxt('boiler')}</div><div class="sx-num" style="font-size:24px;font-weight:800;margin-top:4px">${res.boilerKw.toFixed(1)} kW</div></div>
+    <div class="sx-card"><div style="font-size:12px;color:#8ea0bd">${sxt('gasDay')}</div><div class="sx-num" style="font-size:24px;font-weight:800;margin-top:4px">${gasDay.toFixed(1)} m³</div></div>
+    <div class="sx-card"><div style="font-size:12px;color:#8ea0bd">${sxt('room')}</div><div class="sx-num" style="font-size:24px;font-weight:800;margin-top:4px">${rooms.length}</div></div>
+  </div>
+  <div class="sx-card" style="overflow-x:auto">
+    <table class="sx-tbl"><thead><tr><th>#</th><th>${sxt('room')}</th><th style="text-align:right">t°C</th><th style="text-align:right">${sxt('area')}</th>
+      <th style="text-align:right">Стены</th><th style="text-align:right">Окна+двери</th><th style="text-align:right">Пол+пот.</th><th style="text-align:right">Инфил.</th><th style="text-align:right">${sxt('q')}</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+  </div>`;
+}
+
+/* ── PAGE: radiators (reuses autoSelectPanels + sectionWatt) ── */
+function sxRadiatorsPage(){
+  let res=null; try{ res=computeSimple(); }catch(e){}
+  if(!res) return `<div class="sx-page-h">${sxt('pRad')}</div><div class="sx-card">${sxt('addFirst')}</div>`;
+  const rows=(res.floors[0].rooms||[]).map(r=>{
+    const reqW=Math.round(r.qW||0);
+    let panel='—';
+    try{ const opts=autoSelectPanels(reqW, r.tInt||20); if(opts&&opts.length){ const o=opts[0]; panel=`${o.n}× Tip${o.type} ${o.h}×${o.l} <span style="color:#7f90ad">(${o.cover}%)</span>`; } }catch(e){}
+    let secs='—';
+    try{ const sw=sectionWatt(r.tInt||20); if(sw>0) secs=Math.ceil(reqW*1.15/sw)+' сек.'; }catch(e){}
+    return `<tr><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right;color:#f5b544">${reqW}</td><td>${panel}</td><td class="mono">${secs}</td></tr>`;
+  }).join('');
+  return `
+  <div class="sx-page-h">${sxt('pRad')}</div>
+  <p class="sx-page-sub">${sxt('radSub')}</p>
+  <div class="sx-card" style="overflow-x:auto">
+    <table class="sx-tbl"><thead><tr><th>${sxt('room')}</th><th style="text-align:right">${sxt('radNeed')}</th><th>${sxt('radPanel')}</th><th>${sxt('radSections')}</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+  </div>`;
+}
+
+/* ── PAGE: engineering modules (reuses existing engineeringModulesHTML) ── */
+function sxEngineeringPage(){
+  let res=null; try{ res=computeSimple(); window._calcRes=res; }catch(e){}
+  let inner='';
+  try{ if(typeof engineeringModulesHTML==='function' && res) inner=engineeringModulesHTML(res); }catch(e){}
+  return `<div class="sx-page-h">${sxt('pEng')}</div><p class="sx-page-sub">${sxt('engSub')}</p>${inner||('<div class=\"sx-card\">'+sxt('addFirst')+'</div>')}`;
+}
+
+/* ── helpers ── */
+function sxEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function sxFlashSaved(btn){ if(!btn) return; const o=btn.textContent; btn.textContent='✓ '+sxt('saved'); setTimeout(()=>{ btn.textContent=o; },1400); }
 </script>
 
 </body>
