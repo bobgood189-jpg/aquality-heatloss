@@ -2852,7 +2852,15 @@ async function sbSendOtp(email){
   try{
     const {error}=await c.auth.resetPasswordForEmail(email);
     // resetPasswordForEmail не раскрывает существование пользователя — считаем успехом при отсутствии ошибки
-    if(error) return {ok:false,err:_friendlyAuthErr(error.message)};
+    if(error){
+      console.error('[AQ] sbSendOtp error:', { message:error.message, name:error.name, status:error.status });
+      // Почтовый сервер Supabase не смог отправить письмо (SMTP не настроен/сломан) —
+      // supabase-js в этом случае часто подменяет message на "{}" (см. _friendlyAuthErr).
+      // Даём понятную подсказку сразу перейти на Telegram-канал вместо общей ошибки.
+      const isEmailSendFailure = error.status===500 || /sending.*email|error sending|smtp/i.test(error.message||'');
+      if(isEmailSendFailure) return {ok:false, err:t('forgot-err-email-unavailable')};
+      return {ok:false,err:_friendlyAuthErr(error.message)};
+    }
     return {ok:true};
   }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
 }
@@ -4646,7 +4654,18 @@ async function doRegister(){
   closeAuth(); initAuthNav();
   toast(t('toast-account-ok'));
 }
-function showAuthErr(msg){ const e=document.getElementById('auth-err'); if(e){ e.textContent=msg; e.classList.remove('hidden'); } }
+function showAuthErr(msg){
+  const e=document.getElementById('auth-err'); if(!e) return;
+  // Защита от случая, когда вызывающий код по ошибке передаст сюда не строку
+  // (объект ошибки/ответа целиком) — никогда не показываем "{}"/"[object Object]".
+  let text=msg;
+  if(typeof text!=='string'){
+    text = (text && (text.message||text.msg||text.error_description)) || '';
+  }
+  text = String(text||'').trim();
+  if(!text || /^\{.*\}$/.test(text) || text==='[object Object]') text = t('auth-err-generic')||'Не удалось выполнить операцию. Попробуйте ещё раз чуть позже.';
+  e.textContent = text; e.classList.remove('hidden');
+}
 
 function renderForgotForm(){
   const backBtn=`<button onclick="authSwitchTab('login')" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:rgba(148,163,184,.5);background:none;border:none;cursor:pointer;margin-bottom:1.25rem;padding:0;transition:color .15s" onmouseover="this.style.color='#ECF0FA'" onmouseout="this.style.color='rgba(148,163,184,.5)'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> ${t('forgot-back')}</button>`;
@@ -9023,6 +9042,7 @@ const _i18n = {
     'forgot-tg-no-link':'⚠️ Telegram не привязан к этому аккаунту. Привяжите его в профиле или используйте сброс через бота ниже.',
     'forgot-tg-too-soon':'Код уже отправлен, подождите немного перед повторной отправкой.',
     'forgot-err-user-not-found':'Email не зарегистрирован','forgot-err-otp-invalid':'Неверный или просроченный код',
+    'forgot-err-email-unavailable':'Не удалось отправить письмо с кодом (проблема на стороне почтового сервера). Используйте кнопку «Получить код в Telegram» ниже.',
     'sub-expiry-warning':'⚠ Подписка истекает через %n% дн. — продлите заранее.',
     'sub-expired-msg':'❌ Срок подписки истёк — обновите подписку для доступа.',
     'toast-access-denied':'Доступ запрещён',
@@ -9549,6 +9569,7 @@ const _i18n = {
     'forgot-tg-no-link':"⚠️ Telegram bu akkauntga bog'lanmagan. Profilda bog'lang yoki quyidagi bot orqali tiklashdan foydalaning.",
     'forgot-tg-too-soon':'Kod allaqachon yuborilgan, biroz kutib turing.',
     'forgot-err-user-not-found':"Bu email ro'yxatdan o'tmagan",'forgot-err-otp-invalid':"Noto'g'ri yoki eskirgan kod",
+    'forgot-err-email-unavailable':"Kodli xat yuborilmadi (pochta serverida muammo). Quyidagi «Telegramda kod olish» tugmasidan foydalaning.",
     'sub-expiry-warning':'⚠ Obuna %n% kun ichida tugaydi — muddatidan oldin yangilang.',
     'sub-expired-msg':"❌ Obuna muddati tugadi — kirish uchun obunani yangilang.",
     'toast-access-denied':'Kirish taqiqlangan',
@@ -10093,6 +10114,7 @@ const _i18n = {
     'forgot-tg-no-link':"⚠️ Telegram isn't linked to this account. Link it in your profile or use the bot reset link below.",
     'forgot-tg-too-soon':'A code was already sent — please wait a bit before requesting another.',
     'forgot-err-user-not-found':'Email not found','forgot-err-otp-invalid':'Invalid or expired code',
+    'forgot-err-email-unavailable':'Could not send the code email (a problem on the mail server side). Use the "Get code via Telegram" button below.',
     'sub-expiry-warning':'⚠ Subscription expires in %n% days — renew now.',
     'sub-expired-msg':'❌ Your subscription has expired — renew to continue.',
     'toast-access-denied':'Access denied',
