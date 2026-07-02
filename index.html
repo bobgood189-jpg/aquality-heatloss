@@ -497,8 +497,12 @@ section#calculator{
 }
 [data-theme="light"] .wi::placeholder{color:var(--aq-muted)}
 [data-theme="light"] select.wi{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%237a6b59' stroke-width='2'%3E%3Cpolyline points='2 4 6 8 10 4'/%3E%3C/svg%3E");
-  background-color:var(--aq-input-bg)
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%235a4632' stroke-width='2'%3E%3Cpolyline points='2 4 6 8 10 4'/%3E%3C/svg%3E");
+  background-color:var(--aq-input-bg);
+  /* B10: шорткат background в [data-theme="light"] .wi сбрасывал repeat/position → шеврон тайлился */
+  background-repeat:no-repeat;
+  background-position:right .8rem center;
+  background-size:12px 12px
 }
 
 /* Cards */
@@ -1559,6 +1563,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
    ТЕПЛОВАЯ ВИЗУАЛИЗАЦИЯ
 ══════════════════════════════════════════════ */
 #heat-viz-section{position:relative;overflow:hidden;background:linear-gradient(180deg,#07090F 0%,#0B0F1A 50%,#07090F 100%);padding:5rem 1.5rem 8rem;z-index:2}
+.hviz-glow{position:absolute;inset:0;background:radial-gradient(ellipse 75% 55% at 50% 50%,rgba(245,158,11,.04),transparent);pointer-events:none}
 .hviz-layout{display:flex;align-items:center;gap:3.5rem;max-width:1040px;margin:0 auto;flex-wrap:wrap}
 @media(max-width:860px){.hviz-layout{flex-direction:column;align-items:center;gap:2.5rem}}
 .hviz-building-wrap{position:relative;flex-shrink:0;filter:drop-shadow(0 0 50px rgba(245,158,11,.1))}
@@ -1580,6 +1585,48 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 .hviz-loss-hint{font-size:.67rem;color:#4E6080;line-height:1.4}
 [data-theme="light"] .hviz-loss-row{background:rgba(255,255,255,.88);border-color:rgba(30,60,120,.1)}
 [data-theme="light"] .hviz-loss-row:hover,[data-theme="light"] .hviz-loss-row.active{border-color:rgba(217,119,6,.28);background:rgba(254,243,199,.35)}
+/* ── Светлая тема секции «Тепловой анализ» (A1–A12) ── */
+/* A1: фон секции — светлый градиент в палитре страницы, плавный стык с соседями */
+[data-theme="light"] #heat-viz-section{background:linear-gradient(180deg,var(--aq-bg) 0%,var(--aq-bg2) 50%,var(--aq-bg) 100%)}
+/* A2: декоративный radial-оверлей — тёплый и едва заметный на светлом */
+[data-theme="light"] .hviz-glow{background:radial-gradient(ellipse 75% 55% at 50% 50%,rgba(194,119,10,.06),transparent)}
+/* A3: эйброу «ТЕПЛОВОЙ АНАЛИЗ» — контрастный акцент */
+[data-theme="light"] #heat-viz-section .text-amber\/70{color:var(--aq-accent)!important}
+/* A4: заголовок H2 — тёмный текст, акцентный градиент «Фергане» затемнён */
+[data-theme="light"] #heat-viz-section h2{color:var(--aq-bright)!important}
+[data-theme="light"] #heat-viz-section .thermal-text{background-image:linear-gradient(90deg,#1D4ED8 0%,#6D28D9 15%,#B45309 35%,#C2410C 52%,#DC2626 68%,#B45309 82%,#92520C 100%)}
+/* A5: вводный параграф — затемнён для контраста */
+[data-theme="light"] .hviz-stats-wrap>.text-muted{color:var(--aq-text)!important}
+/* A6: заголовки карточек потерь — тёмные на белых карточках (были rgb(236,240,250)) */
+[data-theme="light"] .hviz-loss-label{color:var(--aq-bright)}
+/* A7: иконки — тёмные штрихи + пастельные плашки, цветовое кодирование сохранено */
+[data-theme="light"] .hviz-loss-row[data-hviz="roof"] .hviz-loss-icon{background:rgba(124,58,237,.1)!important;border-color:rgba(109,40,217,.35)!important}
+[data-theme="light"] .hviz-loss-row[data-hviz="roof"] .hviz-loss-icon svg{stroke:#6D28D9}
+[data-theme="light"] .hviz-loss-row[data-hviz="walls"] .hviz-loss-icon{background:rgba(220,38,38,.08)!important;border-color:rgba(185,28,28,.35)!important}
+[data-theme="light"] .hviz-loss-row[data-hviz="walls"] .hviz-loss-icon svg{stroke:#B91C1C}
+[data-theme="light"] .hviz-loss-row[data-hviz="windows"] .hviz-loss-icon{background:rgba(217,119,6,.1)!important;border-color:rgba(146,64,14,.35)!important}
+[data-theme="light"] .hviz-loss-row[data-hviz="windows"] .hviz-loss-icon svg{stroke:#92400E}
+[data-theme="light"] .hviz-loss-row[data-hviz="floor"] .hviz-loss-icon{background:rgba(2,132,199,.08)!important;border-color:rgba(3,105,161,.32)!important}
+[data-theme="light"] .hviz-loss-row[data-hviz="floor"] .hviz-loss-icon svg{stroke:#0369A1}
+/* A8: подписи-хинты — контраст ≥7:1 на белой карточке */
+[data-theme="light"] .hviz-loss-hint{color:#44536E}
+/* A9: дорожка прогресс-бара видима на белом; проценты затемнены по цветам */
+[data-theme="light"] .hviz-loss-bar-bg{background:rgba(30,60,120,.14)}
+[data-theme="light"] .hviz-loss-row[data-hviz="roof"] .hviz-loss-pct{color:#6D28D9!important}
+[data-theme="light"] .hviz-loss-row[data-hviz="walls"] .hviz-loss-pct{color:#B91C1C!important}
+[data-theme="light"] .hviz-loss-row[data-hviz="windows"] .hviz-loss-pct{color:#92400E!important}
+[data-theme="light"] .hviz-loss-row[data-hviz="floor"] .hviz-loss-pct{color:#0369A1!important}
+/* A10: бейджи — непрозрачные пастельные плашки с тёмным текстом (читаемы и на тёмной сцене, и на светлом фоне) */
+[data-theme="light"] .hviz-badge-purple{background:#F3E8FF;border-color:rgba(109,40,217,.5);color:#6D28D9}
+[data-theme="light"] .hviz-badge-red{background:#FEE2E2;border-color:rgba(185,28,28,.45);color:#B91C1C}
+[data-theme="light"] .hviz-badge-amber{background:#FEF3C7;border-color:rgba(146,64,14,.45);color:#92400E}
+[data-theme="light"] .hviz-badge-blue{background:#E0F2FE;border-color:rgba(3,105,161,.4);color:#0369A1}
+/* A11: иллюстрация — намеренная тёмная карточка-виджет («тепловизор ночью»): рамка, скругление, мягкая нейтральная тень */
+[data-theme="light"] .hviz-building-wrap{filter:none}
+[data-theme="light"] .hviz-building-wrap canvas{background:linear-gradient(180deg,#0B1120 0%,#0E1830 100%);box-shadow:0 0 0 1px rgba(15,26,46,.12),0 18px 44px rgba(15,30,70,.16),0 4px 12px rgba(15,30,70,.1)}
+/* A12: CTA — без тёмного ореола под кнопкой на светлом фоне */
+[data-theme="light"] #heat-viz-section .lg-btn{box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 8px 24px rgba(194,119,10,.22)}
+[data-theme="light"] #heat-viz-section .lg-btn:hover{box-shadow:0 0 0 1px rgba(255,255,255,.3) inset,0 12px 32px rgba(194,119,10,.3)}
 /* ══════════════════════════════════════════════
    TESTIMONIALS + SOCIAL PROOF
 ══════════════════════════════════════════════ */
@@ -2006,7 +2053,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
 
 <!-- ═══════ ТЕПЛОВАЯ ВИЗУАЛИЗАЦИЯ ═══════ -->
 <section id="heat-viz-section" class="sect-reveal">
-  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 75% 55% at 50% 50%,rgba(245,158,11,.04),transparent);pointer-events:none"></div>
+  <div class="hviz-glow"></div>
   <div class="mx-auto px-4 sm:px-6" style="max-width:1080px">
     <div class="text-center mb-14">
       <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-amber/70">Тепловой анализ</p>
@@ -2099,8 +2146,39 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
       </div>
     </div>
 
+    <!-- ═══ Выбор калькулятора — виден только на лендинге (без маршрута /calculator/*) ═══ -->
+    <div id="calc-choice" class="grid grid-cols-1 gap-5 sm:grid-cols-2 max-w-4xl mx-auto">
+      <p class="sm:col-span-2 text-center text-sm text-muted -mt-2" data-i18n="calc-choose-sub">Два инструмента — одна формула КМК 2.01.04-18. Отличается только способ ввода планировки.</p>
+      <div class="rounded-3xl border border-amber/25 bg-w850/50 p-6 sm:p-7 flex flex-col" style="backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 8px 32px rgba(0,0,0,.3)">
+        <div class="flex items-start justify-between gap-2 mb-4">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber/15">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" class="h-6 w-6"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+          </div>
+          <span class="inline-flex items-center gap-1 rounded-full bg-amber/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span data-i18n="calc-mode-max-badge">Доступно в MAX</span>
+          </span>
+        </div>
+        <h3 class="text-xl font-extrabold text-cream" data-i18n="calc-max-name">Макс калькулятор</h3>
+        <p class="text-xs font-semibold uppercase tracking-widest text-amber/70 mt-1" data-i18n="calc-max-tag">Точный расчёт по чертежу</p>
+        <p class="text-sm text-muted mt-3 leading-relaxed flex-1" data-i18n="calc-mode-revit-desc">Рисуйте план на canvas — точный расчёт по геометрии.</p>
+        <button onclick="openCalc('max')" class="lg-btn mt-5 w-full py-3 text-sm"><span data-i18n="calc-max-open">Открыть Макс</span> →</button>
+      </div>
+      <div class="rounded-3xl border border-sand/15 bg-w850/50 p-6 sm:p-7 flex flex-col" style="backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 8px 32px rgba(0,0,0,.3)">
+        <div class="flex items-start justify-between gap-2 mb-4">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber/15">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" class="h-6 w-6"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </div>
+        </div>
+        <h3 class="text-xl font-extrabold text-cream" data-i18n="calc-pro-name">Про калькулятор</h3>
+        <p class="text-xs font-semibold uppercase tracking-widest text-amber/70 mt-1" data-i18n="calc-pro-tag">Быстрая оценка по размерам</p>
+        <p class="text-sm text-muted mt-3 leading-relaxed flex-1" data-i18n="calc-mode-simple-desc">Вводите размеры без рисования — быстрая оценка.</p>
+        <button onclick="openCalc('pro')" class="lg-btn mt-5 w-full py-3 text-sm"><span data-i18n="calc-pro-open">Открыть Про</span> →</button>
+      </div>
+    </div>
+
     <!-- Progress -->
-    <div id="prog-wrap" class="mb-8">
+    <div id="prog-wrap" class="mb-8" style="display:none">
       <div id="prog-desktop" class="hidden sm:flex items-center justify-center gap-0"></div>
       <div id="prog-mobile" class="sm:hidden">
         <div class="mb-2 flex items-center justify-between text-xs text-muted"><span id="prog-label-mob">Шаг 1 из 6</span></div>
@@ -2108,7 +2186,7 @@ kbd.hk{display:inline-flex;align-items:center;padding:.14rem .44rem;border-radiu
       </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
+    <div id="calc-wizard" class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]" style="display:none">
       <div>
         <div id="step-panel" class="step-panel rounded-3xl border border-white/8 bg-w850/50 p-5 sm:p-7" style="backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 8px 32px rgba(0,0,0,.3)"></div>
         <div class="mt-5 flex items-center justify-between gap-3">
@@ -5258,7 +5336,7 @@ function openMyCalcs(){
       html+=`<div class="sec-card"><p class="text-base font-bold text-cream mb-3">${t('history-saved-title')}</p>`;
       u.projects.slice(0,30).forEach(p=>{
         const d=new Date(p.createdAt);
-        const loadAttr=p.state?`onclick="loadState(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p.state))}'))); ST.step=6; renderProgress(); renderStep(); updateNavHint(); updateLivePanel(); scrollToEl('calculator'); closeMyCalcs(); toast(t('toast-calc-loaded'))"`:'';
+        const loadAttr=p.state?`onclick="loadState(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p.state))}'))); calcShowWizard('max'); ST.step=6; renderProgress(); renderStep(); updateNavHint(); updateLivePanel(); scrollToEl('calculator'); closeMyCalcs(); toast(t('toast-calc-loaded'))"`:'';
         html+=`<div class="hist-row" style="cursor:${p.state?'pointer':'default'}">
           <div ${loadAttr} class="flex-1"><p class="font-semibold text-cream text-sm">${p.label}</p><p class="text-xs text-muted mt-0.5">${d.toLocaleDateString(locale,{day:'numeric',month:'short',year:'numeric'})}</p></div>
           <button onclick="event.stopPropagation(); if(confirm(t('history-delete-confirm'))) aqDeleteCalc('${p.id}')" class="flex-shrink-0 p-1.5 rounded-lg text-muted hover:text-ember transition-colors" title="${t('pf-delete-account')}">
@@ -5778,7 +5856,7 @@ function _tgNavigator(){
   return `${_tgHd('🧭 Быстрый переход')}
   <div class="tg-blk"><div class="tg-blk-hd">Шаги расчёта</div>
     ${[[1,'Шаг 1 — Выбор города'],[2,'Шаг 2 — Параметры здания'],[3,'Шаг 3 — Комнаты'],[5,'Шаг 5 — Результаты']].map(([step,lbl])=>`
-    <div class="tg-r click" onclick="ST.step=${step};renderProgress();renderStep();scrollToEl('calculator');closeSettings()">
+    <div class="tg-r click" onclick="calcShowWizard();ST.step=${step};renderProgress();renderStep();scrollToEl('calculator');closeSettings()">
       <div class="tg-r-ic" style="background:#f59e0b20;color:#f59e0b">→</div>
       <div class="tg-r-bd"><p class="tg-r-tt">${lbl}</p></div><span style="opacity:.25">›</span>
     </div>`).join('')}
@@ -5786,7 +5864,7 @@ function _tgNavigator(){
   <div class="tg-blk"><div class="tg-blk-hd">Регион</div>
     <div class="tg-r"><div class="tg-r-ic" style="background:#3b82f620;color:#3b82f6">📍</div>
       <div class="tg-r-bd"><p class="tg-r-tt">Текущий город</p><p class="tg-r-sb">${window.ST?.cityName||'Не выбран'}</p></div>
-      <button class="tg-p" onclick="ST.step=1;renderProgress();renderStep();scrollToEl('calculator');closeSettings()">Изменить</button>
+      <button class="tg-p" onclick="calcShowWizard();ST.step=1;renderProgress();renderStep();scrollToEl('calculator');closeSettings()">Изменить</button>
     </div>
   </div>`;
 }
@@ -8128,6 +8206,8 @@ const BASE_PRESETS = {
     {id:'metalux_premium',name:'Металюкс Премиум 100мм',r:1.10,u:0.91,brand:'Металюкс',group:'Металюкс',desc:'ППУ 100мм, 3 контура уплотнения'},
   ],
   floors:[
+    /* ── C2: Без подвала / подполья — пол по грунту, n=0.75 НЕ применяется ── */
+    {id:'floor_no_basement',name:'Без подвала — пол по грунту',r:2.100,n:1.0,ground:true,addR:0.11,group:'Без подвала / подполья',desc:'Подполья нет: понижающий коэф. n не применяется, зональный расчёт по грунту',recommended:true},
     /* ── Над тёплым подвалом (n=0.4) ── */
     {id:'floor_screed',name:'Ж/б 200 + стяжка',r:0.336,n:0.4,group:'Тёплый подвал (n=0.4)',desc:'Над тёплым подвалом'},
     {id:'floor_screed_xps50',name:'Ж/б 200 + XPS 50',r:1.920,n:0.4,group:'Тёплый подвал (n=0.4)',desc:'XPS λ0.034 + стяжка'},
@@ -8175,6 +8255,8 @@ const BASE_PRESETS = {
     {id:'floor_ground_ppu50',name:'Грунт + ППУ 50',r:2.200,n:1.0,ground:true,addR:2.09,group:'На грунте (зональный)',desc:'ППУ λ0.025 + стяжка, зональный'},
   ],
   ceilings:[
+    /* ── C1: Без чердака — совмещённая (плоская) кровля, коэф. n чердака не применяется ── */
+    {id:'ceil_flat_none',name:'Без чердака — плоская (совмещённая) кровля',r:2.500,flat:true,group:'Без чердака / плоская кровля',desc:'Чердака нет: потери через кровельный пирог напрямую, n=1'},
     /* ── Холодный чердак — минвата ── */
     {id:'ceil_i50',name:'Чердак + вата 50',r:1.300,group:'Холодный чердак (вата)',desc:'Холодный чердак, минвата λ0.042'},
     {id:'ceil_i100',name:'Чердак + вата 100',r:2.490,group:'Холодный чердак (вата)',desc:'Минвата λ0.042'},
@@ -8701,8 +8783,10 @@ const _i18n = {
     'orb-tag':'Разделы платформы','orb-h3':'Все возможности — <span style="background:linear-gradient(90deg,#f59e0b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent">в одном месте</span>',
     'orb-sub':'Нажмите на любой узел, чтобы узнать подробнее и перейти в раздел.',
     'orb-demand':'Востребованность','orb-related':'Связанные разделы','orb-goto':'Перейти в раздел',
-    'orb-1-title':'Калькулятор','orb-1-date':'Главная функция','orb-1-tag':'Расчёт теплопотерь',
-    'orb-1-body':'Полный инженерный расчёт теплопотерь по КМК 2.01.04-18. Нарисуйте план здания — получите мощность котла и число секций радиаторов для каждой комнаты.',
+    'orb-1-title':'Макс калькулятор','orb-1-date':'Точный расчёт','orb-1-tag':'Мини-ревит · по чертежу',
+    'orb-1-body':'Нарисуйте план здания на canvas — площади и периметры считаются по геометрии. Полный инженерный расчёт по КМК 2.01.04-18: мощность котла и секции радиаторов для каждой комнаты.',
+    'orb-7-title':'Про калькулятор','orb-7-date':'Быстрая оценка','orb-7-tag':'По размерам комнат',
+    'orb-7-body':'Введите размеры комнат вручную — без чертежа. Быстрая оценка теплопотерь по той же формуле КМК 2.01.04-18.',
     'orb-2-title':'Мастерская','orb-2-date':'Свои материалы','orb-2-tag':'Конструктор R',
     'orb-2-body':'Добавьте любой строительный материал или многослойную конструкцию. Введите слои с толщиной и коэффициентом λ — итоговое R рассчитается автоматически.',
     'orb-3-title':'Мой профиль','orb-3-date':'Личный кабинет','orb-3-tag':'Аккаунт',
@@ -9119,6 +9203,15 @@ const _i18n = {
     'calc-mode-selected':'Выбрано',
     'calc-mode-max-badge':'Доступно в MAX',
     'calc-mode-max-only':'Мини-Ревит доступен в тарифе Max',
+    'calc-choose-sub':'Два инструмента — одна формула КМК 2.01.04-18. Отличается только способ ввода планировки.',
+    'calc-max-name':'Макс калькулятор',
+    'calc-pro-name':'Про калькулятор',
+    'calc-max-tag':'Точный расчёт по чертежу',
+    'calc-pro-tag':'Быстрая оценка по размерам',
+    'calc-max-open':'Открыть Макс',
+    'calc-pro-open':'Открыть Про',
+    'calc-switch':'Сменить калькулятор',
+    'calc-max-locked-h':'Макс калькулятор — в тарифе Max',
     'simple-step-mats':'Материалы',
     'simple-step-rooms':'Комнат',
     'simple-step-enter':'Данные комнат',
@@ -9646,6 +9739,15 @@ const _i18n = {
     'calc-mode-selected':"Tanlangan",
     'calc-mode-max-badge':"MAX tarifida",
     'calc-mode-max-only':"Mini-revit Max tarifida mavjud",
+    'calc-choose-sub':"Ikkita vosita — bitta QMQ 2.01.04-18 formulasi. Faqat reja kiritish usuli farq qiladi.",
+    'calc-max-name':"Maks kalkulyator",
+    'calc-pro-name':"Pro kalkulyator",
+    'calc-max-tag':"Chizma bo'yicha aniq hisob",
+    'calc-pro-tag':"O'lchamlar bo'yicha tezkor baho",
+    'calc-max-open':"Maksni ochish",
+    'calc-pro-open':"Proni ochish",
+    'calc-switch':"Kalkulyatorni almashtirish",
+    'calc-max-locked-h':"Maks kalkulyator — Max tarifida",
     'simple-step-mats':"Materiallar",
     'simple-step-rooms':"Xonalar",
     'simple-step-enter':"Xona ma'lumotlari",
@@ -9755,8 +9857,10 @@ const _i18n = {
     'orb-tag':'Platform sections','orb-h3':'All features — <span style="background:linear-gradient(90deg,#f59e0b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent">in one place</span>',
     'orb-sub':'Click any node to learn more and navigate to that section.',
     'orb-demand':'Popularity','orb-related':'Related sections','orb-goto':'Go to section',
-    'orb-1-title':'Calculator','orb-1-date':'Core feature','orb-1-tag':'Heat loss calculation',
-    'orb-1-body':'Full engineering heat loss calculation per KMK 2.01.04-18. Draw the building plan — get boiler power and radiator sections count for each room.',
+    'orb-1-title':'Max Calculator','orb-1-date':'Precise calculation','orb-1-tag':'Mini-Revit · drawing-based',
+    'orb-1-body':'Draw the building plan on canvas — areas and perimeters are computed from geometry. Full engineering calculation per KMK 2.01.04-18: boiler power and radiator sections per room.',
+    'orb-7-title':'Pro Calculator','orb-7-date':'Quick estimate','orb-7-tag':'Room dimensions input',
+    'orb-7-body':'Enter room dimensions manually — no drawing. Quick heat-loss estimate using the same KMK 2.01.04-18 formula.',
     'orb-2-title':'Workshop','orb-2-date':'Custom materials','orb-2-tag':'R builder',
     'orb-2-body':'Add any building material or multi-layer construction. Enter layers with thickness and λ coefficient — the total R is calculated automatically.',
     'orb-3-title':'My Profile','orb-3-date':'Personal account','orb-3-tag':'Account',
@@ -10191,6 +10295,15 @@ const _i18n = {
     'calc-mode-selected':'Selected',
     'calc-mode-max-badge':'Available in MAX',
     'calc-mode-max-only':'Mini-Revit is available on the Max plan',
+    'calc-choose-sub':'Two tools — one KMK 2.01.04-18 formula. Only the floor-plan input differs.',
+    'calc-max-name':'Max Calculator',
+    'calc-pro-name':'Pro Calculator',
+    'calc-max-tag':'Precise, drawing-based',
+    'calc-pro-tag':'Quick estimate by dimensions',
+    'calc-max-open':'Open Max',
+    'calc-pro-open':'Open Pro',
+    'calc-switch':'Switch calculator',
+    'calc-max-locked-h':'Max Calculator — Max plan',
     'simple-step-mats':'Materials',
     'simple-step-rooms':'Rooms',
     'simple-step-enter':'Room data',
@@ -10370,6 +10483,8 @@ const PIPE_TYPES = [
   {id:'pert',   name:'PE-RT / PE-X',         desc:'Тёплый пол, коллекторная схема, tmax 95 °C'},
   {id:'copper', name:'Медь',                 desc:'Долговечно, котлы высокого давления'},
   {id:'steel',  name:'Сталь / чугун',        desc:'Металл, старый фонд, высокая прочность'},
+  /* C3: «Нет» — подбор трубопровода пропускается */
+  {id:'none',   name:'Не учитывать / Нет',   desc:'Подбор трубопровода пропускается — на мощность котла не влияет'},
 ];
 const HEATING_TYPES = [
   {id:'radiator',  name:'Радиатор',       desc:'Биметалл, алюминий или сталь — под окном'},
@@ -10377,7 +10492,11 @@ const HEATING_TYPES = [
   {id:'ceiling',   name:'Потолочное',     desc:'ИК-панели или тёплый потолок'},
   {id:'fancoil',   name:'Фанкойл',        desc:'Скрытый вентиляторный доводчик, зонирование'},
   {id:'convector', name:'Конвектор',      desc:'Встраиваемый в пол или плинтусный'},
+  /* C4: «Нет» — расчёт без привязки к прибору */
+  {id:'none',      name:'Не указывать / Нет', desc:'Только теплопотери и котёл: секции радиаторов и контуры тёплого пола не считаются'},
 ];
+/* C4: выбран ли режим «без прибора отопления» */
+function heatingNone(){ return Array.isArray(ST.heatingTypes)&&ST.heatingTypes.length===1&&ST.heatingTypes[0]==='none'; }
 const SECTION_W_NOMINAL = 150;     // Вт/секцию при ΔT=60 (режим 90/70/20, биметалл)
 const SECTION_DT_NOMINAL = 60;
 const ATTIC = {                    // коэф. n для потолка верхнего этажа по типу чердака (КМК 2.01.04-18 табл.3)
@@ -10388,7 +10507,12 @@ const ATTIC = {                    // коэф. n для потолка верх
   unvent: {n:1.2, name:'Невентилируемый',           nameUz:'Shamollatilmagan',       nameEn:'Unventilated',
            desc:'Совсем без вентиляции (КМК: +20%)',               descUz:"Hech qanday shamollatish yo'q (KMK: +20%)",          descEn:'No ventilation at all (KMK: +20%)'},
 };
-function atticN(){ return (ATTIC[ST.attic]||ATTIC.closed).n; }
+function atticN(){
+  /* C1: при плоской (совмещённой) кровле чердака нет — буферный коэф. не применяется */
+  const cp=findPreset('ceilings',ST.mat.ceilingId);
+  if(cp&&cp.flat) return 1;
+  return (ATTIC[ST.attic]||ATTIC.closed).n;
+}
 function airtightAch(){ return (AIRTIGHT[ST.airtight]||AIRTIGHT.normal).ach; }
 function heatRegime(){ return HEAT_REGIMES.find(r=>r.id===ST.heatRegime)||HEAT_REGIMES[0]; }
 /* Вт на секцию — логарифмический ΔT (LMTD) по EN 442 */
@@ -10844,7 +10968,7 @@ function engineeringModulesHTML(res){
 
   <div class="grid grid-cols-1 gap-4 mb-8 lg:grid-cols-2">
 
-    <!-- 1. ГИДРАВЛИКА -->
+    ${ST.pipeType==='none'?'':`<!-- 1. ГИДРАВЛИКА (скрыт при «Тип труб: Нет», C3) -->
     <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-1">💧 Гидравлика трубопровода</p>
       <p class="text-[11px] text-muted mb-3">G = Q / (1.163·Δt) · v = G/S · ΔP по Дарси–Вейсбаху</p>
@@ -10855,9 +10979,9 @@ function engineeringModulesHTML(res){
         <label class="text-[11px] text-muted">Σξ (фитинги)<input id="hv-h-k" type="number" min="0" value="5" oninput="hvHydroCalc()" style="${HVI}"></label>
       </div>
       <div id="hv-h-out"></div>
-    </div>
+    </div>`}
 
-    <!-- 2. ТЁПЛЫЙ ПОЛ -->
+    ${heatingNone()?'':`<!-- 2. ТЁПЛЫЙ ПОЛ (скрыт при «Тип отопления: Нет», C4) -->
     <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-1">🌡️ Тёплый пол (контур)</p>
       <p class="text-[11px] text-muted mb-3">q = f(шаг)·(t_ср−t_комн)/R_покр · Q = q·S</p>
@@ -10868,7 +10992,7 @@ function engineeringModulesHTML(res){
         <label class="text-[11px] text-muted">t подачи пола, °C<input id="hv-f-tin" type="number" min="25" max="55" value="45" oninput="hvFloorCalc()" style="${HVI}"></label>
       </div>
       <div id="hv-f-out"></div>
-    </div>
+    </div>`}
 
     <!-- 3. РАСШИРИТЕЛЬНЫЙ БАК -->
     <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
@@ -10881,7 +11005,7 @@ function engineeringModulesHTML(res){
       <div id="hv-t-out"></div>
     </div>
 
-    <!-- 4. ПАНЕЛЬНЫЕ РАДИАТОРЫ -->
+    ${heatingNone()?'':`<!-- 4. ПАНЕЛЬНЫЕ РАДИАТОРЫ (скрыт при «Тип отопления: Нет», C4) -->
     <div class="rounded-2xl border border-amber/25 bg-w850 p-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-1">🔥 Панельные радиаторы (Tip 11/22)</p>
       <p class="text-[11px] text-muted mb-3">Автоподбор по EN 442: W = Wном·(Δt/50)^1.3</p>
@@ -10890,7 +11014,7 @@ function engineeringModulesHTML(res){
         <label class="text-[11px] text-muted">t комнаты, °C<input id="hv-p-tr" type="number" min="16" max="26" value="22" oninput="hvPanelCalc()" style="${HVI}"></label>
       </div>
       <div id="hv-p-out"></div>
-    </div>
+    </div>`}
 
   </div>`;
 }
@@ -10932,7 +11056,9 @@ function hvTankCalc(){
       <div class="rounded-xl bg-amber/8 border border-amber/20 py-2"><p class="text-[10px] text-muted">Расширение</p><p class="mono text-sm font-bold text-cream">${et.vTank.toFixed(1)}</p><p class="text-[9px] text-muted">литров</p></div>
       <div class="rounded-xl bg-amber/12 border border-amber/30 py-2"><p class="text-[10px] text-muted">Бак (станд.)</p><p class="mono text-sm font-bold text-amber">${et.recommended}</p><p class="text-[9px] text-muted">литров</p></div>
     </div>
-    <p class="text-[10px] text-muted mt-2">Оценка объёма: радиаторы ≈ ${sv.radL.toFixed(1)} л (${res.totalSections} сек.×0.45) + трубы/котёл ≈ ${sv.pipeL.toFixed(1)} л (${res.totalKw.toFixed(1)} кВт). Берётся ближайший больший бак из ряда 5/8/12/18/24/35/50/80/100 л.</p>`);
+    <p class="text-[10px] text-muted mt-2">${heatingNone()
+      ?`Оценка объёма по мощности системы ≈ ${sv.totalL.toFixed(1)} л (${res.totalKw.toFixed(1)} кВт, прибор отопления не указан).`
+      :`Оценка объёма: радиаторы ≈ ${sv.radL.toFixed(1)} л (${res.totalSections} сек.×0.45) + трубы/котёл ≈ ${sv.pipeL.toFixed(1)} л (${res.totalKw.toFixed(1)} кВт).`} Берётся ближайший больший бак из ряда 5/8/12/18/24/35/50/80/100 л.</p>`);
 }
 function hvPanelCalc(){
   const reqW=_hvNum('hv-p-q',1000), tr=_hvNum('hv-p-tr',22);
@@ -11036,7 +11162,7 @@ const ST = {
   northSide:'top',
   floors:[],
   activeFloorId:null,
-  mat:{ wallId:'brick_380', windowId:'double_glazing_pvc', doorId:'door_metal_insulated', floorId:'floor_xps50', ceilingId:'ceil_i100' },
+  mat:{ wallId:'brick_380', windowId:'double_glazing_pvc', doorId:'door_metal_insulated', floorId:'floor_no_basement', ceilingId:'ceil_i100' },  /* C2: дефолт — типовой дом без подвала */
   airtight:'normal', heatRegime:'90/70', attic:'closed', lambdaMode:'A',
   pipeType:'pp', heatingTypes:['radiator'],
   basement: null, tExtManual:null,
@@ -11045,6 +11171,80 @@ const ST = {
   simpleRoomIdx: 0,
   simpleRooms: [],
 };
+
+/* ════════════════════════════════════════════════════════════
+   ДВА КАЛЬКУЛЯТОРА КАК МАРШРУТЫ
+   /calculator/max → МАКС (Мини-ревит, canvas-план, calcMode='revit')
+   /calculator/pro → ПРО  (Простой, ввод размеров, calcMode='simple')
+   Режим жёстко привязан к маршруту; переключателя в шагах нет.
+   На лендинге (без маршрута) вместо мастера виден выбор (#calc-choice).
+   Netlify отдаёт index.html по обоим путям (_redirects), локально
+   работает фолбэк ?calc=max|pro.
+════════════════════════════════════════════════════════════ */
+const CALC_KIND_MODE = { max:'revit', pro:'simple' };
+function calcKindFromLocation(){
+  const m = location.pathname.match(/\/calculator\/(max|pro)\/?$/);
+  if(m) return m[1];
+  const q = new URLSearchParams(location.search).get('calc');
+  if(q==='max'||q==='pro') return q;
+  if(location.hash.indexOf('#r=')===0) return 'max';  // share-ссылки несут геометрию Мини-ревита
+  return null;
+}
+let CALC_KIND = calcKindFromLocation();
+if(CALC_KIND) ST.calcMode = CALC_KIND_MODE[CALC_KIND];
+
+function calcUrlFor(kind){
+  if(location.protocol==='file:') return null;        // file:// не позволяет pushState на другой путь
+  return kind ? '/calculator/'+kind : '/';
+}
+function calcSyncView(){
+  const choice=document.getElementById('calc-choice');
+  const prog=document.getElementById('prog-wrap');
+  const wiz=document.getElementById('calc-wizard');
+  const on=!!CALC_KIND;
+  if(choice) choice.style.display=on?'none':'';
+  if(prog) prog.style.display=on?'':'none';
+  if(wiz) wiz.style.display=on?'':'none';
+}
+/* Служебный показ мастера (демо, пресеты, история, share, настройки) —
+   без пейвол-логики: замок при необходимости отрисует renderStep. */
+function calcShowWizard(kind, push){
+  kind = kind || (ST.calcMode==='simple'?'pro':'max');
+  const changed = CALC_KIND!==kind;
+  CALC_KIND=kind; ST.calcMode=CALC_KIND_MODE[kind];
+  if(push!==false && changed){
+    const url=calcUrlFor(kind);
+    if(url){ try{ history.pushState({calc:kind},'',url); }catch(e){} }
+  }
+  calcSyncView();
+}
+/* Пользовательский вход из карточек выбора / «Разделов платформы». */
+function openCalc(kind){
+  if(!CALC_KIND_MODE[kind]) return;
+  if(CALC_KIND!==kind){ ST.step=1; _prevKw=null; }
+  calcShowWizard(kind);
+  renderProgress(); renderStep(); updateNavHint(); updateLivePanel();
+  scrollToEl('calculator');
+  try{ trackEvent('calc_open_'+kind); }catch(e){}
+}
+/* Назад к выбору калькулятора (ссылка «Сменить калькулятор» на шаге 1). */
+function calcGoChooser(){
+  CALC_KIND=null;
+  const url=calcUrlFor(null);
+  if(url){ try{ history.pushState({calc:null},'',url); }catch(e){} }
+  calcSyncView();
+  scrollToEl('calculator');
+}
+window.addEventListener('popstate',()=>{
+  const kind=calcKindFromLocation();
+  if(kind===CALC_KIND) return;
+  CALC_KIND=kind;
+  if(kind){
+    ST.calcMode=CALC_KIND_MODE[kind]; ST.step=1;
+    renderProgress(); renderStep(); updateNavHint(); updateLivePanel();
+  }
+  calcSyncView();
+});
 
 function initFloors(){
   ST.floors = [{ id:uid('fl'), name:'1 этаж', height:_tgG('defCeilH',2.8), rooms:[], floorSlab:{thickness:20,insulation:'none',insulationThickness:0,note:''} }];
@@ -11225,14 +11425,26 @@ function wizBack(){
 /* ════════════════════════════════════════════════════════════
    STEP RENDER DISPATCH
 ════════════════════════════════════════════════════════════ */
+/* МАКС без тарифа Max: вместо тихой подмены режима — замок с выходом в ПРО. */
+function aqMaxLockedHTML(){
+  return `<div class="pw-lock">
+    <div class="pw-lock-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="34" height="34"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h3 class="pw-lock-title">${t('calc-max-locked-h')}</h3>
+    <p class="pw-lock-body">${t('calc-mode-max-only')}</p>
+    <div class="flex items-center justify-center gap-3 flex-wrap">
+      <button class="lg-btn px-6 py-2.5 text-sm" onclick="openPaywall()">${pt('lockBtn')}</button>
+      <button class="lg-btn-sec px-6 py-2.5 text-sm" onclick="openCalc('pro')">${t('calc-pro-open')}</button>
+    </div>
+  </div>`;
+}
 function renderStep(){
   const p=document.getElementById('step-panel'); if(!p) return;
-  // Мини-Ревит только в тарифе MAX — остальным принудительно простой режим.
-  if(PAYWALL_ON && !aqHasMax() && ST.calcMode!=='simple'){
-    ST.calcMode='simple';
-    if(ST.step>1) ST.step=1;
-    renderProgress(); updateNavHint();
-  }
+  // Маршрут диктует режим: МАКС → Мини-ревит, ПРО → Простой.
+  if(CALC_KIND) ST.calcMode=CALC_KIND_MODE[CALC_KIND];
+  // Мини-Ревит (МАКС) доступен только в тарифе Max.
+  if(ST.calcMode!=='simple' && PAYWALL_ON && !aqHasMax()){ p.innerHTML=aqMaxLockedHTML(); return; }
   if(ST.calcMode==='simple'){
     if(PAYWALL_ON && !aqHasAccess() && ST.step>=2 && ST.step<=5){ p.innerHTML=aqLockedStepHTML(); return; }
     const sr=[null,s1,sSimple2,sSimple3,sSimple4,sSimple5];
@@ -11253,7 +11465,6 @@ function renderStep(){
 
 /* ── STEP 1 — City ── */
 function s1(){
-  const revitLocked = PAYWALL_ON && !aqHasMax();
   return `<details class="help">
     <summary>${t('help-1-title')}</summary>
     <div class="help-body">${t('help-1-body')}</div>
@@ -11315,38 +11526,15 @@ function s1(){
     </div>
   </div>
 
-  <div class="mt-6">
-    <p class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">${t('calc-mode-label')}</p>
-    <div class="flex flex-col gap-3">
-      <button type="button" onclick="setCalcMode('revit')" aria-pressed="${ST.calcMode!=='simple'?'true':'false'}"
-        class="sel-card rounded-xl border border-sand/15 bg-w800/50 p-4 text-left flex items-start gap-3 ${ST.calcMode!=='simple'?'active':''}${revitLocked?' opacity-60':''}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5 flex-shrink-0 mt-0.5 ${ST.calcMode!=='simple'?'text-amber':'text-sand'}"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
-        <span class="flex-1 min-w-0">
-          <span class="flex items-center justify-between gap-2">
-            <span class="text-sm font-bold text-cream">${t('calc-mode-revit')}</span>
-            ${revitLocked?`<span class="inline-flex items-center gap-1 rounded-full bg-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${t('calc-mode-max-badge')}
-            </span>`:`<span class="inline-flex items-center gap-1 rounded-full bg-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber ${ST.calcMode!=='simple'?'':'invisible'}" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="h-3 w-3"><polyline points="20 6 9 17 4 12"/></svg>${t('calc-mode-selected')}
-            </span>`}
-          </span>
-          <p class="text-[11px] font-normal text-muted mt-0.5">${t('calc-mode-revit-desc')}</p>
-        </span>
-      </button>
-      <button type="button" onclick="setCalcMode('simple')" aria-pressed="${ST.calcMode==='simple'?'true':'false'}"
-        class="sel-card rounded-xl border border-sand/15 bg-w800/50 p-4 text-left flex items-start gap-3 ${ST.calcMode==='simple'?'active':''}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5 flex-shrink-0 mt-0.5 ${ST.calcMode==='simple'?'text-amber':'text-sand'}"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        <span class="flex-1 min-w-0">
-          <span class="flex items-center justify-between gap-2">
-            <span class="text-sm font-bold text-cream">${t('calc-mode-simple')}</span>
-            <span class="inline-flex items-center gap-1 rounded-full bg-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber ${ST.calcMode==='simple'?'':'invisible'}" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="h-3 w-3"><polyline points="20 6 9 17 4 12"/></svg>${t('calc-mode-selected')}
-            </span>
-          </span>
-          <p class="text-[11px] font-normal text-muted mt-0.5">${t('calc-mode-simple-desc')}</p>
-        </span>
-      </button>
-    </div>
+  <div class="mt-6 rounded-xl border border-amber/20 bg-amber/5 p-3.5 flex items-center gap-3">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5 flex-shrink-0 text-amber">${ST.calcMode==='simple'
+      ?'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'
+      :'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>'}</svg>
+    <span class="flex-1 min-w-0">
+      <span class="text-sm font-bold text-cream">${t(ST.calcMode==='simple'?'calc-pro-name':'calc-max-name')}</span>
+      <p class="text-[11px] font-normal text-muted mt-0.5">${t(ST.calcMode==='simple'?'calc-mode-simple-desc':'calc-mode-revit-desc')}</p>
+    </span>
+    <button type="button" onclick="calcGoChooser()" class="text-xs font-semibold text-amber hover:text-cream transition-colors whitespace-nowrap bg-transparent border-none cursor-pointer p-0">${t('calc-switch')}</button>
   </div>`;
 }
 function selectCity(id){
@@ -11369,19 +11557,10 @@ function setManualTExt(v){
 }
 
 /* ════════════════════════════════════════════════════════════
-   SIMPLE MODE (Тип 2) — ввод комнат без canvas
+   SIMPLE MODE (Тип 2) — ввод комнат без canvas.
+   Переключателя режима больше нет: режим фиксирует маршрут
+   (/calculator/max | /calculator/pro), см. openCalc/calcShowWizard.
 ════════════════════════════════════════════════════════════ */
-function setCalcMode(mode){
-  if(ST.calcMode===mode) return;
-  if(mode==='revit' && PAYWALL_ON && !aqHasMax()){
-    if(aqHasAccess()) toast(t('calc-mode-max-only'),'err');
-    openPaywall(); return;
-  }
-  ST.calcMode=mode;
-  if(ST.step>1) ST.step=1;
-  renderProgress(); renderStep(); updateNavHint();
-}
-
 function simpleRoomValid(idx){
   const r=ST.simpleRooms[idx];
   if(!r) return false;
@@ -11592,9 +11771,13 @@ function simpleRoomsEditorInner(){
         ${numFld(i,'ceilings',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
       </div>`}
       <div class="grid grid-cols-2 gap-2">
-        <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-attic-lbl')}</label>
-          <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'ceilings',${ii},'attic',this.value)">
-            ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>
+        ${(()=>{const cpIt=findPreset('ceilings',it.presetId||ST.mat.ceilingId);
+          return (cpIt&&cpIt.flat)
+            ?`<div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-attic-lbl')}</label>
+              <div class="wi py-1.5 text-sm" style="opacity:.72;cursor:default">Без чердака — n=1</div></div>`
+            :`<div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-attic-lbl')}</label>
+              <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'ceilings',${ii},'attic',this.value)">
+                ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>`;})()}
         ${matFld(i,'ceilings',ii,'ceilings',it.presetId)}
       </div>`;
   };
@@ -11761,7 +11944,7 @@ function computeSimpleRoom(r,tExt){
     const S=_srItemArea(r,'ceilings',cl); if(S<=0) continue;
     const cp=findPreset('ceilings',cl.presetId||ST.mat.ceilingId); if(!cp) continue;
     const R=regimeR(cp.r,0.17,presetClass(cp));
-    const n=(ATTIC[cl.attic]||ATTIC.closed).n;
+    const n=(cp.flat)?1:(ATTIC[cl.attic]||ATTIC.closed).n;  /* C1: без чердака → n=1 */
     if(R>0&&dTout>0) bd.ceiling+=(dTout/R)*S*n;
   }
   // ── Инфильтрация (объём = площадь пола × высота) ──
@@ -13047,10 +13230,10 @@ function edDrawRulers(ctx, W, H){
   if(EDITOR._export) return;
   const RS = 20;
   ctx.save();
-  ctx.fillStyle = 'rgba(8,10,18,0.9)';
+  ctx.fillStyle = EDP.rulerBg;
   ctx.fillRect(0,0,W,RS);
   ctx.fillRect(0,0,RS,H);
-  ctx.fillStyle = 'rgba(50,60,85,0.8)';
+  ctx.fillStyle = EDP.rulerLine;
   ctx.fillRect(RS,RS-1,W-RS,1);
   ctx.fillRect(RS-1,RS,1,H-RS);
 
@@ -13068,10 +13251,10 @@ function edDrawRulers(ctx, W, H){
   for(let m=x0; m<=ST.plot.w+step; m=+(m+step).toFixed(6)){
     const px=exToPx(m); if(px<RS||px>W+2) continue;
     const isMaj = Math.abs(Math.round(m/step)%5)===0;
-    ctx.fillStyle=`rgba(154,134,117,${isMaj?0.65:0.28})`;
+    ctx.fillStyle=isMaj?EDP.rulerTickMaj:EDP.rulerTickMin;
     ctx.fillRect(Math.round(px),RS-(isMaj?10:5),1,(isMaj?10:5));
     if(isMaj && px>RS+12 && px<W-12){
-      ctx.fillStyle='rgba(154,134,117,0.8)';
+      ctx.fillStyle=EDP.rulerText;
       ctx.fillText(m+'',Math.round(px),2);
     }
   }
@@ -13082,11 +13265,11 @@ function edDrawRulers(ctx, W, H){
   for(let m=y0; m<=ST.plot.d+step; m=+(m+step).toFixed(6)){
     const py=eyToPx(m); if(py<RS||py>H+2) continue;
     const isMaj = Math.abs(Math.round(m/step)%5)===0;
-    ctx.fillStyle=`rgba(154,134,117,${isMaj?0.65:0.28})`;
+    ctx.fillStyle=isMaj?EDP.rulerTickMaj:EDP.rulerTickMin;
     ctx.fillRect(RS-(isMaj?10:5),Math.round(py),(isMaj?10:5),1);
     if(isMaj && py>RS+12 && py<H-12){
       ctx.save();
-      ctx.fillStyle='rgba(154,134,117,0.8)';
+      ctx.fillStyle=EDP.rulerText;
       ctx.translate(9,Math.round(py));
       ctx.rotate(-Math.PI/2);
       ctx.textAlign='center';
@@ -13099,13 +13282,13 @@ function edDrawRulers(ctx, W, H){
   if(EDITOR.cur){
     const [mc,nc]=EDITOR.cur;
     const cpx=exToPx(mc), cpy=eyToPx(nc);
-    ctx.fillStyle='rgba(245,158,11,0.75)';
+    ctx.fillStyle=EDP.rulerCursor;
     if(cpx>RS&&cpx<W){ ctx.fillRect(cpx-0.5,RS-9,1,9); }
     if(cpy>RS&&cpy<H){ ctx.fillRect(RS-9,cpy-0.5,9,1); }
   }
 
   // Corner square (top-left)
-  ctx.fillStyle='rgba(10,12,20,1)';
+  ctx.fillStyle=EDP.rulerCorner;
   ctx.fillRect(0,0,RS,RS);
 
   ctx.restore();
@@ -13124,30 +13307,30 @@ function edDrawSnapIndicator(ctx){
     ctx.fillStyle='rgba(245,158,11,0.18)'; ctx.fillRect(px-5.5,py-5.5,11,11);
     // label
     if(EDITOR.scale>30){
-      ctx.fillStyle='rgba(245,158,11,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.fillStyle=EDP.snapAmberText; ctx.font='600 9px JetBrains Mono,monospace';
       ctx.textAlign='left'; ctx.textBaseline='bottom';
       ctx.fillText('⌐ УГЛУ',px+8,py-3);
     }
   } else if(tp==='mid'){
-    ctx.fillStyle='#7dd3fc';
+    ctx.fillStyle=EDP.sky;
     ctx.beginPath(); ctx.moveTo(px,py-6); ctx.lineTo(px+5.5,py+4); ctx.lineTo(px-5.5,py+4); ctx.closePath(); ctx.fill();
     if(EDITOR.scale>30){
-      ctx.fillStyle='rgba(125,211,252,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.fillStyle=EDP.skyStrong; ctx.font='600 9px JetBrains Mono,monospace';
       ctx.textAlign='left'; ctx.textBaseline='bottom';
       ctx.fillText('MID',px+8,py-3);
     }
   } else if(tp==='edge'){
-    ctx.strokeStyle='#34d399'; ctx.lineWidth=1.5;
+    ctx.strokeStyle=EDP.snapGreen; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.arc(px,py,5.5,0,Math.PI*2); ctx.stroke();
     ctx.fillStyle='rgba(52,211,153,0.18)'; ctx.beginPath(); ctx.arc(px,py,5.5,0,Math.PI*2); ctx.fill();
     if(EDITOR.scale>30){
-      ctx.fillStyle='rgba(52,211,153,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.fillStyle=EDP.snapGreenText; ctx.font='600 9px JetBrains Mono,monospace';
       ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('РЕБРО',px+8,py-3);
     }
   } else if(tp==='align'){
     const W=EDITOR.cssW,H=EDITOR.cssH;
     // Faint full-span guide lines
-    ctx.strokeStyle='rgba(167,139,250,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,6]);
+    ctx.strokeStyle=EDP.snapPurpleFaint; ctx.lineWidth=1; ctx.setLineDash([4,6]);
     ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(W,py); ctx.stroke();
     ctx.setLineDash([]);
@@ -13155,46 +13338,46 @@ function edDrawSnapIndicator(ctx){
     const srcPts=EDITOR._alignSrcPts||[];
     for(const sp of srcPts){
       const spx=exToPx(sp.x), spy=eyToPx(sp.y);
-      ctx.strokeStyle='rgba(167,139,250,0.65)'; ctx.lineWidth=1.2; ctx.setLineDash([3,4]);
+      ctx.strokeStyle=EDP.snapPurpleMid; ctx.lineWidth=1.2; ctx.setLineDash([3,4]);
       ctx.beginPath();
       if(Math.abs(spx-px)>Math.abs(spy-py)){ ctx.moveTo(spx,spy); ctx.lineTo(px,spy); }
       else { ctx.moveTo(spx,spy); ctx.lineTo(spx,py); }
       ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='rgba(167,139,250,0.55)'; ctx.strokeStyle='rgba(167,139,250,0.85)'; ctx.lineWidth=1.2;
+      ctx.fillStyle=EDP.snapPurpleDot; ctx.strokeStyle=EDP.snapPurpleStrong; ctx.lineWidth=1.2;
       ctx.beginPath(); ctx.arc(spx,spy,3.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
     }
     // Snap point square
-    ctx.strokeStyle='rgba(167,139,250,0.9)'; ctx.lineWidth=1.5;
+    ctx.strokeStyle=EDP.snapPurpleStrong; ctx.lineWidth=1.5;
     ctx.strokeRect(px-4,py-4,8,8);
-    ctx.fillStyle='rgba(167,139,250,0.15)'; ctx.fillRect(px-4,py-4,8,8);
+    ctx.fillStyle=EDP.snapPurpleFaint; ctx.fillRect(px-4,py-4,8,8);
     if(EDITOR.scale>30){
-      ctx.fillStyle='rgba(167,139,250,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.fillStyle=EDP.snapPurpleText; ctx.font='600 9px JetBrains Mono,monospace';
       ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('ВЫРАВН.',px+8,py-3);
     }
   } else if(tp==='intersect'){
-    ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2;
+    ctx.strokeStyle=EDP.snapYellow; ctx.lineWidth=2;
     const si=7;
     ctx.beginPath(); ctx.moveTo(px-si,py-si); ctx.lineTo(px+si,py+si); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(px+si,py-si); ctx.lineTo(px-si,py+si); ctx.stroke();
     if(EDITOR.scale>30){
-      ctx.fillStyle='rgba(251,191,36,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.fillStyle=EDP.snapYellowText; ctx.font='600 9px JetBrains Mono,monospace';
       ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('×',px+10,py-3);
     }
   } else if(tp==='parallel'){
-    ctx.strokeStyle='#c084fc'; ctx.lineWidth=1.5;
+    ctx.strokeStyle=EDP.snapPurple; ctx.lineWidth=1.5;
     const pl=9;
     ctx.beginPath(); ctx.moveTo(px-pl,py-3); ctx.lineTo(px+pl,py-3); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(px-pl,py+3); ctx.lineTo(px+pl,py+3); ctx.stroke();
-    ctx.strokeStyle='rgba(192,132,252,0.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.strokeStyle=EDP.snapParGuide; ctx.lineWidth=1; ctx.setLineDash([3,3]);
     ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,EDITOR.cssH); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(EDITOR.cssW,py); ctx.stroke();
     ctx.setLineDash([]);
     if(EDITOR.scale>30){
-      ctx.fillStyle='rgba(192,132,252,0.85)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.fillStyle=EDP.snapParText; ctx.font='600 9px JetBrains Mono,monospace';
       ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.fillText('∥',px+10,py-3);
     }
   } else {
-    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
+    ctx.strokeStyle=EDP.snapCross; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(px-5,py); ctx.lineTo(px+5,py); ctx.moveTo(px,py-5); ctx.lineTo(px,py+5); ctx.stroke();
   }
   // Show snapped coordinates near cursor
@@ -13206,8 +13389,8 @@ function edDrawSnapIndicator(ctx){
     let lx=px+14, ly=py+10;
     if(lx+tw+8>W) lx=px-tw-16;
     if(ly+18>H) ly=py-22;
-    ctx.fillStyle='rgba(10,12,20,0.82)'; ctx.fillRect(lx-3,ly-2,tw+6,16);
-    ctx.fillStyle='rgba(200,215,240,0.9)'; ctx.fillText(label,lx,ly);
+    ctx.fillStyle=EDP.coordBg; ctx.fillRect(lx-3,ly-2,tw+6,16);
+    ctx.fillStyle=EDP.coordText; ctx.fillText(label,lx,ly);
   }
   ctx.restore();
 }
@@ -13466,32 +13649,105 @@ function edWheel(e){
 function edSchedule(){ if(EDITOR.raf) return; EDITOR.raf=requestAnimationFrame(()=>{ EDITOR.raf=0; edDraw(); }); }
 
 /* ---- DRAW ---- */
+/* ── B-I: тема-зависимая палитра холста редактора.
+   dark = прежние захардкоженные цвета (не менять!), light — читаемые на светлом поле ── */
+function getCanvasPalette(theme){
+  theme = theme || document.documentElement.dataset.theme || 'dark';
+  if(theme === 'light') return {
+    bg:'#efe9dd', plot:'#fbf7ee',                                                    /* B1 */
+    gridMinor:'rgba(70,85,110,.1)', gridMajor:'rgba(70,85,110,.2)',                  /* B2/B3 */
+    plotBorder:'rgba(70,85,110,.55)',                                                /* B3 */
+    rulerBg:'rgba(232,225,211,.96)', rulerLine:'rgba(120,110,92,.6)',                /* B4 */
+    rulerTickMaj:'rgba(90,76,56,.75)', rulerTickMin:'rgba(90,76,56,.38)',
+    rulerText:'rgba(74,60,40,.95)', rulerCorner:'#e3dccb', rulerCursor:'rgba(180,83,9,.9)',
+    dimLine:'rgba(146,82,12,.8)', dimLineSoft:'rgba(146,82,12,.72)',                 /* B5 */
+    dimText:'#7c4a03', dimTextSoft:'rgba(124,74,3,.9)',
+    labelBg:'rgba(255,253,246,.92)', tooltipBg:'rgba(255,253,246,.95)', tooltipBorder:'rgba(2,132,199,.45)',
+    overallDim:'rgba(107,91,69,.95)',
+    compassS:'#B45309', compassN:'#C2410C', compassEW:'#6B5B45',                     /* B6 */
+    roomStroke:'rgba(70,60,45,.42)', roomName:'#1A2A4A', roomSub:'rgba(60,74,102,.85)', /* B7 */
+    wallBand:'rgba(217,119,6,.3)', wallInner:'rgba(180,83,9,.95)', wallOuter:'rgba(180,83,9,.75)',
+    sky:'#0369A1', skyStrong:'rgba(3,105,161,.85)', sky90:'rgba(3,105,161,.9)',
+    sky80:'rgba(3,105,161,.8)', sky75:'rgba(3,105,161,.8)', skyPipe:'rgba(3,105,161,.65)',
+    skyTool:'rgba(3,105,161,.75)', skyMid:'rgba(3,105,161,.6)', skyFaint:'rgba(3,105,161,.3)',
+    skyFill:'rgba(3,105,161,.08)', skyFill10:'rgba(3,105,161,.1)', skyFill06:'rgba(3,105,161,.06)',
+    dotStroke:'#ffffff', handleStroke:'#ffffff',                                      /* B9 */
+    hintText:'#7c4a03', hintOk:'#15803d', angleText:'rgba(112,92,52,.9)',            /* B8 */
+    winStroke:'#0284C7', doorStroke:'#a85a28',
+    snapAmberText:'rgba(180,83,9,.95)', snapGreen:'#059669', snapGreenText:'rgba(4,120,87,.95)',
+    snapPurple:'#7C3AED', snapPurpleFaint:'rgba(124,58,237,.2)', snapPurpleMid:'rgba(124,58,237,.7)',
+    snapPurpleStrong:'rgba(124,58,237,.9)', snapPurpleText:'rgba(109,40,217,.95)', snapPurpleDot:'rgba(124,58,237,.6)',
+    snapYellow:'#B45309', snapYellowText:'rgba(180,83,9,.95)',
+    snapCross:'rgba(40,52,74,.6)',
+    snapParGuide:'rgba(124,58,237,.5)', snapParText:'rgba(109,40,217,.95)',
+    coordBg:'rgba(255,253,246,.92)', coordText:'rgba(40,52,74,.95)',
+    tempDim:'#1D4ED8'
+  };
+  return {
+    bg:'#0e0c08', plot:'#16130d',
+    gridMinor:'rgba(217,199,180,.05)', gridMajor:'rgba(217,199,180,.11)',
+    plotBorder:'rgba(217,199,180,.35)',
+    rulerBg:'rgba(8,10,18,0.9)', rulerLine:'rgba(50,60,85,0.8)',
+    rulerTickMaj:'rgba(154,134,117,0.65)', rulerTickMin:'rgba(154,134,117,0.28)',
+    rulerText:'rgba(154,134,117,0.8)', rulerCorner:'rgba(10,12,20,1)', rulerCursor:'rgba(245,158,11,0.75)',
+    dimLine:'rgba(255,210,122,.75)', dimLineSoft:'rgba(255,210,122,.7)',
+    dimText:'#ffd27a', dimTextSoft:'rgba(255,210,122,.9)',
+    labelBg:'rgba(12,14,22,.85)', tooltipBg:'rgba(8,10,18,0.88)', tooltipBorder:'rgba(125,211,252,0.3)',
+    overallDim:'rgba(154,134,117,.95)',
+    compassS:'#f59e0b', compassN:'#ff6b35', compassEW:'#9a8675',
+    roomStroke:'rgba(217,199,180,.3)', roomName:'#faf6f0', roomSub:'rgba(217,199,180,.75)',
+    wallBand:'rgba(245,158,11,0.28)', wallInner:'rgba(245,158,11,0.9)', wallOuter:'rgba(245,158,11,0.7)',
+    sky:'#7dd3fc', skyStrong:'rgba(125,211,252,.85)', sky90:'rgba(125,211,252,.9)',
+    sky80:'rgba(125,211,252,.8)', sky75:'rgba(125,211,252,.75)', skyPipe:'rgba(125,211,252,.65)',
+    skyTool:'rgba(125,211,252,.7)', skyMid:'rgba(125,211,252,.55)', skyFaint:'rgba(125,211,252,.25)',
+    skyFill:'rgba(125,211,252,.07)', skyFill10:'rgba(125,211,252,0.1)', skyFill06:'rgba(125,211,252,0.06)',
+    dotStroke:'#16130d', handleStroke:'#16130d',
+    hintText:'rgba(255,210,122,.92)', hintOk:'#4ade80', angleText:'rgba(180,160,120,.7)',
+    winStroke:'#7dd3fc', doorStroke:'#c2703d',
+    snapAmberText:'rgba(245,158,11,0.85)', snapGreen:'#34d399', snapGreenText:'rgba(52,211,153,0.85)',
+    snapPurple:'#c084fc', snapPurpleFaint:'rgba(167,139,250,0.15)', snapPurpleMid:'rgba(167,139,250,0.65)',
+    snapPurpleStrong:'rgba(167,139,250,0.9)', snapPurpleText:'rgba(167,139,250,0.85)', snapPurpleDot:'rgba(167,139,250,0.55)',
+    snapYellow:'#fbbf24', snapYellowText:'rgba(251,191,36,0.85)',
+    snapCross:'rgba(255,255,255,0.5)',
+    snapParGuide:'rgba(192,132,252,0.5)', snapParText:'rgba(192,132,252,0.85)',
+    coordBg:'rgba(10,12,20,0.82)', coordText:'rgba(200,215,240,0.9)',
+    tempDim:'#60A5FA'
+  };
+}
+let EDP = getCanvasPalette();
+/* Смена темы → обновить палитру и перерисовать холст */
+new MutationObserver(()=>{
+  EDP = getCanvasPalette();
+  if(typeof EDITOR!=='undefined' && EDITOR.open && document.getElementById('ed-canvas')) edDraw();
+}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
 function edDraw(){
   const cv=document.getElementById('ed-canvas'); if(!cv) return;
+  EDP=getCanvasPalette();
   const ctx=cv.getContext('2d'); const f=activeFloor();
   const W=EDITOR.cssW, H=EDITOR.cssH;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#0e0c08'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=EDP.bg; ctx.fillRect(0,0,W,H);
   const px0=exToPx(0), py0=eyToPx(0), pw=ST.plot.w*EDITOR.scale, ph=ST.plot.d*EDITOR.scale;
-  ctx.fillStyle='#16130d'; ctx.fillRect(px0,py0,pw,ph);
+  ctx.fillStyle=EDP.plot; ctx.fillRect(px0,py0,pw,ph);
   const gs=(EDITOR.scale*EDITOR.gridStep<7)?1:EDITOR.gridStep;
-  ctx.lineWidth=1; ctx.strokeStyle='rgba(217,199,180,.05)';
+  ctx.lineWidth=1; ctx.strokeStyle=EDP.gridMinor;
   for(let x=0;x<=ST.plot.w+1e-6;x+=gs){ const X=exToPx(x); ctx.beginPath(); ctx.moveTo(X,py0); ctx.lineTo(X,py0+ph); ctx.stroke(); }
   for(let y=0;y<=ST.plot.d+1e-6;y+=gs){ const Y=eyToPx(y); ctx.beginPath(); ctx.moveTo(px0,Y); ctx.lineTo(px0+pw,Y); ctx.stroke(); }
-  ctx.strokeStyle='rgba(217,199,180,.11)';
+  ctx.strokeStyle=EDP.gridMajor;
   for(let x=0;x<=ST.plot.w+1e-6;x+=5){ const X=exToPx(x); ctx.beginPath(); ctx.moveTo(X,py0); ctx.lineTo(X,py0+ph); ctx.stroke(); }
   for(let y=0;y<=ST.plot.d+1e-6;y+=5){ const Y=eyToPx(y); ctx.beginPath(); ctx.moveTo(px0,Y); ctx.lineTo(px0+pw,Y); ctx.stroke(); }
-  ctx.strokeStyle='rgba(217,199,180,.35)'; ctx.lineWidth=2; ctx.strokeRect(px0,py0,pw,ph);
+  ctx.strokeStyle=EDP.plotBorder; ctx.lineWidth=2; ctx.strokeRect(px0,py0,pw,ph);
   // compass
   ctx.font='700 12px Manrope,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   const sun=southSide();
   const cmid={top:[px0+pw/2,py0-30],bottom:[px0+pw/2,py0+ph+30],left:[px0-26,py0+ph/2],right:[px0+pw+26,py0+ph/2]};
-  for(const s of ['top','right','bottom','left']){ const d=sideDir(s); ctx.fillStyle=d==='S'?'#f59e0b':d==='N'?'#ff6b35':'#9a8675'; ctx.fillText(dirLabel(d)+(s===sun?' ☀':''), cmid[s][0], cmid[s][1]); }
+  for(const s of ['top','right','bottom','left']){ const d=sideDir(s); ctx.fillStyle=d==='S'?EDP.compassS:d==='N'?EDP.compassN:EDP.compassEW; ctx.fillText(dirLabel(d)+(s===sun?' ☀':''), cmid[s][0], cmid[s][1]); }
   for(const room of f.rooms) edDrawRoom(ctx,room,f.rooms,room.id===EDITOR.selId);
   edDrawAnnotations(ctx,f);
   edDrawToolPreview(ctx);
   if(!EDITOR._export && EDITOR.guides.length){
-    ctx.strokeStyle='rgba(125,211,252,.9)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+    ctx.strokeStyle=EDP.sky90; ctx.lineWidth=1; ctx.setLineDash([4,3]);
     for(const g of EDITOR.guides){ ctx.beginPath(); if(g.t==='v'){ const X=exToPx(g.x); ctx.moveTo(X,0); ctx.lineTo(X,H);} else { const Y=eyToPx(g.y); ctx.moveTo(0,Y); ctx.lineTo(W,Y);} ctx.stroke(); }
     ctx.setLineDash([]);
   }
@@ -13509,32 +13765,32 @@ function edDraw(){
     // Top dimension line (width)
     if(w>0.1 && dpw>50){
       const off=16;
-      ctx.strokeStyle='rgba(255,210,122,.75)'; ctx.lineWidth=1;
+      ctx.strokeStyle=EDP.dimLine; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(dpx,dpy-off); ctx.lineTo(dpx+dpw,dpy-off); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(dpx,dpy-off-5); ctx.lineTo(dpx,dpy-off+5); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(dpx+dpw,dpy-off-5); ctx.lineTo(dpx+dpw,dpy-off+5); ctx.stroke();
       const wlbl=w.toFixed(2)+' м'; ctx.font='700 11px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
       const ww=ctx.measureText(wlbl).width;
-      ctx.fillStyle='rgba(12,14,22,.85)'; ctx.fillRect(dpx+dpw/2-ww/2-4,dpy-off-8,ww+8,16);
-      ctx.fillStyle='#ffd27a'; ctx.fillText(wlbl,dpx+dpw/2,dpy-off);
+      ctx.fillStyle=EDP.labelBg; ctx.fillRect(dpx+dpw/2-ww/2-4,dpy-off-8,ww+8,16);
+      ctx.fillStyle=EDP.dimText; ctx.fillText(wlbl,dpx+dpw/2,dpy-off);
     }
     // Left dimension line (height)
     if(h>0.1 && dph>40){
       const off=16;
-      ctx.strokeStyle='rgba(255,210,122,.75)'; ctx.lineWidth=1;
+      ctx.strokeStyle=EDP.dimLine; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(dpx-off,dpy); ctx.lineTo(dpx-off,dpy+dph); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(dpx-off-5,dpy); ctx.lineTo(dpx-off+5,dpy); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(dpx-off-5,dpy+dph); ctx.lineTo(dpx-off+5,dpy+dph); ctx.stroke();
       const hlbl=h.toFixed(2)+' м'; ctx.font='700 11px JetBrains Mono,monospace';
       const hw=ctx.measureText(hlbl).width;
       ctx.save(); ctx.translate(dpx-off,dpy+dph/2); ctx.rotate(-Math.PI/2);
-      ctx.fillStyle='rgba(12,14,22,.85)'; ctx.fillRect(-hw/2-4,-8,hw+8,16);
-      ctx.fillStyle='#ffd27a'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(hlbl,0,0);
+      ctx.fillStyle=EDP.labelBg; ctx.fillRect(-hw/2-4,-8,hw+8,16);
+      ctx.fillStyle=EDP.dimText; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(hlbl,0,0);
       ctx.restore();
     }
     // Area label in center
     if(w>0.3 && h>0.3 && dpw>70 && dph>36){
-      ctx.fillStyle='rgba(255,210,122,.88)'; ctx.font='600 11px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle=EDP.dimTextSoft; ctx.font='600 11px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(`${(w*h).toFixed(1)} м²`,dpx+dpw/2,dpy+dph/2);
     }
   }
@@ -13547,7 +13803,7 @@ function edDraw(){
       ctx.save();
       ctx.beginPath(); pts.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
       if(EDITOR.polyCur) ctx.lineTo(exToPx(EDITOR.polyCur[0]),eyToPx(EDITOR.polyCur[1]));
-      ctx.closePath(); ctx.fillStyle='rgba(125,211,252,.07)'; ctx.fill(); ctx.restore();
+      ctx.closePath(); ctx.fillStyle=EDP.skyFill; ctx.fill(); ctx.restore();
     }
 
     // ── Wall double-line (outer offset) — Revit style ──
@@ -13558,14 +13814,14 @@ function edDraw(){
         if(!b) continue;
         const dx=b[0]-a[0], dy=b[1]-a[1], len=Math.hypot(dx,dy); if(len<1) continue;
         const nx=-dy/len*WALL_TP, ny=dx/len*WALL_TP;
-        ctx.strokeStyle='rgba(125,211,252,.25)'; ctx.lineWidth=1;
+        ctx.strokeStyle=EDP.skyFaint; ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(a[0]+nx,a[1]+ny); ctx.lineTo(b[0]+nx,b[1]+ny); ctx.stroke();
       }
       ctx.setLineDash([]); ctx.restore();
     }
 
     // ── Main polygon lines ──
-    ctx.strokeStyle='#7dd3fc'; ctx.lineWidth=2; ctx.setLineDash([5,4]); ctx.beginPath();
+    ctx.strokeStyle=EDP.sky; ctx.lineWidth=2; ctx.setLineDash([5,4]); ctx.beginPath();
     pts.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
     if(EDITOR.polyCur) ctx.lineTo(exToPx(EDITOR.polyCur[0]),eyToPx(EDITOR.polyCur[1]));
     ctx.stroke(); ctx.setLineDash([]);
@@ -13581,8 +13837,8 @@ function edDraw(){
       const nx=(ay-by)/segPx*12, ny=(bx-ax)/segPx*12;
       const lbl=segM.toFixed(2)+' м';
       const tw=ctx.measureText(lbl).width;
-      ctx.fillStyle='rgba(12,14,22,.82)'; ctx.fillRect(mx2+nx-tw/2-3,my2+ny-7,tw+6,14);
-      ctx.fillStyle='#7dd3fc'; ctx.fillText(lbl,mx2+nx,my2+ny);
+      ctx.fillStyle=EDP.labelBg; ctx.fillRect(mx2+nx-tw/2-3,my2+ny-7,tw+6,14);
+      ctx.fillStyle=EDP.sky; ctx.fillText(lbl,mx2+nx,my2+ny);
     }
 
     // ── Live current-segment dimension ──
@@ -13597,13 +13853,13 @@ function edDraw(){
         const lbl=segM.toFixed(2)+' м';
         const tw=ctx.measureText(lbl).width;
         ctx.fillStyle='rgba(245,158,11,.18)'; ctx.fillRect(mx2+nx-tw/2-3,my2+ny-7,tw+6,14);
-        ctx.fillStyle='#ffd27a'; ctx.fillText(lbl,mx2+nx,my2+ny);
+        ctx.fillStyle=EDP.dimText; ctx.fillText(lbl,mx2+nx,my2+ny);
 
         // Angle from horizontal
         const ang=Math.atan2(EDITOR.polyCur[1]-EDITOR.polyPts[EDITOR.polyPts.length-1][1], EDITOR.polyCur[0]-EDITOR.polyPts[EDITOR.polyPts.length-1][0])*180/Math.PI;
         const angN=((ang%180)+180)%180;
         if(Math.min(angN,180-angN)>2 && EDITOR.scale>25){
-          ctx.fillStyle='rgba(180,160,120,.7)'; ctx.font='600 9px JetBrains Mono,monospace';
+          ctx.fillStyle=EDP.angleText; ctx.font='600 9px JetBrains Mono,monospace';
           ctx.fillText(ang.toFixed(1)+'°',cx2+14,cy2+4);
         }
       }
@@ -13612,7 +13868,7 @@ function edDraw(){
     // ── Vertex dots ──
     const nearStart = pts.length>=3 && EDITOR.polyCur &&
       Math.hypot(exToPx(EDITOR.polyCur[0])-pts[0][0], eyToPx(EDITOR.polyCur[1])-pts[0][1]) < 14;
-    ctx.fillStyle='#7dd3fc'; ctx.strokeStyle='#16130d'; ctx.lineWidth=1.5;
+    ctx.fillStyle=EDP.sky; ctx.strokeStyle=EDP.dotStroke; ctx.lineWidth=1.5;
     pts.forEach((p,i)=>{ ctx.beginPath(); ctx.arc(p[0],p[1], i===0?6:4, 0,7); ctx.fill(); ctx.stroke(); });
 
     // ── Close-polygon green glow ──
@@ -13630,8 +13886,8 @@ function edDraw(){
       ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='middle';
       const hint=nearStart?'✓ замкнуть контур':EDITOR.polyPts.length>=3?'Enter — замкнуть · Esc — отмена':'кликайте углы…';
       const tw2=ctx.measureText(hint).width;
-      ctx.fillStyle='rgba(12,14,22,.82)'; ctx.fillRect(hx-3,hy-8,tw2+6,16);
-      ctx.fillStyle=nearStart?'#4ade80':'rgba(255,210,122,.92)'; ctx.fillText(hint,hx,hy);
+      ctx.fillStyle=EDP.labelBg; ctx.fillRect(hx-3,hy-8,tw2+6,16);
+      ctx.fillStyle=nearStart?EDP.hintOk:EDP.hintText; ctx.fillText(hint,hx,hy);
     }
   }
   if(EDITOR.showDims) edDrawOverallDims(ctx);
@@ -13645,8 +13901,8 @@ function edDraw(){
       const mr=f.rooms.find(r=>r.id===id); if(!mr) continue;
       const vp2=roomVerts(mr).map(([vx,vy])=>[exToPx(vx),eyToPx(vy)]);
       ctx.save(); ctx.beginPath(); vp2.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath();
-      ctx.strokeStyle='#7dd3fc'; ctx.lineWidth=2; ctx.setLineDash([5,3]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='rgba(125,211,252,0.1)'; ctx.fill(); ctx.restore();
+      ctx.strokeStyle=EDP.sky; ctx.lineWidth=2; ctx.setLineDash([5,3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=EDP.skyFill10; ctx.fill(); ctx.restore();
     }
   }
   // Rubber-band selection rect
@@ -13654,9 +13910,9 @@ function edDraw(){
     const b=EDITOR.selBox;
     const bx=exToPx(Math.min(b.x0,b.x1)), by=eyToPx(Math.min(b.y0,b.y1));
     const bw=Math.abs(b.x1-b.x0)*EDITOR.scale, bh=Math.abs(b.y1-b.y0)*EDITOR.scale;
-    ctx.save(); ctx.strokeStyle='rgba(125,211,252,0.85)'; ctx.lineWidth=1.5; ctx.setLineDash([5,3]);
+    ctx.save(); ctx.strokeStyle=EDP.skyStrong; ctx.lineWidth=1.5; ctx.setLineDash([5,3]);
     ctx.strokeRect(bx,by,bw,bh); ctx.setLineDash([]);
-    ctx.fillStyle='rgba(125,211,252,0.06)'; ctx.fillRect(bx,by,bw,bh); ctx.restore();
+    ctx.fillStyle=EDP.skyFill06; ctx.fillRect(bx,by,bw,bh); ctx.restore();
   }
   // Hover room tooltip (W×H)
   if(EDITOR._hoverRoomId && !EDITOR._export && EDITOR.cur){
@@ -13671,9 +13927,9 @@ function edDraw(){
       let lx=px+14, ly=py-28;
       if(lx+tw+10>W) lx=px-tw-16;
       if(ly<10) ly=py+14;
-      ctx.fillStyle='rgba(8,10,18,0.88)'; ctx.fillRect(lx-4,ly-3,tw+8,18);
-      ctx.strokeStyle='rgba(125,211,252,0.3)'; ctx.lineWidth=1; ctx.strokeRect(lx-4,ly-3,tw+8,18);
-      ctx.fillStyle='#7dd3fc'; ctx.fillText(lbl,lx,ly); ctx.restore();
+      ctx.fillStyle=EDP.tooltipBg; ctx.fillRect(lx-4,ly-3,tw+8,18);
+      ctx.strokeStyle=EDP.tooltipBorder; ctx.lineWidth=1; ctx.strokeRect(lx-4,ly-3,tw+8,18);
+      ctx.fillStyle=EDP.sky; ctx.fillText(lbl,lx,ly); ctx.restore();
     }
   }
   edDrawSnapIndicator(ctx);
@@ -13689,7 +13945,7 @@ function edDrawRoom(ctx,room,rooms,sel){
     ctx.save(); ctx.beginPath(); vp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath();
     ctx.globalAlpha=0.18; ctx.fillStyle=room._wallColor; ctx.fill(); ctx.globalAlpha=1; ctx.restore();
   }
-  ctx.strokeStyle=sel?'#f59e0b':'rgba(217,199,180,.3)'; ctx.lineWidth=sel?2:1.1; ctx.stroke();
+  ctx.strokeStyle=sel?'#f59e0b':EDP.roomStroke; ctx.lineWidth=sel?2:1.1; ctx.stroke();
   // External walls: draw as filled wall band (Revit-style double line)
   const WALL_T = Math.max(2, Math.min(8, EDITOR.scale * 0.18)); // wall thickness in px, scales with zoom
   ctx.lineCap='round';
@@ -13705,12 +13961,12 @@ function edDrawRoom(ctx,room,rooms,sel){
     ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
     ctx.lineTo(bx+nxp,by+nyp); ctx.lineTo(ax+nxp,ay+nyp);
     ctx.closePath();
-    ctx.fillStyle='rgba(245,158,11,0.28)'; ctx.fill();
+    ctx.fillStyle=EDP.wallBand; ctx.fill();
     // Inner (room edge) line
-    ctx.strokeStyle='rgba(245,158,11,0.9)'; ctx.lineWidth=1.8; ctx.beginPath();
+    ctx.strokeStyle=EDP.wallInner; ctx.lineWidth=1.8; ctx.beginPath();
     ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
     // Outer face line
-    ctx.strokeStyle='rgba(245,158,11,0.7)'; ctx.lineWidth=1.2; ctx.beginPath();
+    ctx.strokeStyle=EDP.wallOuter; ctx.lineWidth=1.2; ctx.beginPath();
     ctx.moveTo(ax+nxp,ay+nyp); ctx.lineTo(bx+nxp,by+nyp); ctx.stroke();
     // Dimension label on external segment (always shown when scale sufficient)
     if(EDITOR.scale>12 && s.len>0.3){
@@ -13718,8 +13974,8 @@ function edDrawRoom(ctx,room,rooms,sel){
       ctx.save(); ctx.font='700 10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
       const lbl=s.len.toFixed(2);
       const tw=ctx.measureText(lbl).width;
-      ctx.fillStyle='rgba(12,14,22,.82)'; ctx.fillRect(lx-tw/2-3,ly-7,tw+6,14);
-      ctx.fillStyle='rgba(255,210,122,.95)'; ctx.fillText(lbl,lx,ly);
+      ctx.fillStyle=EDP.labelBg; ctx.fillRect(lx-tw/2-3,ly-7,tw+6,14);
+      ctx.fillStyle=EDP.dimTextSoft; ctx.fillText(lbl,lx,ly);
       ctx.restore();
     }
   }
@@ -13732,8 +13988,8 @@ function edDrawRoom(ctx,room,rooms,sel){
     if(hasMat||isSelEdge){
       const a=vp2[i],b=vp2[(i+1)%vp2.length];
       ctx.save(); ctx.lineCap='round';
-      if(isSelEdge){ ctx.strokeStyle='#7dd3fc'; ctx.lineWidth=5; ctx.setLineDash([8,5]); }
-      else { ctx.strokeStyle='rgba(125,211,252,.55)'; ctx.lineWidth=3; ctx.setLineDash([4,4]); }
+      if(isSelEdge){ ctx.strokeStyle=EDP.sky; ctx.lineWidth=5; ctx.setLineDash([8,5]); }
+      else { ctx.strokeStyle=EDP.skyMid; ctx.lineWidth=3; ctx.setLineDash([4,4]); }
       ctx.beginPath(); ctx.moveTo(exToPx(a[0]),eyToPx(a[1])); ctx.lineTo(exToPx(b[0]),eyToPx(b[1])); ctx.stroke();
       ctx.setLineDash([]); ctx.restore();
     }
@@ -13742,10 +13998,10 @@ function edDrawRoom(ctx,room,rooms,sel){
   const c=roomCentroid(room), cx=exToPx(c[0]), cy=eyToPx(c[1]), bb=roomBBox(room);
   ctx.textAlign='center'; ctx.textBaseline='middle';
   if(bb.w*EDITOR.scale>56 && bb.h*EDITOR.scale>34){
-    ctx.fillStyle='#faf6f0'; ctx.font='700 12px Manrope,sans-serif';
+    ctx.fillStyle=EDP.roomName; ctx.font='700 12px Manrope,sans-serif';
     ctx.fillText(room.name||roomTypeName(room.typeId), cx, cy-9);
     const peri=roomEdges(room).reduce((s,e)=>s+Math.hypot(e.b[0]-e.a[0],e.b[1]-e.a[1]),0);
-    ctx.fillStyle='rgba(217,199,180,.75)'; ctx.font='600 10px JetBrains Mono,monospace';
+    ctx.fillStyle=EDP.roomSub; ctx.font='600 10px JetBrains Mono,monospace';
     ctx.fillText(`${roomArea(room).toFixed(1)} м² · P${peri.toFixed(1)} · +${room.tInt}°`, cx, cy+8);
   }
   // ↕ Custom height tag
@@ -13753,7 +14009,7 @@ function edDrawRoom(ctx,room,rooms,sel){
     const f=activeFloor();
     if(Math.abs(room.customHeight-(f.height||2.8))>0.05){
       ctx.save();
-      ctx.fillStyle='rgba(125,211,252,.9)'; ctx.font='600 9px JetBrains Mono,monospace';
+      ctx.fillStyle=EDP.sky90; ctx.font='600 9px JetBrains Mono,monospace';
       ctx.textAlign='center'; ctx.textBaseline='middle';
       const tagY=cy+(bb.h*EDITOR.scale>34?22:8);
       ctx.fillText(`↕${room.customHeight.toFixed(1)}м`,cx,tagY);
@@ -13771,7 +14027,7 @@ function edDrawRoom(ctx,room,rooms,sel){
 }
 function edDrawOpening(ctx,room,op){
   const g=openingGeom(room,op);
-  ctx.strokeStyle=op.type==='window'?'#7dd3fc':'#c2703d'; ctx.lineWidth=op.type==='window'?5:6; ctx.lineCap='round'; ctx.beginPath();
+  ctx.strokeStyle=op.type==='window'?EDP.winStroke:EDP.doorStroke; ctx.lineWidth=op.type==='window'?5:6; ctx.lineCap='round'; ctx.beginPath();
   ctx.moveTo(exToPx(g.cx-g.ux*g.half),eyToPx(g.cy-g.uy*g.half)); ctx.lineTo(exToPx(g.cx+g.ux*g.half),eyToPx(g.cy+g.uy*g.half)); ctx.stroke(); ctx.lineCap='butt';
 }
 function edHandles(room){
@@ -13780,15 +14036,15 @@ function edHandles(room){
   return {nw:[x,y], n:[x+w/2,y], ne:[x+w,y], e:[x+w,y+h/2], se:[x+w,y+h], s:[x+w/2,y+h], sw:[x,y+h], w:[x,y+h/2]};
 }
 function edDrawHandles(ctx,room){
-  const hs=edHandles(room); const poly=!!room.poly; ctx.strokeStyle='#16130d'; ctx.lineWidth=1.5;
-  for(const k in hs){ const [hx,hy]=hs[k]; ctx.fillStyle=poly?'#7dd3fc':'#f59e0b';
+  const hs=edHandles(room); const poly=!!room.poly; ctx.strokeStyle=EDP.handleStroke; ctx.lineWidth=1.5;
+  for(const k in hs){ const [hx,hy]=hs[k]; ctx.fillStyle=poly?EDP.sky:'#f59e0b';
     if(poly){ ctx.beginPath(); ctx.arc(hx,hy,5,0,7); ctx.fill(); ctx.stroke(); }
     else { ctx.beginPath(); ctx.rect(hx-4,hy-4,8,8); ctx.fill(); ctx.stroke(); } }
 }
 function edOpeningPos(room,op){ const g=openingGeom(room,op); return [exToPx(g.cx), eyToPx(g.cy)]; }
 function edDrawOpeningHandles(ctx,room){
   for(const op of (room.openings||[])){ const [cx,cy]=edOpeningPos(room,op);
-    ctx.beginPath(); ctx.arc(cx,cy,5,0,7); ctx.fillStyle=op.type==='window'?'#7dd3fc':'#c2703d'; ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle='#fff'; ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(cx,cy,5,0,7); ctx.fillStyle=op.type==='window'?EDP.winStroke:EDP.doorStroke; ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle='#fff'; ctx.stroke(); }
 }
 function edDimLine(ctx,x1,y1,x2,y2,text,color){
   ctx.strokeStyle=color; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
@@ -13798,18 +14054,18 @@ function edDimLine(ctx,x1,y1,x2,y2,text,color){
   ctx.stroke();
   ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
   const mx=(x1+x2)/2, my=(y1+y2)/2, tw=ctx.measureText(text).width;
-  ctx.fillStyle='rgba(14,12,8,.92)'; ctx.fillRect(mx-tw/2-3,my-7,tw+6,14);
+  ctx.fillStyle=EDP.labelBg; ctx.fillRect(mx-tw/2-3,my-7,tw+6,14);
   ctx.fillStyle=color; ctx.fillText(text,mx,my);
 }
 function edDrawSelDims(ctx,room){
   const x=exToPx(room.x), y=eyToPx(room.y), w=room.w*EDITOR.scale, h=room.h*EDITOR.scale, off=15;
-  edDimLine(ctx,x,y-off,x+w,y-off,room.w.toFixed(2)+' м','#ffd27a');
-  edDimLine(ctx,x-off,y,x-off,y+h,room.h.toFixed(2)+' м','#ffd27a');
+  edDimLine(ctx,x,y-off,x+w,y-off,room.w.toFixed(2)+' м',EDP.dimText);
+  edDimLine(ctx,x-off,y,x-off,y+h,room.h.toFixed(2)+' м',EDP.dimText);
 }
 function edDrawOverallDims(ctx){
   const x=exToPx(0), y=eyToPx(0), w=ST.plot.w*EDITOR.scale, h=ST.plot.d*EDITOR.scale, off=42;
-  edDimLine(ctx,x,y-off,x+w,y-off,ST.plot.w.toFixed(1)+' м','rgba(154,134,117,.95)');
-  edDimLine(ctx,x-off,y,x-off,y+h,ST.plot.d.toFixed(1)+' м','rgba(154,134,117,.95)');
+  edDimLine(ctx,x,y-off,x+w,y-off,ST.plot.w.toFixed(1)+' м',EDP.overallDim);
+  edDimLine(ctx,x-off,y,x-off,y+h,ST.plot.d.toFixed(1)+' м',EDP.overallDim);
 }
 
 /* ---- HIT TESTS ---- */
@@ -14604,32 +14860,32 @@ function edDrawAnnotations(ctx,f){
     switch(ann.type){
       case 'line':
         if(ann.pts&&ann.pts.length===2){
-          ctx.strokeStyle='rgba(125,211,252,.8)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+          ctx.strokeStyle=EDP.sky80; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
           ctx.beginPath(); ctx.moveTo(exToPx(ann.pts[0][0]),eyToPx(ann.pts[0][1])); ctx.lineTo(exToPx(ann.pts[1][0]),eyToPx(ann.pts[1][1])); ctx.stroke(); ctx.setLineDash([]);
         } break;
       case 'arc':
         if(ann.pts&&ann.pts.length===3){
           const [a,b,c]=ann.pts.map(([x,y])=>[exToPx(x),eyToPx(y)]);
-          ctx.strokeStyle='rgba(125,211,252,.8)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+          ctx.strokeStyle=EDP.sky80; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
           ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.quadraticCurveTo(c[0],c[1],b[0],b[1]); ctx.stroke(); ctx.setLineDash([]);
         } break;
       case 'circle':
-        ctx.strokeStyle='rgba(125,211,252,.8)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+        ctx.strokeStyle=EDP.sky80; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
         ctx.beginPath(); ctx.arc(exToPx(ann.cx),eyToPx(ann.cy),ann.r*EDITOR.scale,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
         break;
       case 'dim': {
         const [a,b]=ann.pts;
-        edDimLine(ctx,exToPx(a[0]),eyToPx(a[1]),exToPx(b[0]),eyToPx(b[1]),ann.label,'#ffd27a');
+        edDimLine(ctx,exToPx(a[0]),eyToPx(a[1]),exToPx(b[0]),eyToPx(b[1]),ann.label,EDP.dimText);
         break;
       }
       case 'text':
-        ctx.fillStyle='rgba(255,210,122,.92)'; ctx.font='600 12px Manrope,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.fillStyle=EDP.hintText; ctx.font='600 12px Manrope,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
         ctx.fillText(ann.text,exToPx(ann.x)+4,eyToPx(ann.y)); break;
       case 'leader':
         if(ann.pts&&ann.pts.length===2){
-          ctx.strokeStyle='rgba(255,210,122,.7)'; ctx.lineWidth=1.2;
+          ctx.strokeStyle=EDP.dimLineSoft; ctx.lineWidth=1.2;
           ctx.beginPath(); ctx.moveTo(exToPx(ann.pts[0][0]),eyToPx(ann.pts[0][1])); ctx.lineTo(exToPx(ann.pts[1][0]),eyToPx(ann.pts[1][1])); ctx.stroke();
-          ctx.fillStyle='rgba(255,210,122,.92)'; ctx.font='500 11px Manrope,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+          ctx.fillStyle=EDP.hintText; ctx.font='500 11px Manrope,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='bottom';
           ctx.fillText(ann.text,exToPx(ann.pts[1][0])+4,eyToPx(ann.pts[1][1])-2);
         } break;
       case 'radiator': {
@@ -14638,7 +14894,7 @@ function edDrawAnnotations(ctx,f){
         ctx.fillRect(cx-s,cy-s*0.4,s*2,s*0.8); ctx.strokeRect(cx-s,cy-s*0.4,s*2,s*0.8);
         ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=0.7;
         [-s*0.45,0,s*0.45].forEach(dx=>{ ctx.beginPath(); ctx.moveTo(cx+dx,cy-s*0.4); ctx.lineTo(cx+dx,cy+s*0.4); ctx.stroke(); });
-        ctx.fillStyle='rgba(125,211,252,.75)'; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.fillStyle=EDP.sky75; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
         ctx.fillText('RAD',cx,cy+s*0.45); break;
       }
       case 'boiler': {
@@ -14661,7 +14917,7 @@ function edDrawAnnotations(ctx,f){
       }
       case 'pipe':
         if(ann.pts&&ann.pts.length>=2){
-          ctx.strokeStyle='rgba(125,211,252,.65)'; ctx.lineWidth=2.5;
+          ctx.strokeStyle=EDP.skyPipe; ctx.lineWidth=2.5;
           ctx.beginPath(); ann.pts.forEach(([x,y],i)=>i?ctx.lineTo(exToPx(x),eyToPx(y)):ctx.moveTo(exToPx(x),eyToPx(y))); ctx.stroke();
         } break;
       case 'level-marker': {
@@ -14671,7 +14927,7 @@ function edDrawAnnotations(ctx,f){
         ctx.beginPath(); ctx.moveTo(la[0],la[1]); ctx.lineTo(lb[0],lb[1]); ctx.stroke();
         const cx=(la[0]+lb[0])/2, cy=(la[1]+lb[1])/2;
         ctx.fillStyle='rgba(245,158,11,.9)'; ctx.fillRect(cx-3,cy-3,6,6);
-        ctx.fillStyle='#ffd27a'; ctx.font='700 10px JetBrains Mono,monospace';
+        ctx.fillStyle=EDP.dimText; ctx.font='700 10px JetBrains Mono,monospace';
         ctx.textAlign='left'; ctx.textBaseline='bottom';
         ctx.fillText(ann.label||'',cx+6,cy-2); break;
       }
@@ -14761,53 +15017,53 @@ function edDrawToolPreview(ctx){
   ctx.save();
   // Line tool
   if(EDITOR._linePt){
-    ctx.strokeStyle='rgba(125,211,252,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.strokeStyle=EDP.skyTool; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
     ctx.beginPath(); ctx.moveTo(exToPx(EDITOR._linePt[0]),eyToPx(EDITOR._linePt[1])); ctx.lineTo(cx,cy); ctx.stroke(); ctx.setLineDash([]);
     const d=Math.hypot(cur[0]-EDITOR._linePt[0],cur[1]-EDITOR._linePt[1]);
-    ctx.fillStyle='rgba(125,211,252,.85)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillStyle=EDP.skyStrong; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
     ctx.fillText(d.toFixed(2)+' м',cx+8,cy-4);
   }
   // Circle tool
   if(EDITOR._circlePt){
     const r=Math.hypot(cur[0]-EDITOR._circlePt[0],cur[1]-EDITOR._circlePt[1]);
-    ctx.strokeStyle='rgba(125,211,252,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.strokeStyle=EDP.skyTool; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
     ctx.beginPath(); ctx.arc(exToPx(EDITOR._circlePt[0]),eyToPx(EDITOR._circlePt[1]),r*EDITOR.scale,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='rgba(125,211,252,.85)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillStyle=EDP.skyStrong; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
     ctx.fillText('r='+r.toFixed(2)+' м',cx+8,cy-4);
   }
   // Arc tool
   if(EDITOR._arcPts&&EDITOR._arcPts.length){
-    ctx.strokeStyle='rgba(125,211,252,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.strokeStyle=EDP.skyTool; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
     const pts=[...EDITOR._arcPts.map(([x,y])=>[exToPx(x),eyToPx(y)]),[cx,cy]];
     ctx.beginPath(); pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='rgba(125,211,252,.85)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillStyle=EDP.skyStrong; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
     ctx.fillText('Точка '+(EDITOR._arcPts.length+1)+'/3',cx+8,cy-4);
   }
   // Measure (distance/dim) tool
   if(EDITOR._measure){
     const pts=EDITOR._measure.pts;
-    ctx.strokeStyle='rgba(255,210,122,.7)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.strokeStyle=EDP.dimLineSoft; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
     ctx.beginPath();
     pts.forEach(([x,y],i)=>i?ctx.lineTo(exToPx(x),eyToPx(y)):ctx.moveTo(exToPx(x),eyToPx(y)));
     ctx.lineTo(cx,cy); ctx.stroke(); ctx.setLineDash([]);
-    pts.forEach(([x,y])=>{ ctx.fillStyle='#ffd27a'; ctx.beginPath(); ctx.arc(exToPx(x),eyToPx(y),4,0,Math.PI*2); ctx.fill(); });
+    pts.forEach(([x,y])=>{ ctx.fillStyle=EDP.dimText; ctx.beginPath(); ctx.arc(exToPx(x),eyToPx(y),4,0,Math.PI*2); ctx.fill(); });
     if(pts.length>=1){
       const last=pts[pts.length-1]; const d=Math.hypot(cur[0]-last[0],cur[1]-last[1]);
-      ctx.fillStyle='rgba(255,210,122,.9)'; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+      ctx.fillStyle=EDP.dimTextSoft; ctx.font='600 10px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
       ctx.fillText(d.toFixed(2)+' м',cx+8,cy-4);
     }
     if(EDITOR._measure.type==='area-measure'&&pts.length>=2){
       const hint=pts.length>=3?'клик по 1-й точке / Enter — завершить':'кликайте углы…';
-      ctx.fillStyle='rgba(255,210,122,.7)'; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillStyle=EDP.dimLineSoft; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='top';
       ctx.fillText(hint,cx+10,cy+8);
     }
   }
   // Pipe tool
   if(EDITOR._pipePoints&&EDITOR._pipePoints.length){
-    ctx.strokeStyle='rgba(125,211,252,.65)'; ctx.lineWidth=2.5;
+    ctx.strokeStyle=EDP.skyPipe; ctx.lineWidth=2.5;
     ctx.beginPath(); EDITOR._pipePoints.forEach(([x,y],i)=>i?ctx.lineTo(exToPx(x),eyToPx(y)):ctx.moveTo(exToPx(x),eyToPx(y)));
     ctx.lineTo(cx,cy); ctx.stroke();
-    ctx.fillStyle='rgba(125,211,252,.8)'; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillStyle=EDP.sky80; ctx.font='600 9px JetBrains Mono,monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
     ctx.fillText('Enter/Esc — завершить',cx+8,cy-4);
   }
   ctx.restore();
@@ -14955,9 +15211,12 @@ function edProps(){
   box.classList.remove('collapsed');
   const f=activeFloor(); const room=edSelRoom();
   const res=computeObject(); const fr=res&&res.floors?res.floors.find(x=>x.id===f.id):null;
+  const _ceilFlat=(()=>{const cp=findPreset('ceilings',ST.mat.ceilingId);return !!(cp&&cp.flat);})();
   const atticSel=`<label class="block text-[11px] uppercase tracking-wider text-amber/70 mb-1 mt-3">${t('mr-attic')}</label>
-    <select class="wi mb-1" onchange="edSetAttic(this.value)">${Object.entries(ATTIC).map(([id,a])=>`<option value="${id}" ${ST.attic===id?'selected':''}>${atticName(id)} — n=${a.n}</option>`).join('')}</select>
-    <p class="text-[10px] text-muted mb-1">${atticDesc(ST.attic)}</p>`;
+    ${_ceilFlat
+      ?`<div class="wi mb-1" style="opacity:.72;cursor:default">Без чердака — n=1 (плоская кровля)</div>`
+      :`<select class="wi mb-1" onchange="edSetAttic(this.value)">${Object.entries(ATTIC).map(([id,a])=>`<option value="${id}" ${ST.attic===id?'selected':''}>${atticName(id)} — n=${a.n}</option>`).join('')}</select>`}
+    <p class="text-[10px] text-muted mb-1">${_ceilFlat?'В материалах выбрана совмещённая кровля — коэф. чердака отключён, двойного учёта нет.':atticDesc(ST.attic)}</p>`;
   if(!room){
     const area=f.rooms.reduce((s,r)=>s+roomArea(r),0);
     box.innerHTML=`<div class="ed-props-hd"><p class="font-bold text-cream">${f.name}</p><button class="ed-props-collapse" onclick="edToggleProps()" title="Свернуть">‹</button></div>
@@ -15027,7 +15286,7 @@ function edProps(){
       ${room.customHeight!=null?`<button onclick="edSetRoomCustomHeight('${room.id}','')" class="ed-tbtn text-xs" title="${t('mr-room-h-reset')}">↺</button>`:''}
     </div>
     ${geomBlock}
-    <div class="rounded-lg bg-w800/60 p-2 text-xs text-muted mb-3">${roomArea(room).toFixed(1)} ${t('mr-unit-m')}² · ${peri.toFixed(1)} ${t('mr-unit-m')} · t +${room.tInt}°${rr?` · <span class="text-amber">${rr.qKw.toFixed(2)} кВт · ${rr.sections} ${t('result-sections-abbr')}</span>`:''}</div>
+    <div class="rounded-lg bg-w800/60 p-2 text-xs text-muted mb-3">${roomArea(room).toFixed(1)} ${t('mr-unit-m')}² · ${peri.toFixed(1)} ${t('mr-unit-m')} · t +${room.tInt}°${rr?` · <span class="text-amber">${rr.qKw.toFixed(2)} кВт${heatingNone()?'':` · ${rr.sections} ${t('result-sections-abbr')}`}</span>`:''}</div>
     <div class="flex gap-2 mb-2">
       <button onclick="edAddOpening('window')" class="ed-tbtn flex-1 justify-center">${t('mr-room-add-window')||t('add-window')}</button>
       <button onclick="edAddOpening('door')" class="ed-tbtn flex-1 justify-center">${t('mr-room-add-door')||t('add-door')}</button>
@@ -15433,7 +15692,7 @@ function edDrawTempDims(ctx){
   const room = edSelRoom(); if(!room) return;
   const bb = roomBBox(room);
   const rooms = activeFloor().rooms;
-  const C='#60A5FA', TH=1.2, TICK=5, OFF=18;
+  const C=EDP.tempDim, TH=1.2, TICK=5, OFF=18;
   ctx.save(); ctx.strokeStyle=C; ctx.fillStyle=C;
   ctx.lineWidth=TH; ctx.font='600 10px JetBrains Mono,monospace';
   ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -15446,7 +15705,7 @@ function edDrawTempDims(ctx){
     else { ctx.beginPath(); ctx.moveTo(ax-TICK,ay); ctx.lineTo(ax+TICK,ay); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(bx-TICK,by); ctx.lineTo(bx+TICK,by); ctx.stroke(); }
     const tw=ctx.measureText(lbl).width;
-    ctx.fillStyle='rgba(8,10,18,.85)'; ctx.fillRect(mx-tw/2-3,my-7,tw+6,14);
+    ctx.fillStyle=EDP.coordBg; ctx.fillRect(mx-tw/2-3,my-7,tw+6,14);
     ctx.fillStyle=C; ctx.fillText(lbl,mx,my);
   };
 
@@ -15843,10 +16102,18 @@ function selPipeType(id){
 }
 function toggleHeatingType(id){
   if(!Array.isArray(ST.heatingTypes)||!ST.heatingTypes.length) ST.heatingTypes=['radiator'];
-  const idx=ST.heatingTypes.indexOf(id);
-  if(idx>=0){ if(ST.heatingTypes.length>1) ST.heatingTypes.splice(idx,1); }
-  else ST.heatingTypes.push(id);
+  if(id==='none'){
+    /* C4: «Нет» — эксклюзивный выбор, снимает остальные */
+    ST.heatingTypes=['none'];
+  } else {
+    ST.heatingTypes=ST.heatingTypes.filter(x=>x!=='none');
+    const idx=ST.heatingTypes.indexOf(id);
+    if(idx>=0){ if(ST.heatingTypes.length>1) ST.heatingTypes.splice(idx,1); }
+    else ST.heatingTypes.push(id);
+    if(!ST.heatingTypes.length) ST.heatingTypes=[id];
+  }
   document.querySelectorAll('#step-panel [data-ht]').forEach(el=>el.classList.toggle('active',(ST.heatingTypes).includes(el.getAttribute('data-ht'))));
+  updateLivePanel();
 }
 function presetGrid(label,cat,currentId,onselect){
   const isWall = cat==='walls';
@@ -16082,7 +16349,9 @@ function s6(){
   const ip=interpret(res);
   const cost=costEstimate(res.totalKw);
   const boiler=recommendBoiler(res.boilerKw);
-  const pipe=recommendPipe(res.totalKw);
+  const pipeNone=(ST.pipeType==='none');      /* C3 */
+  const hNone=heatingNone();                  /* C4 */
+  const pipe=pipeNone?null:recommendPipe(res.totalKw);
   const cmp=compareWalls();
   const cmpBest=cmp.rows[cmp.rows.length-1];
   const sc=buildScenario();
@@ -16116,8 +16385,8 @@ function s6(){
     <tr><td class="text-sand">${TYPE[k]||k}</td><td class="r mono text-cream">${Math.round(v)}</td><td class="r mono text-muted">${((v/res.totalW)*100).toFixed(1)}%</td></tr>`).join('');
 
   const floorsRows=res.floors.map(f=>`
-    <tr class="sub"><td colspan="2">${f.name} · ${f.area.toFixed(1)} м² · ${f.rooms.length} ${t('rooms-hint').split(' ')[0]||'комн.'}</td><td class="r">${f.qKw.toFixed(2)} кВт</td><td class="r">${f.sections}</td></tr>
-    ${f.rooms.map(r=>`<tr><td class="pl-6 text-muted">${r.name}</td><td class="r mono text-muted">${r.area.toFixed(1)} м²</td><td class="r mono text-cream">${r.qKw.toFixed(2)} кВт</td><td class="r mono text-amber">${r.sections}</td></tr>`).join('')}
+    <tr class="sub"><td colspan="2">${f.name} · ${f.area.toFixed(1)} м² · ${f.rooms.length} ${t('rooms-hint').split(' ')[0]||'комн.'}</td><td class="r">${f.qKw.toFixed(2)} кВт</td>${hNone?'':`<td class="r">${f.sections}</td>`}</tr>
+    ${f.rooms.map(r=>`<tr><td class="pl-6 text-muted">${r.name}</td><td class="r mono text-muted">${r.area.toFixed(1)} м²</td><td class="r mono text-cream">${r.qKw.toFixed(2)} кВт</td>${hNone?'':`<td class="r mono text-amber">${r.sections}</td>`}</tr>`).join('')}
   `).join('');
 
   const _wallP=findPreset('walls',ST.mat.wallId);
@@ -16144,11 +16413,15 @@ function s6(){
       <p class="flex items-baseline gap-1 min-w-0"><span id="r-boiler" class="count-big" data-target="${res.boilerKw.toFixed(2)}" data-dec="2" style="font-size:${fitNum(res.boilerKw.toFixed(2))}">0</span><span class="text-base font-bold text-amber">кВт</span></p>
       <p class="text-[11px] text-muted mt-1">${t('result-recommended')}</p>
     </div>
-    <div class="rounded-2xl border border-sand/10 bg-w850 p-4">
+    ${hNone?`<div class="rounded-2xl border border-sand/10 bg-w850 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-2 flex items-center">${t('result-radiators')}</p>
+      <p class="flex items-baseline gap-1 min-w-0"><span class="count-big" style="font-size:2rem">—</span></p>
+      <p class="text-[11px] text-muted mt-1">прибор не указан</p>
+    </div>`:`<div class="rounded-2xl border border-sand/10 bg-w850 p-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-2 flex items-center">${t('result-radiators')} ${tip('sections')}</p>
       <p class="flex items-baseline gap-1 min-w-0"><span id="r-secs" class="count-big" data-target="${res.totalSections}" data-dec="0" style="font-size:${fitNum(String(res.totalSections))}">0</span><span class="text-base font-bold text-amber">сек.</span></p>
       <p class="text-[11px] text-muted mt-1">${t('result-total-house')}</p>
-    </div>
+    </div>`}
     <div class="rounded-2xl border border-sand/10 bg-w850 p-4">
       <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/80 mb-2">${t('result-area')}</p>
       <p class="flex items-baseline gap-1 min-w-0"><span id="r-area" class="count-big" data-target="${res.totalArea.toFixed(1)}" data-dec="1" style="font-size:${fitNum(res.totalArea.toFixed(1))}">0</span><span class="text-base font-bold text-amber">м²</span></p>
@@ -16183,8 +16456,8 @@ function s6(){
   ${thermalFloorPlanHTML(res)}
   <h4 class="font-semibold text-cream mb-3">${t('result-floors-h4')}</h4>
   <div class="overflow-x-auto rounded-2xl border border-sand/10 mb-8">
-    <table class="btable"><thead><tr><th>${t('col-room')}</th><th class="r">${t('col-area')}</th><th class="r">${t('col-loss')}</th><th class="r">${t('col-sections')}</th></tr></thead>
-    <tbody>${floorsRows}<tr class="tot"><td>${t('col-total')}</td><td class="r mono">${res.totalArea.toFixed(1)} м²</td><td class="r mono">${res.totalKw.toFixed(2)} кВт</td><td class="r mono">${res.totalSections}</td></tr></tbody></table>
+    <table class="btable"><thead><tr><th>${t('col-room')}</th><th class="r">${t('col-area')}</th><th class="r">${t('col-loss')}</th>${hNone?'':`<th class="r">${t('col-sections')}</th>`}</tr></thead>
+    <tbody>${floorsRows}<tr class="tot"><td>${t('col-total')}</td><td class="r mono">${res.totalArea.toFixed(1)} м²</td><td class="r mono">${res.totalKw.toFixed(2)} кВт</td>${hNone?'':`<td class="r mono">${res.totalSections}</td>`}</tr></tbody></table>
   </div>`:''}
 
   <h4 class="font-semibold text-cream mb-3">${t('result-breakdown-h4')}</h4>
@@ -16220,7 +16493,7 @@ function s6(){
     <tbody>
       <tr><td class="text-sand">Теплопотери</td><td class="r mono text-cream">${sc.cur.totalKw.toFixed(2)} кВт</td><td class="r mono text-green-400">${sc.imp.totalKw.toFixed(2)} кВт</td><td class="r mono text-green-400">${dKw}</td></tr>
       <tr><td class="text-sand">Котёл (типоразмер)</td><td class="r mono text-cream">${recommendBoiler(sc.cur.boilerKw)} кВт</td><td class="r mono text-green-400">${impBoiler} кВт</td><td class="r mono text-muted">${impBoiler<recommendBoiler(sc.cur.boilerKw)?'дешевле':'='}</td></tr>
-      <tr><td class="text-sand">Радиаторы</td><td class="r mono text-cream">${sc.cur.totalSections} сек.</td><td class="r mono text-green-400">${sc.imp.totalSections} сек.</td><td class="r mono text-muted">−${sc.cur.totalSections-sc.imp.totalSections}</td></tr>
+      ${hNone?'':`<tr><td class="text-sand">Радиаторы</td><td class="r mono text-cream">${sc.cur.totalSections} сек.</td><td class="r mono text-green-400">${sc.imp.totalSections} сек.</td><td class="r mono text-muted">−${sc.cur.totalSections-sc.imp.totalSections}</td></tr>`}
       <tr><td class="text-sand">Газ, в месяц</td><td class="r mono text-cream">${fmtSum(sc.gasCur)}</td><td class="r mono text-green-400">${fmtSum(sc.gasImp)}</td><td class="r mono text-green-400">−${fmtSum(sc.gasCur-sc.gasImp)}</td></tr>
     </tbody></table>
   </div>
@@ -16250,7 +16523,7 @@ function s6(){
   <div class="info-card">
     <h4 class="font-extrabold text-cream text-lg mb-3">Что дальше?</h4>
     <div class="space-y-1.5 text-sm text-sand mb-3">
-      <p>✓ Теплопотери: <b class="text-amber">${res.totalKw.toFixed(1)} кВт</b> · Котёл: <b class="text-amber">${boiler} кВт</b> · Секций: <b class="text-amber">${res.totalSections}</b> · Труба: <b class="text-amber">⌀ ${pipe}</b></p>
+      <p>✓ Теплопотери: <b class="text-amber">${res.totalKw.toFixed(1)} кВт</b> · Котёл: <b class="text-amber">${boiler} кВт</b>${hNone?'':` · Секций: <b class="text-amber">${res.totalSections}</b>`}${pipeNone?'':` · Труба: <b class="text-amber">⌀ ${pipe}</b>`}</p>
     </div>
     ${equipmentCards(res)}
     ${equipSpecPanel(res)}
@@ -16461,6 +16734,7 @@ function applyPreset(kind){
       w:o[3],h:o[4],count:o[5]||1}))
   }))}));
   ST.activeFloorId=ST.floors[0].id; _prevKw=null; PLAN.selectedId=null;
+  calcShowWizard('max');   // пресеты — это готовая геометрия Мини-ревита
   ST.step=6; renderProgress(); renderStep(); updateNavHint(); updateLivePanel(); pushHistory();
   scrollToEl('calculator');
   toast(t('toast-demo-ready'));
@@ -16871,6 +17145,7 @@ function pushHistory(){
 function loadFromHistory(i){
   const h=loadHistory(); if(!h[i]) return;
   loadState(h[i].state); ST.step=6; _prevKw=null; PLAN.selectedId=null;
+  calcShowWizard('max');   // история хранит геометрию Мини-ревита
   renderProgress(); renderStep(); updateNavHint(); updateLivePanel();
   scrollToEl('calculator');
   toast(t('toast-calc-loaded'));
@@ -16939,16 +17214,17 @@ function aqBoiler(boilerKw){ return AQ_BOILERS.find(b=>b.maxKw>=boilerKw)||AQ_BO
 function aqRadModel(sections){ return sections>150?AQ_RADIATORS[1]:AQ_RADIATORS[0]; }
 
 function equipmentCards(res){
+  const hNone=heatingNone(), pipeNone=(ST.pipeType==='none');   /* C3/C4 */
   const bKw=recommendBoiler(res.boilerKw);
   const bItem=aqBoiler(bKw);
   const rItem=aqRadModel(res.totalSections);
-  const pipe=recommendPipe(res.totalKw);
+  const pipe=pipeNone?null:recommendPipe(res.totalKw);
   const tg=CONTACT.tgAdmin;
   const obj=`${ST.cityName||''}, ${res.totalArea.toFixed(0)} м², ${res.totalKw.toFixed(1)} кВт`;
 
   const msgBoiler=encodeURIComponent(`Здравствуйте! Хочу узнать цену котла ${bItem.model} (${bKw} кВт) для объекта: ${obj}. Расчёт по КМК через ваш калькулятор.`);
   const msgRad=encodeURIComponent(`Здравствуйте! Нужны радиаторы ${rItem.model} × ${res.totalSections} секций для объекта: ${obj}. Расчёт по КМК.`);
-  const msgAll=encodeURIComponent(`Здравствуйте! Прошу полный расчёт стоимости оборудования: котёл ${bItem.model} ${bKw} кВт + радиаторы ${res.totalSections} секций + труба ⌀${pipe}. Объект: ${obj}.`);
+  const msgAll=encodeURIComponent(`Здравствуйте! Прошу полный расчёт стоимости оборудования: котёл ${bItem.model} ${bKw} кВт${hNone?'':` + радиаторы ${res.totalSections} секций`}${pipeNone?'':` + труба ⌀${pipe}`}. Объект: ${obj}.`);
 
   return `
   <div class="mt-4 mb-2">
@@ -16968,7 +17244,7 @@ function equipmentCards(res){
           Узнать цену
         </a>
       </div>
-      <div class="rounded-xl border border-sand/10 bg-w850 p-3.5 flex flex-col gap-2">
+      ${hNone?'':`<div class="rounded-xl border border-sand/10 bg-w850 p-3.5 flex flex-col gap-2">
         <div class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber/70">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3.5 w-3.5"><rect x="3" y="5" width="4" height="14" rx="1"/><rect x="10" y="5" width="4" height="14" rx="1"/><rect x="17" y="5" width="4" height="14" rx="1"/></svg>Радиаторы
         </div>
@@ -16981,8 +17257,8 @@ function equipmentCards(res){
           <svg viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 flex-shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
           Узнать цену
         </a>
-      </div>
-      <div class="rounded-xl border border-sand/10 bg-w850 p-3.5 flex flex-col gap-2">
+      </div>`}
+      ${pipeNone?'':`<div class="rounded-xl border border-sand/10 bg-w850 p-3.5 flex flex-col gap-2">
         <div class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber/70">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3.5 w-3.5"><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Труба
         </div>
@@ -16995,7 +17271,7 @@ function equipmentCards(res){
           <svg viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 flex-shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
           Весь комплект
         </a>
-      </div>
+      </div>`}
     </div>
   </div>`;
 }
@@ -17007,7 +17283,7 @@ function wizReset(){
   ST.step=1; ST.cityId=null; ST.cityName=null; ST.tExt=null;
   ST.plot={w:16,d:12}; ST.northSide='top';
   ST.airtight='normal'; ST.heatRegime='90/70'; ST.attic='closed';
-  ST.mat={wallId:'brick_380',windowId:'double_glazing_pvc',doorId:'door_metal_insulated',floorId:'floor_xps50',ceilingId:'ceil_i100'};
+  ST.mat={wallId:'brick_380',windowId:'double_glazing_pvc',doorId:'door_metal_insulated',floorId:'floor_no_basement',ceilingId:'ceil_i100'};
   ST.basement=null; initFloors(); _prevKw=null; PLAN.selectedId=null;
   renderProgress(); renderStep(); updateNavHint(); updateLivePanel();
   scrollToEl('calculator');
@@ -17111,7 +17387,7 @@ function roomCardsHTML(res){
       <div class="room-card-name" title="${r.name}">${r.name}</div>
       <div class="room-card-kw" style="color:${color}">${r.qKw.toFixed(2)}<span>кВт</span></div>
       <div class="room-card-bar"><div class="room-card-bar-inner" style="width:${pct}%;background:${color}"></div></div>
-      <div class="room-card-meta">${r.area.toFixed(1)} м² · ${r.sections} сек</div>
+      <div class="room-card-meta">${r.area.toFixed(1)} м²${heatingNone()?'':` · ${r.sections} сек`}</div>
     </div>`;
   }).join('');
   return `<div>
@@ -17582,9 +17858,12 @@ void main(void){
    Vanilla port of jatin-yadav05's component, brand-themed.
 ════════════════════════════════════════════════════════════ */
 const PROCESS_DATA=[
-  {id:1,title:'Калькулятор',date:'Главная функция',tag:'Расчёт теплопотерь',energy:100,icon:'calc',related:[2,3],
-   action:'scrollToEl("calculator")',
-   content:'Полный инженерный расчёт теплопотерь по КМК 2.01.04-18. Нарисуйте план здания — получите мощность котла и число секций радиаторов для каждой комнаты.'},
+  {id:1,title:'Макс калькулятор',date:'Точный расчёт',tag:'Мини-ревит · по чертежу',energy:100,icon:'plan',related:[7,2],
+   action:'openCalc("max")',
+   content:'Нарисуйте план здания на canvas — площади и периметры считаются по геометрии. Полный инженерный расчёт по КМК 2.01.04-18: мощность котла и секции радиаторов для каждой комнаты.'},
+  {id:7,title:'Про калькулятор',date:'Быстрая оценка',tag:'По размерам комнат',energy:90,icon:'calc',related:[1,4],
+   action:'openCalc("pro")',
+   content:'Введите размеры комнат вручную — без чертежа. Быстрая оценка теплопотерь по той же формуле КМК 2.01.04-18.'},
   {id:2,title:'Мастерская',date:'Свои материалы',tag:'Конструктор R',energy:80,icon:'tool',related:[1,5],
    action:'openWorkshopSec()',
    content:'Добавьте любой строительный материал или многослойную конструкцию. Введите слои с толщиной и коэффициентом λ — итоговое R рассчитается автоматически.'},
@@ -17603,6 +17882,7 @@ const PROCESS_DATA=[
 ];
 const PROC_ICONS={
   calc:'<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>',
+  plan:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>',
   tool:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
   user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   history:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
@@ -18075,7 +18355,7 @@ function roomChampionsHTML(res){
             <span class="font-semibold text-cream text-sm">${r.name}</span>
             <span class="champ-badge ${champCls[i]}">${labels[i]}</span>
           </div>
-          <div class="text-xs text-muted">${r.area.toFixed(1)} м² · ${r.sections} секц. · ${r.floorName}</div>
+          <div class="text-xs text-muted">${r.area.toFixed(1)} м²${heatingNone()?'':` · ${r.sections} секц.`} · ${r.floorName}</div>
         </div>
         <div class="text-right flex-shrink-0">
           <div class="font-extrabold mono" style="font-size:17px;color:${colors[i]}">${r.qKw.toFixed(2)}</div>
@@ -18091,19 +18371,20 @@ function roomChampionsHTML(res){
    СПЕЦИФИКАЦИЯ ОБОРУДОВАНИЯ С ЦЕНАМИ (из каталога)
 ════════════════════════════════════════════════════════════ */
 function equipSpecPanel(res){
+  const hNone=heatingNone(), pipeNone=(ST.pipeType==='none');   /* C3/C4 */
   const bKw=recommendBoiler(res.boilerKw);
   const boilerItem=EQUIPMENT_DB.boilers.slice().sort((a,b)=>a.kw-b.kw).find(b=>b.kw>=bKw)
     ||EQUIPMENT_DB.boilers[EQUIPMENT_DB.boilers.length-1];
   const radItem=EQUIPMENT_DB.radiators.find(r=>r.id==='rf_500_10')||EQUIPMENT_DB.radiators[0];
-  const radCount=Math.max(1,Math.ceil(res.totalSections/(radItem.sections||10)));
-  const radTotal=radCount*radItem.price;
+  const radCount=hNone?0:Math.max(1,Math.ceil(res.totalSections/(radItem.sections||10)));
+  const radTotal=hNone?0:radCount*radItem.price;
   const pipeId=res.totalKw<=15?'wp_pn25_20':res.totalKw<=25?'wp_pn25_25':res.totalKw<=40?'wp_pn25_32':'wp_pn25_40';
   const pipeItem=EQUIPMENT_DB.pipes.find(p=>p.id===pipeId)||EQUIPMENT_DB.pipes.find(p=>p.id.startsWith('wp_pn25'));
   const pipeM=Math.round(res.roomCount*6*1.2);
-  const pipeCost=pipeItem&&pipeItem.price_m?(pipeM*pipeItem.price_m):0;
+  const pipeCost=(!pipeNone&&pipeItem&&pipeItem.price_m)?(pipeM*pipeItem.price_m):0;
   const subtotal=(boilerItem?.price||0)+radTotal+pipeCost;
   const totalEst=Math.round(subtotal*1.15);
-  const fullMsg=encodeURIComponent(`Здравствуйте! Хочу заказать комплект отопления:\n• Котёл: ${boilerItem?.name||'—'} (${bKw} кВт)\n• Радиаторы: ${radItem?.name||'—'} × ${radCount} шт (${res.totalSections} секций итого)\n• Труба: ${pipeItem?.name||'—'} ≈ ${pipeM} м\nОбъект: ${ST.cityName||'—'}, ${res.totalArea.toFixed(0)} м², теплопотери ${res.totalKw.toFixed(1)} кВт.\nРасчёт выполнен по КМК 2.01.04-18 на сайте Aquality.`);
+  const fullMsg=encodeURIComponent(`Здравствуйте! Хочу заказать комплект отопления:\n• Котёл: ${boilerItem?.name||'—'} (${bKw} кВт)${hNone?'':`\n• Радиаторы: ${radItem?.name||'—'} × ${radCount} шт (${res.totalSections} секций итого)`}${pipeNone?'':`\n• Труба: ${pipeItem?.name||'—'} ≈ ${pipeM} м`}\nОбъект: ${ST.cityName||'—'}, ${res.totalArea.toFixed(0)} м², теплопотери ${res.totalKw.toFixed(1)} кВт.\nРасчёт выполнен по КМК 2.01.04-18 на сайте Aquality.`);
   if(!boilerItem) return '';
   return `<div class="rounded-2xl border border-amber/20 bg-w850/60 p-4 mt-3 mb-2" style="backdrop-filter:blur(10px)">
     <p class="text-[11px] font-semibold uppercase tracking-wider text-amber/70 mb-3 flex items-center gap-2">
@@ -18112,7 +18393,7 @@ function equipSpecPanel(res){
     </p>
     <div class="space-y-2 text-sm mb-3">
       <div class="spec-row"><span class="text-muted">Котёл ${boilerItem.name} · ${bKw} кВт</span><span class="mono font-semibold text-cream">${fmtSum(boilerItem.price)}</span></div>
-      <div class="spec-row"><span class="text-muted">${radItem.name} × ${radCount} шт (${res.totalSections} секц)</span><span class="mono font-semibold text-cream">${fmtSum(radTotal)}</span></div>
+      ${hNone?'':`<div class="spec-row"><span class="text-muted">${radItem.name} × ${radCount} шт (${res.totalSections} секц)</span><span class="mono font-semibold text-cream">${fmtSum(radTotal)}</span></div>`}
       ${pipeCost>0?`<div class="spec-row"><span class="text-muted">${pipeItem.name.replace('WaterPRO ','').replace(' (армир.)','A')} · ${pipeM} м</span><span class="mono font-semibold text-cream">${fmtSum(pipeCost)}</span></div>`:''}
       <div class="spec-row" style="border-top:1px solid rgba(245,158,11,.15);padding-top:8px;margin-top:4px">
         <span class="text-muted text-xs">Итого оборудование + монтаж (~15%)</span>
@@ -18427,6 +18708,7 @@ function demoPreset(kind){
       w:o[3],h:o[4],count:o[5]||1}))
   }))}));
   ST.activeFloorId=ST.floors[0].id; _prevKw=null; PLAN.selectedId=null;
+  calcShowWizard('max');   // демо — готовая геометрия Мини-ревита
   ST.step=6; renderProgress(); renderStep(); updateNavHint(); updateLivePanel(); pushHistory();
   scrollToEl('calculator');
   const banner=document.getElementById('demo-banner');
@@ -18477,7 +18759,7 @@ function shareResults(){
     `📊 РАСЧЁТ ТЕПЛОПОТЕРЬ — Aquality | WaterPro`,
     `🏠 ${ST.cityName} · ${ST.floors.length} эт. · ${res.roomCount} комн. · ${res.totalArea.toFixed(0)} м²`,
     `🌡 Теплопотери: ${res.totalKw.toFixed(2)} кВт (${perM2.toFixed(0)} Вт/м²)`,
-    `🔥 Котёл: ${res.boilerKw.toFixed(0)} кВт · Радиаторы: ${res.totalSections} сек.`,
+    `🔥 Котёл: ${res.boilerKw.toFixed(0)} кВт${heatingNone()?'':` · Радиаторы: ${res.totalSections} сек.`}`,
     `⭐ Тепловой рейтинг: ${score}/100 · Энергокласс: ${ec.cls}`,
     `💰 Газ в месяц (ориент.): ${gasM}`,
     co2kg>0?`🌿 CO₂ за сезон: ~${co2kg.toLocaleString('ru-RU')} кг`:'',
@@ -18573,7 +18855,15 @@ function initHero(){
 }
 function initWizard(){
   if(!tryLoadFromHash()) initFloors();
+  calcSyncView();          // лендинг → выбор калькулятора; /calculator/* → мастер
   renderProgress(); renderStep(); updateNavHint(); updateLivePanel();
+  // Прямой заход на маршрут калькулятора — сразу показываем его, без прокрутки лендинга.
+  // Повтор через 400 мс: Lenis/стартовые анимации могут вернуть страницу к верху.
+  if(CALC_KIND){
+    const go=()=>{ const el=document.getElementById('calculator'); if(el){ if(window._lenis) window._lenis.scrollTo(el,{offset:0,immediate:true}); else el.scrollIntoView({behavior:'auto',block:'start'}); } };
+    requestAnimationFrame(go);
+    setTimeout(go,400);
+  }
 }
 
 /* ── Global keyboard handler: Enter / Space + shortcuts ── */
@@ -18606,8 +18896,9 @@ document.addEventListener('keydown', e => {
   if(e.key==='s'||e.key==='S'){
     if(ST.step===6) shareResults();
   }
-  // 1-6: jump to wizard step
+  // 1-6: jump to wizard step (только когда открыт один из калькуляторов)
   if(e.key>='1'&&e.key<='6'){
+    if(!CALC_KIND) return;
     const step=parseInt(e.key);
     if(ST.step>=1&&step<=6){ ST.step=step; renderProgress(); renderStep(); updateNavHint(); scrollToEl('calculator'); }
   }
