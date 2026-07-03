@@ -19,6 +19,13 @@
 /calculator/*         /index.html 200
 
 /BACKEND_AUDIT.md     /404.html   404!
+/PERF_BASELINE.md     /404.html   404!
+/PERF_REPORT.md       /404.html   404!
+/package.json         /404.html   404!
+/package-lock.json    /404.html   404!
+/tailwind.config.js   /404.html   404!
+/src/*                /404.html   404!
+/docs/*               /404.html   404!
 /SECURITY.md          /404.html   404!
 /PROGRESS.md          /404.html   404!
 /README-SUPABASE.md   /404.html   404!

@@ -5,6 +5,17 @@
 # там работает только <meta>-CSP внутри index.html (см. SECURITY.md).
 # ════════════════════════════════════════════════════════════════════════
 
+# ── Кэширование (перф): статика в /assets — на год (immutable).
+#    ВАЖНО: при изменении assets/app.js|site.css|tailwind.css поднимите ?v=
+#    в ссылках index.html (иначе постоянные посетители год не увидят обновление).
+#    index.html всегда ревалидируется, поэтому смена ?v= доезжает мгновенно. ──
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
 /*
   # Принудительный HTTPS на год (после первого визита). Включайте, только когда
   # уверены, что сайт навсегда на HTTPS — откат на HTTP станет недоступен.

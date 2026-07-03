@@ -24,3 +24,4 @@ package-lock.json
 index.protected.html
 .netlify/
 supabase/.temp/
+supabase/.env
