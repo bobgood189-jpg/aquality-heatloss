@@ -17044,6 +17044,71 @@ document.addEventListener('DOMContentLoaded',()=>{
   safe('wizard', initWizard);     // рендер мастера расчёта — кнопки/шаги
   safe('lang', applyLang);        // i18n + меню аккаунта (initAuthNav)
   safe('hydrate', aqHydrate);     // Supabase: восстановление сессии (если настроен)
+  /* ═══ ФИКС «частичной отрисовки» на слабых телефонах/iPhone ═══
+     Раскрытие секций и аккордеоны — КОНТЕНТ, а не декорация. Раньше оба
+     блока жили внутри initScrollStars (siteBgAnim), который на tier-low и
+     prefers-reduced-motion выходит в первой строке → .sect-reveal-секции
+     навсегда оставались с opacity:0 (чёрные дыры вместо «Теплового анализа»,
+     «Разделов платформы», отзывов, «Быстрой оценки»…). Теперь выполняются
+     на ЛЮБОМ tier, а CSS прячет секции только при html.anim-ready —
+     если JS не выполнился вовсе, контент просто виден без анимации. */
+  safe('sectReveal', function initSectReveal(){
+    const secs=Array.prototype.slice.call(document.querySelectorAll('.sect-reveal'));
+    if(!secs.length) return;
+    const reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    if(reduced||!('IntersectionObserver' in window)){
+      secs.forEach(s=>s.classList.add('in-view'));
+      return;
+    }
+    // Секции уже в/над вьюпортом раскрываем синхронно — без мигания на DCL
+    const vh=window.innerHeight||800;
+    secs.forEach(s=>{ const r=s.getBoundingClientRect(); if(r.top<vh*0.88) s.classList.add('in-view'); });
+    document.documentElement.classList.add('anim-ready');
+    const rest=secs.filter(s=>!s.classList.contains('in-view'));
+    if(!rest.length) return;
+    const obs=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){e.target.classList.add('in-view');obs.unobserve(e.target);}
+      });
+    },{threshold:0.12});
+    rest.forEach(s=>obs.observe(s));
+    // Страховка: наблюдатель молчит (экзотический браузер) → через 10 с
+    // раскрываем всё принудительно: теряется анимация, но не контент.
+    setTimeout(()=>{ secs.forEach(s=>s.classList.add('in-view')); obs.disconnect(); },10000);
+  });
+  safe('expTabs', function initExpTabs(){
+    document.querySelectorAll('.exp-tab-hdr').forEach(hdr=>{
+      const body=hdr.nextElementSibling;
+      if(!body||!body.classList.contains('exp-tab-body')) return;
+      // Start expanded
+      body.style.maxHeight=body.scrollHeight+'px';
+      body.classList.add('expanded');
+      hdr.classList.add('open');
+      hdr.addEventListener('click',()=>{
+        const isOpen=hdr.classList.contains('open');
+        if(isOpen){
+          body.style.maxHeight=body.scrollHeight+'px';
+          requestAnimationFrame(()=>{
+            body.style.maxHeight='0';
+            body.classList.remove('expanded');
+            body.classList.add('collapsed');
+            hdr.classList.remove('open');
+          });
+        } else {
+          body.classList.remove('collapsed');
+          body.style.maxHeight='0';
+          requestAnimationFrame(()=>{
+            body.style.maxHeight=body.scrollHeight+'px';
+            body.classList.add('expanded');
+            hdr.classList.add('open');
+            body.addEventListener('transitionend',()=>{
+              if(body.classList.contains('expanded')) body.style.maxHeight='none';
+            },{once:true});
+          });
+        }
+      });
+    });
+  });
   safe('scroll', initScroll);
   safe('scrollProgress', initScrollProgress);
   safe('liveTicker', initLiveTicker);
@@ -17217,49 +17282,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
     // PERF: цикл через PerfManager — кап 30/24 fps, пауза при простое/скрытой вкладке
     PerfManager.addLoop('siteBgStars',frame,{fps:{high:30,medium:24},canvas:cv,decorative:true});
-    // Phase 7: section reveal via IntersectionObserver
-    if('IntersectionObserver' in window){
-      const obs=new IntersectionObserver(entries=>{
-        entries.forEach(e=>{
-          if(e.isIntersecting){e.target.classList.add('in-view');obs.unobserve(e.target);}
-        });
-      },{threshold:0.12});
-      document.querySelectorAll('.sect-reveal').forEach(s=>obs.observe(s));
-    } else {
-      document.querySelectorAll('.sect-reveal').forEach(s=>s.classList.add('in-view'));
-    }
-    // Phase 7: expandable section toggle
-    document.querySelectorAll('.exp-tab-hdr').forEach(hdr=>{
-      const body=hdr.nextElementSibling;
-      if(!body||!body.classList.contains('exp-tab-body')) return;
-      // Start expanded
-      body.style.maxHeight=body.scrollHeight+'px';
-      body.classList.add('expanded');
-      hdr.classList.add('open');
-      hdr.addEventListener('click',()=>{
-        const isOpen=hdr.classList.contains('open');
-        if(isOpen){
-          body.style.maxHeight=body.scrollHeight+'px';
-          requestAnimationFrame(()=>{
-            body.style.maxHeight='0';
-            body.classList.remove('expanded');
-            body.classList.add('collapsed');
-            hdr.classList.remove('open');
-          });
-        } else {
-          body.classList.remove('collapsed');
-          body.style.maxHeight='0';
-          requestAnimationFrame(()=>{
-            body.style.maxHeight=body.scrollHeight+'px';
-            body.classList.add('expanded');
-            hdr.classList.add('open');
-            body.addEventListener('transitionend',()=>{
-              if(body.classList.contains('expanded')) body.style.maxHeight='none';
-            },{once:true});
-          });
-        }
-      });
-    });
+    /* Раскрытие секций (.sect-reveal) и аккордеоны (.exp-tab) отсюда ВЫНЕСЕНЫ:
+       это контент, а не декорация — см. safe('sectReveal') и safe('expTabs')
+       выше по DCL. Здесь остались только фоновые звёзды. */
   });
 
   if(SB_CONFIGURED) console.info('[AQ] Supabase backend: ON');
@@ -17397,7 +17422,14 @@ function initHvizCanvas(){
     }
   }
   // PERF: цикл через PerfManager — кап fps, сон вне вьюпорта (IO), пауза при простое
-  PerfManager.addLoop('hvizCanvas',draw,{fps:{high:30,medium:24},canvas:cv,decorative:true});
+  // ФИКС: на tier-low/reduced-motion декоративный цикл не запускается —
+  // раньше canvas «Теплового анализа» оставался ПУСТЫМ. Теперь рисуем
+  // статичную картинку (дом + разлетевшиеся частицы за ~30 кадров).
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches||PerfManager.tier==='low'){
+    for(let i=0;i<30;i++) draw();
+  } else {
+    PerfManager.addLoop('hvizCanvas',draw,{fps:{high:30,medium:24},canvas:cv,decorative:true});
+  }
 }
 
 /* ══ Testimonials ══ */
@@ -17598,9 +17630,8 @@ document.addEventListener('DOMContentLoaded',function(){
   try{qeUpdate();}catch(e){}
   try{initHvizBars();}catch(e){}
   try{
-    // PERF: reduced-motion и LOW-tier — статичная секция без canvas-анимации
-    if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches
-       && !(window.PerfManager&&PerfManager.tier==='low')) initHvizCanvas();
+    // На low/reduced initHvizCanvas сам рисует статичный кадр вместо цикла
+    initHvizCanvas();
   }catch(e){}
 });
 ;

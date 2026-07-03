@@ -440,12 +440,16 @@ section#calculator{
   border-top: 1px solid rgba(140,165,210,.15);
 }
 /* Phase 7: Section reveal animation */
+/* Скрытие до reveal — ТОЛЬКО при html.anim-ready (ставит initSectReveal в app.js).
+   Если JS не выполнился (сбой/блокировка/экзотика) — секции просто видимы. */
 .sect-reveal{
-  opacity:0;
-  transform:translateY(28px) scale(0.985);
   transform-origin:top center;
   transition:opacity .6s ease-out, transform .7s cubic-bezier(.34,1.4,.64,1);
   will-change:opacity,transform;
+}
+html.anim-ready .sect-reveal:not(.in-view){
+  opacity:0;
+  transform:translateY(28px) scale(0.985);
 }
 .sect-reveal.in-view{
   opacity:1;
