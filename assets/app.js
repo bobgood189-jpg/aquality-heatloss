@@ -17111,6 +17111,21 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   safe('scroll', initScroll);
   safe('scrollProgress', initScrollProgress);
+  /* ═══ PERF: убираем лаги скролла ═══
+     На странице ~63 элемента с backdrop-filter (стеклянный блюр). Safari
+     перерисовывает их все на каждом кадре Lenis-скролла → до ~27 fps на
+     среднем Mac. Пока идёт скролл — вешаем html.is-scrolling (CSS гасит
+     backdrop-filter), через 150 мс покоя снимаем. В движении блюр не виден,
+     статичный вид не меняется. Работает на всех tier (лаг был и на desktop). */
+  safe('scrollPerf', function initScrollPerf(){
+    const h=document.documentElement; let tId=0;
+    const onScroll=()=>{
+      if(!tId) h.classList.add('is-scrolling');
+      else clearTimeout(tId);
+      tId=setTimeout(()=>{ h.classList.remove('is-scrolling'); tId=0; },150);
+    };
+    ['scroll','wheel','touchmove'].forEach(ev=>addEventListener(ev,onScroll,{passive:true}));
+  });
   safe('liveTicker', initLiveTicker);
   safe('hero', initHero);
   /* ШАГ 3: WebGL-фон стартует не сейчас, а после window.load + requestIdleCallback
