@@ -8350,6 +8350,94 @@ function zonalFloorAreas(room, rooms){
   return areas.map((a,i)=>({r:FLOOR_ZONE_R[i], a})).filter(z=>z.a>0.01);
 }
 
+/* ════════════════════════════════════════════════════════════
+   ТОЛЩИНА СТЕН — наружный обмер ограждений (КМК 2.01.04-18, СНиП теплотехники).
+   ─────────────────────────────────────────────────────────────
+   Пользователь чертит комнату по ВНУТРЕННЕЙ (чистовой) грани стен —
+   это чистый пролёт помещения. Физическая стена толщиной t лежит
+   СНАРУЖИ нарисованной линии (нарисованное ребро = внутренняя грань).
+   Для наружных стен площадь по нормативу считается по НАРУЖНОМУ обмеру:
+   внутренний контур смещается наружу на полную толщину t с корректной
+   обработкой углов (miter): выпуклый (внешний) угол удлиняет ребро на t,
+   вогнутый (внутренний угол L-плана) — укорачивает на t.
+   Контроль: комната 4.0×6.0 внутр., t=400мм → наружный габарит 4.8×6.8 м.
+
+   Модель данных: физическая толщина стены — это параметр «Материала стен»
+   (у пресетов есть поле thickness, мм) с возможностью пер-рёберного
+   переопределения через room.edgeMats[i]. Тепловое R уже считается послойно
+   в computeRoom — здесь только ГЕОМЕТРИЯ (длина/площадь наружных стен).
+   Живой расчёт этот блок пока НЕ трогает — это ядро под Фазу wiring. */
+
+const WALL_THICK_DEFAULT_MM = 400;   // кирпич 1.5 / пеноблок — дефолт по КМК
+
+/* Пересечение двух прямых (точка+направление). null — если параллельны. */
+function lineIntersect(p1,d1,p2,d2){
+  const den = d1[0]*d2[1]-d1[1]*d2[0];
+  if(Math.abs(den)<1e-9) return null;                       // параллельны/совпадают
+  const t = ((p2[0]-p1[0])*d2[1]-(p2[1]-p1[1])*d2[0])/den;
+  return [p1[0]+t*d1[0], p1[1]+t*d1[1]];
+}
+/* Внешняя нормаль ребра a→b произвольного полигона (наружу из контура). */
+function polyEdgeOutNormal(verts,a,b){
+  const dx=b[0]-a[0], dy=b[1]-a[1], len=Math.hypot(dx,dy)||1;
+  const n=[-dy/len,dx/len], mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2, e=1e-3;
+  return pointInRoom(mx+n[0]*e, my+n[1]*e, {poly:verts}) ? [-n[0],-n[1]] : n;
+}
+function polyPerimeter(v){ let p=0; for(let i=0;i<v.length;i++){ const a=v[i],b=v[(i+1)%v.length]; p+=Math.hypot(b[0]-a[0],b[1]-a[1]); } return p; }
+function polyAreaAbs(v){ let a=0; for(let i=0;i<v.length;i++){ const p=v[i],q=v[(i+1)%v.length]; a+=p[0]*q[1]-q[0]*p[1]; } return Math.abs(a)/2; }
+
+/* Miter-offset простого полигона НАРУЖУ на dist (метры).
+   Каждое ребро сдвигается по своей внешней нормали; соседние смещённые
+   прямые пересекаются → новая вершина. Выпуклые углы удлиняют периметр
+   (+2·dist на угол), вогнутые укорачивают (−2·dist). Работает для
+   прямоугольника и прямоугольного полигона (L-, П- и т.п.). */
+function offsetPolygonMiter(verts, dist){
+  const n=verts.length; if(n<3||dist===0) return verts.map(p=>[p[0],p[1]]);
+  const nrm=[], dir=[];
+  for(let i=0;i<n;i++){ const a=verts[i], b=verts[(i+1)%n];
+    nrm.push(polyEdgeOutNormal(verts,a,b));
+    const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1; dir.push([dx/L,dy/L]); }
+  const out=[];
+  for(let i=0;i<n;i++){
+    const eP=(i-1+n)%n;                                      // ребро, входящее в вершину i
+    const pA=[verts[i][0]+dist*nrm[eP][0], verts[i][1]+dist*nrm[eP][1]];  // на смещённой прямой ребра eP
+    const pB=[verts[i][0]+dist*nrm[i][0],  verts[i][1]+dist*nrm[i][1]];   // на смещённой прямой ребра i
+    const x=lineIntersect(pA,dir[eP],pB,dir[i]);
+    out.push(x || pB);                                      // ~180° (коллинеарно) — просто смещение
+  }
+  return out;
+}
+
+/* Толщина наружной стены комнаты по ребру, мм. Приоритет:
+   ручная толщина слоя ребра → толщина пресета стены ребра → общий материал
+   стен (ST.mat.wallId) → настройка defWallThick → дефолт 400. */
+function edgeWallThickMm(room, edgeIndex){
+  const em = room && room.edgeMats && room.edgeMats[edgeIndex];
+  if(em){
+    if(em.thick>0) return em.thick;
+    if(em.preset){ const ep=findPreset('walls',em.preset); if(ep && ep.thickness) return ep.thickness; }
+  }
+  const wp = findPreset('walls', ST && ST.mat && ST.mat.wallId);
+  if(wp && wp.thickness) return wp.thickness;
+  if(ST && ST.defWallThick>0) return ST.defWallThick;
+  return WALL_THICK_DEFAULT_MM;
+}
+
+/* Наружный контур комнаты (единая толщина t, м) — вершины наружной грани стен. */
+function roomOuterContour(room, thickM){ return offsetPolygonMiter(roomVerts(room), thickM); }
+/* Габаритные наружные размеры прямоугольной комнаты (м): {w,h}. */
+function roomOuterDims(room, thickM){
+  const o=roomOuterContour(room,thickM); let x0=1/0,y0=1/0,x1=-1/0,y1=-1/0;
+  for(const [x,y] of o){ x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y); }
+  return {w:x1-x0, h:y1-y0};
+}
+/* Наружная длина ребра edgeIndex (м) — длина соответствующего ребра наружного контура. */
+function outerEdgeLength(room, edgeIndex, thickM){
+  const o=roomOuterContour(room,thickM), n=o.length;
+  const a=o[edgeIndex%n], b=o[(edgeIndex+1)%n];
+  return Math.hypot(b[0]-a[0], b[1]-a[1]);
+}
+
 /* Расчёт одной комнаты */
 function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
   const tInt = room.tInt;
@@ -8805,6 +8893,21 @@ function runSelfTest(){
     ok('Панель Tip11 H500 L1000 при Δt60: ≈ 659 Вт', approx(po,659,0.02), `W=${po.toFixed(0)} Вт`);
     const aps=autoSelectPanels(600,20);
     ok('Автоподбор панелей: есть варианты с покрытием ≥100%', aps.length>0 && aps[0].cover>=100, `вариантов=${aps.length}, лучший=${aps[0]?aps[0].cover+'%':'—'}`);
+
+    /* ── Геометрия наружного обмера стен (толщина t) — ядро под учёт толщины ── */
+    const rectV=[[0,0],[4,0],[4,6],[0,6]];                         // внутренняя комната 4×6
+    const rd=roomOuterDims({poly:rectV},0.4);
+    ok('Толщина: 4×6 внутр., t=400мм → наружный габарит 4.8×6.8', approx(rd.w,4.8,1e-6)&&approx(rd.h,6.8,1e-6), `${rd.w.toFixed(2)}×${rd.h.toFixed(2)} м`);
+    ok('Толщина: наружный периметр 4×6 = 23.2 м (внутр. 20)', approx(polyPerimeter(offsetPolygonMiter(rectV,0.4)),23.2,1e-6), `Pнар=${polyPerimeter(offsetPolygonMiter(rectV,0.4)).toFixed(2)} м`);
+    ok('Толщина: t=0 → наружный контур == внутренний', approx(polyPerimeter(offsetPolygonMiter(rectV,0)),polyPerimeter(rectV),1e-9), '');
+    ok('Толщина: наружная длина ребра прямоуг. = внутр.+2·t (ребро 0: 4→4.8)', approx(outerEdgeLength({poly:rectV},0,0.4),4.8,1e-6), `L=${outerEdgeLength({poly:rectV},0,0.4).toFixed(2)} м`);
+    const lV=[[0,0],[6,0],[6,3],[3,3],[3,6],[0,6]];               // L-план: внутр. периметр 24, площадь 27
+    const lO=offsetPolygonMiter(lV,0.4);
+    const lExp=[6.8,3.8,3.0,3.0,3.8,6.8];
+    ok('Толщина: L-план — наружный периметр 27.2 м (5 выпуклых +t, 1 вогнутый −t)', approx(polyPerimeter(lO),27.2,1e-6), `Pнар=${polyPerimeter(lO).toFixed(2)} м`);
+    ok('Толщина: L-план — длины наружных рёбер [6.8,3.8,3,3,3.8,6.8]', (()=>{for(let i=0;i<6;i++){const a=lO[i],b=lO[(i+1)%6];if(!approx(Math.hypot(b[0]-a[0],b[1]-a[1]),lExp[i],1e-6))return false;}return true;})(), '');
+    ok('Толщина: L-план — наружная площадь габарита 37.24 м²', approx(polyAreaAbs(lO),37.24,1e-6), `A=${polyAreaAbs(lO).toFixed(2)} м²`);
+    ok('Толщина: резолвер edgeWallThickMm — пресет brick_380 → 400 мм', edgeWallThickMm({},0)===400, `t=${edgeWallThickMm({},0)} мм`);
   }catch(e){ ok('Без исключений', false, e&&e.message); }
   finally{ Object.assign(ST, JSON.parse(snap)); }
 
@@ -11203,7 +11306,7 @@ function buildEditorUI(){
     ${buildRibbon()}
     <div class="ed-canvas-wrap" id="ed-canvas-wrap">
       <canvas id="ed-canvas"></canvas>
-      <div id="mr-schedule-view"></div>
+      <div id="mr-schedule-view" data-lenis-prevent></div>
       <div class="ed-legend">
         <div><i style="background:#ff6b35"></i>${t('mr-legend-hot')}</div>
         <div><i style="background:#f59e0b"></i>${t('mr-legend-live')}</div>
@@ -11220,7 +11323,7 @@ function buildEditorUI(){
       </div>
       <div id="ed-text-input" style="display:none;position:absolute;z-index:9999"></div>
     </div>
-    <div class="ed-props" id="ed-props"></div>
+    <div class="ed-props" id="ed-props" data-lenis-prevent></div>
   </div>
   <div class="ed-status" id="ed-status"></div>`;
 }
@@ -11248,7 +11351,7 @@ function buildRibbon(){
       ${_rsvg(cat.sp)}<span>${catLabel(cat.id)}</span><span class="er-chev">›</span></div>
       <div class="er-body${open?'':' hidden'}" id="er-body-${cat.id}">${tools.map(tool=>erToolBtn(tool)).join('')}</div></div>`;
   }).join('');
-  return `<div class="ed-ribbon" id="ed-ribbon">
+  return `<div class="ed-ribbon" id="ed-ribbon" data-lenis-prevent>
     <div class="er-search"><input type="text" id="er-search" placeholder="${t('mr-search-ph')}" oninput="erFilter(this.value)" autocomplete="off"></div>
     ${rows}</div>`;
 }
