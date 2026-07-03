@@ -73,25 +73,31 @@ html[data-theme="light"]{background:#EEF2FA}
 body{margin:0;background:#07090F;color:#ECF0FA;font-family:Manrope,system-ui,sans-serif}
 html[data-theme="light"] body{background:#EEF2FA;color:#2A3651}
 .bg-comets{position:absolute;inset:0;overflow:hidden;pointer-events:none;contain:strict}
-.bgc{position:absolute;left:0;height:1px;width:150px;opacity:0;
-  background:linear-gradient(90deg,transparent,rgba(125,211,252,.38),transparent);
+.bgc{position:absolute;left:0;height:2px;width:170px;opacity:0;border-radius:2px;
+  background:linear-gradient(90deg,transparent 0%,rgba(125,211,252,.1) 40%,rgba(125,211,252,.85) 85%,rgba(224,246,255,1) 100%);
   animation:bgc-fly 9s linear infinite;will-change:transform,opacity}
-.bgc2{top:38%;width:200px;animation-delay:2.6s;animation-duration:11.5s}
-.bgc3{top:60%;width:120px;animation-delay:5.2s;animation-duration:8.5s;
-  background:linear-gradient(90deg,transparent,rgba(245,158,11,.28),transparent)}
-.bgc4{top:76%;width:170px;animation-delay:7.4s;animation-duration:13s}
+.bgc::after{content:'';position:absolute;right:-2px;top:50%;width:5px;height:5px;
+  transform:translateY(-50%);border-radius:50%;background:rgba(224,246,255,1);
+  box-shadow:0 0 8px 2px rgba(125,211,252,.9),0 0 18px 5px rgba(125,211,252,.4)}
+.bgc2{top:38%;width:220px;animation-delay:2.6s;animation-duration:11.5s}
+.bgc3{top:60%;width:140px;animation-delay:5.2s;animation-duration:8.5s;
+  background:linear-gradient(90deg,transparent 0%,rgba(245,158,11,.1) 40%,rgba(245,158,11,.8) 85%,rgba(255,224,168,1) 100%)}
+.bgc3::after{background:rgba(255,224,168,1);box-shadow:0 0 8px 2px rgba(245,158,11,.9),0 0 18px 5px rgba(245,158,11,.4)}
+.bgc4{top:76%;width:190px;animation-delay:7.4s;animation-duration:13s}
 .bgc1{top:20%}
 @keyframes bgc-fly{
   0%{transform:translateX(-25vw);opacity:0}
-  10%{opacity:.75}
-  60%{opacity:.4}
+  10%{opacity:1}
+  65%{opacity:.6}
   100%{transform:translateX(125vw);opacity:0}
 }
 /* WebGL стартовал → кометы гасим, canvas проявляется (см. site.css #shader-bg).
    На tier-low WebGL не инициализируется вовсе — кометы остаются постоянным фоном. */
 html.webgl-on .bg-comets{display:none}
-[data-theme="light"] .bgc{background:linear-gradient(90deg,transparent,rgba(49,83,161,.22),transparent)}
-[data-theme="light"] .bgc3{background:linear-gradient(90deg,transparent,rgba(217,119,6,.20),transparent)}
+[data-theme="light"] .bgc{background:linear-gradient(90deg,transparent 0%,rgba(49,83,161,.06) 40%,rgba(49,83,161,.55) 85%,rgba(180,205,255,.95) 100%)}
+[data-theme="light"] .bgc::after{background:rgba(180,205,255,1);box-shadow:0 0 8px 2px rgba(49,83,161,.6),0 0 18px 5px rgba(49,83,161,.25)}
+[data-theme="light"] .bgc3{background:linear-gradient(90deg,transparent 0%,rgba(217,119,6,.06) 40%,rgba(217,119,6,.5) 85%,rgba(255,214,150,.95) 100%)}
+[data-theme="light"] .bgc3::after{background:rgba(255,214,150,1);box-shadow:0 0 8px 2px rgba(217,119,6,.55),0 0 18px 5px rgba(217,119,6,.25)}
 @media (prefers-reduced-motion: reduce){.bgc{animation:none;opacity:0}}
 /* ════ PERF: tier-правила качества (вешаются PerfManager'ом на <html>) ════
    На мобильных (tier-medium/low) отключаем backdrop-filter — он крайне дорог

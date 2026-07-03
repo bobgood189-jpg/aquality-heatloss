@@ -434,10 +434,12 @@ section.bg-w900{
   position: relative;
   z-index: 1;
 }
-/* Calculator needs more opacity for dense content readability */
+/* Calculator needs more opacity for dense content readability.
+   No border-top here: unlike other .bg-w900 sections (which sit on the
+   plain page background), this one overlaps the section above via
+   negative margin — a hard border-top there reads as an ugly seam. */
 section#calculator{
   background: rgba(10,14,28,.54) !important;
-  border-top: 1px solid rgba(140,165,210,.15);
 }
 /* Phase 7: Section reveal animation */
 /* Скрытие до reveal — ТОЛЬКО при html.anim-ready (ставит initSectReveal в app.js).
@@ -721,7 +723,7 @@ html.anim-ready .sect-reveal:not(.in-view){
 [data-theme="light"] #hero .orb1,.orb2{opacity:.12}
 
 /* Calculator section */
-[data-theme="light"] #calculator{background:var(--aq-bg2)!important}
+[data-theme="light"] #calculator{background:var(--aq-bg2)!important;border-top:none}
 [data-theme="light"] #step-panel{
   background:rgba(255,255,255,.7)!important;border-color:var(--aq-border)!important;
   box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 8px 32px rgba(60,35,10,.08)!important
