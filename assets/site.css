@@ -1686,6 +1686,10 @@ html.webgl-on #shader-bg{opacity:.72}
 @keyframes wa-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.65);opacity:0}}
 @media(max-width:550px){#floating-actions{bottom:1.2rem;right:1.2rem;gap:.6rem}#floating-wa{padding:.85rem;border-radius:50%}.wa-label{display:none}}
 .sec-overlay.open~#floating-actions,body:has(.sec-overlay.open) #floating-actions,body:has(#paywall-overlay.open) #floating-actions,body:has(#admin-overlay.open) #floating-actions{opacity:0;pointer-events:none;transform:scale(.8)}
+/* Мини-Revit открыт → плавающие кнопки (подписка/WhatsApp) полностью скрыты: перекрывают панель свойств.
+   #floating-actions в DOM раньше #ed-root, поэтому селектор-сосед «~» не работает — только :has;
+   .ed-hidden — JS-фолбэк из openEditor/closeEditor для браузеров без :has. */
+body:has(#ed-root.open) #floating-actions,#floating-actions.ed-hidden{display:none !important}
 /* ══════════════════════════════════════════════
    HERO TRUST BADGES + GRADIENT DIVIDER
 ══════════════════════════════════════════════ */

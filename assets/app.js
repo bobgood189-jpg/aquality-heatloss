@@ -353,6 +353,8 @@ async function aqLoadSession(session){
       }catch(e){ console.warn('[AQ] профиль не создан', e); prof = ins; }
     }
     _aqCacheProf(prof, u.id);
+    try{ if(typeof aqMergeCloudPresets==='function') aqMergeCloudPresets(prof); }catch(e){}
+    try{ if(typeof aqMergeCloudMats==='function') aqMergeCloudMats(prof); }catch(e){}
   } else {
     console.warn('[AQ] профиль не загружен', profRes.reason);
     prof = _aqReadCachedProf(u.id);   // резерв: сохранённые роль/имя, чтобы не терять админа
@@ -2647,6 +2649,12 @@ function _hidePageWidgets(){
 function _showPageWidgets(){
   const orbital=document.getElementById('orbital'); if(orbital) orbital.style.display='';
   const lp=document.getElementById('live-panel'); if(lp) lp.style.display='';
+}
+/* Плавающие кнопки (#floating-sub / #floating-wa): JS-фолбэк к CSS body:has(#ed-root.open)
+   для браузеров без :has. Кнопки не удаляются из DOM — только класс на время редактора. */
+function _toggleFloatingActions(hide){
+  const fa=document.getElementById('floating-actions');
+  if(fa) fa.classList.toggle('ed-hidden', !!hide);
 }
 
 /* ══ Body scroll lock (position:fixed approach for iOS Safari) ══ */
@@ -6111,23 +6119,23 @@ const CEIL_MATS = [
   {id:'ce_asbest',     name:'Асбоцементные плиты',                     lambda:0.35, group:'Отделка'},
 ];
 
-/* ── Типовые конструкции пола (для Узбекистана) ── */
+/* ── Типовые конструкции пола (для Узбекистана); thick — ММ ── */
 const FLOOR_TEMPLATES = [
-  {name:'ЖБ + Пеноплекс + стяжка + плитка',layers:[{matId:'fl_rc_hollow',thick:22},{matId:'fl_xps',thick:5},{matId:'fl_screed',thick:5},{matId:'fl_tile',thick:1}]},
-  {name:'1 этаж: грунт + XPS + стяжка + плитка',layers:[{matId:'fl_gravel',thick:10},{matId:'fl_hydroiz',thick:0.5},{matId:'fl_xps',thick:10},{matId:'fl_screed',thick:7},{matId:'fl_tile',thick:1}]},
-  {name:'ЖБ + керамзит + стяжка + ламинат',layers:[{matId:'fl_rc_hollow',thick:22},{matId:'fl_keramzit',thick:10},{matId:'fl_screed',thick:5},{matId:'fl_laminate',thick:1.2}]},
-  {name:'ЖБ + ППУ + стяжка + мрамор',layers:[{matId:'fl_rc_solid',thick:20},{matId:'fl_ppu',thick:7},{matId:'fl_screed',thick:5},{matId:'fl_marble',thick:2}]},
-  {name:'Дерево + минвата + ОСП + паркет',layers:[{matId:'fl_wood_beam',thick:5},{matId:'fl_minwool_p',thick:10},{matId:'fl_osb',thick:1.8},{matId:'fl_parquet',thick:2}]},
-  {name:'ЖБ + пенопласт + стяжка + линолеум',layers:[{matId:'fl_rc_hollow',thick:22},{matId:'fl_eps',thick:5},{matId:'fl_screed',thick:5},{matId:'fl_linoleum',thick:0.3}]},
+  {name:'ЖБ + Пеноплекс + стяжка + плитка',layers:[{matId:'fl_rc_hollow',thick:220},{matId:'fl_xps',thick:50},{matId:'fl_screed',thick:50},{matId:'fl_tile',thick:10}]},
+  {name:'1 этаж: грунт + XPS + стяжка + плитка',layers:[{matId:'fl_gravel',thick:100},{matId:'fl_hydroiz',thick:5},{matId:'fl_xps',thick:100},{matId:'fl_screed',thick:70},{matId:'fl_tile',thick:10}]},
+  {name:'ЖБ + керамзит + стяжка + ламинат',layers:[{matId:'fl_rc_hollow',thick:220},{matId:'fl_keramzit',thick:100},{matId:'fl_screed',thick:50},{matId:'fl_laminate',thick:12}]},
+  {name:'ЖБ + ППУ + стяжка + мрамор',layers:[{matId:'fl_rc_solid',thick:200},{matId:'fl_ppu',thick:70},{matId:'fl_screed',thick:50},{matId:'fl_marble',thick:20}]},
+  {name:'Дерево + минвата + ОСП + паркет',layers:[{matId:'fl_wood_beam',thick:50},{matId:'fl_minwool_p',thick:100},{matId:'fl_osb',thick:18},{matId:'fl_parquet',thick:20}]},
+  {name:'ЖБ + пенопласт + стяжка + линолеум',layers:[{matId:'fl_rc_hollow',thick:220},{matId:'fl_eps',thick:50},{matId:'fl_screed',thick:50},{matId:'fl_linoleum',thick:3}]},
 ];
-/* ── Типовые конструкции потолка (для Узбекистана) ── */
+/* ── Типовые конструкции потолка (для Узбекистана); thick — ММ ── */
 const CEIL_TEMPLATES = [
-  {name:'Ломбоз + перлит + штукатурка (типовой УЗ)',layers:[{matId:'ce_rc_hollow',thick:22},{matId:'ce_lomboz_f',thick:3},{matId:'ce_perlit',thick:10},{matId:'ce_plaster_g',thick:2}]},
-  {name:'Монолит + базальтвата + ГКЛ',layers:[{matId:'ce_rc_solid',thick:20},{matId:'ce_basalt_p',thick:10},{matId:'ce_gkl',thick:1.25}]},
-  {name:'Монолит + Пеноплекс + стяжка',layers:[{matId:'ce_rc_solid',thick:20},{matId:'ce_xps',thick:8},{matId:'ce_screed',thick:5}]},
-  {name:'Дерево + минвата + вагонка',layers:[{matId:'ce_wood_pine',thick:5},{matId:'ce_minwool_r',thick:15},{matId:'ce_lining',thick:2}]},
-  {name:'Ломбоз + ППУ + ГВЛ',layers:[{matId:'ce_rc_hollow',thick:22},{matId:'ce_ppu',thick:8},{matId:'ce_gvl',thick:1.25}]},
-  {name:'Монолит + эковата + натяжной потолок',layers:[{matId:'ce_rc_solid',thick:20},{matId:'ce_ekovata',thick:15},{matId:'ce_stretch',thick:0.05}]},
+  {name:'Ломбоз + перлит + штукатурка (типовой УЗ)',layers:[{matId:'ce_rc_hollow',thick:220},{matId:'ce_lomboz_f',thick:30},{matId:'ce_perlit',thick:100},{matId:'ce_plaster_g',thick:20}]},
+  {name:'Монолит + базальтвата + ГКЛ',layers:[{matId:'ce_rc_solid',thick:200},{matId:'ce_basalt_p',thick:100},{matId:'ce_gkl',thick:12.5}]},
+  {name:'Монолит + Пеноплекс + стяжка',layers:[{matId:'ce_rc_solid',thick:200},{matId:'ce_xps',thick:80},{matId:'ce_screed',thick:50}]},
+  {name:'Дерево + минвата + вагонка',layers:[{matId:'ce_wood_pine',thick:50},{matId:'ce_minwool_r',thick:150},{matId:'ce_lining',thick:20}]},
+  {name:'Ломбоз + ППУ + ГВЛ',layers:[{matId:'ce_rc_hollow',thick:220},{matId:'ce_ppu',thick:80},{matId:'ce_gvl',thick:12.5}]},
+  {name:'Монолит + эковата + натяжной потолок',layers:[{matId:'ce_rc_solid',thick:200},{matId:'ce_ekovata',thick:150},{matId:'ce_stretch',thick:0.5}]},
 ];
 
 const CAT_LABELS = {
@@ -6138,14 +6146,81 @@ const CAT_LABELS = {
   get ceilings(){ return t('cat-ceilings')||'Потолок'; }
 };
 
-/* ── Мастерская: пользовательские материалы (localStorage) ── */
+/* ── Мастерская: пользовательские материалы (localStorage + профиль Supabase) ── */
 const CUSTOM_KEY = 'aq_custom_presets_v1';
 function loadCustom(){
   try{ const c=JSON.parse(localStorage.getItem(CUSTOM_KEY)); if(c&&typeof c==='object') return Object.assign({walls:[],windows:[],doors:[],floors:[],ceilings:[]},c); }catch(e){}
   return {walls:[],windows:[],doors:[],floors:[],ceilings:[]};
 }
-function saveCustom(){ try{ localStorage.setItem(CUSTOM_KEY,JSON.stringify(CUSTOM)); }catch(e){} }
+let _cpSyncT=null;
+function saveCustom(){
+  try{ localStorage.setItem(CUSTOM_KEY,JSON.stringify(CUSTOM)); }catch(e){}
+  /* авторизован через Supabase → лениво зеркалим в profiles.custom_presets */
+  try{ clearTimeout(_cpSyncT); _cpSyncT=setTimeout(aqSyncCustomPresets,1500); }catch(e){}
+}
+async function aqSyncCustomPresets(){
+  try{
+    if(typeof sb!=='function'||typeof _AQ==='undefined') return;
+    const c=sb(), u=_AQ&&_AQ.user;
+    if(!c||!u||!u._sb) return;
+    await c.from('profiles').update({custom_presets:CUSTOM}).eq('id',u.id);
+  }catch(e){ /* колонки custom_presets может не быть — работаем только с localStorage */ }
+}
+/* Слить конструкции из профиля (custom_presets) с локальными — по id, без дублей */
+function aqMergeCloudPresets(prof){
+  const cloud=prof&&prof.custom_presets;
+  if(!cloud||typeof cloud!=='object') return;
+  let added=0;
+  for(const cat of ['walls','windows','doors','floors','ceilings']){
+    const arr=Array.isArray(cloud[cat])?cloud[cat]:[];
+    for(const p of arr){ if(p&&p.id&&p.r>0&&!CUSTOM[cat].some(x=>x.id===p.id)){ CUSTOM[cat].push(p); added++; } }
+  }
+  if(added){ try{ localStorage.setItem(CUSTOM_KEY,JSON.stringify(CUSTOM)); }catch(e){} }
+}
 let CUSTOM = loadCustom();
+
+/* ── Личная библиотека материалов слоёв («Мастерская материалов»): свои {name, λ} под свой вкус ──
+   Подмешивается в автодополнение λ во всех редакторах слоёв (стены/пол/потолок/Мастерская).
+   Хранится в localStorage + зеркалится в profiles.custom_mats. */
+const CUSTOM_MATS_KEY = 'aq_custom_mats_v1';
+function loadCustomMats(){
+  try{ const a=JSON.parse(localStorage.getItem(CUSTOM_MATS_KEY)); if(Array.isArray(a)) return a.filter(m=>m&&m.name&&m.lambda>0); }catch(e){}
+  return [];
+}
+let CUSTOM_MATS = loadCustomMats();
+let _cmSyncT=null;
+function saveCustomMats(){
+  try{ localStorage.setItem(CUSTOM_MATS_KEY,JSON.stringify(CUSTOM_MATS)); }catch(e){}
+  try{ clearTimeout(_cmSyncT); _cmSyncT=setTimeout(aqSyncCustomMats,1500); }catch(e){}
+}
+async function aqSyncCustomMats(){
+  try{
+    if(typeof sb!=='function'||typeof _AQ==='undefined') return;
+    const c=sb(), u=_AQ&&_AQ.user;
+    if(!c||!u||!u._sb) return;
+    await c.from('profiles').update({custom_mats:CUSTOM_MATS}).eq('id',u.id);
+  }catch(e){ /* колонки custom_mats может не быть — работаем только с localStorage */ }
+}
+function aqMergeCloudMats(prof){
+  const cloud=prof&&prof.custom_mats;
+  if(!Array.isArray(cloud)) return;
+  let added=0;
+  for(const m of cloud){ if(m&&m.name&&m.lambda>0&&!CUSTOM_MATS.some(x=>x.id===m.id||x.name===m.name)){ CUSTOM_MATS.push(m); added++; } }
+  if(added){ try{ localStorage.setItem(CUSTOM_MATS_KEY,JSON.stringify(CUSTOM_MATS)); }catch(e){} }
+}
+/* Сохранить материал в личную библиотеку (name+λ). Возвращает false, если уже есть с той же λ. */
+function addCustomMat(name, lambda){
+  name=(name||'').trim(); lambda=parseFloat(lambda);
+  if(!name||!(lambda>0)) return {ok:false,err:'Нужны название и λ>0'};
+  const exBuiltin=RAW_MATERIALS.find(m=>m.name.toLowerCase()===name.toLowerCase());
+  const exMine=CUSTOM_MATS.find(m=>m.name.toLowerCase()===name.toLowerCase());
+  if(exMine){ if(Math.abs(exMine.lambda-lambda)<1e-6) return {ok:false,err:'Уже в списке'}; exMine.lambda=lambda; saveCustomMats(); return {ok:true,updated:true}; }
+  if(exBuiltin && Math.abs((exBuiltin.lambda!=null?exBuiltin.lambda:exBuiltin.λ)-lambda)<1e-6) return {ok:false,err:'Есть в справочнике'};
+  CUSTOM_MATS.push({id:uid('mat'), name, lambda, group:'Мои материалы'});
+  saveCustomMats();
+  return {ok:true};
+}
+function removeCustomMat(id){ CUSTOM_MATS=CUSTOM_MATS.filter(m=>m.id!==id); saveCustomMats(); }
 function presetList(cat){ return [...BASE_PRESETS[cat], ...CUSTOM[cat].map(p=>({...p,custom:true}))]; }
 function findPreset(cat,id){ return presetList(cat).find(p=>p.id===id)||null; }
 
@@ -8099,6 +8174,18 @@ const WALL_HOMOG_DEFAULT = 0.85;   // коэф. однородности; мос
 const ALPHA = {in_wall:8.7, in_ceiling:7.6, in_floor:5.8, out_wall:23, out_roof:12, out_vent:6};
 const WALL_ENVELOPE_R = 0.17;      // R_si+R_se стены/двери при ручном вводе λ (совместимо с пресетами)
 
+/* ── Rsi/Rse по направлению теплового потока (КМК 2.01.04-18 / ISO 6946) ──
+   Для многослойных конструкций, собираемых пользователем (редактор слоёв / Мастерская):
+   стена  — горизонтальный поток: 0.13+0.04=0.17 (калибровка BASE_PRESETS, НЕ менять);
+   пол    — поток вниз:  Rsi 0.17 + Rse 0.04 = 0.21;
+   потолок— поток вверх: Rsi 0.10 + Rse 0.04 = 0.14. */
+const SURFACE_ENVELOPE = {
+  wall:    {rsi:0.13, rse:0.04},
+  floor:   {rsi:0.17, rse:0.04},
+  ceiling: {rsi:0.10, rse:0.04},
+};
+function envelopeR(kind){ const e=SURFACE_ENVELOPE[kind]; return e ? e.rsi+e.rse : 0; }
+
 /* ── β надбавки на открывание НАРУЖНЫХ дверей/ворот ──
    Источник: ТЕПЛОПОТЕРЬЯ хисоб-китоблари.xlsx (image7). Применяются только к наружным проёмам-дверям
    (приток холодного воздуха при открывании); к окнам и внутренним дверям не применяются. */
@@ -8392,10 +8479,13 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
       const opR = op.customU>0 ? 1/op.customU : (pp?pp.r:0);
       if(opR>0) breakdown[op.type] += (localDT/opR)*a*k;
     }
-    // Per-edge R override (Фаза 1+3): preset OR manual λ+thickness
+    // Per-edge R override: слои > пресет > ручной λ+толщина (слои и ручной ввод — точная сборка, без коэф. однородности)
     const em = room.edgeMats && room.edgeMats[ed.i];
     let edgeR = wallR;
-    if(em && em.preset){ const ep=findPreset('walls',em.preset); if(ep) edgeR=regimeR(ep.r,WALL_ENVELOPE_R,presetClass(ep))*(ep.homog!=null?ep.homog:WALL_HOMOG_DEFAULT); }
+    const emLayersR = em ? calcLayerR(em.layers,'wall') : null;
+    if(emLayersR!=null){ edgeR=emLayersR; }
+    else if(em && em.customR>0){ edgeR=em.customR; }
+    else if(em && em.preset){ const ep=findPreset('walls',em.preset); if(ep) edgeR=regimeR(ep.r,WALL_ENVELOPE_R,presetClass(ep))*(ep.homog!=null?ep.homog:WALL_HOMOG_DEFAULT); }
     else if(em && em.lambda>0 && em.thick>0){ edgeR=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda; }
     ed.segs.forEach((seg,si)=>{
       const localDT = tInt - seg.tOther;
@@ -8409,9 +8499,10 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
     });
   }
 
-  // Пол (нижний этаж): если заданы кастомные слои — используем их R, иначе пресет
+  // Пол (нижний этаж): приоритет — слои комнаты > слои этажа > глобальный пресет
   if(floorIndex===0){
-    const customFloorR = calcLayerR(floor.floorLayers);
+    const roomFloorR = calcLayerR(room.floorLayers,'floor');
+    const customFloorR = roomFloorR!=null ? roomFloorR : calcLayerR(floor.floorLayers,'floor');
     if(customFloorR!=null){
       if(customFloorR>0) breakdown.floor += (dTout/customFloorR)*area;
     } else if(fp){
@@ -8419,17 +8510,18 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
         const addR=fp.addR!=null?fp.addR:0, n=fp.n!=null?fp.n:1;
         for(const z of zonalFloorAreas(room,rooms)) breakdown.floor+=(dTout/(z.r+addR))*z.a*n;
       } else {
-        breakdown.floor += (dTout/regimeR(fp.r,0.17,presetClass(fp)))*area*(fp.n!=null?fp.n:1);
+        breakdown.floor += (dTout/regimeR(fp.r,fp.env!=null?fp.env:0.17,presetClass(fp)))*area*(fp.n!=null?fp.n:1);
       }
     }
   }
-  // Потолок (верхний этаж): кастомные слои или пресет
+  // Потолок (верхний этаж): приоритет — слои комнаты > слои этажа > глобальный пресет
   if(floorIndex===lastIndex){
-    const customCeilR = calcLayerR(floor.ceilingLayers);
+    const roomCeilR = calcLayerR(room.ceilingLayers,'ceiling');
+    const customCeilR = roomCeilR!=null ? roomCeilR : calcLayerR(floor.ceilingLayers,'ceiling');
     if(customCeilR!=null){
       if(customCeilR>0) breakdown.ceiling += (dTout/customCeilR)*area*atticN();
     } else if(cp){
-      breakdown.ceiling += (dTout/regimeR(cp.r,0.17,presetClass(cp)))*area*atticN();
+      breakdown.ceiling += (dTout/regimeR(cp.r,cp.env!=null?cp.env:0.17,presetClass(cp)))*area*atticN();
     }
   }
 
@@ -8789,6 +8881,47 @@ function runSelfTest(){
     const dN=mkRoom([{id:'dN',type:'door',side:'top',pos:50,w:1,h:2.1,count:1,doorType:'double'}]); fl.rooms=[dN];
     const rDN=computeRoom(dN,fl,0,0,tExt,[dN]);
     ok('β двери (double +0.34) увеличивает потерю двери', rDN.breakdown.door>rD0.breakdown.door, `none=${rD0.breakdown.door.toFixed(0)} → double=${rDN.breakdown.door.toFixed(0)} Вт`);
+
+    /* ── Многослойные конструкции: R/U и приоритеты (редактор слоёв / Мастерская) ──
+       Эталоны R — из шапки BASE_PRESETS: brick_380=0.750, gazo_300=2.31. */
+    const rBrick=calcLayerR([{name:'Кирпич глиняный полнотелый',lambda:0.70,thick:380},{name:'Штукатурка цем.-песч.',lambda:0.81,thick:30}],'wall');
+    ok('R слоёв (кирпич 380 + 2×штук.15) = пресет brick_380 (0.750)', approx(rBrick,0.750,0.005), `R=${rBrick}`);
+    const rGazo=calcLayerR([{name:'Газоблок AAC D500',lambda:0.14,thick:300}],'wall');
+    ok('R слоёв (газоблок 300 D500) = пресет gazo_300 (2.31)', approx(rGazo,2.31,0.005), `R=${rGazo}`);
+    ok('U = 1/R (газоблок 300)', approx(1/rGazo,0.4324,0.01), `U=${(1/rGazo).toFixed(4)}`);
+    ok('Rsi+Rse по направлению потока: стена 0.17 / пол 0.21 / потолок 0.14',
+       Math.abs(envelopeR('wall')-0.17)<1e-9 && Math.abs(envelopeR('floor')-0.21)<1e-9 && Math.abs(envelopeR('ceiling')-0.14)<1e-9,
+       `${envelopeR('wall').toFixed(2)} / ${envelopeR('floor').toFixed(2)} / ${envelopeR('ceiling').toFixed(2)}`);
+    const pComp=findPreset('walls','brick_380_i100');
+    const rEq=calcLayerR(presetToLayers(pComp,'wall'),'wall');
+    ok('Пресет → слои: эквивалентный слой сохраняет R (brick_380_i100 = 3.13)', approx(rEq,pComp.r,0.01), `R=${rEq}`);
+    const rmL=mkRoom([]); fl.rooms=[rmL];
+    fl.floorLayers=[{name:'XPS (экструзионный ПС)',lambda:0.034,thick:50}];
+    rmL.floorLayers=[{name:'XPS (экструзионный ПС)',lambda:0.034,thick:100}];
+    const rL=computeRoom(rmL,fl,0,0,tExt,[rmL]);
+    const expFloor=(34/calcLayerR(rmL.floorLayers,'floor'))*20;
+    ok('Слои комнаты (пол) переопределяют слои этажа и пресет', approx(rL.breakdown.floor,expFloor,1e-3), `floor=${rL.breakdown.floor.toFixed(1)} / ожид. ${expFloor.toFixed(1)} Вт`);
+    delete fl.floorLayers;
+    const rmW=mkRoom([]); rmW.edgeMats={0:{preset:'',lambda:0,thick:300,layers:[{name:'Газоблок AAC D500',lambda:0.14,thick:300},{name:'Минеральная вата (плита)',lambda:0.042,thick:100}]}};
+    fl.rooms=[rmW];
+    const rWl=computeRoom(rmW,fl,0,0,tExt,[rmW]);
+    ok('Слои отдельной стены (edgeMats.layers) переопределяют пресет', rWl.breakdown.wall<rB.breakdown.wall, `wall ${rB.breakdown.wall.toFixed(0)} → ${rWl.breakdown.wall.toFixed(0)} Вт`);
+    /* Ручной R стены (customR) — задаём готовое R=3.0, потери = ΔT/R·S */
+    const rmCR=mkRoom([]); rmCR.edgeMats={0:{preset:'',lambda:0,thick:0,customR:3.0}}; fl.rooms=[rmCR];
+    const rCR=computeRoom(rmCR,fl,0,0,tExt,[rmCR]);
+    ok('Ручной R стены (customR=3.0) применяется в расчёте', rCR.breakdown.wall>0 && rCR.breakdown.wall<rB.breakdown.wall, `wall=${rCR.breakdown.wall.toFixed(0)} Вт при R=3.0`);
+    ok('customR: чем больше R, тем меньше потери', (()=>{ const a=mkRoom([]); a.edgeMats={0:{preset:'',customR:1.0}}; const b=mkRoom([]); b.edgeMats={0:{preset:'',customR:5.0}}; fl.rooms=[a]; const ra=computeRoom(a,fl,0,0,tExt,[a]); fl.rooms=[b]; const rb=computeRoom(b,fl,0,0,tExt,[b]); return ra.breakdown.wall>rb.breakdown.wall; })(), 'R1.0 > R5.0 по потерям');
+    /* «Мои материалы»: сохранение и автоподстановка λ в редакторе слоёв */
+    ok('Мои материалы: addCustomMat + leMatByName находит λ', (()=>{
+      const snapM=CUSTOM_MATS.slice();
+      const uniq='__ТестМат '+Math.random().toString(36).slice(2,6);
+      const r1=addCustomMat(uniq, 0.055);
+      const found=leMatByName({mats:RAW_MATERIALS}, uniq);
+      const lamOk=found && Math.abs(leMatLambda(found)-0.055)<1e-9;
+      const idx=CUSTOM_MATS.findIndex(m=>m.name===uniq); if(idx>=0) removeCustomMat(CUSTOM_MATS[idx].id);
+      CUSTOM_MATS.length=0; snapM.forEach(m=>CUSTOM_MATS.push(m));   // восстановить
+      return r1.ok && lamOk;
+    })(), 'своя λ подставляется из «Моих материалов»');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -11159,6 +11292,7 @@ function openEditor(){
   document.body.style.overflow='hidden';
   if(window._lenis) window._lenis.stop();
   _hidePageWidgets();
+  _toggleFloatingActions(true);
   const root=document.getElementById('ed-root');
   root.innerHTML=buildEditorUI();
   root.classList.add('open');
@@ -11178,6 +11312,7 @@ function closeEditor(){
   document.body.style.overflow='';
   if(window._lenis) window._lenis.start();
   _showPageWidgets();
+  _toggleFloatingActions(false);
   window.removeEventListener('keydown', edKey);
   window.removeEventListener('keyup', edKeyUp);
   window.removeEventListener('resize', edOnResize);
@@ -11735,7 +11870,7 @@ function edDrawRoom(ctx,room,rooms,sel){
   // Highlight selected edge (Фаза 3) + mark edges with custom material
   const vp2=roomVerts(room);
   for(let i=0;i<vp2.length;i++){
-    const hasMat=room.edgeMats && room.edgeMats[i] && (room.edgeMats[i].preset||room.edgeMats[i].lambda>0);
+    const hasMat=room.edgeMats && room.edgeMats[i] && (room.edgeMats[i].preset||room.edgeMats[i].lambda>0||normLayers(room.edgeMats[i].layers).length);
     const isSelEdge=EDITOR.selEdge && EDITOR.selEdge.roomId===room.id && EDITOR.selEdge.edgeIdx===i;
     if(hasMat||isSelEdge){
       const a=vp2[i],b=vp2[(i+1)%vp2.length];
@@ -11835,15 +11970,57 @@ function edEdgeAt(sx,sy){ const f=activeFloor(),thr=10; let best=thr,br=null,bi=
   }} return br?{room:br,edgeIdx:bi}:null;
 }
 /* Set per-edge material override */
+/* Эффективный R стены (тот же приоритет, что в расчёте): слои > ручной R > пресет > λ+δ > глобальный */
+function edWallEffR(room,edgeIdx){
+  const em=room.edgeMats&&room.edgeMats[edgeIdx];
+  const lr=em?calcLayerR(em.layers,'wall'):null;
+  if(lr!=null) return lr;
+  if(em&&em.customR>0) return em.customR;
+  if(em&&em.preset){const ep=findPreset('walls',em.preset);if(ep)return ep.r;}
+  if(em&&em.lambda>0&&em.thick>0) return WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;
+  const wp=findPreset('walls',ST.mat.wallId); return wp?wp.r:1.5;
+}
 function edSetEdgeMat(roomId,edgeIdx,key,val){
   const r=findRoom(roomId); if(!r) return;
   if(!r.edgeMats) r.edgeMats={};
   if(!r.edgeMats[edgeIdx]) r.edgeMats[edgeIdx]={preset:'',lambda:0,thick:300};
+  const m=r.edgeMats[edgeIdx];
   if(key==='preset'){
-    if(val==='__manual'){ r.edgeMats[edgeIdx].preset=''; } // manual mode: clear preset, keep lambda/thick
-    else { r.edgeMats[edgeIdx].preset=val; const p=findPreset('walls',val); if(p){r.edgeMats[edgeIdx].lambda=p.lambda||0;} }
-  } else { r.edgeMats[edgeIdx][key]=val; }
+    /* при любой смене конструкции сбрасываем спец-режимы (слои / ручной R) */
+    if(val!=='__layers'){ delete m.layers; delete m.layersMode; }
+    if(val!=='__manualR') delete m.customR;
+    if(val==='__layers'){
+      /* режим «слои»: миграция «один пресет → массив layers» — разбираем СОБСТВЕННЫЙ пресет
+         стены (если был выбран), иначе глобальный пресет этажа */
+      const ownPreset=m.preset;
+      m.preset=''; m.layersMode=true;
+      if(!normLayers(m.layers).length){
+        const src=findPreset('walls',ownPreset)||findPreset('walls',ST.mat.wallId);
+        m.layers=src?presetToLayers(src,'wall'):[];
+      }
+    } else if(val==='__manual'){
+      m.preset='';                          // ручной λ+толщина: пресет очищаем, λ/δ сохраняем
+      if(!(m.lambda>0)) m.lambda=0.14;
+      if(!(m.thick>0)) m.thick=300;
+    } else if(val==='__manualR'){
+      m.preset='';                          // ручной готовый R: сеем текущим эффективным R
+      m.customR=+edWallEffR(r,edgeIdx).toFixed(3);
+    } else {
+      m.preset=val; const p=findPreset('walls',val); if(p){m.lambda=p.lambda||0;}
+    }
+  } else {
+    m[key]=val;
+  }
   edCommit(); edDraw(); edProps();
+}
+/* «+ слой» из пресет-режима: включить слои (с миграцией пресета) и сразу добавить пустой слой */
+function edWallAddLayer(roomId,edgeIdx){
+  edSetEdgeMat(roomId,edgeIdx,'preset','__layers');
+  leAdd('wle-'+roomId+'-'+edgeIdx);
+}
+/* «Мастерская» из панели стены — доступна в любом режиме */
+function edWallOpenWorkshop(roomId,edgeIdx){
+  openWorkshop('walls',{fromEditor:true,target:'wall',roomId,edgeIdx});
 }
 function edClearEdgeMat(roomId,edgeIdx){ const r=findRoom(roomId); if(r&&r.edgeMats) delete r.edgeMats[edgeIdx]; edCommit(); edDraw(); edProps(); }
 
@@ -13040,11 +13217,12 @@ function edProps(){
     ${geomBlock}
     <div class="rounded-lg bg-w800/60 p-2 text-xs text-muted mb-3">${roomArea(room).toFixed(1)} ${t('mr-unit-m')}² · ${peri.toFixed(1)} ${t('mr-unit-m')} · t +${room.tInt}°${rr?` · <span class="text-amber">${rr.qKw.toFixed(2)} кВт${heatingNone()?'':` · ${rr.sections} ${t('result-sections-abbr')}`}</span>`:''}</div>
     <div class="flex gap-2 mb-2">
-      <button onclick="edAddOpening('window')" class="ed-tbtn flex-1 justify-center">${t('mr-room-add-window')||t('add-window')}</button>
-      <button onclick="edAddOpening('door')" class="ed-tbtn flex-1 justify-center">${t('mr-room-add-door')||t('add-door')}</button>
+      <button onclick="edAddOpening('window')" class="ed-tbtn flex-1 justify-center">${t('add-window')}</button>
+      <button onclick="edAddOpening('door')" class="ed-tbtn flex-1 justify-center">${t('add-door')}</button>
     </div>
     ${ops||`<p class="text-xs text-muted">${t('mr-no-openings')}</p>`}
-    ${buildWallMatsPanel(room)}`;
+    ${buildWallMatsPanel(room)}
+    ${buildRoomSlabPanels(room)}`;
 }
 
 /* Approximate per-edge heat loss (W) — exterior walls only, no beta/corner corrections */
@@ -13057,7 +13235,10 @@ function _edgeApproxQ(room, edgeIdx, floorH){
   const H=floorH||2.8;
   const em=room.edgeMats&&room.edgeMats[edgeIdx];
   let R=1.5;
-  if(em&&em.preset){const ep=findPreset('walls',em.preset);if(ep)R=ep.r*(ep.homog??WALL_HOMOG_DEFAULT);}
+  const emLR=em?calcLayerR(em.layers,'wall'):null;
+  if(emLR!=null){R=emLR;}
+  else if(em&&em.customR>0){R=em.customR;}
+  else if(em&&em.preset){const ep=findPreset('walls',em.preset);if(ep)R=ep.r*(ep.homog??WALL_HOMOG_DEFAULT);}
   else if(em&&em.lambda>0&&em.thick>0){R=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;}
   else{const wp=findPreset('walls',ST.mat.wallId);if(wp)R=wp.r*(wp.homog??WALL_HOMOG_DEFAULT);}
   return R>0?(dT/R)*len*H:0;
@@ -13078,19 +13259,24 @@ function buildWallMatsPanel(room){
 
   for(let i=0;i<n;i++){
     const em=room.edgeMats&&room.edgeMats[i];
-    const hasMat=em&&(em.preset||(em.lambda>0&&em.thick>0));
+    const hasLayers=!!(em&&normLayers(em.layers).length);
+    const hasMat=em&&(hasLayers||em.customR>0||em.preset||(em.lambda>0&&em.thick>0));
     const isSelected=(i===sel);
     const a=verts[i],b=verts[(i+1)%n];
     const len=Math.hypot(b[0]-a[0],b[1]-a[1]);
     const {isExt,extLen}=getWallExt(a,b);
     const dirLabel=getWallDir(a,b);
     let dispR=null, dispLam=null, dispThick=null;
-    if(em&&em.preset){const ep=findPreset('walls',em.preset);if(ep){dispR=ep.r;dispThick=em.thick||300;dispLam=ep.lambda||null;}}
+    if(hasLayers){dispR=calcLayerR(em.layers,'wall');dispThick=normLayers(em.layers).reduce((s,l)=>s+l.thick,0);}
+    else if(em&&em.customR>0){dispR=em.customR;dispThick=em.thick||null;}
+    else if(em&&em.preset){const ep=findPreset('walls',em.preset);if(ep){dispR=ep.r;dispThick=ep.thickness||em.thick||300;dispLam=ep.lambda||null;}}
     else if(em&&em.lambda>0&&em.thick>0){dispLam=em.lambda;dispThick=em.thick;dispR=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;}
-    else{const wp=findPreset('walls',ST.mat.wallId);if(wp){dispR=wp.r;}}
+    else{const wp=findPreset('walls',ST.mat.wallId);if(wp){dispR=wp.r;dispThick=wp.thickness||null;dispLam=wp.lambda||null;}}
+    /* эквивалентная λ = δ/(R−0.17), если прямая λ неизвестна (составные пресеты, слои, ручной R) */
+    if(dispLam==null && dispR!=null && dispThick>0){ const rc=dispR-WALL_ENVELOPE_R; if(rc>0.001) dispLam=+(dispThick/1000/rc).toFixed(3); }
     const qApprox=isExt?_edgeApproxQ(room,i,H):0;
     if(isExt){totalExtQ+=qApprox;totalExtLen+=extLen;}
-    const matName=hasMat?(em.preset?wallPresets.find(p=>p.id===em.preset)?.name||em.preset:`λ${(em.lambda||0).toFixed(3)},${em.thick||0}мм`):'глобальный';
+    const matName=hasMat?(hasLayers?`слои (${normLayers(em.layers).length})`:em.customR>0?`ручной R=${em.customR}`:em.preset?wallPresets.find(p=>p.id===em.preset)?.name||em.preset:`λ${(em.lambda||0).toFixed(3)},${em.thick||0}мм`):'глобальный';
     const col=isSelected?'rgba(125,211,252,.18)':'rgba(255,255,255,.03)';
     const brd=isSelected?'1px solid rgba(125,211,252,.4)':'1px solid rgba(255,255,255,.06)';
     const clr=isSelected?'#7dd3fc':'rgba(200,215,240,.85)';
@@ -13123,24 +13309,45 @@ function buildWallMatsPanel(room){
     const selPreset=em.preset||'';
     const selLambda=em.lambda||0;
     const selThick=em.thick||300;
-    const isManual=!selPreset&&selLambda>0;
+    const hasLayersSel=!!normLayers(em.layers).length;
+    const hasCustomR=em.customR>0;
+    const isManual=!selPreset&&!hasLayersSel&&!hasCustomR&&selLambda>0;
     const a=verts[sel],b=verts[(sel+1)%n];
     const len=Math.hypot(b[0]-a[0],b[1]-a[1]);
     const {isExt:isExtSel}=getWallExt(a,b);
     const dirSel=getWallDir(a,b);
     const qW=isExtSel?_edgeApproxQ(room,sel,H):0;
     const extSelPct=totalExtQ>0&&isExtSel?((qW/totalExtQ)*100).toFixed(1)+'%':'—';
-    let selR=null;
-    if(em.preset){const ep=findPreset('walls',em.preset);if(ep)selR=ep.r;}
-    else if(em.lambda>0&&em.thick>0){selR=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;}
-    else{const wp=findPreset('walls',ST.mat.wallId);if(wp)selR=wp.r;}
+    let selR=null, selThickEff=null, selLamEff=selLambda||null;
+    if(hasLayersSel){selR=calcLayerR(em.layers,'wall');selThickEff=normLayers(em.layers).reduce((s,l)=>s+l.thick,0);}
+    else if(hasCustomR){selR=em.customR;selThickEff=em.thick||null;}
+    else if(em.preset){const ep=findPreset('walls',em.preset);if(ep){selR=ep.r;selThickEff=ep.thickness||null;selLamEff=ep.lambda||null;}}
+    else if(em.lambda>0&&em.thick>0){selR=WALL_ENVELOPE_R+(em.thick/1000)/em.lambda;selThickEff=em.thick;}
+    else{const wp=findPreset('walls',ST.mat.wallId);if(wp){selR=wp.r;selThickEff=wp.thickness||null;selLamEff=wp.lambda||null;}}
+    /* эквивалентная λ для наглядности, если прямой λ нет (составные пресеты, слои, ручной R) */
+    if(selLamEff==null && selR!=null && selThickEff>0){ const rc=selR-WALL_ENVELOPE_R; if(rc>0.001) selLamEff=+(selThickEff/1000/rc).toFixed(3); }
+    /* редактор слоёв выбранной стены (индивидуальная многослойная конструкция) */
+    const wleKey='wle-'+room.id+'-'+sel;
+    if(hasLayersSel||(em.layersMode)){
+      leReg(wleKey,{
+        kind:'wall', mats:RAW_MATERIALS,
+        get:()=>{ const r=findRoom(room.id); if(!r) return []; if(!r.edgeMats) r.edgeMats={}; if(!r.edgeMats[sel]) r.edgeMats[sel]={preset:'',lambda:0,thick:300}; if(!r.edgeMats[sel].layers) r.edgeMats[sel].layers=[]; return r.edgeMats[sel].layers; },
+        title:'Слои стены (снаружи → внутрь)',
+        empty:'Добавьте слои конструкции этой стены.',
+        workshopCat:'walls',
+        wsCtx:{fromEditor:true,target:'wall',roomId:room.id,edgeIdx:sel},
+        seedPreset:()=>findPreset('walls',selPreset||ST.mat.wallId),
+        clearable:false,
+        onChange(){ edCommit(); edDraw(); },
+      });
+    }
     const R_wall_min=1.8; // КМК Zone III
     const wComply=selR!=null?(selR>=R_wall_min?'ok':selR>=R_wall_min*0.75?'warn':'bad'):null;
     const wCC=wComply==='ok'?'#4ade80':wComply==='warn'?'#fbbf24':'#f87171';
     detail=`<div class="rounded-lg mt-1.5 p-3" style="background:rgba(125,211,252,.06);border:1px solid rgba(125,211,252,.22)">
       <div class="flex justify-between items-center mb-2">
         <span class="text-[10px] uppercase tracking-wider font-bold" style="color:#7dd3fc">Ст.${sel+1}${dirSel?' · '+dirSel:''} · ${isExtSel?'наружная':'внутренняя'}</span>
-        ${(selPreset||(selLambda>0))?`<button onclick="edClearEdgeMat('${room.id}',${sel})" style="font-size:10px;color:rgba(154,134,117,.7);border:none;background:none;cursor:pointer">↺ сброс</button>`:''}
+        ${(selPreset||selLambda>0||hasLayersSel||em.layersMode||hasCustomR)?`<button onclick="edClearEdgeMat('${room.id}',${sel})" style="font-size:10px;color:rgba(154,134,117,.7);border:none;background:none;cursor:pointer">↺ сброс</button>`:''}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr ${isExtSel?'1fr 1fr':''};gap:4px;margin-bottom:8px">
         <div style="background:rgba(0,0,0,.25);border-radius:5px;padding:4px 6px;text-align:center">
@@ -13162,26 +13369,38 @@ function buildWallMatsPanel(room){
       </div>
       ${selR?`<div style="display:flex;gap:8px;margin-bottom:8px;font-size:10px;flex-wrap:wrap;align-items:center">
         <span style="color:rgba(125,211,252,.8)">R=${selR.toFixed(3)} м²·К/Вт</span>
-        <span style="color:rgba(245,158,11,.7)">U=${(1/selR).toFixed(3)}</span>
-        ${selLambda?`<span style="color:rgba(154,134,117,.7)">λ=${selLambda}</span>`:''}
+        <span style="color:rgba(245,158,11,.7)">U=${(1/selR).toFixed(3)} Вт/(м²·К)</span>
+        ${selLamEff?`<span style="color:rgba(154,134,117,.8)">λ${selLambda?'':'экв.'}=${selLamEff}</span>`:''}
         ${wComply?`<span style="font-size:9px;font-weight:700;color:${wCC};padding:1px 5px;border-radius:3px;border:1px solid ${wCC}44;background:${wCC}11">${wComply==='ok'?'✓':'⚠'} КМК R≥${R_wall_min}</span>`:''}
       </div>`:''}
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+        <button onclick="edWallOpenWorkshop('${room.id}',${sel})" title="Создать конструкцию в Мастерской и применить к этой стене" style="background:rgba(192,132,252,.12);border:1px solid rgba(192,132,252,.32);border-radius:6px;color:#c084fc;font-size:11px;cursor:pointer;padding:4px 10px;font-weight:600">🛠 Мастерская</button>
+        <button onclick="edWallAddLayer('${room.id}',${sel})" title="Собрать стену из слоёв (материал + λ + толщина)" style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.32);border-radius:6px;color:#ffd27a;font-size:11px;cursor:pointer;padding:4px 10px;font-weight:600">+ слой</button>
+      </div>
       <label class="text-[10px] text-muted mb-1 block">Конструкция стены</label>
       <select class="wi mb-2 text-xs py-1.5" onchange="edSetEdgeMat('${room.id}',${sel},'preset',this.value)">
         <option value="">— Глобальный пресет этажа</option>
         ${wallPresets.map(p=>`<option value="${p.id}" ${selPreset===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
         <option value="__manual" ${isManual?'selected':''}>✏ Ручной λ + толщина</option>
+        <option value="__manualR" ${hasCustomR?'selected':''}>✏ Ручное R (готовое значение)</option>
+        <option value="__layers" ${(hasLayersSel||em.layersMode)?'selected':''}>🧱 Многослойная конструкция (слои)</option>
       </select>
       ${isManual||selPreset==='__manual'?`<div class="grid grid-cols-2 gap-2">
         <div>
           <label class="text-[10px] text-muted block mb-0.5">λ, Вт/(м·К)</label>
-          <input class="wi py-1.5 text-xs" type="number" min="0.01" max="5" step="0.001" value="${selLambda||0.14}" onchange="edSetEdgeMat('${room.id}',${sel},'lambda',+this.value)">
+          <input class="wi py-1.5 text-xs" type="number" min="0.01" max="5" step="0.001" value="${selLambda||0.14}" onchange="edSetEdgeMat('${room.id}',${sel},'lambda',+this.value)" title="Теплопроводность материала: чем меньше, тем теплее">
         </div>
         <div>
           <label class="text-[10px] text-muted block mb-0.5">Толщина, мм</label>
           <input class="wi py-1.5 text-xs" type="number" min="50" max="2000" step="10" value="${selThick}" onchange="edSetEdgeMat('${room.id}',${sel},'thick',+this.value)">
         </div>
       </div>`:''}
+      ${hasCustomR||selPreset==='__manualR'?`<div>
+        <label class="text-[10px] text-muted block mb-0.5">R, м²·К/Вт <span style="opacity:.6">(готовое значение, U считается автоматически)</span></label>
+        <input class="wi py-1.5 text-xs" type="number" min="0.05" max="20" step="0.01" value="${em.customR||(selR!=null?+selR.toFixed(3):0.75)}" onchange="edSetEdgeMat('${room.id}',${sel},'customR',+this.value)" title="Сопротивление теплопередаче стены целиком">
+        <p style="font-size:9px;color:rgba(154,134,117,.65);margin-top:3px">U = 1/R = ${em.customR>0?(1/em.customR).toFixed(3):'—'} Вт/(м²·К)</p>
+      </div>`:''}
+      ${(hasLayersSel||em.layersMode)?leHtml(wleKey)+`<p style="font-size:9px;color:rgba(154,134,117,.65);margin-top:4px">Слои — точная сборка: R = 0.13+0.04 + Σ(δ/λ), коэффициент однородности кладки (0.85) не применяется.</p>`:''}
     </div>`;
   } else {
     detail=`<p style="font-size:10px;color:rgba(154,134,117,.6);margin-top:4px">↑ Нажмите на стену или кликните на стену на плане</p>`;
@@ -13195,149 +13414,309 @@ function edSetAttic(v){ if(ATTIC[v]) ST.attic=v; updateLivePanel(); edProps(); e
 function edSetType(v){ const r=edSelRoom(); if(!r) return; r.typeId=v; r.tInt=roomTypeTemp(v); edPushHist(); updateLivePanel(); edDraw(); edProps(); edStatus(); }
 function edSetName(v){ const r=edSelRoom(); if(!r) return; r.name=v; edPushHist(); edDraw(); }
 function edSetFloorHeight(v){ const f=activeFloor(); f.height=Math.max(2,Math.min(6,parseFloat(v)||2.8)); edPushHist(); updateLivePanel(); edProps(); }
-/* ── Layer R/U calculation: R_total = 0.17 (surfaces) + Σ(δ/λ) ── */
-function calcLayerR(layers){
-  if(!layers||!layers.length) return null;
-  const layerSum=layers.reduce((s,l)=>s+(l.lambda>0?(Math.max(0.5,l.thick||1))/100/(l.lambda*wetRatio(clsOf(l.name||''))):0),0);
-  return parseFloat((0.17+layerSum).toFixed(4));
+/* ════════════════════════════════════════════════════════════
+   МНОГОСЛОЙНЫЕ КОНСТРУКЦИИ — расчёт R/U.
+   Канонический слой: {id?, matId?, name, lambda Вт/(м·К), thick ММ}.
+   Формат Мастерской {name, d(мм), l(λ)} нормализуется normLayers().
+   R = Rsi+Rse (SURFACE_ENVELOPE по направлению потока) + Σ(δ/1000/(λ·влажн.))
+════════════════════════════════════════════════════════════ */
+function normLayers(layers){
+  if(!Array.isArray(layers)) return [];
+  return layers
+    .map(l=>({name:l.name||'', matId:l.matId||null,
+      lambda:parseFloat(l.lambda!=null?l.lambda:l.l)||0,
+      thick:parseFloat(l.thick!=null?l.thick:l.d)||0}))
+    .filter(l=>l.lambda>0&&l.thick>0);
 }
-
-/* ── Layer management ── */
-function addFloorCeilLayer(isFloor){
-  const f=activeFloor();
-  const key=isFloor?'floorLayers':'ceilingLayers';
-  const mats=isFloor?FLOOR_MATS:CEIL_MATS;
-  if(!f[key])f[key]=[];
-  const def=mats[0];
-  f[key].push({id:'ly'+Date.now(),matId:def.id,name:def.name,lambda:def.lambda,thick:isFloor?20:5});
-  edPushHist();edProps();
+/* R одного слоя = δ/λ (с влажностной поправкой режима Б по классу материала) */
+function layerR1(l){
+  const n=normLayers([l])[0];
+  return n ? (n.thick/1000)/(n.lambda*wetRatio(clsOf(n.name))) : 0;
 }
-function removeFloorCeilLayer(isFloor,idx){
-  const f=activeFloor();
-  const key=isFloor?'floorLayers':'ceilingLayers';
-  if(!f[key])return;
-  f[key].splice(idx,1);
-  edPushHist();edProps();
+function calcLayerSum(layers){ return normLayers(layers).reduce((s,l)=>s+(l.thick/1000)/(l.lambda*wetRatio(clsOf(l.name))),0); }
+function calcLayerR(layers, kind){
+  const ls=normLayers(layers);
+  if(!ls.length) return null;
+  return parseFloat((envelopeR(kind||'floor')+calcLayerSum(ls)).toFixed(4));
 }
-function setFloorCeilLayer(isFloor,idx,field,val){
-  const f=activeFloor();
-  const key=isFloor?'floorLayers':'ceilingLayers';
-  if(!f[key]||!f[key][idx])return;
-  const layer=f[key][idx];
-  const mats=isFloor?FLOOR_MATS:CEIL_MATS;
-  if(field==='matId'){
-    const m=mats.find(m=>m.id===val);
-    if(m){layer.matId=m.id;layer.name=m.name;layer.lambda=m.lambda;}
-  } else if(field==='thick'){
-    layer.thick=Math.max(0.5,parseFloat(val)||1);
-  } else if(field==='lambda'){
-    layer.lambda=Math.max(0.001,parseFloat(val)||0.001);
+/* ── Обратная совместимость: одиночный пресет → массив слоёв ──
+   1) у пользовательских пресетов Мастерской берём их слои;
+   2) у пресетов с λ и толщиной — один слой;
+   3) у составных (λ=null) — эквивалентный слой, сохраняющий R пресета. */
+function presetToLayers(p, kind){
+  if(!p) return [];
+  if(Array.isArray(p.layers)&&p.layers.length){
+    const ls=normLayers(p.layers);
+    if(ls.length) return ls.map(l=>({id:uid('ly'),matId:l.matId,name:l.name,lambda:l.lambda,thick:l.thick}));
   }
-  edPushHist();edProps();
-}
-function moveFloorCeilLayer(isFloor,idx,dir){
-  const f=activeFloor();
-  const key=isFloor?'floorLayers':'ceilingLayers';
-  if(!f[key])return;
-  const ni=idx+dir;
-  if(ni<0||ni>=f[key].length)return;
-  [f[key][idx],f[key][ni]]=[f[key][ni],f[key][idx]];
-  edPushHist();edProps();
+  const thick=p.thickness||300;
+  const env=p.env!=null?p.env:(kind==='wall'?WALL_ENVELOPE_R:0.17);
+  /* слой по λ пресета — только если он воспроизводит R пресета (иначе «+штук.» и т.п. потерялись бы) */
+  if(p.lambda>0 && (!(p.r>0) || Math.abs(env+(thick/1000)/p.lambda-p.r)<=0.02))
+    return [{id:uid('ly'),name:p.name,lambda:p.lambda,thick}];
+  const rCond=Math.max(0.01,(p.r||0)-env);
+  return [{id:uid('ly'),name:p.name+' (эквив. слой)',lambda:parseFloat((thick/1000/rCond).toFixed(4)),thick}];
 }
 
-/* ── Применить типовую конструкцию ── */
-function applyLayerTemplate(isFloor, tplIdx){
-  const f=activeFloor();
-  const key=isFloor?'floorLayers':'ceilingLayers';
-  const mats=isFloor?FLOOR_MATS:CEIL_MATS;
-  const tpl=(isFloor?FLOOR_TEMPLATES:CEIL_TEMPLATES)[tplIdx]; if(!tpl) return;
-  f[key]=tpl.layers.map((l,i)=>{
-    const m=mats.find(m=>m.id===l.matId)||mats[0];
-    return {id:'ly'+Date.now()+i, matId:m.id, name:m.name, lambda:m.lambda, thick:l.thick};
-  });
-  edPushHist(); edProps();
-  toast(tpl.name+' — применено');
+/* ════════════════════════════════════════════════════════════
+   ЕДИНЫЙ РЕДАКТОР СЛОЁВ — переиспользуется для стен, полов,
+   потолков (глобально на этаж и индивидуально на элемент) и Мастерской.
+   Регистрация: leReg(key,{get,kind,mats,templates?,title,empty?,onChange,...})
+════════════════════════════════════════════════════════════ */
+const LAYER_EDS = {};
+const LE_KIND_MIN = {wall:1.8, floor:2.0, ceiling:2.5};   // нормы КМК 2.01.04-18, III климатическая зона
+const LE_GROUP_CLR = {'Несущие':'#64748b','Утеплители':'#f59e0b','Стяжки':'#94a3b8','Покрытия':'#c084fc','Заполнители':'#475569','Гидроизоляция':'#3b82f6','Отделка':'#ec4899','Кладка':'#a16207','Ячеистый бетон':'#84cc16','Бетон':'#64748b','Дерево':'#b45309','Штукатурки':'#94a3b8','СИП':'#22d3ee'};
+function leReg(key,cfg){ LAYER_EDS[key]=cfg; return key; }
+function _leCfg(key){ return LAYER_EDS[key]||null; }
+function _leArr(key){ const c=_leCfg(key); return c?(c.get()||[]):[]; }
+function leMatByName(cfg,name){
+  const n=(name||'').trim().toLowerCase(); if(!n) return null;
+  /* приоритет: материалы редактора → личные «Мои материалы» → встроенный справочник */
+  for(const pool of [(cfg&&cfg.mats)||[], CUSTOM_MATS, RAW_MATERIALS]){
+    const m=pool.find(m=>m.name.toLowerCase()===n); if(m) return m;
+  }
+  return null;
 }
-
-/* ── Revit-style layer panel builder ── */
-function buildLayersPanel(f, isFloor){
-  const key=isFloor?'floorLayers':'ceilingLayers';
-  const mats=isFloor?FLOOR_MATS:CEIL_MATS;
-  const templates=isFloor?FLOOR_TEMPLATES:CEIL_TEMPLATES;
-  const layers=f[key]||[];
-  const R=calcLayerR(layers);
-  const Rdisp=R!=null?R.toFixed(3):'—';
-  const Udisp=R!=null?(1/R).toFixed(3):'—';
-  const title=isFloor?'Пол — конструкция слоёв':'Потолок — конструкция слоёв';
-  const isFloorInt=isFloor?1:0;
-  const R_min=isFloor?2.0:2.5; // КМК 2.01.04-18 Zone III
-  const comply=R!=null?(R>=R_min?'ok':R>=R_min*0.75?'warn':'bad'):null;
-  const cC=comply==='ok'?'#4ade80':comply==='warn'?'#fbbf24':'#f87171';
-  const cL=comply==='ok'?'✓ КМК R≥'+R_min:comply==='warn'?'⚠ R<'+R_min:'✗ R<'+R_min;
-  const GC={'Несущие':'#64748b','Утеплители':'#f59e0b','Стяжки':'#94a3b8','Покрытия':'#c084fc','Заполнители':'#475569','Гидроизоляция':'#3b82f6','Отделка':'#ec4899'};
-  const lClr=(l)=>{const m=mats.find(m=>m.id===l.matId);return m?(GC[m.group]||'#4b5563'):'#4b5563';};
-  const groups={};
-  for(const m of mats){if(!groups[m.group])groups[m.group]=[];groups[m.group].push(m);}
-  const mkOpts=(sel)=>Object.entries(groups).map(([g,ms])=>
-    `<optgroup label="${g}">${ms.map(m=>`<option value="${m.id}" ${m.id===sel?'selected':''}>${m.name} (λ ${m.lambda})</option>`).join('')}</optgroup>`
-  ).join('');
-  const totalThick=layers.reduce((s,l)=>s+(l.thick||0),0);
+function leMatLambda(m){ return m ? (m.lambda!=null?m.lambda:m.λ) : null; }
+function leChanged(key){ const c=_leCfg(key); if(c&&c.onChange) c.onChange(); }
+function leAdd(key){ _leArr(key).push({id:uid('ly'),name:'',lambda:0,thick:0,_auto:true}); leChanged(key); }
+function leRemove(key,i){ const a=_leArr(key); a.splice(i,1); leChanged(key); }
+function leMove(key,i,d){ const a=_leArr(key); const j=i+d; if(j<0||j>=a.length) return; [a[i],a[j]]=[a[j],a[i]]; leChanged(key); }
+function leSet(key,i,field,val,commit){
+  const c=_leCfg(key), a=_leArr(key); if(!a[i]) return; const l=a[i];
+  if(field==='name'){
+    l.name=val;
+    const m=leMatByName(c,val);
+    if(m&&(!(l.lambda>0)||l._auto)){    // автозаполнение λ из справочника (как wsAutoFill)
+      l.lambda=leMatLambda(m); l._auto=true; if(m.id) l.matId=m.id;
+      const el=document.getElementById(`le-l-${key}-${i}`); if(el) el.value=l.lambda;
+    }
+  } else if(field==='thick'){ const v=parseFloat(val); l.thick=v>0?v:0; }
+  else if(field==='lambda'){ const v=parseFloat(val); l.lambda=v>0?v:0; l._auto=false; delete l.matId; }
+  if(commit) leChanged(key); else leLive(key);
+}
+function leApplyTpl(key,idx){
+  const c=_leCfg(key); if(!c||!c.templates||!c.templates[idx]) return;
+  const tpl=c.templates[idx], mats=c.mats||[];
+  const a=_leArr(key); a.length=0;
+  tpl.layers.forEach((l,i)=>{ const m=mats.find(m=>m.id===l.matId); if(m) a.push({id:uid('ly')+i,matId:m.id,name:m.name,lambda:leMatLambda(m),thick:l.thick,_auto:true}); });
+  leChanged(key); toast(tpl.name+' — применено');
+}
+function leSeedFromPreset(key){
+  const c=_leCfg(key); if(!c||!c.seedPreset) return;
+  const p=c.seedPreset();
+  if(!p){ toast('Пресет не найден','err'); return; }
+  const a=_leArr(key); a.length=0;
+  presetToLayers(p,c.kind).forEach(l=>a.push(l));
+  leChanged(key); toast('Пресет «'+p.name+'» разобран в слои');
+}
+function leClear(key){ const a=_leArr(key); a.length=0; leChanged(key); }
+function leOpenWs(key){ const c=_leCfg(key); if(c&&c.workshopCat) openWorkshop(c.workshopCat, c.wsCtx||{fromEditor:true}); }
+function leTotals(key){
+  const c=_leCfg(key), a=_leArr(key);
+  const R=calcLayerR(a,c?c.kind:null);
+  const rMin=c&&c.rMin!==undefined?c.rMin:(c?LE_KIND_MIN[c.kind]:null);
+  return {R, U:R?1/R:null, sumMm:normLayers(a).reduce((s,l)=>s+l.thick,0), rMin:rMin!=null?rMin:null};
+}
+function _leChip(l){ const r=layerR1(l); return r>0?('R '+r.toFixed(3)):'R —'; }
+/* Живой пересчёт (oninput) без полной перерисовки: итоги + чипы вклада слоёв */
+function leLive(key){
+  const t=leTotals(key);
+  const el=document.getElementById('le-tot-'+key); if(el) el.innerHTML=_leTotHtml(key,t);
+  _leArr(key).forEach((l,i)=>{ const chip=document.getElementById(`le-lr-${key}-${i}`); if(chip) chip.textContent=_leChip(l); });
+  const c=_leCfg(key); if(c&&c.onLive) c.onLive(t);
+}
+function _leTotHtml(key,t){
+  if(t.R==null) return '';
+  const hasNorm=t.rMin!=null;
+  const okN=hasNorm&&t.R>=t.rMin, warnN=hasNorm&&!okN&&t.R>=t.rMin*0.75;
+  const cC=!hasNorm?'#7dd3fc':okN?'#4ade80':warnN?'#fbbf24':'#f87171';
+  const badge=hasNorm?`<span title="Норма сопротивления теплопередаче — КМК 2.01.04-18, III климатическая зона" style="font-size:9px;font-weight:700;color:${cC};padding:1px 5px;border-radius:4px;border:1px solid ${cC}44;background:${cC}11;white-space:nowrap">${okN?'✓':'⚠'} КМК R≥${t.rMin}</span>`:'';
+  return `<div style="padding:6px 8px;border-radius:6px;background:rgba(125,211,252,.06);border:1px solid rgba(125,211,252,.15)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
+      <span><span style="color:#7dd3fc;font-weight:700">Итого</span>
+      <span style="color:rgba(200,215,240,.85)"> δ=${(+t.sumMm.toFixed(1))} мм · R=${t.R.toFixed(3)} м²·К/Вт · U=${t.U.toFixed(3)} Вт/(м²·К)</span></span>
+      ${badge}
+    </div>
+    ${hasNorm&&!okN?`<div style="font-size:9px;color:${cC};margin-top:3px">R ниже нормы КМК — добавьте слой утеплителя (минвата, XPS, ППУ…)</div>`:''}
+  </div>`;
+}
+function _leDatalist(cfg){
+  const seen=new Set(), opts=[];
+  /* «Мои материалы» первыми — они у пользователя под свой вкус */
+  for(const pool of [(cfg&&cfg.mats)||[], CUSTOM_MATS, RAW_MATERIALS]){
+    for(const m of pool){ if(!seen.has(m.name)){ seen.add(m.name); const lam=leMatLambda(m); opts.push(`<option value="${m.name.replace(/"/g,'&quot;')}">${lam!=null?'λ '+lam:''}</option>`); } }
+  }
+  return opts.join('');
+}
+function _leGroupClr(cfg,l){
+  const m=(l.matId&&cfg&&cfg.mats&&cfg.mats.find(x=>x.id===l.matId))||leMatByName(cfg,l.name);
+  return (m&&LE_GROUP_CLR[m.group])||'#4b5563';
+}
+/* Материал слоя уже есть в справочниках (по имени+λ)? Тогда «сохранить» не предлагаем */
+function _leMatKnown(cfg,l){
+  const nm=(l.name||'').trim().toLowerCase(); if(!nm||!(l.lambda>0)) return true;
+  const m=leMatByName(cfg,l.name);
+  return !!(m && Math.abs((leMatLambda(m)||0)-l.lambda)<1e-6);
+}
+/* 💾 из строки слоя: сохранить материал (имя+λ) в «Мои материалы» */
+function leSaveMat(key,i){
+  const c=_leCfg(key), l=_leArr(key)[i]; if(!l) return;
+  const res=addCustomMat(l.name, l.lambda);
+  if(res.ok){ toast(res.updated?'λ обновлена в «Моих материалах»':'Материал сохранён в «Мои материалы»'); if(l.name){const m=leMatByName(c,l.name);if(m&&m.id)l.matId=m.id;} leChanged(key); }
+  else toast(res.err||'Не сохранено','err');
+}
+/* Быстрая вставка сохранённого материала новым слоем */
+function leInsertMat(key,id){
+  const m=CUSTOM_MATS.find(x=>x.id===id); if(!m) return;
+  _leArr(key).push({id:uid('ly'),matId:m.id,name:m.name,lambda:m.lambda,thick:0,_auto:true});
+  leChanged(key);
+}
+function leDeleteMat(key,id){ removeCustomMat(id); leChanged(key); }
+/* HTML единого редактора слоёв */
+function leHtml(key){
+  const cfg=_leCfg(key); if(!cfg) return '';
+  const layers=cfg.get()||[];
+  const t=leTotals(key);
+  const dlId='le-dl-'+key;
+  const totalThick=normLayers(layers).reduce((s,l)=>s+l.thick,0);
+  /* диаграмма пирога конструкции */
   let diagram='';
   if(layers.length>0&&totalThick>0){
-    const bars=layers.map(l=>{
-      const pct=Math.max(3,(l.thick||0)/totalThick*100).toFixed(1);
-      const c=lClr(l);
-      return `<div title="${l.name} · ${l.thick}см · λ=${l.lambda}" style="width:${pct}%;background:${c};opacity:.72;position:relative;cursor:default;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.72">${parseFloat(pct)>8?`<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:7px;color:#fff;font-weight:700;white-space:nowrap;pointer-events:none">${l.thick}cm</span>`:''}</div>`;
+    const bars=normLayers(layers).map(l=>{
+      const pct=Math.max(3,l.thick/totalThick*100).toFixed(1);
+      const c=_leGroupClr(cfg,l);
+      return `<div title="${(l.name||'слой').replace(/"/g,'&quot;')} · ${l.thick} мм · λ=${l.lambda} · R=${layerR1(l).toFixed(3)}" style="width:${pct}%;background:${c};opacity:.72">${parseFloat(pct)>10?`<span style="display:block;text-align:center;font-size:7px;color:#fff;font-weight:700;line-height:18px;white-space:nowrap;overflow:hidden">${l.thick}мм</span>`:''}</div>`;
     }).join('');
     diagram=`<div style="display:flex;height:18px;border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,.08);margin-bottom:5px">${bars}</div>`;
   }
   const rows=layers.map((l,i)=>{
-    const layerR=l.lambda>0?((l.thick||1)/100/l.lambda).toFixed(3):'—';
-    const c=lClr(l);
-    return `<div style="display:grid;grid-template-columns:1fr 64px 60px 46px;gap:3px;align-items:center;margin-bottom:4px;padding:5px 6px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-left:3px solid ${c}55">
+    const c=_leGroupClr(cfg,l);
+    return `<div style="display:grid;grid-template-columns:1fr 52px 52px auto;gap:3px;align-items:start;margin-bottom:4px;padding:5px 6px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-left:3px solid ${c}55">
       <div>
-        <select class="wi py-1 text-xs" style="font-size:10px;padding:2px 4px" onchange="setFloorCeilLayer(${isFloorInt},${i},'matId',this.value)">${mkOpts(l.matId)}</select>
-        <div style="font-size:9px;color:rgba(245,158,11,.65);margin-top:1px;padding-left:2px">λ=${l.lambda} · R=${layerR} м²·К/Вт</div>
+        <input class="wi text-xs" list="${dlId}" placeholder="Материал слоя" value="${(l.name||'').replace(/"/g,'&quot;')}" style="font-size:10px;padding:3px 5px"
+          oninput="leSet('${key}',${i},'name',this.value)" onchange="leSet('${key}',${i},'name',this.value,1)" title="Название материала — при совпадении со справочником или «Моими материалами» λ подставится автоматически">
+        <div style="display:flex;align-items:center;gap:5px;margin-top:2px;padding-left:2px">
+          <span id="le-lr-${key}-${i}" style="font-size:9px;color:rgba(245,158,11,.7)" title="Вклад слоя в сопротивление: R = δ/λ">${_leChip(l)}</span>
+          ${!_leMatKnown(cfg,l)?`<button onclick="leSaveMat('${key}',${i})" title="Сохранить материал (название + λ) в «Мои материалы» для повторного использования" style="font-size:8px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.28);border-radius:3px;cursor:pointer;padding:0 4px;line-height:1.5">💾 в мои</button>`:''}
+        </div>
       </div>
       <div>
-        <input class="wi text-xs" type="number" min="0.5" step="0.5" value="${l.thick}" style="padding:3px 5px;font-size:11px" onchange="setFloorCeilLayer(${isFloorInt},${i},'thick',this.value)" title="Толщина, см">
-        <div style="font-size:9px;color:rgba(154,134,117,.6);text-align:center">${l.thick}см</div>
+        <input class="wi text-xs" type="number" min="0.5" step="1" value="${l.thick||''}" placeholder="мм" style="padding:3px 4px;font-size:10px;text-align:center"
+          oninput="leSet('${key}',${i},'thick',this.value)" onchange="leSet('${key}',${i},'thick',this.value,1)" title="Толщина слоя, мм">
+        <div style="font-size:8px;color:rgba(154,134,117,.6);text-align:center">мм</div>
+      </div>
+      <div>
+        <input id="le-l-${key}-${i}" class="wi text-xs" type="number" min="0.001" step="0.001" value="${l.lambda||''}" placeholder="λ" style="padding:3px 4px;font-size:10px;text-align:center"
+          oninput="leSet('${key}',${i},'lambda',this.value)" onchange="leSet('${key}',${i},'lambda',this.value,1)" title="λ — теплопроводность, Вт/(м·К): чем меньше, тем теплее">
+        <div style="font-size:8px;color:rgba(154,134,117,.6);text-align:center">λ</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:2px">
-        <button onclick="moveFloorCeilLayer(${isFloorInt},${i},-1)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:4px;color:#8fa3c0;font-size:10px;cursor:pointer;padding:2px">↑</button>
-        <button onclick="moveFloorCeilLayer(${isFloorInt},${i},1)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:4px;color:#8fa3c0;font-size:10px;cursor:pointer;padding:2px">↓</button>
+        <div style="display:flex;gap:2px">
+          <button onclick="leMove('${key}',${i},-1)" title="Слой выше (наружу)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:4px;color:#8fa3c0;font-size:9px;cursor:pointer;padding:1px 5px">↑</button>
+          <button onclick="leMove('${key}',${i},1)" title="Слой ниже (внутрь)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:4px;color:#8fa3c0;font-size:9px;cursor:pointer;padding:1px 5px">↓</button>
+        </div>
+        <button onclick="leRemove('${key}',${i})" title="Удалить слой" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;color:#f87171;font-size:10px;cursor:pointer;padding:1px 5px;line-height:1.2">✕</button>
       </div>
-      <button onclick="removeFloorCeilLayer(${isFloorInt},${i})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:#f87171;font-size:13px;cursor:pointer;padding:3px 6px;line-height:1">✕</button>
     </div>`;
   }).join('');
-  const tplChips=templates.map((tpl,i)=>{
+  const tplChips=(cfg.templates||[]).map((tpl,i)=>{
     const short=tpl.name.replace(/\s*\(типовой УЗ\)/,'').split(' + ').slice(0,2).join(' + ');
-    return `<button onclick="applyLayerTemplate(${isFloorInt},${i})" title="${tpl.name}" style="font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(125,211,252,.07);border:1px solid rgba(125,211,252,.18);color:#7dd3fc;cursor:pointer;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;transition:background .12s" onmouseover="this.style.background='rgba(125,211,252,.16)'" onmouseout="this.style.background='rgba(125,211,252,.07)'">${short}…</button>`;
+    return `<button onclick="leApplyTpl('${key}',${i})" title="${tpl.name}" style="font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(125,211,252,.07);border:1px solid rgba(125,211,252,.18);color:#7dd3fc;cursor:pointer;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${short}…</button>`;
   }).join('');
-  return `<div style="margin-top:12px;border-top:1px solid rgba(140,165,210,.1);padding-top:12px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <p style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:rgba(245,158,11,.7)">${title}</p>
-      <div style="display:flex;align-items:center;gap:5px">
-        ${comply?`<span style="font-size:9px;font-weight:700;color:${cC};padding:1px 5px;border-radius:4px;border:1px solid ${cC}44;background:${cC}11">${cL}</span>`:''}
-        ${R!=null?`<span style="font-size:10px;font-weight:700;color:#7dd3fc">R=${Rdisp}</span>`:''}
-        <button onclick="addFloorCeilLayer(${isFloorInt})" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:5px;color:#ffd27a;font-size:10px;cursor:pointer;padding:2px 8px">+ слой</button>
+  /* «Мои материалы» — личная библиотека под свой вкус: клик = вставить слоем, × = удалить */
+  const myMats=CUSTOM_MATS.length?`<div style="margin-bottom:7px">
+    <div style="font-size:9px;color:rgba(192,132,252,.75);margin-bottom:3px;letter-spacing:.04em;text-transform:uppercase">🛠 Мои материалы <span style="opacity:.6;text-transform:none">— клик, чтобы добавить слоем</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px">${CUSTOM_MATS.map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 4px 2px 7px;border-radius:4px;background:rgba(192,132,252,.09);border:1px solid rgba(192,132,252,.24);color:#d8b4fe;white-space:nowrap">
+      <button onclick="leInsertMat('${key}','${m.id}')" title="Добавить слой из этого материала" style="background:none;border:none;color:inherit;cursor:pointer;font-size:9px;padding:0">${m.name.replace(/"/g,'&quot;')} · λ${m.lambda}</button>
+      <button onclick="leDeleteMat('${key}','${m.id}')" title="Удалить из «Моих материалов»" style="background:none;border:none;color:rgba(248,113,113,.8);cursor:pointer;font-size:10px;padding:0;line-height:1">×</button>
+    </span>`).join('')}</div>
+  </div>`:'';
+  const env=SURFACE_ENVELOPE[cfg.kind];
+  const envNote=env?`Rsi ${env.rsi} + Rse ${env.rse} (${cfg.kind==='wall'?'горизонтальный поток':cfg.kind==='floor'?'поток тепла вниз':'поток тепла вверх'})`:'без Rsi/Rse (паспортное R)';
+  const hint=`<details style="margin-top:5px"><summary style="font-size:9px;color:rgba(154,134,117,.7);cursor:pointer">Что такое λ, δ, R, U?</summary>
+    <div style="font-size:9px;color:rgba(154,134,117,.85);line-height:1.5;padding:4px 2px">
+      <b>λ</b> — теплопроводность материала, Вт/(м·К): чем меньше, тем лучше держит тепло.<br>
+      <b>δ</b> — толщина слоя, мм. <b>R слоя</b> = δ/λ — вклад слоя в утепление.<br>
+      <b>R конструкции</b> = ${envNote} + Σ R слоёв, м²·К/Вт.<br>
+      <b>U</b> = 1/R — коэффициент теплопередачи, Вт/(м²·К): чем меньше, тем меньше теплопотери.<br>
+      ${t.rMin!=null?`Норма КМК 2.01.04-18 (III зона): R ≥ ${t.rMin}.`:''} В режиме λ(Б) учитывается влажностная поправка.
+    </div></details>`;
+  return `<div style="margin-top:10px;border-top:1px solid rgba(140,165,210,.1);padding-top:10px">
+    <datalist id="${dlId}">${_leDatalist(cfg)}</datalist>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:5px;margin-bottom:6px;flex-wrap:wrap">
+      <p style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:rgba(245,158,11,.7)">${cfg.title||'Слои конструкции'}</p>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        ${cfg.seedPreset?`<button onclick="leSeedFromPreset('${key}')" title="Разобрать текущий пресет в слои и редактировать" style="background:rgba(125,211,252,.1);border:1px solid rgba(125,211,252,.25);border-radius:5px;color:#7dd3fc;font-size:10px;cursor:pointer;padding:2px 8px">⤓ из пресета</button>`:''}
+        ${cfg.workshopCat?`<button onclick="leOpenWs('${key}')" title="Мастерская: создать конструкцию и сохранить в свой список" style="background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:5px;color:#c084fc;font-size:10px;cursor:pointer;padding:2px 8px">🛠 Мастерская</button>`:''}
+        <button onclick="leAdd('${key}')" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:5px;color:#ffd27a;font-size:10px;cursor:pointer;padding:2px 8px">+ слой</button>
+        ${layers.length&&cfg.clearable!==false?`<button onclick="leClear('${key}')" title="Убрать все слои — вернуться к дефолту" style="background:none;border:1px solid rgba(154,134,117,.25);border-radius:5px;color:rgba(154,134,117,.8);font-size:10px;cursor:pointer;padding:2px 6px">↺</button>`:''}
       </div>
     </div>
-    <div style="margin-bottom:7px">
+    ${cfg.templates&&cfg.templates.length?`<div style="margin-bottom:7px">
       <div style="font-size:9px;color:rgba(154,134,117,.5);margin-bottom:3px;letter-spacing:.04em;text-transform:uppercase">Типовые конструкции</div>
       <div style="display:flex;flex-wrap:wrap;gap:3px">${tplChips}</div>
-    </div>
-    ${diagram}
-    ${layers.length?rows:`<div style="font-size:10px;color:rgba(154,134,117,.6);padding:6px 0">Нет слоёв — используется глобальный пресет.<br>Нажмите «+ слой» или выберите типовую конструкцию выше.</div>`}
-    ${R!=null?`<div style="margin-top:6px;padding:6px 8px;border-radius:6px;background:rgba(125,211,252,.06);border:1px solid rgba(125,211,252,.15);font-size:10px;display:flex;justify-content:space-between;align-items:center">
-      <span><span style="color:#7dd3fc;font-weight:700">Итого</span> <span style="color:rgba(200,215,240,.8)">R=${Rdisp} · U=${Udisp} · δ=${totalThick}см</span></span>
-      ${comply?`<span style="font-weight:700;color:${cC}">${cL}</span>`:''}
     </div>`:''}
+    ${myMats}
+    ${diagram}
+    ${layers.length?rows:`<div style="font-size:10px;color:rgba(154,134,117,.6);padding:6px 0">${cfg.empty||'Нет слоёв — используется значение по умолчанию.'}<br>Нажмите «+ слой»${cfg.templates&&cfg.templates.length?' или выберите типовую конструкцию':''}${cfg.seedPreset?', либо «⤓ из пресета»':''}.</div>`}
+    <div id="le-tot-${key}" style="margin-top:6px;font-size:10px">${_leTotHtml(key,t)}</div>
+    ${hint}
   </div>`;
 }
 
+/* ── Панель слоёв пола/потолка ЭТАЖА (дефолт для всех комнат этажа) ── */
+function buildLayersPanel(f, isFloor){
+  const lkey=isFloor?'floorLayers':'ceilingLayers';
+  const key=(isFloor?'flf-':'flc-')+f.id;
+  leReg(key,{
+    kind:isFloor?'floor':'ceiling',
+    get:()=>{ if(!f[lkey]) f[lkey]=[]; return f[lkey]; },
+    mats:isFloor?FLOOR_MATS:CEIL_MATS,
+    templates:isFloor?FLOOR_TEMPLATES:CEIL_TEMPLATES,
+    title:isFloor?'Пол этажа — слои конструкции':'Потолок этажа — слои конструкции',
+    empty:'Нет слоёв — используется глобальный пресет (шаг «Материалы»).',
+    workshopCat:isFloor?'floors':'ceilings',
+    wsCtx:{fromEditor:true,target:isFloor?'floorSlab':'floorCeil',floorId:f.id},
+    seedPreset:()=>findPreset(isFloor?'floors':'ceilings',isFloor?ST.mat.floorId:ST.mat.ceilingId),
+    onChange(){ edCommit(); },
+  });
+  return leHtml(key);
+}
 /* Keep legacy buildSlabPanel for backward compat — now delegates to buildLayersPanel */
 function buildSlabPanel(f){ return buildLayersPanel(f, true); }
+
+/* ── Индивидуальные слои пола/потолка КОМНАТЫ — переопределяют этаж и пресет.
+   Пол показываем на нижнем этаже/в подвале, потолок — на верхнем/в подвале
+   (только там эти элементы участвуют в расчёте computeRoom). ── */
+function buildRoomSlabPanels(room){
+  const f=activeFloor();
+  const isBs=!!f.isBasement;
+  const fi=ST.floors.findIndex(x=>x.id===f.id);
+  const isGround=isBs||fi===0;
+  const isTop=isBs||(fi>=0&&fi===ST.floors.length-1);
+  const mk=(isFloor)=>{
+    const lkey=isFloor?'floorLayers':'ceilingLayers';
+    const key=(isFloor?'rmf-':'rmc-')+room.id;
+    leReg(key,{
+      kind:isFloor?'floor':'ceiling',
+      get:()=>{ if(!room[lkey]) room[lkey]=[]; return room[lkey]; },
+      mats:isFloor?FLOOR_MATS:CEIL_MATS,
+      templates:isFloor?FLOOR_TEMPLATES:CEIL_TEMPLATES,
+      title:isFloor?'Пол этой комнаты — слои':'Потолок этой комнаты — слои',
+      empty:'Нет слоёв — действует конструкция этажа или глобальный пресет.',
+      workshopCat:isFloor?'floors':'ceilings',
+      wsCtx:{fromEditor:true,target:isFloor?'roomFloor':'roomCeil',roomId:room.id},
+      seedPreset:()=>findPreset(isFloor?'floors':'ceilings',isFloor?ST.mat.floorId:ST.mat.ceilingId),
+      onChange(){ edCommit(); },
+    });
+    return leHtml(key);
+  };
+  let html='';
+  if(isGround) html+=mk(true);
+  if(isTop) html+=mk(false);
+  return html;
+}
 function edSetField(field,val){ const r=edSelRoom(); if(!r) return; let v=parseFloat(val)||0;
   if(field==='w'){ v=Math.max(0.1,Math.min(ST.plot.w,v)); r.w=v; r.x=Math.min(r.x,ST.plot.w-v); }
   else if(field==='h'){ v=Math.max(0.1,Math.min(ST.plot.d,v)); r.h=v; r.y=Math.min(r.y,ST.plot.d-v); }
@@ -13676,8 +14055,8 @@ function renderRoomEdit(){
       ${extSides.length===0?`<p class="text-xs text-muted">${t('rre-no-ext-walls')}</p>`:''}
       <div class="space-y-2">${(room.openings||[]).map(op=>opRow(room,op,extSides)).join('')}</div>
       ${extSides.length>0?`<div class="flex gap-2 mt-2">
-        <button onclick="addOpening('${room.id}','window')" class="tool-btn text-xs py-1.5">${t('mr-room-add-window')}</button>
-        <button onclick="addOpening('${room.id}','door')" class="tool-btn text-xs py-1.5">${t('mr-room-add-door')}</button>
+        <button onclick="addOpening('${room.id}','window')" class="tool-btn text-xs py-1.5">${t('add-window')}</button>
+        <button onclick="addOpening('${room.id}','door')" class="tool-btn text-xs py-1.5">${t('add-door')}</button>
       </div>`:''}
     </div>
   </div>`;
@@ -13891,72 +14270,80 @@ function refreshPcards(fn,id){
   document.querySelectorAll('#step-panel .pcard').forEach(el=>{ const oc=el.getAttribute('onclick')||''; if(oc.startsWith(fn+'(')) el.classList.toggle('active',oc.includes(`'${id}'`)); });
 }
 
-/* ── Мастерская (modal) — ENHANCED (Фаза 5) ── */
-let _wsLayers=[];  // multi-layer rows for Workshop
+/* ── Мастерская (modal) — на едином редакторе слоёв; доступна всем (шаг 5 и мини-Revit) ── */
+let _wsLayers=[];              // канонические слои {name, lambda, thick(мм)}
+let _wsCtx=null;               // вызов из мини-Revit: {fromEditor, target:'wall|roomFloor|roomCeil|floorSlab|floorCeil', roomId?, edgeIdx?, floorId?}
+let _wsFields={name:'',r:'',desc:'',n:null};   // сохраняем значения полей между перерисовками
+const WS_KIND={walls:'wall',floors:'floor',ceilings:'ceiling'};
+function wsKind(cat){ return WS_KIND[cat]||null; }
+function wsMats(cat){ return cat==='floors'?FLOOR_MATS:cat==='ceilings'?CEIL_MATS:RAW_MATERIALS; }
+function _wsFreshLayer(){ return {id:uid('ly'),name:'',lambda:0,thick:0,_auto:true}; }
 
-function openWorkshop(cat){
+function openWorkshop(cat, ctx){
   _closeDropdown();
-  _wsLayers=[{name:'',d:'',l:''}];
+  _wsLayers=[_wsFreshLayer()];
+  _wsCtx=(ctx&&ctx.fromEditor)?ctx:null;
+  _wsFields={name:'',r:'',desc:'',n:null};
   renderWorkshop(cat||'walls');
   document.getElementById('modal-backdrop').classList.add('open');
   document.body.style.overflow='hidden';
 }
+function wsSwitchCat(c){ _wsLayers=[_wsFreshLayer()]; _wsFields={name:'',r:'',desc:'',n:null}; renderWorkshop(c); }
 function renderWorkshop(cat){
   const cats=['walls','windows','doors','floors','ceilings'];
   const needN=(cat==='floors'||cat==='ceilings');
   const isWall=cat==='walls';
-  const layersHtml=_wsLayers.map((ly,i)=>`
-    <div class="layer-row" id="wslr-${i}">
-      <input placeholder="Материал слоя" list="rm-list" value="${ly.name}" oninput="_wsLayers[${i}].name=this.value" onchange="wsAutoFill(${i},this.value)" class="text-sm">
-      <input placeholder="мм" type="number" min="1" step="1" value="${ly.d}" oninput="_wsLayers[${i}].d=this.value;wsCalcR()" class="text-sm text-center">
-      <input id="wsl-l-${i}" placeholder="λ" type="number" min="0.001" step="0.001" value="${ly.l}" oninput="_wsLayers[${i}].l=this.value;wsCalcR()" class="text-sm text-center">
-      <button class="layer-del" onclick="wsRemoveLayer(${i})" title="Удалить слой"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>`).join('');
+  const kind=wsKind(cat);
+  leReg('ws',{
+    kind, mats:wsMats(cat),
+    get:()=>_wsLayers,
+    title:'Слои конструкции',
+    empty:'Добавьте слои: материал, толщину в мм и λ.',
+    clearable:true,
+    onChange(){ renderWorkshop(cat); },
+  });
+  const targetNote=_wsCtx?`<div class="rounded-lg border border-amber/25 bg-amber/10 px-3 py-2 mb-3 text-[11px] text-amber">После сохранения конструкция будет применена к выбранному элементу в редакторе плана.</div>`:'';
 
   document.getElementById('modal-body').innerHTML=`
-    <datalist id="rm-list">${RAW_MATERIALS.map(m=>`<option value="${m.name}">`).join('')}</datalist>
+    <datalist id="rm-list">${[...CUSTOM_MATS,...RAW_MATERIALS].map(m=>`<option value="${m.name.replace(/"/g,'&quot;')}">`).join('')}</datalist>
     <p class="text-xs font-semibold uppercase tracking-widest text-amber/80 mb-1">${t('workshop-btn')}</p>
     <h2 class="text-xl font-extrabold text-cream mb-4">${t('ws-add-mat-title')}</h2>
+    ${targetNote}
     <div class="flex flex-wrap gap-1.5 mb-4">
-      ${cats.map(c=>`<button onclick="_wsLayers=[{name:'',d:'',l:''}];renderWorkshop('${c}')" class="floor-tab ${c===cat?'active':''}">${CAT_LABELS[c]}</button>`).join('')}
+      ${cats.map(c=>`<button onclick="wsSwitchCat('${c}')" class="floor-tab ${c===cat?'active':''}">${CAT_LABELS[c]}</button>`).join('')}
     </div>
     <div class="space-y-3">
       <div><label class="block text-xs font-semibold text-sand mb-1">${t('ws-struct-name-lbl')} <span class="text-ember">*</span></label>
-        <input id="ws-name" class="wi py-2 text-sm" placeholder="${t('ws-struct-name-ph')}"></div>
+        <input id="ws-name" class="wi py-2 text-sm" placeholder="${t('ws-struct-name-ph')}" value="${(_wsFields.name||'').replace(/"/g,'&quot;')}" oninput="_wsFields.name=this.value"></div>
 
       <!-- Method A: direct R -->
       <div class="rounded-xl border border-sand/10 bg-w800/40 p-3 space-y-2">
         <p class="text-xs text-amber/80 font-semibold">${t('ws-method-a-title')}</p>
         <div><label class="block text-xs text-muted mb-1">${t('ws-r-total-lbl')}</label>
-          <input id="ws-r" class="wi py-2 text-sm" type="number" min="0.05" step="0.01" placeholder="${t('ws-r-ph')}" oninput="wsHighlightA()"></div>
+          <input id="ws-r" class="wi py-2 text-sm" type="number" min="0.05" step="0.01" placeholder="${t('ws-r-ph')}" value="${_wsFields.r||''}" oninput="_wsFields.r=this.value"></div>
       </div>
 
-      <!-- Method B: layered builder -->
-      <div class="rounded-xl border border-amber/15 bg-w800/40 p-3 space-y-2">
+      <!-- Method B: единый редактор слоёв (живой пересчёт R и U) -->
+      <div class="rounded-xl border border-amber/15 bg-w800/40 p-3">
         <p class="text-xs text-amber/80 font-semibold">${t('ws-method-b-title')}</p>
-        <div class="grid grid-cols-[1fr_80px_80px_28px] gap-1 mb-1 text-[10px] text-muted font-semibold px-0.5">
-          <span>${t('ws-layer-col-mat')}</span><span class="text-center">мм</span><span class="text-center">λ</span><span></span>
-        </div>
-        <div id="ws-layers">${layersHtml}</div>
-        <button onclick="wsAddLayer()" class="tool-btn text-xs py-1.5 px-3 mt-1">+ ${t('ws-add-layer-btn')}</button>
+        ${leHtml('ws')}
         <div class="flex flex-wrap gap-1 mt-2">
           <span class="text-[10px] text-muted self-center mr-1">Быстро:</span>
-          <button onclick="wsAddLayerPreset('Штукатурка цем.','${cat}')" class="quick-chip">+Штукатурка</button>
-          <button onclick="wsAddLayerPreset('Шпаклёвка финишная','${cat}')" class="quick-chip">+Шпаклёвка</button>
-          <button onclick="wsAddLayerPreset('Минеральная вата','${cat}')" class="quick-chip">+Утеплитель</button>
-          <button onclick="wsAddLayerPreset('Стяжка ЦПС','${cat}')" class="quick-chip">+Стяжка</button>
+          <button onclick="_wsQuick('Штукатурка цем.','${cat}')" class="quick-chip">+Штукатурка</button>
+          <button onclick="_wsQuick('Шпаклёвка финишная','${cat}')" class="quick-chip">+Шпаклёвка</button>
+          <button onclick="_wsQuick('Минеральная вата','${cat}')" class="quick-chip">+Утеплитель</button>
+          <button onclick="_wsQuick('Стяжка ЦПС','${cat}')" class="quick-chip">+Стяжка</button>
         </div>
-        <div id="ws-r-calc" class="text-xs text-amber font-semibold mt-1 hidden"></div>
         <p class="text-[10px] text-muted mt-1">${isWall?t('ws-wall-extra')+' ':''}${t('ws-layers-auto')}</p>
       </div>
 
       ${needN?`<div><label class="block text-xs font-semibold text-sand mb-1">${t('ws-n-coeff-lbl')}</label>
-        <input id="ws-n" class="wi py-2 text-sm" type="number" min="0" max="1" step="0.05" value="${cat==='floors'?'0.6':'0.9'}">
+        <input id="ws-n" class="wi py-2 text-sm" type="number" min="0" max="1" step="0.05" value="${_wsFields.n!=null?_wsFields.n:(cat==='floors'?'0.6':'0.9')}" oninput="_wsFields.n=this.value">
         <p class="text-[11px] text-muted mt-1">${t('ws-n-hint')}</p></div>`:''}
 
       <div>
         <label class="block text-xs text-muted mb-1">${t('ws-desc-lbl')}</label>
-        <input id="ws-desc" class="wi py-2 text-sm" placeholder="${t('auth-optional')}">
+        <input id="ws-desc" class="wi py-2 text-sm" placeholder="${t('auth-optional')}" value="${(_wsFields.desc||'').replace(/"/g,'&quot;')}" oninput="_wsFields.desc=this.value">
       </div>
     </div>
     <p id="ws-err" class="text-xs text-ember mt-2 hidden"></p>
@@ -13981,39 +14368,19 @@ function renderWorkshop(cat){
     </div>`:''}`;
 }
 
-function wsAddLayer(){
-  _wsLayers.push({name:'',d:'',l:''});
-  const cat=document.querySelector('#modal-body .floor-tab.active')?.textContent;
-  const activeCat=Object.entries(CAT_LABELS).find(([k,v])=>v===cat)||['walls'];
-  renderWorkshop(activeCat[0]);
-}
-function wsRemoveLayer(i){
-  _wsLayers.splice(i,1);
-  if(!_wsLayers.length) _wsLayers=[{name:'',d:'',l:''}];
-  const cat=document.querySelector('#modal-body .floor-tab.active')?.textContent;
-  const activeCat=Object.entries(CAT_LABELS).find(([k,v])=>v===cat)||['walls'];
-  renderWorkshop(activeCat[0]);
-}
-function wsAddLayerPreset(matName, cat){
+function _wsQuick(matName, cat){
   const mat = RAW_MATERIALS.find(m=>m.name.toLowerCase().startsWith(matName.toLowerCase()));
-  _wsLayers.push({name: mat?mat.name:matName, d:'', l: mat?String(mat.λ):''});
+  _wsLayers.push({id:uid('ly'), name: mat?mat.name:matName, lambda: mat?leMatLambda(mat):0, thick:0, _auto:true});
   renderWorkshop(cat);
 }
 function openEditCustom(cat, id){
   const p = CUSTOM[cat].find(x=>x.id===id);
   if(!p) return;
+  _wsLayers = normLayers(p.layers||[]).map(l=>({id:uid('ly'),name:l.name,lambda:l.lambda,thick:l.thick,_auto:false}));
+  if(!_wsLayers.length) _wsLayers=[_wsFreshLayer()];
+  _wsFields={name:p.name, r:(p.layers&&p.layers.length)?'':String(p.r), desc:p.desc||'', n:p.n!=null?String(p.n):null};
+  deleteCustom(cat, id, true);   // редактирование = удалить и пересоздать при сохранении
   renderWorkshop(cat);
-  setTimeout(()=>{
-    if(p.layers&&p.layers.length) _wsLayers=p.layers.map(l=>({name:l.name||'',d:String(l.d||''),l:String(l.l||'')}));
-    renderWorkshop(cat);
-    setTimeout(()=>{
-      const nEl=document.getElementById('ws-name'), rEl=document.getElementById('ws-r'), dEl=document.getElementById('ws-desc');
-      if(nEl) nEl.value=p.name;
-      if(rEl&&!p.layers?.length) rEl.value=p.r;
-      if(dEl) dEl.value=p.desc||'';
-      deleteCustom(cat, id, true);
-    }, 30);
-  }, 30);
 }
 function copyCustom(cat, id){
   const p = CUSTOM[cat].find(x=>x.id===id);
@@ -14024,72 +14391,67 @@ function copyCustom(cat, id){
   renderWorkshop(cat);
   toast('Скопировано: '+copy.name);
 }
-function wsCalcR(){
-  const isWall=document.querySelector('#modal-body .floor-tab.active')?.textContent===CAT_LABELS.walls;
-  let sum=0; let valid=true;
-  for(const ly of _wsLayers){
-    const d=parseFloat(ly.d),l=parseFloat(ly.l);
-    if(d>0&&l>0) sum+=d/1000/l; else if(ly.d||ly.l) valid=false;
-  }
-  if(isWall) sum+=0.17;
-  const el=document.getElementById('ws-r-calc'); if(!el) return;
-  if(sum>0.01){ el.textContent=`R = ${sum.toFixed(3)} м²·°C/Вт`; el.classList.remove('hidden'); }
-  else { el.classList.add('hidden'); }
-}
-function wsHighlightA(){
-  const el=document.getElementById('ws-r-calc'); if(el) el.classList.add('hidden');
-}
-
-function wsAutoFill(i, name){
-  _wsLayers[i].name = name;
-  const mat = RAW_MATERIALS.find(m => m.name === name);
-  if(mat && !_wsLayers[i].l){
-    _wsLayers[i].l = String(mat.λ);
-    const el = document.getElementById('wsl-l-'+i);
-    if(el){ el.value = mat.λ; wsCalcR(); }
-  }
+/* Применить только что созданную конструкцию к элементу мини-Revit, из которого открыли Мастерскую */
+function _wsApplyToTarget(cat, obj){
+  const c=_wsCtx; if(!c) return false;
+  const mkLayers=()=>presetToLayers(obj, wsKind(cat));
+  try{
+    if(c.target==='wall'){
+      const r=findRoom(c.roomId); if(!r) return false;
+      if(!r.edgeMats) r.edgeMats={};
+      r.edgeMats[c.edgeIdx]={preset:'',lambda:0,thick:300,layersMode:true,layers:mkLayers()};
+    } else if(c.target==='roomFloor'||c.target==='roomCeil'){
+      const r=findRoom(c.roomId); if(!r) return false;
+      r[c.target==='roomFloor'?'floorLayers':'ceilingLayers']=mkLayers();
+    } else if(c.target==='floorSlab'||c.target==='floorCeil'){
+      const f=(ST.basement&&ST.basement.id===c.floorId)?ST.basement:(ST.floors.find(x=>x.id===c.floorId)||activeFloor());
+      f[c.target==='floorSlab'?'floorLayers':'ceilingLayers']=mkLayers();
+    } else return false;
+    if(typeof edPushHist==='function') edPushHist();
+    return true;
+  }catch(e){ return false; }
 }
 
 function saveWorkshop(cat){
-  const name=(document.getElementById('ws-name').value||'').trim();
+  const name=(_wsFields.name||'').trim();
   const errEl=document.getElementById('ws-err');
   const showErr=(m)=>{ errEl.textContent=m; errEl.classList.remove('hidden'); };
   if(!name){ showErr('Введите название материала.'); return; }
-  const isWall=cat==='walls';
+  const kind=wsKind(cat);
 
-  // Try direct R first
-  let r=parseFloat(document.getElementById('ws-r').value);
+  // Метод А: паспортное R напрямую
+  let r=parseFloat(_wsFields.r);
+  let rFromLayers=false;
 
-  // Try multi-layer calculation
-  if((!r||r<=0)){
-    let sum=0;
-    for(const ly of _wsLayers){
-      const d=parseFloat(ly.d),l=parseFloat(ly.l);
-      if(d>0&&l>0) sum+=d/1000/l;
-    }
-    if(isWall) sum+=0.17;
-    if(sum>0.01) r=sum;
+  // Метод Б: R из слоёв (+ Rsi/Rse по направлению теплового потока)
+  if(!r||r<=0){
+    const lr=calcLayerR(_wsLayers, kind);
+    if(lr!=null&&lr>0){ r=lr; rFromLayers=true; }
   }
 
   if(!r||r<=0){ showErr('Укажите R, либо введите слои с толщиной и λ.'); return; }
 
-  const layers=_wsLayers.filter(ly=>ly.name||ly.d||ly.l).map(ly=>({...ly}));
-  const obj={id:uid('cst'),name,r:Math.round(r*1000)/1000,desc:(document.getElementById('ws-desc').value||'своё').trim()||'своё',layers};
-  if(cat==='floors'||cat==='ceilings'){ obj.n=Math.max(0,Math.min(1,parseFloat(document.getElementById('ws-n').value)||(cat==='floors'?0.6:0.9))); }
+  const layers=normLayers(_wsLayers).map(l=>({name:l.name,d:String(l.thick),l:String(l.lambda)}));  // формат хранения — как раньше
+  const obj={id:uid('cst'),name,r:Math.round(r*1000)/1000,desc:(_wsFields.desc||'своё').trim()||'своё',layers};
+  if(rFromLayers&&kind&&kind!=='wall') obj.env=+envelopeR(kind).toFixed(3);   // какой конверт Rsi+Rse заложен в r
+  if(cat==='floors'||cat==='ceilings'){ obj.n=Math.max(0,Math.min(1,parseFloat(_wsFields.n)||(cat==='floors'?0.6:0.9))); }
   CUSTOM[cat].push(obj); saveCustom();
-  const map={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
-  ST.mat[map[cat]]=obj.id;
-  _wsLayers=[{name:'',d:'',l:''}];
+  const applied=_wsApplyToTarget(cat,obj);
+  if(applied){ _wsCtx=null; }
+  else if(!_wsCtx){ const map={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'}; ST.mat[map[cat]]=obj.id; }
+  _wsLayers=[_wsFreshLayer()];
+  _wsFields={name:'',r:'',desc:'',n:null};
   renderWorkshop(cat);
   if(ST.step===5) renderStep();
   updateLivePanel();
-  toast(t('toast-ws-mat-saved'));
+  if(document.getElementById('ed-props')&&typeof edProps==='function') edProps();
+  toast(applied?'Сохранено и применено к элементу':t('toast-ws-mat-saved'));
 }
 function deleteCustom(cat,id,silent){
   CUSTOM[cat]=CUSTOM[cat].filter(p=>p.id!==id); saveCustom();
   const map={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
   if(ST.mat[map[cat]]===id) ST.mat[map[cat]]=BASE_PRESETS[cat][0].id;
-  if(!silent){ renderWorkshop(cat); if(ST.step===5) renderStep(); updateLivePanel(); }
+  if(!silent){ renderWorkshop(cat); if(ST.step===5) renderStep(); updateLivePanel(); if(document.getElementById('ed-props')&&typeof edProps==='function') edProps(); }
 }
 
 /* ── STEP 6 — Result ── */
@@ -14826,9 +15188,52 @@ function compareWalls(){
 /* ════════════════════════════════════════════════════════════
    СОХРАНЕНИЕ РАСЧЁТА (ссылка)
 ════════════════════════════════════════════════════════════ */
-function _serFloor(fl){ return {n:fl.name,h:fl.height,r:fl.rooms.map(rm=>[rm.typeId,rm.x,rm.y,rm.w,rm.h,rm.name||'',
+/* Слои конструкции в компактном виде для ссылки/облака: [[name,λ,δмм],…] или 0 */
+function _serLayers(ls){ const n=normLayers(ls).map(l=>[l.name,l.lambda,l.thick]); return n.length?n:0; }
+function _deserLayers(a){ return Array.isArray(a)?a.filter(x=>Array.isArray(x)&&x[1]>0&&x[2]>0).map(x=>({id:uid('ly'),name:x[0]||'',lambda:x[1],thick:x[2]})):[]; }
+/* Индивидуальные конструкции комнаты (rm[8]): edgeMats + слои пола/потолка.
+   Старые ссылки без rm[8] и старый код с новыми ссылками совместимы (лишний индекс игнорируется). */
+function _serRoomExtras(rm){
+  const ex={};
+  if(rm.edgeMats){
+    const em={};
+    for(const i of Object.keys(rm.edgeMats)){
+      const m=rm.edgeMats[i]; if(!m) continue;
+      const e={};
+      if(m.preset) e.p=m.preset;
+      if(m.lambda>0) e.l=m.lambda;
+      if(m.thick>0) e.t=m.thick;
+      if(m.customR>0) e.cr=m.customR;
+      const ly=_serLayers(m.layers); if(ly) e.ly=ly;
+      if(e.p||e.ly||e.cr||(m.lambda>0&&m.thick>0)) em[i]=e;
+    }
+    if(Object.keys(em).length) ex.em=em;
+  }
+  const fL=_serLayers(rm.floorLayers); if(fL) ex.fL=fL;
+  const cL=_serLayers(rm.ceilingLayers); if(cL) ex.cL=cL;
+  return Object.keys(ex).length?ex:0;
+}
+function _deserRoomExtras(room, ex){
+  if(!ex||typeof ex!=='object') return;
+  if(ex.em){
+    room.edgeMats={};
+    for(const i of Object.keys(ex.em)){
+      const e=ex.em[i]||{};
+      const m={preset:e.p||'',lambda:e.l||0,thick:e.t||300};
+      if(e.cr>0) m.customR=e.cr;
+      const ly=_deserLayers(e.ly); if(ly.length){ m.layers=ly; m.layersMode=true; }
+      room.edgeMats[i]=m;
+    }
+  }
+  const fL=_deserLayers(ex.fL); if(fL.length) room.floorLayers=fL;
+  const cL=_deserLayers(ex.cL); if(cL.length) room.ceilingLayers=cL;
+}
+function _serFloor(fl){ const o={n:fl.name,h:fl.height,r:fl.rooms.map(rm=>[rm.typeId,rm.x,rm.y,rm.w,rm.h,rm.name||'',
   (rm.openings||[]).map(o=>[o.side,o.type,o.presetId,o.w,o.h,o.count,o.pos!=null?o.pos:50,o.edge!=null?o.edge:null,o.doorType||0]),
-  rm.poly||null])}; }
+  rm.poly||null, _serRoomExtras(rm)])};
+  const fL=_serLayers(fl.floorLayers); if(fL) o.fL=fL;
+  const cL=_serLayers(fl.ceilingLayers); if(cL) o.cL=cL;
+  return o; }
 function serializeState(){
   const obj={c:ST.cityId,p:[ST.plot.w,ST.plot.d],n:ST.northSide,a:ST.airtight,hr:ST.heatRegime,at:ST.attic,lm:ST.lambdaMode,
     m:[ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId],
@@ -14848,18 +15253,27 @@ function loadState(o){
   ST.pipeType = PIPE_TYPES.some(x=>x.id===o.pt) ? o.pt : 'pp';
   ST.heatingTypes = (Array.isArray(o.ht)&&o.ht.length) ? o.ht : ['radiator'];
   if(o.m){ [ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId]=o.m; }
-  ST.floors=(o.f||[]).map(fl=>({id:uid('fl'),name:fl.n,height:fl.h,rooms:(fl.r||[]).map(rm=>{
-    const room={id:uid('rm'),typeId:rm[0],x:rm[1],y:rm[2],w:rm[3],h:rm[4],name:rm[5]||'',tInt:roomTypeTemp(rm[0]),
-      openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null,doorType:(o[8]&&o[8]!==0)?o[8]:'none'}))};
-    if(rm[7]){ room.poly=rm[7]; const b=roomBBox(room); room.x=b.x; room.y=b.y; room.w=b.w; room.h=b.h; }
-    return room;
-  })}));
+  ST.floors=(o.f||[]).map(fl=>{
+    const out={id:uid('fl'),name:fl.n,height:fl.h,rooms:(fl.r||[]).map(rm=>{
+      const room={id:uid('rm'),typeId:rm[0],x:rm[1],y:rm[2],w:rm[3],h:rm[4],name:rm[5]||'',tInt:roomTypeTemp(rm[0]),
+        openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null,doorType:(o[8]&&o[8]!==0)?o[8]:'none'}))};
+      if(rm[7]){ room.poly=rm[7]; const b=roomBBox(room); room.x=b.x; room.y=b.y; room.w=b.w; room.h=b.h; }
+      _deserRoomExtras(room, rm[8]);
+      return room;
+    })};
+    const fL=_deserLayers(fl.fL); if(fL.length) out.floorLayers=fL;
+    const cL=_deserLayers(fl.cL); if(cL.length) out.ceilingLayers=cL;
+    return out;
+  });
   if(!ST.floors.length) initFloors(); else ST.activeFloorId=ST.floors[0].id;
   if(o.bs){ const fl=o.bs; ST.basement={id:uid('bs'),name:fl.n,height:fl.h,isBasement:true,tExt:fl.bt!=null?fl.bt:-6,rooms:(fl.r||[]).map(rm=>{
     const room={id:uid('rm'),typeId:rm[0],x:rm[1],y:rm[2],w:rm[3],h:rm[4],name:rm[5]||'',tInt:roomTypeTemp(rm[0]),
       openings:(rm[6]||[]).map(o=>({id:uid('op'),side:o[0],type:o[1],presetId:o[2],w:o[3],h:o[4],count:o[5],pos:o[6]!=null?o[6]:50,edge:o[7]!=null?o[7]:null,doorType:(o[8]&&o[8]!==0)?o[8]:'none'}))};
     if(rm[7]){ room.poly=rm[7]; const b=roomBBox(room); room.x=b.x; room.y=b.y; room.w=b.w; room.h=b.h; }
+    _deserRoomExtras(room, rm[8]);
     return room; })};
+    const bfL=_deserLayers(fl.fL); if(bfL.length) ST.basement.floorLayers=bfL;
+    const bcL=_deserLayers(fl.cL); if(bcL.length) ST.basement.ceilingLayers=bcL;
   } else { ST.basement=null; }
 }
 function saveLink(){
