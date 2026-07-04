@@ -55,8 +55,8 @@
 <link rel="canonical" href="https://aquality-hl.netlify.app/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='5' fill='%230a0705'/><path d='M16 5 L8 22 L24 22 Z' stroke='%23f59e0b' stroke-width='1.8' fill='none' stroke-linejoin='round'/><line x1='10.5' y1='17' x2='21.5' y2='17' stroke='%23f59e0b' stroke-width='1.8'/><circle cx='16' cy='22' r='2.5' fill='%23f59e0b'/></svg>" type="image/svg+xml">
 <!-- Шрифты самостоятельно хостятся в assets/fonts (@font-face в site.css, font-display:swap) -->
-<link rel="preload" href="assets/fonts/manrope-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/manrope-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preconnect" href="https://ocrgpmlhtjghiamhbrhv.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -64,7 +64,7 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
 <!-- Three.js подключается лениво (ensureThree в app.js) только при открытии 3D -->
-<script defer src="assets/app.js?v=20260703-fix3"></script>
+<script defer src="/assets/app.js?v=20260703-fix3"></script>
 <style>
 /* ═══ Критический CSS первого экрана: фон/цвет до прихода внешних CSS,
        CSS-заглушка WebGL-фона («кометы» — только transform/opacity). ═══ */
@@ -174,46 +174,13 @@ html.tier-low .thermal-path-bg{display:none!important}
 </script>
 <!-- Supabase JS подгружается ДИНАМИЧЕСКИ и только если заданы ключи (см. loadSupabaseLib).
      В офлайн-режиме внешний бэкенд-CDN не запрашивается вообще. -->
-<link rel="stylesheet" href="assets/site.css?v=20260703-fix3">
+<link rel="stylesheet" href="/assets/site.css?v=20260703-fix3">
 <!-- Tailwind: статическая сборка вместо CDN JIT (конфиг: tailwind.config.js, пересборка: npm run build:css).
      ВАЖНО: линк стоит ПОСЛЕ site.css — Play CDN вставлял свои стили в конец head,
      и утилиты Tailwind побеждали кастомные правила той же специфичности (проверено). -->
-<link rel="stylesheet" href="assets/tailwind.css?v=20260703-fix3">
+<link rel="stylesheet" href="/assets/tailwind.css?v=20260703-fix3">
 </head>
 <body class="bg-w950">
-<script>
-/* ═══ Самолечение стилей ═══
-   Если внешний CSS не применился (оборванная загрузка / застрявший битый кэш —
-   /assets/* отдаётся как immutable на год), страница осталась бы «голой» HTML,
-   как на скриншотах пользователя. Проверяем маркерные правила из site.css и
-   tailwind.css и, если их нет, переинжектируем со свежим cache-buster (?r=…),
-   гарантированно минуя любой кэш. Полностью в try/catch — сам скрипт не может
-   ничего сломать. */
-(function(){
-  function heal(){
-    try{
-      var need=[];
-      var p1=document.createElement('div'); p1.className='lg-btn-sec';
-      p1.style.cssText='position:absolute;left:-9999px;top:-9999px'; document.body.appendChild(p1);
-      if(getComputedStyle(p1).display!=='inline-flex') need.push('site');   // маркер site.css
-      document.body.removeChild(p1);
-      var p2=document.createElement('div'); p2.className='hidden';
-      p2.style.cssText='position:absolute;left:-9999px;top:-9999px'; document.body.appendChild(p2);
-      if(getComputedStyle(p2).display!=='none') need.push('tailwind');       // маркер tailwind.css
-      document.body.removeChild(p2);
-      need.forEach(function(n){
-        var fresh=document.createElement('link'); fresh.rel='stylesheet';
-        fresh.href='assets/'+n+'.css?r='+Date.now();
-        document.head.appendChild(fresh);
-        console.warn('[AQ] '+n+'.css не применился — переинжектирован со свежим cache-buster');
-      });
-    }catch(e){}
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',heal);
-  else heal();
-})();
-</script>
-
 <!-- Scroll progress bar -->
 <div id="scroll-progress"></div>
 
