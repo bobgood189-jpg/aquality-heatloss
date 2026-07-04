@@ -633,7 +633,7 @@ const AQ_PLANS = [
 ];
 // Включён ли paywall: явный флаг приоритетнее; иначе авто (вкл. при Supabase).
 const PAYWALL_ON = (typeof AQ_CFG.PAYWALL === 'boolean') ? AQ_CFG.PAYWALL : SB_CONFIGURED;
-const BOT_USERNAME  = (AQ_CFG.BOT_USERNAME || 'aqualityHL_bot').replace(/^@/,'');
+const BOT_USERNAME  = (AQ_CFG.BOT_USERNAME || 'AqualityHLBot').replace(/^@/,'');
 const PAY_TG        = (AQ_CFG.PAY_TG  || 'aqualityHL').replace(/^@/,'');
 const PAY_TG2       = (AQ_CFG.PAY_TG2 || 'ibrokh1movv7').replace(/^@/,'');
 const PAY_REQ       = AQ_CFG.PAY_REQUISITES || '';
