@@ -635,7 +635,7 @@ const AQ_PLANS = [
 ];
 // Включён ли paywall: явный флаг приоритетнее; иначе авто (вкл. при Supabase).
 const PAYWALL_ON = (typeof AQ_CFG.PAYWALL === 'boolean') ? AQ_CFG.PAYWALL : SB_CONFIGURED;
-const BOT_USERNAME  = (AQ_CFG.BOT_USERNAME || 'aqualityHL_bot').replace(/^@/,'');
+const BOT_USERNAME  = (AQ_CFG.BOT_USERNAME || 'AqualityHLBot').replace(/^@/,'');
 const PAY_TG        = (AQ_CFG.PAY_TG  || 'aqualityHL').replace(/^@/,'');
 const PAY_TG2       = (AQ_CFG.PAY_TG2 || 'ibrokh1movv7').replace(/^@/,'');
 const PAY_REQ       = AQ_CFG.PAY_REQUISITES || '';
@@ -6980,6 +6980,11 @@ const _i18n = {
     'simple-room-height':'Высота потолка, м','simple-room-tint':'t внутри, °C',
     'simple-attic-lbl':'Чердак / кровля',
     'simple-name-lbl':'Название','simple-opt-lbl':'(необязательно)','simple-add-room':'Добавить комнату',
+    'simple-gen-settings':'Общие настройки объекта (герметичность, режим, трубы)',
+    'sr-layers-title':'Слои конструкции (мастерская)',
+    'sr-layer-add':'слой',
+    'sr-layer-mat-ph':'материал',
+    'sr-layers-hint':'Добавьте слои: материал → толщина (мм) → λ. R посчитается сам.',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -8437,6 +8442,94 @@ function zonalFloorAreas(room, rooms){
   return areas.map((a,i)=>({r:FLOOR_ZONE_R[i], a})).filter(z=>z.a>0.01);
 }
 
+/* ════════════════════════════════════════════════════════════
+   ТОЛЩИНА СТЕН — наружный обмер ограждений (КМК 2.01.04-18, СНиП теплотехники).
+   ─────────────────────────────────────────────────────────────
+   Пользователь чертит комнату по ВНУТРЕННЕЙ (чистовой) грани стен —
+   это чистый пролёт помещения. Физическая стена толщиной t лежит
+   СНАРУЖИ нарисованной линии (нарисованное ребро = внутренняя грань).
+   Для наружных стен площадь по нормативу считается по НАРУЖНОМУ обмеру:
+   внутренний контур смещается наружу на полную толщину t с корректной
+   обработкой углов (miter): выпуклый (внешний) угол удлиняет ребро на t,
+   вогнутый (внутренний угол L-плана) — укорачивает на t.
+   Контроль: комната 4.0×6.0 внутр., t=400мм → наружный габарит 4.8×6.8 м.
+
+   Модель данных: физическая толщина стены — это параметр «Материала стен»
+   (у пресетов есть поле thickness, мм) с возможностью пер-рёберного
+   переопределения через room.edgeMats[i]. Тепловое R уже считается послойно
+   в computeRoom — здесь только ГЕОМЕТРИЯ (длина/площадь наружных стен).
+   Живой расчёт этот блок пока НЕ трогает — это ядро под Фазу wiring. */
+
+const WALL_THICK_DEFAULT_MM = 400;   // кирпич 1.5 / пеноблок — дефолт по КМК
+
+/* Пересечение двух прямых (точка+направление). null — если параллельны. */
+function lineIntersect(p1,d1,p2,d2){
+  const den = d1[0]*d2[1]-d1[1]*d2[0];
+  if(Math.abs(den)<1e-9) return null;                       // параллельны/совпадают
+  const t = ((p2[0]-p1[0])*d2[1]-(p2[1]-p1[1])*d2[0])/den;
+  return [p1[0]+t*d1[0], p1[1]+t*d1[1]];
+}
+/* Внешняя нормаль ребра a→b произвольного полигона (наружу из контура). */
+function polyEdgeOutNormal(verts,a,b){
+  const dx=b[0]-a[0], dy=b[1]-a[1], len=Math.hypot(dx,dy)||1;
+  const n=[-dy/len,dx/len], mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2, e=1e-3;
+  return pointInRoom(mx+n[0]*e, my+n[1]*e, {poly:verts}) ? [-n[0],-n[1]] : n;
+}
+function polyPerimeter(v){ let p=0; for(let i=0;i<v.length;i++){ const a=v[i],b=v[(i+1)%v.length]; p+=Math.hypot(b[0]-a[0],b[1]-a[1]); } return p; }
+function polyAreaAbs(v){ let a=0; for(let i=0;i<v.length;i++){ const p=v[i],q=v[(i+1)%v.length]; a+=p[0]*q[1]-q[0]*p[1]; } return Math.abs(a)/2; }
+
+/* Miter-offset простого полигона НАРУЖУ на dist (метры).
+   Каждое ребро сдвигается по своей внешней нормали; соседние смещённые
+   прямые пересекаются → новая вершина. Выпуклые углы удлиняют периметр
+   (+2·dist на угол), вогнутые укорачивают (−2·dist). Работает для
+   прямоугольника и прямоугольного полигона (L-, П- и т.п.). */
+function offsetPolygonMiter(verts, dist){
+  const n=verts.length; if(n<3||dist===0) return verts.map(p=>[p[0],p[1]]);
+  const nrm=[], dir=[];
+  for(let i=0;i<n;i++){ const a=verts[i], b=verts[(i+1)%n];
+    nrm.push(polyEdgeOutNormal(verts,a,b));
+    const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1; dir.push([dx/L,dy/L]); }
+  const out=[];
+  for(let i=0;i<n;i++){
+    const eP=(i-1+n)%n;                                      // ребро, входящее в вершину i
+    const pA=[verts[i][0]+dist*nrm[eP][0], verts[i][1]+dist*nrm[eP][1]];  // на смещённой прямой ребра eP
+    const pB=[verts[i][0]+dist*nrm[i][0],  verts[i][1]+dist*nrm[i][1]];   // на смещённой прямой ребра i
+    const x=lineIntersect(pA,dir[eP],pB,dir[i]);
+    out.push(x || pB);                                      // ~180° (коллинеарно) — просто смещение
+  }
+  return out;
+}
+
+/* Толщина наружной стены комнаты по ребру, мм. Приоритет:
+   ручная толщина слоя ребра → толщина пресета стены ребра → общий материал
+   стен (ST.mat.wallId) → настройка defWallThick → дефолт 400. */
+function edgeWallThickMm(room, edgeIndex){
+  const em = room && room.edgeMats && room.edgeMats[edgeIndex];
+  if(em){
+    if(em.thick>0) return em.thick;
+    if(em.preset){ const ep=findPreset('walls',em.preset); if(ep && ep.thickness) return ep.thickness; }
+  }
+  const wp = findPreset('walls', ST && ST.mat && ST.mat.wallId);
+  if(wp && wp.thickness) return wp.thickness;
+  if(ST && ST.defWallThick>0) return ST.defWallThick;
+  return WALL_THICK_DEFAULT_MM;
+}
+
+/* Наружный контур комнаты (единая толщина t, м) — вершины наружной грани стен. */
+function roomOuterContour(room, thickM){ return offsetPolygonMiter(roomVerts(room), thickM); }
+/* Габаритные наружные размеры прямоугольной комнаты (м): {w,h}. */
+function roomOuterDims(room, thickM){
+  const o=roomOuterContour(room,thickM); let x0=1/0,y0=1/0,x1=-1/0,y1=-1/0;
+  for(const [x,y] of o){ x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y); }
+  return {w:x1-x0, h:y1-y0};
+}
+/* Наружная длина ребра edgeIndex (м) — длина соответствующего ребра наружного контура. */
+function outerEdgeLength(room, edgeIndex, thickM){
+  const o=roomOuterContour(room,thickM), n=o.length;
+  const a=o[edgeIndex%n], b=o[(edgeIndex+1)%n];
+  return Math.hypot(b[0]-a[0], b[1]-a[1]);
+}
+
 /* Расчёт одной комнаты */
 function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
   const tInt = room.tInt;
@@ -8938,6 +9031,21 @@ function runSelfTest(){
     ok('Панель Tip11 H500 L1000 при Δt60: ≈ 659 Вт', approx(po,659,0.02), `W=${po.toFixed(0)} Вт`);
     const aps=autoSelectPanels(600,20);
     ok('Автоподбор панелей: есть варианты с покрытием ≥100%', aps.length>0 && aps[0].cover>=100, `вариантов=${aps.length}, лучший=${aps[0]?aps[0].cover+'%':'—'}`);
+
+    /* ── Геометрия наружного обмера стен (толщина t) — ядро под учёт толщины ── */
+    const rectV=[[0,0],[4,0],[4,6],[0,6]];                         // внутренняя комната 4×6
+    const rd=roomOuterDims({poly:rectV},0.4);
+    ok('Толщина: 4×6 внутр., t=400мм → наружный габарит 4.8×6.8', approx(rd.w,4.8,1e-6)&&approx(rd.h,6.8,1e-6), `${rd.w.toFixed(2)}×${rd.h.toFixed(2)} м`);
+    ok('Толщина: наружный периметр 4×6 = 23.2 м (внутр. 20)', approx(polyPerimeter(offsetPolygonMiter(rectV,0.4)),23.2,1e-6), `Pнар=${polyPerimeter(offsetPolygonMiter(rectV,0.4)).toFixed(2)} м`);
+    ok('Толщина: t=0 → наружный контур == внутренний', approx(polyPerimeter(offsetPolygonMiter(rectV,0)),polyPerimeter(rectV),1e-9), '');
+    ok('Толщина: наружная длина ребра прямоуг. = внутр.+2·t (ребро 0: 4→4.8)', approx(outerEdgeLength({poly:rectV},0,0.4),4.8,1e-6), `L=${outerEdgeLength({poly:rectV},0,0.4).toFixed(2)} м`);
+    const lV=[[0,0],[6,0],[6,3],[3,3],[3,6],[0,6]];               // L-план: внутр. периметр 24, площадь 27
+    const lO=offsetPolygonMiter(lV,0.4);
+    const lExp=[6.8,3.8,3.0,3.0,3.8,6.8];
+    ok('Толщина: L-план — наружный периметр 27.2 м (5 выпуклых +t, 1 вогнутый −t)', approx(polyPerimeter(lO),27.2,1e-6), `Pнар=${polyPerimeter(lO).toFixed(2)} м`);
+    ok('Толщина: L-план — длины наружных рёбер [6.8,3.8,3,3,3.8,6.8]', (()=>{for(let i=0;i<6;i++){const a=lO[i],b=lO[(i+1)%6];if(!approx(Math.hypot(b[0]-a[0],b[1]-a[1]),lExp[i],1e-6))return false;}return true;})(), '');
+    ok('Толщина: L-план — наружная площадь габарита 37.24 м²', approx(polyAreaAbs(lO),37.24,1e-6), `A=${polyAreaAbs(lO).toFixed(2)} м²`);
+    ok('Толщина: резолвер edgeWallThickMm — пресет brick_380 → 400 мм', edgeWallThickMm({},0)===400, `t=${edgeWallThickMm({},0)} мм`);
   }catch(e){ ok('Без исключений', false, e&&e.message); }
   finally{ Object.assign(ST, JSON.parse(snap)); }
 
@@ -8976,7 +9084,7 @@ const ST = {
   pipeType:'pp', heatingTypes:['radiator'],
   basement: null, tExtManual:null,
   calcMode: 'revit',   // 'revit' | 'simple'
-  simpleRoomCount: 3,
+  simpleRoomCount: 1,
   simpleRoomIdx: 0,
   simpleRooms: [],
 };
@@ -9148,7 +9256,7 @@ function renderProgress(){
   const bar=document.getElementById('prog-bar');
   if(!desk) return;
   const titles=ST.calcMode==='simple'
-    ?[t('step-1'),t('simple-step-mats'),t('simple-step-rooms'),t('simple-step-enter'),t('simple-step-result')]
+    ?[t('step-1'),t('simple-step-enter'),t('simple-step-result')]
     :STEP_TITLES;
   const N=titles.length;
   desk.innerHTML='';
@@ -9176,9 +9284,7 @@ function canProceed(){
   if(ST.calcMode==='simple'){
     switch(ST.step){
       case 1: return !!ST.cityId || ST.tExtManual!=null;
-      case 2: return !!(ST.mat.wallId&&ST.mat.floorId&&ST.mat.ceilingId);
-      case 3: return ST.simpleRoomCount>=1;
-      case 4: return ST.simpleRooms.every((_,i)=>simpleRoomValid(i));
+      case 2: return (ST.simpleRooms||[]).length>0 && ST.simpleRooms.every((_,i)=>simpleRoomValid(i));
       default: return true;
     }
   }
@@ -9196,13 +9302,13 @@ function updateNavHint(){
   if(!el||!nb||!label) return;
   if(!canProceed()){
     const msgs=ST.calcMode==='simple'
-      ?{1:t('hint-1'),2:t('hint-5'),3:t('hint-simple-3'),4:t('hint-simple-4')}
+      ?{1:t('hint-1'),2:t('hint-simple-4')}
       :{1:t('hint-1'),2:t('hint-2'),3:t('hint-3'),4:t('hint-4'),5:t('hint-5')};
     el.textContent=msgs[ST.step]||''; nb.style.opacity='.5'; nb.style.cursor='not-allowed';
   } else { el.textContent=''; nb.style.opacity='1'; nb.style.cursor='pointer'; }
-  const N=ST.calcMode==='simple'?5:STEP_TITLES.length;
+  const N=ST.calcMode==='simple'?3:STEP_TITLES.length;
   if(ST.calcMode==='simple'){
-    if(ST.step===4) label.textContent=t('calculate');
+    if(ST.step===2) label.textContent=t('calculate');
     else if(ST.step===N) label.textContent=t('new-calc');
     else label.textContent=t('next');
   } else {
@@ -9229,12 +9335,12 @@ function wizNext(){
   }
   // Simple mode: step 3 → init rooms
   if(ST.calcMode==='simple'){
-    if(ST.step===3){ initSimpleRooms(); }
-    const N=5;
+    if(ST.step===1){ initSimpleRooms(); }
+    const N=3;
     if(ST.step===N){ wizReset(); return; }
     trackEvent('step_'+ST.step);
     ST.step++; renderProgress(); transitionStep(1); updateNavHint(); updateLivePanel();
-    if(ST.step===5){ trackEvent('calc_complete'); if(_tgG('calcCompleteSound',true)){ _playBeep(523,0.18); _playBeep(659,0.18); } }
+    if(ST.step===3){ trackEvent('calc_complete'); if(_tgG('calcCompleteSound',true)){ _playBeep(523,0.18); _playBeep(659,0.18); } }
     return;
   }
   const N=STEP_TITLES.length;
@@ -9292,10 +9398,10 @@ function renderStep(){
   if(ST.calcMode==='simple'){
     // ПРО доступен только с активной подпиской (Pro или Max) — замок на всех шагах.
     if(PAYWALL_ON && !aqHasAccess()){ p.innerHTML=aqProLockedHTML(); return; }
-    const sr=[null,s1,sSimple2,sSimple3,sSimple4,sSimple5];
+    const sr=[null,s1,sSimpleRooms,sSimple5];
     p.innerHTML=sr[ST.step]?sr[ST.step]():'';
     const _mtb=p.querySelector('.manual-t-box'); if(_mtb) _mtb.style.marginTop='10px';
-    if(ST.step===5) requestAnimationFrame(()=>{ try{ runResultReveal(); }catch(e){} });
+    if(ST.step===3) requestAnimationFrame(()=>{ try{ runResultReveal(); }catch(e){} });
     return;
   }
   const renders=[null,s1,s2,s3,s4,s5,s6];
@@ -9449,7 +9555,7 @@ function srSetType(i,typeId){
   const r=ST.simpleRooms[i]; if(!r) return;
   r.typeId=typeId; r.tInt=rt?rt.t:20;
   _srFocusRoom=i;
-  const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); updateNavHint();
+  srRerender();
 }
 function srSetDim(i,field,val){
   const r=ST.simpleRooms[i]; if(!r) return;
@@ -9573,6 +9679,86 @@ function _srItemArea(r,kind,it){
   if(kind==='ceilings'&&it.sameAsFloor){ const f=(r.floors||[])[0]; return f?(f.length||0)*(f.width||0):0; }
   return (it.dims==='lw'||kind==='floors'||kind==='ceilings') ? (it.length||0)*(it.width||0) : (it.length||0)*(it.height||0);
 }
+/* ── Встроенная «Мастерская»: многослойная конструкция прямо в поле стены/пола/
+   потолка. У каждого слоя — материал (λ из базы RAW_MATERIALS или вручную) +
+   толщина. R слоя = δ/λ, ΣR суммируется (+0.17 конверт для стен). Если у
+   поверхности есть валидные слои — R берётся по ним, иначе по готовому пресету. */
+function _srLayersSum(it){
+  let sum=0;
+  for(const ly of (it&&it.layers||[])){ const d=parseFloat(ly.d), la=parseFloat(ly.l); if(d>0&&la>0) sum+=d/1000/la; }
+  return sum;
+}
+function _srItemR(kind,it){
+  const s=_srLayersSum(it); if(s<=0) return null;
+  return kind==='walls' ? s+WALL_ENVELOPE_R : s;
+}
+/* пресет для движка: при заданных слоях подменяем только R (коэффициенты n/flat/
+   однородность берём от выбранного базового материала). */
+function _srItemPreset(kind,it){
+  const base=findPreset(kind, (it&&it.presetId)||ST.mat[_matIdKeys[kind]]);
+  const rl=_srItemR(kind,it);
+  if(rl==null) return base;
+  return Object.assign({}, base||{}, {r:rl, addR:0, custom:true, __layered:true});
+}
+function _srEnsureLayers(it){ if(!Array.isArray(it.layers)) it.layers=[]; return it.layers; }
+function srAddLayer(i,kind,ii){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
+  _srEnsureLayers(it).push({name:'',d:'',l:''}); _srFocusRoom=i; srRerender();
+}
+function srRemoveLayer(i,kind,ii,li){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it||!it.layers) return;
+  it.layers.splice(li,1); _srFocusRoom=i; srRerender();
+}
+function srSetLayerRaw(i,kind,ii,li,field,val){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it||!it.layers||!it.layers[li]) return;
+  it.layers[li][field]=val; _srRecalcLayers(i,kind,ii);
+}
+function srSetLayerName(i,kind,ii,li,val){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
+  _srEnsureLayers(it); if(!it.layers[li]) return;
+  it.layers[li].name=val;
+  const mat=RAW_MATERIALS.find(m=>m.name===val);           // авто-λ из базы
+  if(mat && !(parseFloat(it.layers[li].l)>0)) it.layers[li].l=String(mat.λ);
+  _srFocusRoom=i; srRerender();
+}
+/* живое обновление R по слою + ΣR без полного ре-рендера (сохраняет фокус) */
+function _srRecalcLayers(i,kind,ii){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
+  (it.layers||[]).forEach((ly,li)=>{
+    const d=parseFloat(ly.d), la=parseFloat(ly.l); const lr=(d>0&&la>0)?d/1000/la:0;
+    const el=document.getElementById(`sr-lr-${i}-${kind}-${ii}-${li}`);
+    if(el) el.textContent=lr>0?('R'+lr.toFixed(2)):'—';
+  });
+  const sum=_srItemR(kind,it);
+  const badge=document.getElementById(`sr-sumr-${i}-${kind}-${ii}`);
+  if(badge){ if(sum!=null){ badge.textContent='ΣR '+sum.toFixed(2); badge.classList.remove('hidden'); } else badge.classList.add('hidden'); }
+  srResults();
+}
+function _srLayersBlock(i,kind,it,ii){
+  const layers=Array.isArray(it.layers)?it.layers:[];
+  const sum=_srItemR(kind,it);
+  const gc='grid-template-columns:1fr 52px 58px 44px 18px';
+  const rows=layers.map((ly,li)=>{
+    const d=parseFloat(ly.d), la=parseFloat(ly.l); const lr=(d>0&&la>0)?d/1000/la:0;
+    return `<div class="grid gap-1 items-center" style="${gc}">
+      <input list="sr-rm-list" class="wi py-1 px-1.5 text-xs" placeholder="${t('sr-layer-mat-ph')}" value="${(ly.name||'').replace(/"/g,'&quot;')}" onchange="srSetLayerName(${i},'${kind}',${ii},${li},this.value)" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'name',this.value)">
+      <input type="number" min="0" step="1" class="wi py-1 px-0.5 text-xs text-center" placeholder="мм" value="${ly.d}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'d',this.value)">
+      <input type="number" min="0.001" step="0.001" class="wi py-1 px-0.5 text-xs text-center" placeholder="λ" value="${ly.l}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'l',this.value)">
+      <span id="sr-lr-${i}-${kind}-${ii}-${li}" class="text-[10px] font-mono text-center" style="color:#f59e0b">${lr>0?('R'+lr.toFixed(2)):'—'}</span>
+      <button type="button" onclick="srRemoveLayer(${i},'${kind}',${ii},${li})" class="text-muted hover:text-ember text-sm leading-none">×</button>
+    </div>`;
+  }).join('');
+  return `<div class="mt-2 rounded-lg border border-amber/15 p-2" style="background:rgba(245,158,11,.04)">
+    <div class="flex items-center justify-between mb-1.5">
+      <span class="text-[11px] font-semibold" style="color:rgba(245,158,11,.85)">${t('sr-layers-title')}</span>
+      <span id="sr-sumr-${i}-${kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded ${sum!=null?'':'hidden'}" style="background:rgba(245,158,11,.12);color:#f59e0b">ΣR ${(sum||0).toFixed(2)}</span>
+    </div>
+    ${layers.length?`<div class="grid gap-1 mb-1 text-[9px] text-muted px-0.5" style="${gc}"><span>${t('sr-layer-mat-ph')}</span><span class="text-center">мм</span><span class="text-center">λ</span><span class="text-center">R</span><span></span></div>`:''}
+    <div class="space-y-1">${rows||`<p class="text-[10px] text-muted italic">${t('sr-layers-hint')}</p>`}</div>
+    <button type="button" onclick="srAddLayer(${i},'${kind}',${ii})" class="text-[11px] font-semibold mt-1.5 hover:underline" style="color:#f59e0b">+ ${t('sr-layer-add')}</button>
+  </div>`;
+}
+
 function sSimple4(){
   return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
   <p class="text-sm text-muted mb-4">${t('simple-step-enter-sub')}</p>
@@ -9599,7 +9785,8 @@ function simpleRoomsEditorInner(){
         ${numFld(i,'walls',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'walls',ii,'height',it.height||2.7,t('simple-hgt'),0.1,0.1)}
         ${matFld(i,'walls',ii,'walls',it.presetId)}
-      </div>`;
+      </div>
+      ${_srLayersBlock(i,'walls',it,ii)}`;
     if(kind==='windows') return `
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'windows',ii,'length',it.length||1.2,t('simple-len'),0.1,0.05)}
@@ -9620,7 +9807,8 @@ function simpleRoomsEditorInner(){
         ${numFld(i,'floors',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'floors',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
         ${matFld(i,'floors',ii,'floors',it.presetId)}
-      </div>`;
+      </div>
+      ${_srLayersBlock(i,'floors',it,ii)}`;
     /* ceilings */
     return `
       <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
@@ -9639,7 +9827,8 @@ function simpleRoomsEditorInner(){
               <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'ceilings',${ii},'attic',this.value)">
                 ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>`;})()}
         ${matFld(i,'ceilings',ii,'ceilings',it.presetId)}
-      </div>`;
+      </div>
+      ${_srLayersBlock(i,'ceilings',it,ii)}`;
   };
 
   const section=(i,r,cfg)=>{
@@ -9726,11 +9915,29 @@ function simpleRoomsEditorInner(){
     </details>`;
   }).join('');
 
-  return `${cards}
+  return `<datalist id="sr-rm-list">${RAW_MATERIALS.map(m=>`<option value="${m.name}">`).join('')}</datalist>
+  ${cards}
   <button type="button" onclick="srAddRoom()"
     class="mt-1 w-full rounded-2xl border border-dashed border-amber/30 bg-amber/5 py-3 text-sm font-semibold text-amber hover:bg-amber/10 transition-colors">
     + ${t('simple-add-room')}
   </button>`;
+}
+
+/* ПРО (простой) — единый шаг «Комнаты»: свёрнутые общие настройки объекта
+   (герметичность, режим, λ, трубы, тип отопления) + покомнатный редактор,
+   где материалы задаются у каждой поверхности. Бывший отдельный «Шаг
+   материалов» распущен внутрь комнат — как в @Santexprog_bot. */
+function sSimpleRooms(){
+  return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
+  <p class="text-sm text-muted mb-4">${t('simple-step-enter-sub')}</p>
+  <details class="help mb-5">
+    <summary>${t('simple-gen-settings')}</summary>
+    <div class="help-body pt-4">
+      <button onclick="openWorkshop()" class="tool-btn mb-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t('workshop-btn')}</button>
+      ${objectParamsBlock()}
+    </div>
+  </details>
+  ${simpleRoomsEditorHTML()}`;
 }
 
 function sSimple5(){ return s6(); }
@@ -9771,7 +9978,7 @@ function computeSimpleRoom(r,tExt){
   // ── Стены (каждая — отдельная строка, как в боте) ──
   for(const w of (r.walls||[])){
     const S=(w.length||0)*(w.height||0); if(S<=0) continue;
-    const wp=findPreset('walls',w.presetId||ST.mat.wallId); if(!wp) continue;
+    const wp=_srItemPreset('walls',w); if(!wp) continue;
     const R=regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT);
     const dT=w.basement?dTbase:dTout;
     if(R>0&&dT>0) bd.wall+=(dT/R)*S*cornerK;
@@ -9794,7 +10001,7 @@ function computeSimpleRoom(r,tExt){
   for(const fl of (r.floors||[])){
     const S=(fl.length||0)*(fl.width||0); if(S<=0) continue;
     floorArea+=S;
-    const fp=findPreset('floors',fl.presetId||ST.mat.floorId); if(!fp) continue;
+    const fp=_srItemPreset('floors',fl); if(!fp) continue;
     const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
     const n=fp.n!=null?fp.n:1;
     if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
@@ -9802,7 +10009,7 @@ function computeSimpleRoom(r,tExt){
   // ── Потолок / крыша ──
   for(const cl of (r.ceilings||[])){
     const S=_srItemArea(r,'ceilings',cl); if(S<=0) continue;
-    const cp=findPreset('ceilings',cl.presetId||ST.mat.ceilingId); if(!cp) continue;
+    const cp=_srItemPreset('ceilings',cl); if(!cp) continue;
     const R=regimeR(cp.r,0.17,presetClass(cp));
     const n=(cp.flat)?1:(ATTIC[cl.attic]||ATTIC.closed).n;  /* C1: без чердака → n=1 */
     if(R>0&&dTout>0) bd.ceiling+=(dTout/R)*S*n;
@@ -11338,7 +11545,7 @@ function buildEditorUI(){
     ${buildRibbon()}
     <div class="ed-canvas-wrap" id="ed-canvas-wrap">
       <canvas id="ed-canvas"></canvas>
-      <div id="mr-schedule-view"></div>
+      <div id="mr-schedule-view" data-lenis-prevent></div>
       <div class="ed-legend">
         <div><i style="background:#ff6b35"></i>${t('mr-legend-hot')}</div>
         <div><i style="background:#f59e0b"></i>${t('mr-legend-live')}</div>
@@ -11355,7 +11562,7 @@ function buildEditorUI(){
       </div>
       <div id="ed-text-input" style="display:none;position:absolute;z-index:9999"></div>
     </div>
-    <div class="ed-props" id="ed-props"></div>
+    <div class="ed-props" id="ed-props" data-lenis-prevent></div>
   </div>
   <div class="ed-status" id="ed-status"></div>`;
 }
@@ -11383,7 +11590,7 @@ function buildRibbon(){
       ${_rsvg(cat.sp)}<span>${catLabel(cat.id)}</span><span class="er-chev">›</span></div>
       <div class="er-body${open?'':' hidden'}" id="er-body-${cat.id}">${tools.map(tool=>erToolBtn(tool)).join('')}</div></div>`;
   }).join('');
-  return `<div class="ed-ribbon" id="ed-ribbon">
+  return `<div class="ed-ribbon" id="ed-ribbon" data-lenis-prevent>
     <div class="er-search"><input type="text" id="er-search" placeholder="${t('mr-search-ph')}" oninput="erFilter(this.value)" autocomplete="off"></div>
     ${rows}</div>`;
 }
@@ -17087,7 +17294,8 @@ document.addEventListener('keydown', e => {
   if(e.key>='1'&&e.key<='6'){
     if(!CALC_KIND) return;
     const step=parseInt(e.key);
-    if(ST.step>=1&&step<=6){ ST.step=step; renderProgress(); renderStep(); updateNavHint(); scrollToEl('calculator'); }
+    const _maxStep=ST.calcMode==='simple'?3:6;
+    if(ST.step>=1&&step<=_maxStep){ ST.step=step; renderProgress(); renderStep(); updateNavHint(); scrollToEl('calculator'); }
   }
 });
 

@@ -66,7 +66,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "https://uhyomjdsswasmlycpoyh.supabase.
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "").strip()
 SB_CONFIGURED = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
 
-BOT_USERNAME = os.getenv("BOT_USERNAME", "aqualityHL_bot").lstrip("@")
+BOT_USERNAME = os.getenv("BOT_USERNAME", "AqualityHLBot").lstrip("@")
 SITE_URL = os.getenv("SITE_URL", "https://aquality-hl.netlify.app").rstrip("/")
 
 # ── Subscription shop: PRO/MAX × 1/3/6/12 months ──────────────────────────
