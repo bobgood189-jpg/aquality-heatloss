@@ -1,3 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Маркер-сентинел применения tailwind.css (для самолечения в index.html). */
+:root{--aq-tw-css:1}

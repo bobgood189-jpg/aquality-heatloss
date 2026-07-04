@@ -1,3 +1,6 @@
+/* Маркер-сентинел применения site.css (для самолечения в index.html).
+   CSS-переменная не переопределяется display/медиа-правилами — надёжнее класса. */
+:root{--aq-site-css:1}
 /* ═══ Шрифты: самостоятельный хостинг (были Google Fonts CDN) ═══
    Variable woff2, font-display:swap, unicode-range по сабсетам —
    браузер качает только нужные файлы. Источник: fonts.google.com */

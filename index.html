@@ -193,14 +193,13 @@ html.tier-low .thermal-path-bg{display:none!important}
   function heal(){
     try{
       var need=[];
-      var p1=document.createElement('div'); p1.className='lg-btn-sec';
-      p1.style.cssText='position:absolute;left:-9999px;top:-9999px'; document.body.appendChild(p1);
-      if(getComputedStyle(p1).display!=='inline-flex') need.push('site');   // маркер site.css
-      document.body.removeChild(p1);
-      var p2=document.createElement('div'); p2.className='hidden';
-      p2.style.cssText='position:absolute;left:-9999px;top:-9999px'; document.body.appendChild(p2);
-      if(getComputedStyle(p2).display!=='none') need.push('tailwind');       // маркер tailwind.css
-      document.body.removeChild(p2);
+      // Маркеры-сентинелы: каждый CSS объявляет свой :root-переменную
+      // (--aq-site-css в site.css, --aq-tw-css в tailwind.css). Переменная не
+      // переопределяется display/медиа-правилами — надёжнее проверки класса.
+      // Если стиль не применился, свойство пустое → переинжектируем файл.
+      var cs=getComputedStyle(document.documentElement);
+      if(!cs.getPropertyValue('--aq-site-css').trim()) need.push('site');
+      if(!cs.getPropertyValue('--aq-tw-css').trim())   need.push('tailwind');
       need.forEach(function(n){
         var fresh=document.createElement('link'); fresh.rel='stylesheet';
         fresh.href='assets/'+n+'.css?r='+Date.now();
