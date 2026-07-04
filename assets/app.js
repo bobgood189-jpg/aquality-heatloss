@@ -6905,6 +6905,11 @@ const _i18n = {
     'simple-room-height':'Высота потолка, м','simple-room-tint':'t внутри, °C',
     'simple-attic-lbl':'Чердак / кровля',
     'simple-name-lbl':'Название','simple-opt-lbl':'(необязательно)','simple-add-room':'Добавить комнату',
+    'simple-gen-settings':'Общие настройки объекта (герметичность, режим, трубы)',
+    'sr-layers-title':'Слои конструкции (мастерская)',
+    'sr-layer-add':'слой',
+    'sr-layer-mat-ph':'материал',
+    'sr-layers-hint':'Добавьте слои: материал → толщина (мм) → λ. R посчитается сам.',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -8946,7 +8951,7 @@ const ST = {
   pipeType:'pp', heatingTypes:['radiator'],
   basement: null, tExtManual:null,
   calcMode: 'revit',   // 'revit' | 'simple'
-  simpleRoomCount: 3,
+  simpleRoomCount: 1,
   simpleRoomIdx: 0,
   simpleRooms: [],
 };
@@ -9118,7 +9123,7 @@ function renderProgress(){
   const bar=document.getElementById('prog-bar');
   if(!desk) return;
   const titles=ST.calcMode==='simple'
-    ?[t('step-1'),t('simple-step-mats'),t('simple-step-rooms'),t('simple-step-enter'),t('simple-step-result')]
+    ?[t('step-1'),t('simple-step-enter'),t('simple-step-result')]
     :STEP_TITLES;
   const N=titles.length;
   desk.innerHTML='';
@@ -9146,9 +9151,7 @@ function canProceed(){
   if(ST.calcMode==='simple'){
     switch(ST.step){
       case 1: return !!ST.cityId || ST.tExtManual!=null;
-      case 2: return !!(ST.mat.wallId&&ST.mat.floorId&&ST.mat.ceilingId);
-      case 3: return ST.simpleRoomCount>=1;
-      case 4: return ST.simpleRooms.every((_,i)=>simpleRoomValid(i));
+      case 2: return (ST.simpleRooms||[]).length>0 && ST.simpleRooms.every((_,i)=>simpleRoomValid(i));
       default: return true;
     }
   }
@@ -9166,13 +9169,13 @@ function updateNavHint(){
   if(!el||!nb||!label) return;
   if(!canProceed()){
     const msgs=ST.calcMode==='simple'
-      ?{1:t('hint-1'),2:t('hint-5'),3:t('hint-simple-3'),4:t('hint-simple-4')}
+      ?{1:t('hint-1'),2:t('hint-simple-4')}
       :{1:t('hint-1'),2:t('hint-2'),3:t('hint-3'),4:t('hint-4'),5:t('hint-5')};
     el.textContent=msgs[ST.step]||''; nb.style.opacity='.5'; nb.style.cursor='not-allowed';
   } else { el.textContent=''; nb.style.opacity='1'; nb.style.cursor='pointer'; }
-  const N=ST.calcMode==='simple'?5:STEP_TITLES.length;
+  const N=ST.calcMode==='simple'?3:STEP_TITLES.length;
   if(ST.calcMode==='simple'){
-    if(ST.step===4) label.textContent=t('calculate');
+    if(ST.step===2) label.textContent=t('calculate');
     else if(ST.step===N) label.textContent=t('new-calc');
     else label.textContent=t('next');
   } else {
@@ -9199,12 +9202,12 @@ function wizNext(){
   }
   // Simple mode: step 3 → init rooms
   if(ST.calcMode==='simple'){
-    if(ST.step===3){ initSimpleRooms(); }
-    const N=5;
+    if(ST.step===1){ initSimpleRooms(); }
+    const N=3;
     if(ST.step===N){ wizReset(); return; }
     trackEvent('step_'+ST.step);
     ST.step++; renderProgress(); transitionStep(1); updateNavHint(); updateLivePanel();
-    if(ST.step===5){ trackEvent('calc_complete'); if(_tgG('calcCompleteSound',true)){ _playBeep(523,0.18); _playBeep(659,0.18); } }
+    if(ST.step===3){ trackEvent('calc_complete'); if(_tgG('calcCompleteSound',true)){ _playBeep(523,0.18); _playBeep(659,0.18); } }
     return;
   }
   const N=STEP_TITLES.length;
@@ -9262,10 +9265,10 @@ function renderStep(){
   if(ST.calcMode==='simple'){
     // ПРО доступен только с активной подпиской (Pro или Max) — замок на всех шагах.
     if(PAYWALL_ON && !aqHasAccess()){ p.innerHTML=aqProLockedHTML(); return; }
-    const sr=[null,s1,sSimple2,sSimple3,sSimple4,sSimple5];
+    const sr=[null,s1,sSimpleRooms,sSimple5];
     p.innerHTML=sr[ST.step]?sr[ST.step]():'';
     const _mtb=p.querySelector('.manual-t-box'); if(_mtb) _mtb.style.marginTop='10px';
-    if(ST.step===5) requestAnimationFrame(()=>{ try{ runResultReveal(); }catch(e){} });
+    if(ST.step===3) requestAnimationFrame(()=>{ try{ runResultReveal(); }catch(e){} });
     return;
   }
   const renders=[null,s1,s2,s3,s4,s5,s6];
@@ -9419,7 +9422,7 @@ function srSetType(i,typeId){
   const r=ST.simpleRooms[i]; if(!r) return;
   r.typeId=typeId; r.tInt=rt?rt.t:20;
   _srFocusRoom=i;
-  const p=document.getElementById('step-panel'); if(p) p.innerHTML=sSimple4(); updateNavHint();
+  srRerender();
 }
 function srSetDim(i,field,val){
   const r=ST.simpleRooms[i]; if(!r) return;
@@ -9543,6 +9546,86 @@ function _srItemArea(r,kind,it){
   if(kind==='ceilings'&&it.sameAsFloor){ const f=(r.floors||[])[0]; return f?(f.length||0)*(f.width||0):0; }
   return (it.dims==='lw'||kind==='floors'||kind==='ceilings') ? (it.length||0)*(it.width||0) : (it.length||0)*(it.height||0);
 }
+/* ── Встроенная «Мастерская»: многослойная конструкция прямо в поле стены/пола/
+   потолка. У каждого слоя — материал (λ из базы RAW_MATERIALS или вручную) +
+   толщина. R слоя = δ/λ, ΣR суммируется (+0.17 конверт для стен). Если у
+   поверхности есть валидные слои — R берётся по ним, иначе по готовому пресету. */
+function _srLayersSum(it){
+  let sum=0;
+  for(const ly of (it&&it.layers||[])){ const d=parseFloat(ly.d), la=parseFloat(ly.l); if(d>0&&la>0) sum+=d/1000/la; }
+  return sum;
+}
+function _srItemR(kind,it){
+  const s=_srLayersSum(it); if(s<=0) return null;
+  return kind==='walls' ? s+WALL_ENVELOPE_R : s;
+}
+/* пресет для движка: при заданных слоях подменяем только R (коэффициенты n/flat/
+   однородность берём от выбранного базового материала). */
+function _srItemPreset(kind,it){
+  const base=findPreset(kind, (it&&it.presetId)||ST.mat[_matIdKeys[kind]]);
+  const rl=_srItemR(kind,it);
+  if(rl==null) return base;
+  return Object.assign({}, base||{}, {r:rl, addR:0, custom:true, __layered:true});
+}
+function _srEnsureLayers(it){ if(!Array.isArray(it.layers)) it.layers=[]; return it.layers; }
+function srAddLayer(i,kind,ii){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
+  _srEnsureLayers(it).push({name:'',d:'',l:''}); _srFocusRoom=i; srRerender();
+}
+function srRemoveLayer(i,kind,ii,li){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it||!it.layers) return;
+  it.layers.splice(li,1); _srFocusRoom=i; srRerender();
+}
+function srSetLayerRaw(i,kind,ii,li,field,val){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it||!it.layers||!it.layers[li]) return;
+  it.layers[li][field]=val; _srRecalcLayers(i,kind,ii);
+}
+function srSetLayerName(i,kind,ii,li,val){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
+  _srEnsureLayers(it); if(!it.layers[li]) return;
+  it.layers[li].name=val;
+  const mat=RAW_MATERIALS.find(m=>m.name===val);           // авто-λ из базы
+  if(mat && !(parseFloat(it.layers[li].l)>0)) it.layers[li].l=String(mat.λ);
+  _srFocusRoom=i; srRerender();
+}
+/* живое обновление R по слою + ΣR без полного ре-рендера (сохраняет фокус) */
+function _srRecalcLayers(i,kind,ii){
+  const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
+  (it.layers||[]).forEach((ly,li)=>{
+    const d=parseFloat(ly.d), la=parseFloat(ly.l); const lr=(d>0&&la>0)?d/1000/la:0;
+    const el=document.getElementById(`sr-lr-${i}-${kind}-${ii}-${li}`);
+    if(el) el.textContent=lr>0?('R'+lr.toFixed(2)):'—';
+  });
+  const sum=_srItemR(kind,it);
+  const badge=document.getElementById(`sr-sumr-${i}-${kind}-${ii}`);
+  if(badge){ if(sum!=null){ badge.textContent='ΣR '+sum.toFixed(2); badge.classList.remove('hidden'); } else badge.classList.add('hidden'); }
+  srResults();
+}
+function _srLayersBlock(i,kind,it,ii){
+  const layers=Array.isArray(it.layers)?it.layers:[];
+  const sum=_srItemR(kind,it);
+  const gc='grid-template-columns:1fr 52px 58px 44px 18px';
+  const rows=layers.map((ly,li)=>{
+    const d=parseFloat(ly.d), la=parseFloat(ly.l); const lr=(d>0&&la>0)?d/1000/la:0;
+    return `<div class="grid gap-1 items-center" style="${gc}">
+      <input list="sr-rm-list" class="wi py-1 px-1.5 text-xs" placeholder="${t('sr-layer-mat-ph')}" value="${(ly.name||'').replace(/"/g,'&quot;')}" onchange="srSetLayerName(${i},'${kind}',${ii},${li},this.value)" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'name',this.value)">
+      <input type="number" min="0" step="1" class="wi py-1 px-0.5 text-xs text-center" placeholder="мм" value="${ly.d}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'d',this.value)">
+      <input type="number" min="0.001" step="0.001" class="wi py-1 px-0.5 text-xs text-center" placeholder="λ" value="${ly.l}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'l',this.value)">
+      <span id="sr-lr-${i}-${kind}-${ii}-${li}" class="text-[10px] font-mono text-center" style="color:#f59e0b">${lr>0?('R'+lr.toFixed(2)):'—'}</span>
+      <button type="button" onclick="srRemoveLayer(${i},'${kind}',${ii},${li})" class="text-muted hover:text-ember text-sm leading-none">×</button>
+    </div>`;
+  }).join('');
+  return `<div class="mt-2 rounded-lg border border-amber/15 p-2" style="background:rgba(245,158,11,.04)">
+    <div class="flex items-center justify-between mb-1.5">
+      <span class="text-[11px] font-semibold" style="color:rgba(245,158,11,.85)">${t('sr-layers-title')}</span>
+      <span id="sr-sumr-${i}-${kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded ${sum!=null?'':'hidden'}" style="background:rgba(245,158,11,.12);color:#f59e0b">ΣR ${(sum||0).toFixed(2)}</span>
+    </div>
+    ${layers.length?`<div class="grid gap-1 mb-1 text-[9px] text-muted px-0.5" style="${gc}"><span>${t('sr-layer-mat-ph')}</span><span class="text-center">мм</span><span class="text-center">λ</span><span class="text-center">R</span><span></span></div>`:''}
+    <div class="space-y-1">${rows||`<p class="text-[10px] text-muted italic">${t('sr-layers-hint')}</p>`}</div>
+    <button type="button" onclick="srAddLayer(${i},'${kind}',${ii})" class="text-[11px] font-semibold mt-1.5 hover:underline" style="color:#f59e0b">+ ${t('sr-layer-add')}</button>
+  </div>`;
+}
+
 function sSimple4(){
   return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
   <p class="text-sm text-muted mb-4">${t('simple-step-enter-sub')}</p>
@@ -9569,7 +9652,8 @@ function simpleRoomsEditorInner(){
         ${numFld(i,'walls',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'walls',ii,'height',it.height||2.7,t('simple-hgt'),0.1,0.1)}
         ${matFld(i,'walls',ii,'walls',it.presetId)}
-      </div>`;
+      </div>
+      ${_srLayersBlock(i,'walls',it,ii)}`;
     if(kind==='windows') return `
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'windows',ii,'length',it.length||1.2,t('simple-len'),0.1,0.05)}
@@ -9590,7 +9674,8 @@ function simpleRoomsEditorInner(){
         ${numFld(i,'floors',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'floors',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
         ${matFld(i,'floors',ii,'floors',it.presetId)}
-      </div>`;
+      </div>
+      ${_srLayersBlock(i,'floors',it,ii)}`;
     /* ceilings */
     return `
       <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
@@ -9609,7 +9694,8 @@ function simpleRoomsEditorInner(){
               <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'ceilings',${ii},'attic',this.value)">
                 ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>`;})()}
         ${matFld(i,'ceilings',ii,'ceilings',it.presetId)}
-      </div>`;
+      </div>
+      ${_srLayersBlock(i,'ceilings',it,ii)}`;
   };
 
   const section=(i,r,cfg)=>{
@@ -9696,11 +9782,29 @@ function simpleRoomsEditorInner(){
     </details>`;
   }).join('');
 
-  return `${cards}
+  return `<datalist id="sr-rm-list">${RAW_MATERIALS.map(m=>`<option value="${m.name}">`).join('')}</datalist>
+  ${cards}
   <button type="button" onclick="srAddRoom()"
     class="mt-1 w-full rounded-2xl border border-dashed border-amber/30 bg-amber/5 py-3 text-sm font-semibold text-amber hover:bg-amber/10 transition-colors">
     + ${t('simple-add-room')}
   </button>`;
+}
+
+/* ПРО (простой) — единый шаг «Комнаты»: свёрнутые общие настройки объекта
+   (герметичность, режим, λ, трубы, тип отопления) + покомнатный редактор,
+   где материалы задаются у каждой поверхности. Бывший отдельный «Шаг
+   материалов» распущен внутрь комнат — как в @Santexprog_bot. */
+function sSimpleRooms(){
+  return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
+  <p class="text-sm text-muted mb-4">${t('simple-step-enter-sub')}</p>
+  <details class="help mb-5">
+    <summary>${t('simple-gen-settings')}</summary>
+    <div class="help-body pt-4">
+      <button onclick="openWorkshop()" class="tool-btn mb-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t('workshop-btn')}</button>
+      ${objectParamsBlock()}
+    </div>
+  </details>
+  ${simpleRoomsEditorHTML()}`;
 }
 
 function sSimple5(){ return s6(); }
@@ -9741,7 +9845,7 @@ function computeSimpleRoom(r,tExt){
   // ── Стены (каждая — отдельная строка, как в боте) ──
   for(const w of (r.walls||[])){
     const S=(w.length||0)*(w.height||0); if(S<=0) continue;
-    const wp=findPreset('walls',w.presetId||ST.mat.wallId); if(!wp) continue;
+    const wp=_srItemPreset('walls',w); if(!wp) continue;
     const R=regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT);
     const dT=w.basement?dTbase:dTout;
     if(R>0&&dT>0) bd.wall+=(dT/R)*S*cornerK;
@@ -9764,7 +9868,7 @@ function computeSimpleRoom(r,tExt){
   for(const fl of (r.floors||[])){
     const S=(fl.length||0)*(fl.width||0); if(S<=0) continue;
     floorArea+=S;
-    const fp=findPreset('floors',fl.presetId||ST.mat.floorId); if(!fp) continue;
+    const fp=_srItemPreset('floors',fl); if(!fp) continue;
     const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
     const n=fp.n!=null?fp.n:1;
     if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
@@ -9772,7 +9876,7 @@ function computeSimpleRoom(r,tExt){
   // ── Потолок / крыша ──
   for(const cl of (r.ceilings||[])){
     const S=_srItemArea(r,'ceilings',cl); if(S<=0) continue;
-    const cp=findPreset('ceilings',cl.presetId||ST.mat.ceilingId); if(!cp) continue;
+    const cp=_srItemPreset('ceilings',cl); if(!cp) continue;
     const R=regimeR(cp.r,0.17,presetClass(cp));
     const n=(cp.flat)?1:(ATTIC[cl.attic]||ATTIC.closed).n;  /* C1: без чердака → n=1 */
     if(R>0&&dTout>0) bd.ceiling+=(dTout/R)*S*n;
@@ -16776,7 +16880,8 @@ document.addEventListener('keydown', e => {
   if(e.key>='1'&&e.key<='6'){
     if(!CALC_KIND) return;
     const step=parseInt(e.key);
-    if(ST.step>=1&&step<=6){ ST.step=step; renderProgress(); renderStep(); updateNavHint(); scrollToEl('calculator'); }
+    const _maxStep=ST.calcMode==='simple'?3:6;
+    if(ST.step>=1&&step<=_maxStep){ ST.step=step; renderProgress(); renderStep(); updateNavHint(); scrollToEl('calculator'); }
   }
 });
 
