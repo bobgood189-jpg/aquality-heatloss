@@ -10911,7 +10911,23 @@ const VIEW3D={
   },
 
   _disposeMeshes(){
-    for(const m of this.meshes){ if(m.geometry) m.geometry.dispose(); this.scene&&this.scene.remove(m); }
+    // PERF: освобождаем GPU-ресурсы geometry + material + текстуры. build() пересобирает
+    // сцену с нуля на каждый dirty (смена цвета/каркаса/потолка/теней/этажа), создавая
+    // все материалы заново — без dispose старые копились в видеопамяти (утечка → троттлинг
+    // на мобильных). Материалы бывают общими для нескольких мешей (потолки, радиаторы,
+    // сегменты стены) — dedupe через Set, чтобы не звать dispose дважды.
+    const seenMat=new Set();
+    for(const m of this.meshes){
+      if(m.geometry) m.geometry.dispose();
+      const mats=Array.isArray(m.material)?m.material:(m.material?[m.material]:[]);
+      for(const mat of mats){
+        if(!mat||seenMat.has(mat)) continue;
+        seenMat.add(mat);
+        if(mat.map) mat.map.dispose();
+        mat.dispose();
+      }
+      this.scene&&this.scene.remove(m);
+    }
     this.meshes=[];
   },
 
@@ -17922,6 +17938,38 @@ document.addEventListener('DOMContentLoaded',()=>{
     /* Раскрытие секций (.sect-reveal) и аккордеоны (.exp-tab) отсюда ВЫНЕСЕНЫ:
        это контент, а не декорация — см. safe('sectReveal') и safe('expTabs')
        выше по DCL. Здесь остались только фоновые звёзды. */
+  });
+
+  /* PERF (правило: «видно ≥1px → крутится, не видно → стоп»):
+     сайт-широкий фон shaderBG + siteBgStars лежит position:fixed на весь экран,
+     поэтому IntersectionObserver каждого цикла ВСЕГДА считает его «в кадре» — и он
+     крутится 24/30 fps даже когда сверху раскрыт НЕПРОЗРАЧНЫЙ полноэкранный оверлей
+     (редактор Мини-Ревит, 3D-обзор, модалки), за которым фон не виден пользователю
+     ни на пиксель. Такой рендер = зря греет телефон. Пока оверлей открыт — пауза.
+     Возобновление централизовано через MutationObserver (единый источник правды):
+     не зависит от того, КАК закрыли оверлей (кнопка/ESC/клик по фону/программно),
+     поэтому фон не может «залипнуть» замороженным. Полупрозрачные скримы в список НЕ
+     входят — сквозь них слабое свечение ещё читается, значит анимация продолжается. */
+  safe('bgOcclusion', function initBgOcclusion(){
+    if(!window.PerfManager||!document.body) return;
+    // Полноэкранные оверлеи, за которыми фон 0 видимых пикселей (флэт-непрозрачные
+    // #07090F/#03050D либо ≥94% + backdrop-blur): редактор, админка, вход, модалка.
+    const OPAQUE='#ed-root.open,#admin-overlay.open,#auth-overlay.open,#modal-backdrop.open';
+    const BG=['shaderBG','siteBgStars'];
+    let occluded=false, scheduled=false;
+    function sync(){
+      scheduled=false;
+      const now=!!document.querySelector(OPAQUE);
+      if(now===occluded) return;
+      occluded=now;
+      // pauseLoop/resumeLoop безвредны, если цикл не зарегистрирован (tier-low: фона нет).
+      for(const n of BG){ if(occluded) PerfManager.pauseLoop(n); else PerfManager.resumeLoop(n); }
+    }
+    // Коалесцируем всплески class-мутаций в один вызов на микротаск (sync дешёвый —
+    // один querySelector). Наблюдаем только атрибут class в поддереве body.
+    function schedule(){ if(!scheduled){ scheduled=true; Promise.resolve().then(sync); } }
+    new MutationObserver(schedule).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+    sync(); // если оверлей уже открыт к моменту инициализации
   });
 
   if(SB_CONFIGURED) console.info('[AQ] Supabase backend: ON');
