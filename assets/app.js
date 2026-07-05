@@ -1979,7 +1979,8 @@ let _authTab='login';
 let _authClientType='client';
 let _forgotStep=1;
 let _forgotEmail='';
-let _forgotSource='email'; // 'email' (Supabase native OTP) | 'telegram' (bot-delivered code)
+let _forgotSource='email'; // 'email' (Supabase native OTP) | 'telegram' (bot-delivered code) | 'sms' (Eskiz-delivered code)
+let _forgotPhoneMasked='';
 let _signupEmail='';
 
 function _startAuthCanvas(){
@@ -2042,7 +2043,7 @@ function renderAuthBody(){
   clearInterval(_otpTimerIv); clearInterval(_otpResendIv);
   if(_authTab==='confirm'){ el.innerHTML=renderSignupConfirmForm(); requestAnimationFrame(initOtpBoxes); }
   else if(_authTab==='login') el.innerHTML=renderLoginForm();
-  else if(_authTab==='forgot'){ _forgotStep=1; _forgotSource='email'; el.innerHTML=renderForgotForm(); }
+  else if(_authTab==='forgot'){ _forgotStep=1; _forgotSource='email'; _forgotPhoneMasked=''; el.innerHTML=renderForgotForm(); }
   else el.innerHTML=renderRegisterForm();
 }
 function authSwitchTab(tab){ _authTab=tab; renderAuthBody(); }
@@ -2414,11 +2415,11 @@ function renderForgotForm(){
   // Резервный путь: если письмо с кодом не доходит (лимит почты Supabase) — сброс через Telegram-бота, без email.
   const tgReset=`<div style="margin-top:1.1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06);text-align:center"><p class="text-xs" style="color:rgba(148,163,184,.5);margin-bottom:.4rem">${t('forgot-tg-hint')}</p><a href="https://t.me/${BOT_USERNAME}?start=resetpass" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:700;color:#F59E0B;text-decoration:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161-1.858 8.762c-.14.626-.507.782-1.027.487l-2.84-2.093-1.37 1.318c-.152.152-.279.279-.571.279l.204-2.889 5.26-4.752c.229-.204-.05-.318-.354-.114l-6.503 4.094-2.802-.876c-.609-.19-.62-.609.128-.901l10.95-4.222c.507-.19.951.114.786.902z"/></svg>${t('forgot-tg-link')} →</a></div>`;
   if(_forgotStep===2){
-    const step2Hint = _forgotSource==='telegram'
-      ? t('forgot-step2-hint-tg').replace('%bot%',BOT_USERNAME)
+    const step2Hint = _forgotSource==='telegram' ? t('forgot-step2-hint-tg').replace('%bot%',BOT_USERNAME)
+      : _forgotSource==='sms' ? t('forgot-step2-hint-sms').replace('%phone%',_forgotPhoneMasked)
       : t('forgot-step2-hint').replace('%email%',_forgotEmail);
-    const resendFn = _forgotSource==='telegram' ? 'doForgotSendTg' : 'doForgotSend';
-    const otpLbl = _forgotSource==='telegram' ? t('forgot-otp-lbl-tg') : t('forgot-otp-lbl');
+    const resendFn = _forgotSource==='telegram' ? 'doForgotSendTg' : _forgotSource==='sms' ? 'doForgotSendSms' : 'doForgotSend';
+    const otpLbl = _forgotSource==='telegram' ? t('forgot-otp-lbl-tg') : _forgotSource==='sms' ? t('forgot-otp-lbl-sms') : t('forgot-otp-lbl');
     return `
   ${backBtn}
   <h2 class="text-lg font-extrabold text-cream mb-1">${t('forgot-title')}</h2>
@@ -2453,7 +2454,8 @@ function renderForgotForm(){
   </div>
   <p id="auth-err" class="text-xs text-ember mt-3 hidden"></p>
   <button onclick="doForgotSend()" class="lg-btn w-full mt-5 py-3">${t('forgot-send-btn')} →</button>
-  <button onclick="doForgotSendTg()" class="lg-btn-sec w-full mt-2 py-2.5 text-sm">${t('forgot-tg-otp-btn')}</button>${tgReset}`;
+  <button onclick="doForgotSendTg()" class="lg-btn-sec w-full mt-2 py-2.5 text-sm">${t('forgot-tg-otp-btn')}</button>
+  <button onclick="doForgotSendSms()" class="lg-btn-sec w-full mt-2 py-2.5 text-sm">${t('forgot-sms-otp-btn')}</button>${tgReset}`;
 }
 async function doForgotSend(){
   const emailEl=document.getElementById('fp-email');
@@ -2492,6 +2494,49 @@ async function doForgotSendTg(){
   _forgotEmail=email; _forgotStep=2; _forgotSource='telegram';
   const el=document.getElementById('auth-body'); if(el) el.innerHTML=renderForgotForm();
 }
+// Ещё один резервный канал: код доставляется по SMS через Eskiz.uz на телефон,
+// указанный в профиле (см. supabase/functions/send-sms-reset).
+async function doForgotSendSms(){
+  const emailEl=document.getElementById('fp-email');
+  const email=(emailEl?emailEl.value:_forgotEmail||'').trim();
+  if(!email){ showAuthErr(t('auth-err-no-email')); return; }
+  if(!AQ_CFG.SUPABASE_URL||/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_URL)){ showAuthErr('Доступно только в онлайн-режиме'); return; }
+  const btn=event&&event.target; if(btn) btn.disabled=true;
+  let r={ok:false};
+  try{
+    const res=await fetch(`${AQ_CFG.SUPABASE_URL}/functions/v1/send-sms-reset`,{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':AQ_CFG.SUPABASE_ANON_KEY, 'Authorization':`Bearer ${AQ_CFG.SUPABASE_ANON_KEY}` },
+      body:JSON.stringify({ email }),
+      signal:AbortSignal.timeout(20000)
+    });
+    r=await res.json().catch(()=>({ok:false}));
+  }catch(e){ r={ok:false, reason:'network_error'}; }
+  if(btn) btn.disabled=false;
+  if(!r.ok){
+    const msg = r.reason==='no_phone'       ? t('forgot-sms-no-phone')
+              : r.reason==='user_not_found' ? t('forgot-err-user-not-found')
+              : r.reason==='too_soon'       ? t('forgot-tg-too-soon')
+              : t('forgot-err-otp-invalid');
+    showAuthErr(msg); return;
+  }
+  _forgotEmail=email; _forgotStep=2; _forgotSource='sms'; _forgotPhoneMasked=r.phone||'';
+  const el=document.getElementById('auth-body'); if(el) el.innerHTML=renderForgotForm();
+}
+async function verifySmsResetAndSetPassword(email,code,newPassword){
+  if(!AQ_CFG.SUPABASE_URL||/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_URL)) return {ok:false,err:'Доступно только в онлайн-режиме'};
+  try{
+    const res=await fetch(`${AQ_CFG.SUPABASE_URL}/functions/v1/verify-sms-reset`,{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':AQ_CFG.SUPABASE_ANON_KEY, 'Authorization':`Bearer ${AQ_CFG.SUPABASE_ANON_KEY}` },
+      body:JSON.stringify({ email, code, newPassword }),
+      signal:AbortSignal.timeout(20000)
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||data.ok===false) return {ok:false, err:data.error||t('forgot-err-otp-invalid')};
+    return {ok:true};
+  }catch(e){ return {ok:false, err:_friendlyAuthErr(e.message)}; }
+}
 async function verifyTgResetAndSetPassword(email,code,newPassword){
   if(!AQ_CFG.SUPABASE_URL||/YOUR_SUPABASE/i.test(AQ_CFG.SUPABASE_URL)) return {ok:false,err:'Доступно только в онлайн-режиме'};
   try{
@@ -2512,12 +2557,12 @@ async function doForgotVerify(){
   if(!otp||otp.length<6){ showAuthErr(t('forgot-err-otp-invalid')); return; }
   if(!newPass||newPass.length<6){ showAuthErr(t('auth-err-pass-short')); return; }
   const btn=event&&event.target; if(btn) btn.disabled=true;
-  const r = _forgotSource==='telegram'
-    ? await verifyTgResetAndSetPassword(_forgotEmail,otp,newPass)
+  const r = _forgotSource==='telegram' ? await verifyTgResetAndSetPassword(_forgotEmail,otp,newPass)
+    : _forgotSource==='sms' ? await verifySmsResetAndSetPassword(_forgotEmail,otp,newPass)
     : await sbVerifyOtpAndReset(_forgotEmail,otp,newPass);
   if(btn) btn.disabled=false;
   if(!r.ok){ showAuthErr(r.err); return; }
-  _forgotStep=1; _forgotEmail=''; _forgotSource='email';
+  _forgotStep=1; _forgotEmail=''; _forgotSource='email'; _forgotPhoneMasked='';
   closeAuth();
   toast(t('forgot-success'));
   initAuthNav();
@@ -6698,6 +6743,7 @@ const _i18n = {
     'calc-section-tag':'Калькулятор объекта',
     'calc-section-h2':'Расчёт теплопотерь <span class="text-amber">всего здания</span>',
     'calc-section-sub':'Город → участок и солнце → этажи → планировка комнат → материалы → итог по всему объекту.',
+    'sx-launch-btn':'Рабочая область: объекты и модули',
 
     'col-component-wall':'Стены',    'col-component-window':'Окна',    'col-component-door':'Двери',    'col-component-floor':'Пол',    'col-component-ceiling':'Потолок',    'col-component-infil':'Инфильтрация',
 
@@ -6865,6 +6911,8 @@ const _i18n = {
     'forgot-tg-too-soon':'Код уже отправлен, подождите немного перед повторной отправкой.',
     'forgot-err-user-not-found':'Email не зарегистрирован','forgot-err-otp-invalid':'Неверный или просроченный код',
     'forgot-err-email-unavailable':'Не удалось отправить письмо с кодом (проблема на стороне почтового сервера). Используйте кнопку «Получить код в Telegram» ниже.',
+    'forgot-sms-otp-btn':'📱 Получить код по SMS','forgot-step2-hint-sms':'Код отправлен по SMS на %phone%. Введите его ниже.',
+    'forgot-otp-lbl-sms':'Код из SMS (6 цифр)','forgot-sms-no-phone':'⚠️ У аккаунта не указан номер телефона. Используйте другой способ восстановления.',
     'sub-expiry-warning':'⚠ Подписка истекает через %n% дн. — продлите заранее.',
     'sub-expired-msg':'❌ Срок подписки истёк — обновите подписку для доступа.',
     'toast-access-denied':'Доступ запрещён',
@@ -7243,6 +7291,7 @@ const _i18n = {
     "calc-section-tag":"Ob'ekt kalkulyatori",
     "calc-section-h2":"Butun bino issiqlik yo'qotishini <span class=\"text-amber\">hisoblash</span>",
     "calc-section-sub":"Shahar → maydon va quyosh → qavatlar → xonalar rejasi → materiallar → ob'ekt bo'yicha natija.",
+    "sx-launch-btn":"Ish maydoni: obyektlar va modullar",
 
     'col-component-wall':'Devorlar',    'col-component-window':'Derazalar',    'col-component-door':'Eshiklar',    'col-component-floor':'Pol',    'col-component-ceiling':'Ship',    'col-component-infil':'Infiltratsiya',
 
@@ -7410,6 +7459,8 @@ const _i18n = {
     'forgot-tg-too-soon':'Kod allaqachon yuborilgan, biroz kutib turing.',
     'forgot-err-user-not-found':"Bu email ro'yxatdan o'tmagan",'forgot-err-otp-invalid':"Noto'g'ri yoki eskirgan kod",
     'forgot-err-email-unavailable':"Kodli xat yuborilmadi (pochta serverida muammo). Quyidagi «Telegramda kod olish» tugmasidan foydalaning.",
+    'forgot-sms-otp-btn':'📱 SMS orqali kod olish','forgot-step2-hint-sms':'Kod %phone% raqamiga SMS orqali yuborildi. Quyida kiriting.',
+    'forgot-otp-lbl-sms':'SMS-dagi kod (6 raqam)','forgot-sms-no-phone':"⚠️ Akkauntda telefon raqami ko'rsatilmagan. Boshqa tiklash usulidan foydalaning.",
     'sub-expiry-warning':'⚠ Obuna %n% kun ichida tugaydi — muddatidan oldin yangilang.',
     'sub-expired-msg':"❌ Obuna muddati tugadi — kirish uchun obunani yangilang.",
     'toast-access-denied':'Kirish taqiqlangan',
@@ -7801,6 +7852,7 @@ const _i18n = {
     'calc-section-tag':'Building Calculator',
     'calc-section-h2':'Heat loss calculation for <span class="text-amber">the entire building</span>',
     'calc-section-sub':'City → plot & sun → floors → room layout → materials → full building result.',
+    'sx-launch-btn':'Workspace: objects & modules',
 
     'col-component-wall':'Walls',    'col-component-window':'Windows',    'col-component-door':'Doors',    'col-component-floor':'Floor',    'col-component-ceiling':'Ceiling',    'col-component-infil':'Infiltration',
 
@@ -7970,6 +8022,8 @@ const _i18n = {
     'forgot-tg-too-soon':'A code was already sent — please wait a bit before requesting another.',
     'forgot-err-user-not-found':'Email not found','forgot-err-otp-invalid':'Invalid or expired code',
     'forgot-err-email-unavailable':'Could not send the code email (a problem on the mail server side). Use the "Get code via Telegram" button below.',
+    'forgot-sms-otp-btn':'📱 Get code via SMS','forgot-step2-hint-sms':'Code sent by SMS to %phone%. Enter it below.',
+    'forgot-otp-lbl-sms':'Code from SMS (6 digits)','forgot-sms-no-phone':"⚠️ No phone number on file for this account. Use another recovery method.",
     'sub-expiry-warning':'⚠ Subscription expires in %n% days — renew now.',
     'sub-expired-msg':'❌ Your subscription has expired — renew to continue.',
     'toast-access-denied':'Access denied',
