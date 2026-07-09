@@ -9360,8 +9360,24 @@ function activeFloor(){ return (ST.basement&&ST.basement.id===ST.activeFloorId)?
    LIVE PANEL
 ════════════════════════════════════════════════════════════ */
 let _prevKw=null, _kwAnim=null;
+let _kwMiniT=null;
+/* 4.1: закреплённая мини-плашка «~N кВт» для узких экранов (на десктопе живая панель справа).
+   Debounce 300 мс; видна на шагах ввода (Макс 2–5, ПРО 2), скрыта на результате и в редакторе. */
+function _updateKwMini(res){
+  clearTimeout(_kwMiniT);
+  _kwMiniT=setTimeout(()=>{
+    let el=document.getElementById('kw-mini');
+    const lastStep=ST.calcMode==='simple'?3:6;
+    const show=ST.step>=2&&ST.step<lastStep&&res&&res.roomCount>0&&res.totalW>0;
+    if(!show){ if(el) el.style.display=''; if(el) el.classList.remove('on'); return; }
+    if(!el){ el=document.createElement('div'); el.id='kw-mini'; document.body.appendChild(el); }
+    el.classList.add('on');
+    el.innerHTML=`<span class="kwm-v">~${res.totalKw.toFixed(1)} кВт</span><span class="kwm-s">${res.totalArea.toFixed(0)} м² · ${res.roomCount} ${t('room-abbr')||'комн.'}</span>`;
+  },300);
+}
 function updateLivePanel(){
   const res = computeObject();
+  _updateKwMini(res);
   const valEl=document.getElementById('kw-val');
   const unitEl=document.getElementById('kw-unit');
   const statusEl=document.getElementById('kw-status');
@@ -9723,6 +9739,19 @@ function simpleCornerK(r){
   const mode=r.corner||'auto';
   const isCorner = mode==='auto' ? simpleExtWallCount(r)>=2 : mode!=='one';
   return isCorner ? (1+CORNER_SURCHARGE) : 1;
+}
+/* Санити-чек результата (Фаза 4 плана точности): удельные теплопотери Вт/м² с оценкой диапазона */
+function sanityBadgeHTML(res){
+  if(!res||!(res.totalArea>0)||!(res.totalW>0)) return '';
+  const wm2=res.totalW/res.totalArea;
+  const b= wm2<70  ? {c:'#4ade80', txt:'отлично утеплён'} :
+           wm2<=120? {c:'#a3e635', txt:'типично для утеплённого дома'} :
+           wm2<=180? {c:'#fbbf24', txt:'выше типичного — проверьте окна и герметичность'} :
+                     {c:'#f87171', txt:'очень высокие — проверьте ввод: размеры, материалы, температуры'};
+  return `<div class="mb-5 flex items-center gap-2 flex-wrap">
+    <span style="font-size:11px;font-weight:700;color:${b.c};padding:3px 10px;border-radius:999px;border:1px solid ${b.c}55;background:${b.c}14">${Math.round(wm2)} Вт/м² — ${b.txt}</span>
+    <span class="text-[10px] text-muted" title="Итоговые теплопотери, делённые на отапливаемую площадь">удельные теплопотери</span>
+  </div>`;
 }
 /* Жёлтый баннер на шаге результата ПРО: у каких комнат не указан пол/потолок (результат занижен) */
 function simpleIncompleteBanner(){
@@ -13645,7 +13674,13 @@ function edProps(){
         <div><label class="text-[10px] text-muted">${t('mr-geom-y')}</label><input class="wi py-1.5 text-sm" type="number" step="0.5" min="0" value="${room.y}" onchange="edSetField('y',this.value)"></div>
         <div><label class="text-[10px] text-muted">${t('mr-geom-w')}</label><input class="wi py-1.5 text-sm" type="number" step="0.1" min="0.1" value="${room.w}" onchange="edSetField('w',this.value)"></div>
         <div><label class="text-[10px] text-muted">${t('mr-geom-d')}</label><input class="wi py-1.5 text-sm" type="number" step="0.1" min="0.1" value="${room.h}" onchange="edSetField('h',this.value)"></div>
-      </div>`;
+      </div>
+      ${(()=>{try{
+        /* 4.3: комната чертится по ВНУТРЕННЕЙ грани — показываем наружный обмер (КМК) явно */
+        const tmm=Math.max(...roomVerts(room).map((_,i)=>edgeWallThickMm(room,i)));
+        const od=roomOuterDims(room,tmm/1000);
+        return `<div class="rounded-lg bg-w800/40 border border-sand/10 p-2 text-[10px] text-muted mb-2" title="Размеры комнаты вводятся по внутренней (чистовой) грани стен; наружный обмер = внутренний + 2×толщина стены">Наружный обмер: <b class="text-cream">${od.w.toFixed(2)} × ${od.h.toFixed(2)} м</b> · стена ${tmm} мм</div>`;
+      }catch(e){return '';}})()}`;
   box.innerHTML=`<div class="ed-props-hd">
       <p class="font-bold text-cream" style="font-size:.82rem">${room.poly?t('mr-shape'):t('mr-room')}</p>
       <div class="flex gap-1 items-center">
@@ -14617,8 +14652,8 @@ function s5(){
   <p class="text-sm text-muted mb-2">${t('step5-sub')}</p>
   <button onclick="openWorkshop()" class="tool-btn mb-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t('workshop-btn')}</button>
   ${presetGrid(t('mat-walls'),'walls',ST.mat.wallId,'selWall')}
-  ${usedWindows?presetGrid(t('mat-windows-default'),'windows',ST.mat.windowId,'selWindow'):''}
-  ${usedDoors?presetGrid(t('mat-doors-default'),'doors',ST.mat.doorId,'selDoor'):''}
+  ${usedWindows?presetGrid(t('mat-windows-default'),'windows',ST.mat.windowId,'selWindow')+opOverridesNote('window'):''}
+  ${usedDoors?presetGrid(t('mat-doors-default'),'doors',ST.mat.doorId,'selDoor')+opOverridesNote('door'):''}
   ${presetGrid(t('mat-floor'),'floors',ST.mat.floorId,'selFloor')}
   ${presetGrid(t('mat-ceiling'),'ceilings',ST.mat.ceilingId,'selCeiling')}
   ${objectParamsBlock()}`;
@@ -14765,6 +14800,22 @@ function toggleHeatingType(id){
   }
   document.querySelectorAll('#step-panel [data-ht]').forEach(el=>el.classList.toggle('active',(ST.heatingTypes).includes(el.getAttribute('data-ht'))));
   updateLivePanel();
+}
+/* 4.4: у скольких проёмов задан собственный пресет/U — глобальный выбор на них не влияет */
+function opOverridesNote(type){
+  const globalId=type==='window'?ST.mat.windowId:ST.mat.doorId;
+  const list=[];
+  (ST.floors||[]).forEach(f=>(f.rooms||[]).forEach(r=>(r.openings||[]).forEach(op=>{
+    if(op.type!==type) return;
+    const own=(op.customU>0)||(op.presetId&&op.presetId!==globalId);
+    if(!own) return;
+    const what=op.customU>0?`U=${(+op.customU).toFixed(2)}${op.modelName?' ('+op.modelName+')':''}`
+      :((findPreset(type==='window'?'windows':'doors',op.presetId)||{}).name||op.presetId);
+    list.push(`${f.name} · ${r.name||roomTypeName(r.typeId)}: ${what}${(op.count||1)>1?' ×'+op.count:''}`);
+  })));
+  if(!list.length) return '';
+  return `<details style="margin:-14px 0 22px"><summary style="font-size:11px;color:rgba(245,158,11,.85);cursor:pointer;user-select:none">переопределено у ${list.length} — глобальный выбор на эти проёмы не влияет</summary>
+    <ul style="margin-top:5px;font-size:11px;color:rgba(154,134,117,.9);padding-left:1.2rem;list-style:disc;line-height:1.7">${list.map(x=>`<li>${x}</li>`).join('')}</ul></details>`;
 }
 function presetGrid(label,cat,currentId,onselect){
   const isWall = cat==='walls';
@@ -15039,6 +15090,7 @@ function s6(){
   </div>
   <p class="text-sm text-muted mb-7">${ST.cityName} · ${ST.floors.length} ${t('fl-abbr')} · ${res.roomCount} ${t('room-abbr')} · ${res.totalArea.toFixed(1)} м² · ${t('airtight-label')}: ${airtightName(ST.airtight).toLowerCase()} · ${t('regime-label')} ${heatRegime().name}</p>
   ${simpleIncompleteBanner()}
+  ${sanityBadgeHTML(res)}
 
   <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
     <div class="rounded-2xl border border-amber/30 bg-gradient-to-b from-amber/10 to-transparent p-4">
