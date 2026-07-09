@@ -5590,20 +5590,23 @@ function toast(msg, kind){
 ════════════════════════════════════════════════════════════ */
 /* Расчётная зимняя температура — параметр Б (наиболее холодная пятидневка обеспеч. 0.92),
    КМК 2.01.01-94 «Строительная климатология», табл. 4, столбец 10. */
+/* tGround — расчётная температура под полом (подполье/грунт на глубине ~1.5 м) для
+   полов НЕ «на грунте» в ПРО-калькуляторе: чем холоднее город, тем холоднее грунт.
+   Дефолт при отсутствии поля — 6 °C (историческое поведение = Santexprog-бот). */
 const CITIES = [
-  {id:'fergana',name:'Фергана',region:'Ферганская обл.',t:-14},
-  {id:'tashkent',name:'Ташкент',region:'Ташкентская обл.',t:-14},
-  {id:'andijan',name:'Андижан',region:'Андижанская обл.',t:-13},
-  {id:'namangan',name:'Наманган',region:'Наманганская обл.',t:-14},
-  {id:'samarkand',name:'Самарканд',region:'Самаркандская обл.',t:-12},
-  {id:'bukhara',name:'Бухара',region:'Бухарская обл.',t:-12},
-  {id:'navoi',name:'Навои',region:'Навоийская обл.',t:-13},
-  {id:'kashkadarya',name:'Карши',region:'Кашкадарьинская обл.',t:-14},
-  {id:'nukus',name:'Нукус',region:'Каракалпакстан',t:-20},
-  {id:'termez',name:'Термез',region:'Сурхандарьинская обл.',t:-10},
-  {id:'urgench',name:'Ургенч',region:'Хорезмская обл.',t:-18},
-  {id:'gulistan',name:'Гулистан',region:'Сырдарьинская обл.',t:-19},
-  {id:'jizzakh',name:'Джизак',region:'Джизакская обл.',t:-16},
+  {id:'fergana',name:'Фергана',region:'Ферганская обл.',t:-14,tGround:6},
+  {id:'tashkent',name:'Ташкент',region:'Ташкентская обл.',t:-14,tGround:6},
+  {id:'andijan',name:'Андижан',region:'Андижанская обл.',t:-13,tGround:6},
+  {id:'namangan',name:'Наманган',region:'Наманганская обл.',t:-14,tGround:6},
+  {id:'samarkand',name:'Самарканд',region:'Самаркандская обл.',t:-12,tGround:7},
+  {id:'bukhara',name:'Бухара',region:'Бухарская обл.',t:-12,tGround:7},
+  {id:'navoi',name:'Навои',region:'Навоийская обл.',t:-13,tGround:6},
+  {id:'kashkadarya',name:'Карши',region:'Кашкадарьинская обл.',t:-14,tGround:6},
+  {id:'nukus',name:'Нукус',region:'Каракалпакстан',t:-20,tGround:3},
+  {id:'termez',name:'Термез',region:'Сурхандарьинская обл.',t:-10,tGround:8},
+  {id:'urgench',name:'Ургенч',region:'Хорезмская обл.',t:-18,tGround:4},
+  {id:'gulistan',name:'Гулистан',region:'Сырдарьинская обл.',t:-19,tGround:4},
+  {id:'jizzakh',name:'Джизак',region:'Джизакская обл.',t:-16,tGround:5},
 ];
 
 const ROOM_TYPES = [
@@ -8495,14 +8498,24 @@ function externalLength(room, side, rooms){
 }
 
 /* Зональный расчёт пола на грунте: 4 зоны по 2 м от наружных стен */
-function zonalFloorAreas(room, rooms){
-  const A=roomArea(room);
-  let P=0; for(const s of roomExtSegs(room,rooms)) P+=s.len;
+/* Ядро зонального метода (Староверов): полосы по 2 м от наружных стен.
+   A — площадь пола (м²), P — периметр наружных стен (м). Общая для Макс и ПРО. */
+function zonalFloorZones(A, P){
   if(P<=0.01) return [{r:FLOOR_ZONE_R[3], a:A}];   // внутреннее помещение — глубокая зона
   const areas=[0,0,0,0]; let rem=A;
   for(let z=0; z<3 && rem>0; z++){ const strip=Math.min(rem, P*2); areas[z]=strip; rem-=strip; }
   areas[3]=Math.max(0,rem);
   return areas.map((a,i)=>({r:FLOOR_ZONE_R[i], a})).filter(z=>z.a>0.01);
+}
+/* Теплопотери пола на грунте зональным методом: Q = Σ ΔT/(R_зоны+addR)·S_зоны·n */
+function zonalFloorQ(A, P, addR, dTout, n){
+  let q=0;
+  for(const z of zonalFloorZones(A,P)) q+=(dTout/(z.r+(addR||0)))*z.a*(n!=null?n:1);
+  return q;
+}
+function zonalFloorAreas(room, rooms){
+  let P=0; for(const s of roomExtSegs(room,rooms)) P+=s.len;
+  return zonalFloorZones(roomArea(room), P);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -9109,6 +9122,43 @@ function runSelfTest(){
     ok('Толщина: L-план — длины наружных рёбер [6.8,3.8,3,3,3.8,6.8]', (()=>{for(let i=0;i<6;i++){const a=lO[i],b=lO[(i+1)%6];if(!approx(Math.hypot(b[0]-a[0],b[1]-a[1]),lExp[i],1e-6))return false;}return true;})(), '');
     ok('Толщина: L-план — наружная площадь габарита 37.24 м²', approx(polyAreaAbs(lO),37.24,1e-6), `A=${polyAreaAbs(lO).toFixed(2)} м²`);
     ok('Толщина: резолвер edgeWallThickMm — пресет brick_380 → 400 мм', edgeWallThickMm({},0)===400, `t=${edgeWallThickMm({},0)} мм`);
+
+    /* ── ПРО (simple): зональный пол, паритет с Макс, температуры (Фаза 2 плана точности) ── */
+    (()=>{
+      const snapS={simpleRooms:ST.simpleRooms, calcMode:ST.calcMode, cityId:ST.cityId, tGround:ST.tGround, tBasement:ST.tBasement, floorId:ST.mat.floorId};
+      try{
+        ST.cityId='fergana'; ST.tGround=null; ST.tBasement=null;
+        /* ядро зон: A=20, P=18 → вся площадь в зоне 1 (18·2=36>20) */
+        const z=zonalFloorZones(20,18);
+        ok('Зоны: A20/P18 → одна зона R=2.1 (20 м²)', z.length===1&&z[0].r===FLOOR_ZONE_R[0]&&approx(z[0].a,20,1e-9), JSON.stringify(z));
+        /* большая плита: A=200, P=20 → 40+40+40+80 по зонам */
+        const z2=zonalFloorZones(200,20);
+        ok('Зоны: A200/P20 → 40/40/40/80 м²', z2.length===4&&approx(z2[0].a,40,1e-9)&&approx(z2[3].a,80,1e-9), JSON.stringify(z2.map(x=>x.a)));
+        /* паритет пола Макс ↔ ПРО: комната 4×5, 4 наружные стены, пол «грунт без утепления» */
+        ST.mat.floorId='floor_ground_bare';
+        const mk={id:'__zt',name:'зт',typeId:'living_room',tInt:20,x:0,y:0,w:4,h:5,openings:[]};
+        const flZ={id:'__fz',name:'т',height:3.0,rooms:[mk]};
+        const rMax=computeRoom(mk,flZ,0,99,-14,[mk]);   // lastIndex=99 → потолок не считается
+        const rPro=computeSimpleRoom({name:'',typeId:'living_room',tInt:20,height:3.0,corner:'auto',
+          walls:[{length:4,height:3,basement:false},{length:5,height:3,basement:false},{length:4,height:3,basement:false},{length:5,height:3,basement:false}],
+          windows:[],doors:[],floors:[{length:4,width:5}],ceilings:[]},-14);
+        const dPct=Math.abs(rPro.breakdown.floor-rMax.breakdown.floor)/rMax.breakdown.floor*100;
+        ok('Паритет пола Макс↔ПРО (грунт, зоны): расхождение < 10%', dPct<10, `Макс=${rMax.breakdown.floor.toFixed(1)} / ПРО=${rPro.breakdown.floor.toFixed(1)} Вт (Δ${dPct.toFixed(1)}%)`);
+        /* не-ground пол: дефолт t под полом = 6 °C (историческое поведение) */
+        ST.mat.floorId='floor_xps50';
+        const rP2=computeSimpleRoom({name:'',typeId:'living_room',tInt:20,height:2.7,corner:'auto',walls:[],windows:[],doors:[],floors:[{length:5,width:4}],ceilings:[]},-14);
+        const fpX=findPreset('floors','floor_xps50');
+        const expF=( (20-6) / (regimeR(fpX.r,0.17,presetClass(fpX))+(fpX.addR||0)) )*20*(fpX.n!=null?fpX.n:1);
+        ok('ПРО: пол не на грунте — ΔT к t под полом (деф. +6), как раньше', approx(rP2.breakdown.floor,expF,1e-6), `floor=${rP2.breakdown.floor.toFixed(1)} Вт`);
+        /* настройка ST.tGround меняет результат не-ground пола */
+        ST.tGround=0;
+        const rP3=computeSimpleRoom({name:'',typeId:'living_room',tInt:20,height:2.7,corner:'auto',walls:[],windows:[],doors:[],floors:[{length:5,width:4}],ceilings:[]},-14);
+        ok('ПРО: t под полом настраивается (0 °C > потерь, чем +6)', rP3.breakdown.floor>rP2.breakdown.floor, `${rP2.breakdown.floor.toFixed(0)} → ${rP3.breakdown.floor.toFixed(0)} Вт`);
+      } finally {
+        ST.simpleRooms=snapS.simpleRooms; ST.calcMode=snapS.calcMode; ST.cityId=snapS.cityId;
+        ST.tGround=snapS.tGround; ST.tBasement=snapS.tBasement; ST.mat.floorId=snapS.floorId;
+      }
+    })();
   }catch(e){ ok('Без исключений', false, e&&e.message); }
   finally{ Object.assign(ST, JSON.parse(snap)); }
 
@@ -9146,6 +9196,8 @@ const ST = {
   airtight:'normal', heatRegime:'90/70', attic:'closed', lambdaMode:'A',
   pipeType:'pp', heatingTypes:['radiator'],
   basement: null, tExtManual:null,
+  tGround: null,       // ПРО: t под полом (не на грунте); null = авто по городу (CITIES.tGround, дефолт 6)
+  tBasement: null,     // ПРО: t за подвальной стеной; null = дефолт 6 (как в боте)
   calcMode: 'revit',   // 'revit' | 'simple'
   simpleRoomCount: 1,
   simpleRoomIdx: 0,
@@ -10076,15 +10128,22 @@ function computeSimple(){
   };
 }
 
-/* Temp deltas mirror @Santexprog_bot project settings (Pol harorati / Podval devori = 6°C). */
-const SIMPLE_FLOOR_T = 6;      // температура грунта под полом
-const SIMPLE_BASEMENT_T = 6;   // температура за подвальной стеной
+/* Temp deltas mirror @Santexprog_bot project settings (Pol harorati / Podval devori = 6°C).
+   Теперь настраиваются в «Общих параметрах» (ST.tGround / ST.tBasement); константы — дефолты. */
+const SIMPLE_FLOOR_T = 6;      // дефолт: температура под полом (не на грунте)
+const SIMPLE_BASEMENT_T = 6;   // дефолт: температура за подвальной стеной
+function simpleGroundT(){
+  if(ST.tGround!=null) return ST.tGround;
+  const c=CITIES.find(x=>x.id===ST.cityId);
+  return (c&&c.tGround!=null)?c.tGround:SIMPLE_FLOOR_T;
+}
+function simpleBasementT(){ return ST.tBasement!=null?ST.tBasement:SIMPLE_BASEMENT_T; }
 
 function computeSimpleRoom(r,tExt){
   const tInt=r.tInt||20, H=r.height||2.7;
   const dTout=tInt-tExt;                                   // к наружному воздуху
-  const dTfloor=tInt-SIMPLE_FLOOR_T;                       // к грунту под полом
-  const dTbase=tInt-SIMPLE_BASEMENT_T;                     // к подвальной стене
+  const dTfloor=tInt-simpleGroundT();                      // под полом (не на грунте)
+  const dTbase=tInt-simpleBasementT();                     // к подвальной стене
   const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
   const cornerK=simpleCornerK(r);   // 'auto': ≥2 наружных стен → +5%, как в Макс
 
@@ -10109,15 +10168,24 @@ function computeSimpleRoom(r,tExt){
     const dBeta=(BETA_DOOR[dr.doorType||'none']||BETA_DOOR.none).beta;
     if(dp&&dp.r>0&&dTout>0) bd.door+=(dTout/dp.r)*S*(1+dBeta)*cornerK;
   }
-  // ── Полы (ΔT к грунту 6°C, без зонального разбиения — как в боте) ──
+  // ── Полы: «на грунте» — зональный метод как в Макс (ΔT к улице, R грунта по зонам
+  //    + утепление addR); прочие (над подвалом/подпольем) — плоское R и ΔT к t под полом ──
   let floorArea=0;
+  const extP=(r.walls||[]).reduce((s,w)=>s+((!w.basement&&(w.length||0)>0&&(w.height||0)>0)?(w.length||0):0),0);
   for(const fl of (r.floors||[])){
     const S=(fl.length||0)*(fl.width||0); if(S<=0) continue;
     floorArea+=S;
     const fp=_srItemPreset('floors',fl); if(!fp) continue;
-    const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
     const n=fp.n!=null?fp.n:1;
-    if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
+    if(fp.ground){
+      /* периметр наружных стен — из введённых стен комнаты; если стен нет — прямоугольник пола */
+      const P=extP>0?extP:2*((fl.length||0)+(fl.width||0));
+      const addR=fp.__layered?fp.r:(fp.addR!=null?fp.addR:0);   // слои Мастерской = утепление поверх грунта
+      if(dTout>0) bd.floor+=zonalFloorQ(S,P,addR,dTout,n);
+    } else {
+      const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
+      if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
+    }
   }
   // ── Потолок / крыша ──
   for(const cl of (r.ceilings||[])){
@@ -14560,6 +14628,32 @@ function objectParamsBlock(){
         <p class="text-xs text-muted">${o.desc}</p>
       </button>`; }).join('')}
     </div>
+  </div>
+  ${simpleTempsBlock()}`;
+}
+/* ПРО: настраиваемые температуры под полом и за подвальной стеной (Фаза 2 плана точности).
+   Дефолты = историческое поведение (+6 °C, как в Santexprog-боте); «авто» для грунта — по городу. */
+function simpleTempsBlock(){
+  if(ST.calcMode!=='simple') return '';
+  const c=CITIES.find(x=>x.id===ST.cityId);
+  const cityG=(c&&c.tGround!=null)?c.tGround:SIMPLE_FLOOR_T;
+  const gOpts=[['','Авто — по городу (+'+cityG+' °C)'],[8,'+8 °C — тёплое подполье'],[6,'+6 °C — стандарт (как в боте)'],[4,'+4 °C — холодное подполье'],[2,'+2 °C'],[0,'0 °C — открытое подполье']];
+  const bOpts=[['','+6 °C — стандарт (как в боте)'],[10,'+10 °C — отапливаемый подвал'],[2,'+2 °C — полуотапливаемый'],[-3,'−3 °C — холодный'],[-6,'−6 °C — неотапливаемый']];
+  const sel=(opts,cur)=>opts.map(([v,l])=>`<option value="${v}" ${String(cur==null?'':cur)===String(v)?'selected':''}>${l}</option>`).join('');
+  return `<div class="mb-6">
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">Температуры под полом и за подвалом</h4>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label class="block text-[11px] text-muted mb-1">Под полом (для полов НЕ «на грунте»)</label>
+        <select class="wi py-2 text-sm" onchange="ST.tGround=this.value===''?null:+this.value;if(typeof srResults==='function')srResults();updateLivePanel()">${sel(gOpts,ST.tGround)}</select>
+        <p class="text-[10px] text-muted mt-1">Полы «на грунте» считаются зонально от уличной t — эта настройка на них не влияет.</p>
+      </div>
+      <div>
+        <label class="block text-[11px] text-muted mb-1">За стеной подвала (стены «в подвал / грунт»)</label>
+        <select class="wi py-2 text-sm" onchange="ST.tBasement=this.value===''?null:+this.value;if(typeof srResults==='function')srResults();updateLivePanel()">${sel(bOpts,ST.tBasement)}</select>
+        <p class="text-[10px] text-muted mt-1">Чем холоднее за стеной, тем больше её теплопотери.</p>
+      </div>
+    </div>
   </div>`;
 }
 function selAirtight(id){ ST.airtight=id; refreshPcards('selAirtight',id); updateLivePanel(); }
@@ -15578,6 +15672,8 @@ function serializeState(){
     m:[ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId],
     pt:ST.pipeType||'pp', ht:ST.heatingTypes||['radiator'],
     f:ST.floors.map(_serFloor)};
+  if(ST.tGround!=null) obj.tg=ST.tGround;
+  if(ST.tBasement!=null) obj.tb=ST.tBasement;
   if(ST.basement){ obj.bs=_serFloor(ST.basement); obj.bs.bt=ST.basement.tExt!=null?ST.basement.tExt:-6; }
   return obj;
 }
@@ -15591,6 +15687,8 @@ function loadState(o){
   ST.lambdaMode = (o.lm==='B')?'B':'A';
   ST.pipeType = PIPE_TYPES.some(x=>x.id===o.pt) ? o.pt : 'pp';
   ST.heatingTypes = (Array.isArray(o.ht)&&o.ht.length) ? o.ht : ['radiator'];
+  ST.tGround = (typeof o.tg==='number') ? o.tg : null;
+  ST.tBasement = (typeof o.tb==='number') ? o.tb : null;
   if(o.m){ [ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId]=o.m; }
   ST.floors=(o.f||[]).map(fl=>{
     const out={id:uid('fl'),name:fl.n,height:fl.h,rooms:(fl.r||[]).map(rm=>{
@@ -18490,7 +18588,7 @@ function sxSaveProjects(list){
 function sxSnapshot(){
   return { calcMode:'simple', cityId:ST.cityId, cityName:ST.cityName, tExt:ST.tExt,
     mat:{...ST.mat}, attic:ST.attic, airtight:ST.airtight, heatRegime:ST.heatRegime, lambdaMode:ST.lambdaMode,
-    pipeType:ST.pipeType, heatingTypes:ST.heatingTypes,
+    pipeType:ST.pipeType, heatingTypes:ST.heatingTypes, tGround:ST.tGround, tBasement:ST.tBasement,
     simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])) };
 }
 function sxRestore(s){
@@ -18499,7 +18597,8 @@ function sxRestore(s){
     if(s.cityId){ ST.cityId=s.cityId; ST.cityName=s.cityName; }
     if(s.tExt!=null) ST.tExt=s.tExt;
     if(s.mat) ST.mat={...ST.mat,...s.mat};
-    ['attic','airtight','heatRegime','lambdaMode','pipeType'].forEach(k=>{ if(s[k]!=null) ST[k]=s[k]; });
+    ST.tGround=null; ST.tBasement=null;   // null в снапшоте = «авто»: не тащить значение предыдущего проекта
+    ['attic','airtight','heatRegime','lambdaMode','pipeType','tGround','tBasement'].forEach(k=>{ if(s[k]!=null) ST[k]=s[k]; });
     if(Array.isArray(s.heatingTypes)) ST.heatingTypes=s.heatingTypes;
     ST.simpleRooms=Array.isArray(s.simpleRooms)?JSON.parse(JSON.stringify(s.simpleRooms)):[];
     ST.simpleRoomCount=s.simpleRoomCount||ST.simpleRooms.length||1;
