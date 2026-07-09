@@ -9285,6 +9285,8 @@ function calcSyncView(){
   if(choice) choice.style.display=on?'none':'';
   if(prog) prog.style.display=on?'':'none';
   if(wiz) wiz.style.display=on?'':'none';
+  /* мастер скрыт (лендинг/выбор калькулятора) → снять живую мини-плашку, чтобы не висела над страницей */
+  if(!on){ const km=document.getElementById('kw-mini'); if(km) km.classList.remove('on'); }
 }
 /* Служебный показ мастера (демо, пресеты, история, share, настройки) —
    без пейвол-логики: замок при необходимости отрисует renderStep. */
@@ -9759,7 +9761,7 @@ function simpleIncompleteBanner(){
   const bad=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)}))
     .filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));   // без стен комната и так помечена «!»
   if(!bad.length) return '';
-  const names=bad.map(x=>x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1))).join(', ');
+  const names=bad.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ');
   const missFloor=bad.some(x=>!x.c.floor), missCeil=bad.some(x=>!x.c.ceiling);
   const what=[missFloor?t('cat-floors').toLowerCase():null, missCeil?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / ');
   const msg=t('simple-incomplete-banner').replace('{rooms}',names).replace('{what}',what);
@@ -14809,9 +14811,9 @@ function opOverridesNote(type){
     if(op.type!==type) return;
     const own=(op.customU>0)||(op.presetId&&op.presetId!==globalId);
     if(!own) return;
-    const what=op.customU>0?`U=${(+op.customU).toFixed(2)}${op.modelName?' ('+op.modelName+')':''}`
-      :((findPreset(type==='window'?'windows':'doors',op.presetId)||{}).name||op.presetId);
-    list.push(`${f.name} · ${r.name||roomTypeName(r.typeId)}: ${what}${(op.count||1)>1?' ×'+op.count:''}`);
+    const what=op.customU>0?`U=${(+op.customU).toFixed(2)}${op.modelName?' ('+sxEsc(op.modelName)+')':''}`
+      :sxEsc((findPreset(type==='window'?'windows':'doors',op.presetId)||{}).name||op.presetId);
+    list.push(`${sxEsc(f.name)} · ${sxEsc(r.name||roomTypeName(r.typeId))}: ${what}${(op.count||1)>1?' ×'+op.count:''}`);
   })));
   if(!list.length) return '';
   return `<details style="margin:-14px 0 22px"><summary style="font-size:11px;color:rgba(245,158,11,.85);cursor:pointer;user-select:none">переопределено у ${list.length} — глобальный выбор на эти проёмы не влияет</summary>
@@ -18923,7 +18925,7 @@ function sxRenderResults(){
   const rows=(res.floors&&res.floors[0]&&res.floors[0].rooms||[]).map(r=>`
     <tr><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.area||0).toFixed(1)}</td><td class="mono" style="text-align:right;color:#f5b544">${Math.round(r.qW||0)}</td></tr>`).join('');
   const incompl=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)})).filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));
-  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1))).join(', ')).replace('{what}',[incompl.some(x=>!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
+  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ')).replace('{what}',[incompl.some(x=>!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
   host.innerHTML=`
     <div class="sx-card">
       <div class="sx-res-hd"><svg viewBox="0 0 24 24" fill="none" stroke="#5be0a0" stroke-width="2" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>${sxt('results')}</div>
