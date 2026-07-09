@@ -5609,20 +5609,24 @@ const CITIES = [
   {id:'jizzakh',name:'Джизак',region:'Джизакская обл.',t:-16,tGround:5},
 ];
 
+/* achMin — нормативная минимальная кратность воздухообмена (1/ч) по типу помещения
+   (КМК 2.01.04-18 / СНиП: кухня ≥1.0, ванная/санузел ≥1.5, жилые 0.5, кладовые/гаражи 0.3).
+   Итоговый ACH комнаты: естественная вентиляция → max(achMin, ACH герметичности);
+   механическая/рекуператор → achMin (организованный приток). */
 const ROOM_TYPES = [
-  {id:'living_room',  name:'Жилая комната', nameUz:'Yashash xonasi',   nameEn:'Living Room',       t:20},
-  {id:'bedroom',      name:'Спальня',        nameUz:'Yotoq xonasi',     nameEn:'Bedroom',           t:20},
-  {id:'children_room',name:'Детская',        nameUz:'Bolalar xonasi',   nameEn:"Children's Room",   t:22},
-  {id:'kitchen',      name:'Кухня',          nameUz:'Oshxona',          nameEn:'Kitchen',           t:18},
-  {id:'bathroom',     name:'Ванная',         nameUz:'Hammom',           nameEn:'Bathroom',          t:25},
-  {id:'toilet',       name:'Туалет',         nameUz:'Hojatxona',        nameEn:'Toilet',            t:20},
-  {id:'corridor',     name:'Коридор',        nameUz:"Yo'lak",           nameEn:'Hallway',           t:16},
-  {id:'storeroom',    name:'Кладовая',       nameUz:'Ombor xonasi',     nameEn:'Storage Room',      t:12},
-  {id:'garage',       name:'Гараж',          nameUz:'Garaj',            nameEn:'Garage',            t:5},
-  {id:'office',       name:'Офис',           nameUz:'Ofis',             nameEn:'Office',            t:20},
-  {id:'shop_floor',   name:'Торговый зал',   nameUz:'Savdo zali',       nameEn:'Shop Floor',        t:16},
-  {id:'workshop',     name:'Цех',            nameUz:'Ustaxona',         nameEn:'Workshop',          t:16},
-  {id:'warehouse',    name:'Склад',          nameUz:'Ombor',            nameEn:'Warehouse',         t:10},
+  {id:'living_room',  name:'Жилая комната', nameUz:'Yashash xonasi',   nameEn:'Living Room',       t:20, achMin:0.5},
+  {id:'bedroom',      name:'Спальня',        nameUz:'Yotoq xonasi',     nameEn:'Bedroom',           t:20, achMin:0.5},
+  {id:'children_room',name:'Детская',        nameUz:'Bolalar xonasi',   nameEn:"Children's Room",   t:22, achMin:0.5},
+  {id:'kitchen',      name:'Кухня',          nameUz:'Oshxona',          nameEn:'Kitchen',           t:18, achMin:1.0},
+  {id:'bathroom',     name:'Ванная',         nameUz:'Hammom',           nameEn:'Bathroom',          t:25, achMin:1.5},
+  {id:'toilet',       name:'Туалет',         nameUz:'Hojatxona',        nameEn:'Toilet',            t:20, achMin:1.5},
+  {id:'corridor',     name:'Коридор',        nameUz:"Yo'lak",           nameEn:'Hallway',           t:16, achMin:0.3},
+  {id:'storeroom',    name:'Кладовая',       nameUz:'Ombor xonasi',     nameEn:'Storage Room',      t:12, achMin:0.3},
+  {id:'garage',       name:'Гараж',          nameUz:'Garaj',            nameEn:'Garage',            t:5, achMin:0.3},
+  {id:'office',       name:'Офис',           nameUz:'Ofis',             nameEn:'Office',            t:20, achMin:0.7},
+  {id:'shop_floor',   name:'Торговый зал',   nameUz:'Savdo zali',       nameEn:'Shop Floor',        t:16, achMin:0.7},
+  {id:'workshop',     name:'Цех',            nameUz:'Ustaxona',         nameEn:'Workshop',          t:16, achMin:0.7},
+  {id:'warehouse',    name:'Склад',          nameUz:'Ombor',            nameEn:'Warehouse',         t:10, achMin:0.3},
 ];
 
 /* Built-in presets. R — полное сопротивление теплопередаче конструкции (м²·°C/Вт),
@@ -8348,6 +8352,21 @@ function atticN(){
   return (ATTIC[ST.attic]||ATTIC.closed).n;
 }
 function airtightAch(){ return (AIRTIGHT[ST.airtight]||AIRTIGHT.normal).ach; }
+/* ── Вентиляция по нормам (Фаза 3 плана точности) ──
+   Итоговый воздухообмен комнаты:
+   · естественная ('natural', дефолт): max(achMin типа комнаты, ACH герметичности) —
+     нормативный минимум не может быть меньше фактической инфильтрации;
+   · механическая ('mech') и рекуператор ('hrv'): achMin по нормам — приток организован,
+     надбавка на герметичность не применяется.
+   Рекуператор дополнительно возвращает тепло: Q_вент × (1 − η). */
+function roomAchMin(typeId){ const r=ROOM_TYPES.find(x=>x.id===typeId); return (r&&r.achMin!=null)?r.achMin:0.5; }
+function ventAchFor(typeId){
+  const min=roomAchMin(typeId);
+  if(ST.ventMode==='mech'||ST.ventMode==='hrv') return min;
+  return Math.max(min, airtightAch());
+}
+function hrvEff(){ return Math.max(0.4, Math.min(0.95, ST.hrvEff!=null?ST.hrvEff:0.75)); }
+function ventFactor(){ return ST.ventMode==='hrv' ? (1-hrvEff()) : 1; }
 function heatRegime(){ return HEAT_REGIMES.find(r=>r.id===ST.heatRegime)||HEAT_REGIMES[0]; }
 /* Вт на секцию — логарифмический ΔT (LMTD) по EN 442 */
 function _lmtd(tin, tout, tr){
@@ -8696,7 +8715,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
 
   const V = area * H;
   const rho = (1.293*273)/(273+tExt);
-  breakdown.infil = 0.28*1.005*V*rho*dTout*airtightAch();
+  breakdown.infil = 0.28*1.005*V*rho*dTout*ventAchFor(room.typeId)*ventFactor();
 
   const qW = Object.values(breakdown).reduce((s,v)=>s+v,0);
   const sections = Math.ceil((qW*1.15)/sectionWatt(tInt));
@@ -9024,13 +9043,14 @@ function initEngineeringModules(){ try{ hvHydroCalc(); hvFloorCalc(); hvTankCalc
 const SELFTEST_PINNED_Q = 4198.1;   // Вт — эталон комнаты 4×5×3, brick_380/закр.чердак/normal, tInt20/tExt-14
                                     // (стены 3217 + потолок 218.5 + пол 214.7 + инфильтрация 547.7)
 function runSelfTest(){
-  const snap = JSON.stringify({mat:ST.mat,attic:ST.attic,airtight:ST.airtight,heatRegime:ST.heatRegime,northSide:ST.northSide,lambdaMode:ST.lambdaMode});
+  const snap = JSON.stringify({mat:ST.mat,attic:ST.attic,airtight:ST.airtight,heatRegime:ST.heatRegime,northSide:ST.northSide,lambdaMode:ST.lambdaMode,ventMode:ST.ventMode,hrvEff:ST.hrvEff});
   const results=[];
   const approx=(a,b,tol)=>b!==0 && Math.abs(a-b)<=Math.abs(b)*tol;
   const ok=(name,cond,info)=>results.push({name,pass:!!cond,info:info||''});
   try{
     ST.mat={wallId:'brick_380',windowId:'double_glazing_pvc',doorId:'door_metal_insulated',floorId:'floor_xps50',ceilingId:'ceil_i100'};
     ST.attic='closed'; ST.airtight='normal'; ST.heatRegime='90/70'; ST.northSide='top'; ST.lambdaMode='A';
+    ST.ventMode='natural'; ST.hrvEff=0.75;
     const tExt=-14;
     const mkRoom=(ops)=>({id:'__t',name:'test',typeId:'living_room',tInt:20,x:0,y:0,w:4,h:5,openings:ops||[]});
     const fl={id:'__f',name:'t',height:3.0,rooms:[]};
@@ -9159,6 +9179,32 @@ function runSelfTest(){
         ST.tGround=snapS.tGround; ST.tBasement=snapS.tBasement; ST.mat.floorId=snapS.floorId;
       }
     })();
+
+    /* ── Вентиляция по нормам (Фаза 3): ACH по типу комнаты, рекуператор ── */
+    (()=>{
+      try{
+        ST.ventMode='natural'; ST.hrvEff=0.75;
+        ok('ACH: жилая natural = max(0.5, 0.7) = 0.7 (герметичность)', ventAchFor('living_room')===0.7, `ach=${ventAchFor('living_room')}`);
+        ok('ACH: кухня natural = max(1.0, 0.7) = 1.0 (норма типа)', ventAchFor('kitchen')===1.0, `ach=${ventAchFor('kitchen')}`);
+        ok('ACH: санузел natural = 1.5', ventAchFor('bathroom')===1.5, `ach=${ventAchFor('bathroom')}`);
+        ST.ventMode='mech';
+        ok('ACH: кухня механическая = 1.0 (без надбавки на герметичность)', ventAchFor('kitchen')===1.0&&ventAchFor('living_room')===0.5, `kitchen=${ventAchFor('kitchen')}, living=${ventAchFor('living_room')}`);
+        /* рекуператор η=75% режет вентиляционную статью в 4 раза против механической */
+        const vRoom=mkRoom([]); fl.rooms=[vRoom];
+        const qMech=computeRoom(vRoom,fl,0,0,tExt,[vRoom]).breakdown.infil;
+        ST.ventMode='hrv'; ST.hrvEff=0.75;
+        const qHrv=computeRoom(vRoom,fl,0,0,tExt,[vRoom]).breakdown.infil;
+        ok('Рекуператор 75% снижает вентиляцию в 4 раза', approx(qMech/qHrv,4,0.001), `mech=${qMech.toFixed(1)} / hrv=${qHrv.toFixed(1)} Вт`);
+        /* сумма byType сходится с totalW в ПРО */
+        ST.ventMode='natural';
+        const sr={name:'',typeId:'kitchen',tInt:18,height:2.7,corner:'auto',
+          walls:[{length:4,height:2.7,basement:false}],windows:[],doors:[],
+          floors:[{length:4,width:3}],ceilings:[{sameAsFloor:true,attic:'closed'}]};
+        const crS=computeSimpleRoom(sr,tExt);
+        const sumS=Object.values(crS.breakdown).reduce((a,b)=>a+b,0);
+        ok('ПРО: Σ breakdown = qW (кухня, ACH 1.0)', approx(sumS,crS.qW,1e-9)&&crS.breakdown.infil>0, `qW=${crS.qW.toFixed(1)} Вт`);
+      } finally { ST.ventMode='natural'; ST.hrvEff=0.75; }
+    })();
   }catch(e){ ok('Без исключений', false, e&&e.message); }
   finally{ Object.assign(ST, JSON.parse(snap)); }
 
@@ -9198,6 +9244,8 @@ const ST = {
   basement: null, tExtManual:null,
   tGround: null,       // ПРО: t под полом (не на грунте); null = авто по городу (CITIES.tGround, дефолт 6)
   tBasement: null,     // ПРО: t за подвальной стеной; null = дефолт 6 (как в боте)
+  ventMode: 'natural', // вентиляция: 'natural' (инфильтрация) | 'mech' (приточно-вытяжная) | 'hrv' (рекуператор)
+  hrvEff: 0.75,        // КПД рекуператора (0.6–0.9), используется при ventMode==='hrv'
   calcMode: 'revit',   // 'revit' | 'simple'
   simpleRoomCount: 1,
   simpleRoomIdx: 0,
@@ -10197,7 +10245,7 @@ function computeSimpleRoom(r,tExt){
   }
   // ── Инфильтрация (объём = площадь пола × высота) ──
   const V=floorArea*H, rho=(1.293*273)/(273+tExt);
-  if(V>0&&dTout>0) bd.infil=0.28*1.005*V*rho*dTout*airtightAch();
+  if(V>0&&dTout>0) bd.infil=0.28*1.005*V*rho*dTout*ventAchFor(r.typeId)*ventFactor();
 
   const qW=Object.values(bd).reduce((s,v)=>s+v,0);
   const area=floorArea;
@@ -14629,7 +14677,47 @@ function objectParamsBlock(){
       </button>`; }).join('')}
     </div>
   </div>
+  ${ventModeBlock()}
   ${simpleTempsBlock()}`;
+}
+/* Вентиляция: естественная / механическая / рекуператор (Фаза 3 плана точности).
+   Общая для Макс и ПРО — влияет на статью «вентиляция/инфильтрация» обоих ядер. */
+function ventModeBlock(){
+  const modes=[
+    {id:'natural', n:'Естественная', d:'Инфильтрация через окна и щели. ACH комнаты = максимум из нормы типа комнаты и герметичности здания.'},
+    {id:'mech',    n:'Механическая приточно-вытяжная', d:'Организованный приток: воздухообмен строго по нормам типа комнаты (кухня 1.0, санузлы 1.5, жилые 0.5), герметичность не добавляет.'},
+    {id:'hrv',     n:'Приточная с рекуператором', d:'То же, что механическая, но рекуператор возвращает тепло вытяжки: потери на вентиляцию × (1 − КПД).'},
+  ];
+  const vm=ST.ventMode||'natural';
+  const eff=Math.round(hrvEff()*100);
+  return `<div class="mb-6">
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">Вентиляция</h4>
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      ${modes.map(o=>`<button type="button" data-vm="${o.id}" onclick="selVentMode('${o.id}')" class="pcard text-left ${vm===o.id?'active':''}">
+        <p class="font-semibold text-cream text-sm leading-snug">${o.n}</p>
+        <p class="text-xs text-muted mt-1">${o.d}</p>
+      </button>`).join('')}
+    </div>
+    <div id="hrv-eff-row" class="mt-3 flex items-center gap-3 flex-wrap" style="display:${vm==='hrv'?'flex':'none'}">
+      <span class="text-xs text-muted flex-shrink-0">КПД рекуператора</span>
+      <input type="range" min="60" max="90" step="5" value="${eff}" style="width:180px"
+        oninput="setHrvEff(+this.value);var l=document.getElementById('hrv-eff-val');if(l)l.textContent=this.value+'%';">
+      <span id="hrv-eff-val" class="text-sm font-bold text-amber mono">${eff}%</span>
+      <span class="text-[10px] text-muted">типично 60–90% (роторные выше, пластинчатые ниже)</span>
+    </div>
+  </div>`;
+}
+function selVentMode(id){
+  ST.ventMode=(id==='mech'||id==='hrv')?id:'natural';
+  document.querySelectorAll('#step-panel [data-vm]').forEach(el=>el.classList.toggle('active',el.getAttribute('data-vm')===ST.ventMode));
+  const row=document.getElementById('hrv-eff-row'); if(row) row.style.display=ST.ventMode==='hrv'?'flex':'none';
+  if(typeof srResults==='function'&&ST.calcMode==='simple') srResults();
+  updateLivePanel();
+}
+function setHrvEff(pct){
+  ST.hrvEff=Math.max(0.4,Math.min(0.95,(+pct||75)/100));
+  if(typeof srResults==='function'&&ST.calcMode==='simple') srResults();
+  updateLivePanel();
 }
 /* ПРО: настраиваемые температуры под полом и за подвальной стеной (Фаза 2 плана точности).
    Дефолты = историческое поведение (+6 °C, как в Santexprog-боте); «авто» для грунта — по городу. */
@@ -14891,7 +14979,10 @@ function s6(){
   const res=computeObject();
   if(!res||res.roomCount===0){ return `<p class="text-muted py-8 text-center">${t('hint-4')}</p>`; }
   window._calcRes=res;
-  const TYPE={wall:t('col-component-wall')||'Стены',window:t('col-component-win')||'Окна',door:t('col-component-door')||'Двери',floor:t('col-component-floor')||'Пол',ceiling:t('col-component-ceil')||'Потолок',infil:t('col-component-infil')||'Инфильтрация'};
+  const _ventLabel = ST.ventMode==='hrv' ? `Вентиляция (рекуператор ${Math.round(hrvEff()*100)}%)`
+    : ST.ventMode==='mech' ? 'Вентиляция (механическая)'
+    : (t('col-component-infil')||'Инфильтрация');
+  const TYPE={wall:t('col-component-wall')||'Стены',window:t('col-component-win')||'Окна',door:t('col-component-door')||'Двери',floor:t('col-component-floor')||'Пол',ceiling:t('col-component-ceil')||'Потолок',infil:_ventLabel};
   const ip=interpret(res);
   const cost=costEstimate(res.totalKw);
   const boiler=recommendBoiler(res.boilerKw);
@@ -15674,6 +15765,7 @@ function serializeState(){
     f:ST.floors.map(_serFloor)};
   if(ST.tGround!=null) obj.tg=ST.tGround;
   if(ST.tBasement!=null) obj.tb=ST.tBasement;
+  if(ST.ventMode&&ST.ventMode!=='natural'){ obj.vm=ST.ventMode; obj.ve=hrvEff(); }
   if(ST.basement){ obj.bs=_serFloor(ST.basement); obj.bs.bt=ST.basement.tExt!=null?ST.basement.tExt:-6; }
   return obj;
 }
@@ -15689,6 +15781,8 @@ function loadState(o){
   ST.heatingTypes = (Array.isArray(o.ht)&&o.ht.length) ? o.ht : ['radiator'];
   ST.tGround = (typeof o.tg==='number') ? o.tg : null;
   ST.tBasement = (typeof o.tb==='number') ? o.tb : null;
+  ST.ventMode = (o.vm==='mech'||o.vm==='hrv') ? o.vm : 'natural';
+  ST.hrvEff = (typeof o.ve==='number') ? o.ve : 0.75;
   if(o.m){ [ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId]=o.m; }
   ST.floors=(o.f||[]).map(fl=>{
     const out={id:uid('fl'),name:fl.n,height:fl.h,rooms:(fl.r||[]).map(rm=>{
@@ -16321,7 +16415,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:13px;color:#1a1208
 <div class="stitle">Распределение по конструкциям</div>
 <table class="bt"><thead><tr><th>Ограждение</th><th class="r">Потери, Вт</th><th class="r">Доля</th></tr></thead>
 <tbody>${byTypeRows}<tr class="tot"><td>Итого</td><td class="r">${Math.round(res.totalW)}</td><td class="r">100%</td></tr></tbody></table>
-<p class="disc">Расчёт по КМК 2.01.04-18 (теплотехника) и КМК 2.01.01-94 (климатология, параметр Б): Q=(Δt/R)×S×n×(1+Σβ) для ограждений (Δt — к улице или к соседнему помещению через перегородку), R=Rвн(0.11)+Σδ/λ+Rнар(0.04), пол на грунте — зональный метод (Староверов), инфильтрация Q=0.28×1.005×V×ρ×Δt×ACH (ACH=${airtightAch().toFixed(1)}). Надбавки на ориентацию: С/СВ/СЗ/В +10%, З/ЮВ +5%, Ю/ЮЗ 0%; угловые +5%. Секции при режиме ${heatRegime().name}. Результат ориентировочный.</p>
+<p class="disc">Расчёт по КМК 2.01.04-18 (теплотехника) и КМК 2.01.01-94 (климатология, параметр Б): Q=(Δt/R)×S×n×(1+Σβ) для ограждений (Δt — к улице или к соседнему помещению через перегородку), R=Rвн(0.11)+Σδ/λ+Rнар(0.04), пол на грунте — зональный метод (Староверов), вентиляция/инфильтрация Q=0.28×1.005×V×ρ×Δt×ACH${ST.ventMode==='hrv'?`×(1−η), рекуператор η=${Math.round(hrvEff()*100)}%`:''} (ACH — ${ST.ventMode==='natural'?`max(норма типа комнаты, герметичность ${airtightAch().toFixed(1)})`:'по норме типа комнаты: кухня 1.0, санузлы 1.5, жилые 0.5'}). Надбавки на ориентацию: С/СВ/СЗ/В +10%, З/ЮВ +5%, Ю/ЮЗ 0%; угловые +5%. Секции при режиме ${heatRegime().name}. Результат ориентировочный.</p>
 <div class="footer"><div><strong>Aquality | WaterPro</strong> · ${CONTACT.address}</div><div>${CONTACT.phone} · wa.me/${CONTACT.whatsapp}</div></div>
 </div>
 <script>window.onload=function(){setTimeout(function(){window.print();},350)};<\/script>
@@ -16711,10 +16805,10 @@ function aiAdvisorHTML(res){
       desc:'Стеклопакет с аргоном и Low-E покрытием снижает потери через окна на 35–40%. Для Ферганы также важна правильная ориентация проёмов.',
       saving:`↓ ~${saving.toFixed(1)} кВт · ~${fmtSum(seasonSave)}/сезон · окупаемость 2–4 года`,color:'#22d3ee'});
   }
-  if(infilPct>0.16){
+  if(infilPct>0.16&&(ST.ventMode||'natural')==='natural'){
     const saving=(res.byType.infil/1000*0.18);
     recs.push({prio:'med',icon:'💨',title:`Инфильтрация ${(infilPct*100).toFixed(0)}% — уплотните проёмы для быстрой экономии`,
-      desc:'Дверные уплотнители, оконные щели, вентиляционные клапаны. Простые меры дают 5–15% экономии без капиталовложений.',
+      desc:'Дверные уплотнители, оконные щели, вентиляционные клапаны. Простые меры дают 5–15% экономии. Радикальнее — приточная вентиляция с рекуператором (см. «Вентиляция» в общих параметрах): возвращает 60–90% тепла вытяжки.',
       saving:`↓ ~${saving.toFixed(1)} кВт · работы окупаются за 1 сезон`,color:'#a78bfa'});
   }
   if(worst&&allRooms.length>1&&worst.qKw/res.totalKw>0.22){
@@ -18589,6 +18683,7 @@ function sxSnapshot(){
   return { calcMode:'simple', cityId:ST.cityId, cityName:ST.cityName, tExt:ST.tExt,
     mat:{...ST.mat}, attic:ST.attic, airtight:ST.airtight, heatRegime:ST.heatRegime, lambdaMode:ST.lambdaMode,
     pipeType:ST.pipeType, heatingTypes:ST.heatingTypes, tGround:ST.tGround, tBasement:ST.tBasement,
+    ventMode:ST.ventMode, hrvEff:ST.hrvEff,
     simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])) };
 }
 function sxRestore(s){
@@ -18597,8 +18692,8 @@ function sxRestore(s){
     if(s.cityId){ ST.cityId=s.cityId; ST.cityName=s.cityName; }
     if(s.tExt!=null) ST.tExt=s.tExt;
     if(s.mat) ST.mat={...ST.mat,...s.mat};
-    ST.tGround=null; ST.tBasement=null;   // null в снапшоте = «авто»: не тащить значение предыдущего проекта
-    ['attic','airtight','heatRegime','lambdaMode','pipeType','tGround','tBasement'].forEach(k=>{ if(s[k]!=null) ST[k]=s[k]; });
+    ST.tGround=null; ST.tBasement=null; ST.ventMode='natural'; ST.hrvEff=0.75;   // сбросить перед восстановлением — не тащить значения предыдущего проекта
+    ['attic','airtight','heatRegime','lambdaMode','pipeType','tGround','tBasement','ventMode','hrvEff'].forEach(k=>{ if(s[k]!=null) ST[k]=s[k]; });
     if(Array.isArray(s.heatingTypes)) ST.heatingTypes=s.heatingTypes;
     ST.simpleRooms=Array.isArray(s.simpleRooms)?JSON.parse(JSON.stringify(s.simpleRooms)):[];
     ST.simpleRoomCount=s.simpleRoomCount||ST.simpleRooms.length||1;
