@@ -6811,7 +6811,7 @@ const _i18n = {
     'mr-room-type':'Тип','mr-room-name-ph':'Название (необязательно)',
     'mr-room-h-label':'↕ Высота комнаты, м','mr-room-h-reset':'Сбросить',
     'mr-verts':'углов',
-    'mr-pos-label':'Позиция:',
+    'mr-pos-label':'Позиция:','op-pos-note':'влияет только на отображение, не на расчёт',
     'mr-side-top':'Верх','mr-side-right':'Право','mr-side-bottom':'Низ','mr-side-left':'Лево',
     'mr-edge-n':'Ребро {n}',
     'mr-dup-title':'Дублировать','mr-rot-title':'Повернуть на 90°','mr-del-title':'Удалить',
@@ -7017,6 +7017,9 @@ const _i18n = {
     'simple-item-add':'Добавить','simple-item-none':'Пока не добавлено — нажмите «Добавить»',
     'simple-ceil-h':'Высота потолка',
     'simple-corner-lbl':'Положение комнаты',
+    'simple-corner-auto':'Авто — по числу наружных стен',
+    'simple-completeness-tip':'Что введено: ✓ есть · ✗ нет (занижает результат) · — не задано',
+    'simple-incomplete-banner':'В комнатах {rooms} не указан {what} — теплопотери занижены. Добавьте недостающие ограждения на шаге «Комнаты».',
     'simple-corner-one':'Одна наружная стена',
     'simple-corner-corner':'Угловая комната (2 стены)',
     'simple-corner-two':'Две и более наружных стены',
@@ -7359,7 +7362,7 @@ const _i18n = {
     "mr-room-type":"Turi","mr-room-name-ph":"Nomi (ixtiyoriy)",
     "mr-room-h-label":"↕ Xona balandligi, m",'mr-room-h-reset':'Tozalash',
     'mr-verts':'burchak',
-    'mr-pos-label':'Pozitsiya:',
+    'mr-pos-label':'Pozitsiya:','op-pos-note':"faqat ko'rinishga ta'sir qiladi, hisobga emas",
     'mr-side-top':'Yuqori',"mr-side-right":"O'ng",'mr-side-bottom':'Past','mr-side-left':'Chap',
     'mr-edge-n':'Qirra {n}',
     "mr-dup-title":"Nusxalash","mr-rot-title":"90° burish","mr-del-title":"O'chirish",
@@ -7565,6 +7568,9 @@ const _i18n = {
     'simple-item-add':"Qo'shish",'simple-item-none':"Hozircha qo'shilmagan — «Qo'shish»ni bosing",
     'simple-ceil-h':"Shift balandligi",
     'simple-corner-lbl':"Xona holati",
+    'simple-corner-auto':"Avto — tashqi devorlar soniga qarab",
+    'simple-completeness-tip':"Nima kiritilgan: ✓ bor · ✗ yo'q (natijani kamaytiradi) · — kiritilmagan",
+    'simple-incomplete-banner':"{rooms} xonalarida {what} ko'rsatilmagan — issiqlik yo'qotishlari kam chiqadi. «Xonalar» qadamida to'ldiring.",
     'simple-corner-one':"Bitta tashqi devor",
     'simple-corner-corner':"Burchak xona (2 devor)",
     'simple-corner-two':"Ikki va undan ortiq tashqi devor",
@@ -7922,7 +7928,7 @@ const _i18n = {
     'mr-room-type':'Type','mr-room-name-ph':'Name (optional)',
     'mr-room-h-label':'↕ Room height, m','mr-room-h-reset':'Reset',
     'mr-verts':'vertices',
-    'mr-pos-label':'Position:',
+    'mr-pos-label':'Position:','op-pos-note':'affects display only, not the calculation',
     'mr-side-top':'Top','mr-side-right':'Right','mr-side-bottom':'Bottom','mr-side-left':'Left',
     'mr-edge-n':'Edge {n}',
     'mr-dup-title':'Duplicate','mr-rot-title':'Rotate 90°','mr-del-title':'Delete',
@@ -8128,6 +8134,9 @@ const _i18n = {
     'simple-item-add':'Add','simple-item-none':'Nothing added yet — click "Add"',
     'simple-ceil-h':'Ceiling height',
     'simple-corner-lbl':'Room position',
+    'simple-corner-auto':'Auto — by exterior wall count',
+    'simple-completeness-tip':'Entered: ✓ present · ✗ missing (understates result) · — not set',
+    'simple-incomplete-banner':'Rooms {rooms} have no {what} — heat loss is understated. Add the missing envelope on the "Rooms" step.',
     'simple-corner-one':'One exterior wall',
     'simple-corner-corner':'Corner room (2 walls)',
     'simple-corner-two':'Two or more exterior walls',
@@ -9522,10 +9531,10 @@ function s1(){
       <input type="checkbox" class="accent-amber" id="cb-manual-t" onchange="toggleManualTExt(this.checked)" ${ST.tExtManual!=null?'checked':''}>
       <span class="text-sm text-cream">Задать расчётную температуру вручную</span>
     </label>
-    <div id="manual-t-row" class="mt-2 flex items-center gap-2" style="display:${ST.tExtManual!=null?'flex':'none'}">
+    <div id="manual-t-row" class="mt-2 flex items-center gap-2 flex-wrap" style="display:${ST.tExtManual!=null?'flex':'none'}">
       <span class="text-xs text-muted flex-shrink-0">t °C</span>
       <input type="number" id="manual-t-val" class="wi w-24 py-2 text-sm text-center" min="-35" max="-5" step="1" value="${ST.tExtManual!=null?ST.tExtManual:(ST.tExt||-14)}" oninput="setManualTExt(+this.value)">
-      <span class="text-xs text-muted">КМК 2.01.01-94 парам. Б</span>
+      <span id="manual-t-hint" class="text-xs text-muted">${(()=>{const c=CITIES.find(x=>x.id===ST.cityId);return c?`Для ${c.name}: ${c.t} °C (КМК 2.01.01-94, парам. Б)`:'КМК 2.01.01-94 парам. Б';})()}</span>
     </div>
   </div>
 
@@ -9561,6 +9570,11 @@ function selectCity(id){
   const c=CITIES.find(x=>x.id===id); if(!c) return;
   ST.cityId=c.id; ST.cityName=c.name; ST.tExt=c.t; ST.tExtManual=null;
   document.querySelectorAll('#step-panel .sel-card').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')===`selectCity('${id}')`));
+  /* смена города сбрасывает ручной t (строкой выше) — синхронизируем блок ручного ввода и подсказку */
+  const hint=document.getElementById('manual-t-hint'); if(hint) hint.textContent=`Для ${c.name}: ${c.t} °C (КМК 2.01.01-94, парам. Б)`;
+  const cb=document.getElementById('cb-manual-t'); if(cb) cb.checked=false;
+  const row=document.getElementById('manual-t-row'); if(row) row.style.display='none';
+  const mv=document.getElementById('manual-t-val'); if(mv) mv.value=c.t;
   updateNavHint(); updateLivePanel();
 }
 function toggleManualTExt(on){
@@ -9586,12 +9600,51 @@ function simpleRoomValid(idx){
   if(!r) return false;
   return (r.walls||[]).length>0 && r.walls.every(w=>(w.length||0)>0 && (w.height||0)>0);
 }
+/* Полнота ограждений комнаты ПРО: что из стен/окон/пола/потолка реально введено.
+   Не блокирует расчёт — только чек-лист в аккордеоне и предупреждение на шаге результата
+   (без пола/потолка результат занижен). */
+function simpleRoomCompleteness(r){
+  const some=(arr,ok)=>(arr||[]).some(ok);
+  return {
+    walls:   some(r.walls,   w=>(w.length||0)>0&&(w.height||0)>0),
+    windows: some(r.windows, w=>(w.length||0)>0&&(w.height||0)>0),
+    doors:   some(r.doors,   d=>(d.length||0)>0&&(d.height||0)>0),
+    floor:   some(r.floors,  f=>(f.length||0)>0&&(f.width||0)>0),
+    ceiling: some(r.ceilings,c=>_srItemArea(r,'ceilings',c)>0),
+  };
+}
+/* Число наружных стен комнаты ПРО (не «подвальных») — для авто-режима угловой надбавки */
+function simpleExtWallCount(r){
+  return (r.walls||[]).filter(w=>!w.basement&&(w.length||0)>0&&(w.height||0)>0).length;
+}
+/* Угловая надбавка ПРО: 'auto' (дефолт) — по числу наружных стен, как в Макс (≥2 → +5%);
+   'one'/'corner'/'two' — ручной override (старые сохранённые комнаты не мигрируются). */
+function simpleCornerK(r){
+  const mode=r.corner||'auto';
+  const isCorner = mode==='auto' ? simpleExtWallCount(r)>=2 : mode!=='one';
+  return isCorner ? (1+CORNER_SURCHARGE) : 1;
+}
+/* Жёлтый баннер на шаге результата ПРО: у каких комнат не указан пол/потолок (результат занижен) */
+function simpleIncompleteBanner(){
+  if(ST.calcMode!=='simple') return '';
+  const bad=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)}))
+    .filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));   // без стен комната и так помечена «!»
+  if(!bad.length) return '';
+  const names=bad.map(x=>x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1))).join(', ');
+  const missFloor=bad.some(x=>!x.c.floor), missCeil=bad.some(x=>!x.c.ceiling);
+  const what=[missFloor?t('cat-floors').toLowerCase():null, missCeil?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / ');
+  const msg=t('simple-incomplete-banner').replace('{rooms}',names).replace('{what}',what);
+  return `<div class="mb-5 rounded-xl border border-amber/35 bg-amber/10 p-3 flex items-start gap-2.5">
+    <span class="flex-shrink-0 text-base">⚠️</span>
+    <p class="text-xs text-amber leading-relaxed">${msg}</p>
+  </div>`;
+}
 
 function initSimpleRooms(){
   const n=ST.simpleRoomCount;
   const ex=ST.simpleRooms||[];
   ST.simpleRooms=Array.from({length:n},(_,i)=>ex[i]||{
-    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'corner',
+    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'auto',
     walls:[], windows:[], doors:[], floors:[], ceilings:[]
   });
 }
@@ -9920,8 +9973,13 @@ function simpleRoomsEditorInner(){
     const rLabel=r.name||(rt?_pick(rt,'name','nameUz','nameEn'):'')||t('simple-room-name-ph').replace('{n}',i+1);
     const isOpen=i===_srFocusRoom;
     const hasErr=!simpleRoomValid(i);
-    const cornerOpts=[['one','simple-corner-one'],['corner','simple-corner-corner'],['two','simple-corner-two']]
-      .map(([v,k])=>`<option value="${v}" ${(r.corner||'corner')===v?'selected':''}>${t(k)}</option>`).join('');
+    const cornerOpts=[['auto','simple-corner-auto'],['one','simple-corner-one'],['corner','simple-corner-corner'],['two','simple-corner-two']]
+      .map(([v,k])=>`<option value="${v}" ${(r.corner||'auto')===v?'selected':''}>${t(k)}</option>`).join('');
+    const comp=simpleRoomCompleteness(r);
+    const compChip=(on,label,critical)=>`<span style="white-space:nowrap;${on?'color:rgba(74,222,128,.75)':critical?'color:rgba(251,191,36,.85)':'color:rgba(154,134,117,.5)'}">${label} ${on?'✓':critical?'✗':'—'}</span>`;
+    const checklist=`<span class="flex-shrink-0 hidden sm:flex items-center gap-1.5 text-[9px] font-medium" title="${t('simple-completeness-tip')}">
+      ${compChip(comp.walls,t('cat-walls'),true)}${compChip(comp.windows,t('cat-windows'),false)}${compChip(comp.floor,t('cat-floors'),true)}${compChip(comp.ceiling,t('cat-ceilings'),true)}
+    </span>`;
 
     return `<details ${isOpen?'open':''} ontoggle="if(this.open)_srFocusRoom=${i}" class="rounded-2xl border ${hasErr?'border-ember/30':'border-sand/10'} bg-w850/40 mb-3 overflow-hidden">
       <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
@@ -9929,6 +9987,7 @@ function simpleRoomsEditorInner(){
           <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-amber/15 text-amber text-xs font-bold">${i+1}</span>
           <span class="text-sm font-semibold text-cream truncate">${rLabel}</span>
           ${hasErr?'<span class="flex-shrink-0 text-[10px] font-bold text-ember bg-ember/10 rounded-full px-2 py-0.5">!</span>':''}
+          ${checklist}
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           ${ST.simpleRooms.length>1?`<button type="button" onclick="event.preventDefault();event.stopPropagation();srDeleteRoom(${i})"
@@ -10027,7 +10086,7 @@ function computeSimpleRoom(r,tExt){
   const dTfloor=tInt-SIMPLE_FLOOR_T;                       // к грунту под полом
   const dTbase=tInt-SIMPLE_BASEMENT_T;                     // к подвальной стене
   const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
-  const cornerK=(r.corner==='one')?1:(1+CORNER_SURCHARGE);
+  const cornerK=simpleCornerK(r);   // 'auto': ≥2 наружных стен → +5%, как в Макс
 
   // ── Стены (каждая — отдельная строка, как в боте) ──
   for(const w of (r.walls||[])){
@@ -13458,6 +13517,7 @@ function edProps(){
       </div>
       <label class="text-[10px] text-muted">${t('mr-pos-label')} ${op.pos!=null?op.pos:50}%</label>
       <input class="w-full" type="range" min="0" max="100" step="2.5" value="${op.pos!=null?op.pos:50}" oninput="edOpPos('${op.id}',this.value)" onchange="edCommit()">
+      <p class="text-[9px] text-muted/60" style="margin-top:-2px">${t('op-pos-note')}</p>
       ${buildOpMfPanel(op)}
     </div>`;
   }).join('');
@@ -14394,6 +14454,7 @@ function opRow(room,op,extSides){
       <label class="text-[10px] text-muted">${t('op-pos-lbl')||t('mr-pos-label')}: <span id="pos-${op.id}" class="text-sand font-semibold">${op.pos!=null?op.pos:50}%</span></label>
       <input class="w-full mt-0.5" type="range" min="0" max="100" step="5" value="${op.pos!=null?op.pos:50}"
         oninput="setOp('${room.id}','${op.id}','pos',this.value);var l=document.getElementById('pos-${op.id}');if(l)l.textContent=this.value+'%';">
+      <p class="text-[9px] text-muted/60 mt-0.5">${t('op-pos-note')}</p>
     </div>
   </div>`;
 }
@@ -14792,6 +14853,7 @@ function s6(){
     <span class="flex items-center gap-1 text-xs text-muted/60 flex-shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${t('result-protected')}</span>
   </div>
   <p class="text-sm text-muted mb-7">${ST.cityName} · ${ST.floors.length} ${t('fl-abbr')} · ${res.roomCount} ${t('room-abbr')} · ${res.totalArea.toFixed(1)} м² · ${t('airtight-label')}: ${airtightName(ST.airtight).toLowerCase()} · ${t('regime-label')} ${heatRegime().name}</p>
+  ${simpleIncompleteBanner()}
 
   <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
     <div class="rounded-2xl border border-amber/30 bg-gradient-to-b from-amber/10 to-transparent p-4">
@@ -18614,9 +18676,12 @@ function sxRenderResults(){
   const gasDay=(res.totalKw*24/8.4);
   const rows=(res.floors&&res.floors[0]&&res.floors[0].rooms||[]).map(r=>`
     <tr><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.area||0).toFixed(1)}</td><td class="mono" style="text-align:right;color:#f5b544">${Math.round(r.qW||0)}</td></tr>`).join('');
+  const incompl=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)})).filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));
+  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1))).join(', ')).replace('{what}',[incompl.some(x=>!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
   host.innerHTML=`
     <div class="sx-card">
       <div class="sx-res-hd"><svg viewBox="0 0 24 24" fill="none" stroke="#5be0a0" stroke-width="2" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>${sxt('results')}</div>
+      ${incomplNote}
       <div class="sx-kpi">
         <div style="font-size:12px;color:#8ea0bd;margin-bottom:4px">${sxt('totalLoss')}</div>
         <div class="sx-kpi-v">${(res.totalKw).toFixed(2)} <span style="font-size:16px">kW</span></div>
