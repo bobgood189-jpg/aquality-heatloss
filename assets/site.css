@@ -1691,6 +1691,14 @@ html.webgl-on #shader-bg{opacity:.72}
    #floating-actions в DOM раньше #ed-root, поэтому селектор-сосед «~» не работает — только :has;
    .ed-hidden — JS-фолбэк из openEditor/closeEditor для браузеров без :has. */
 body:has(#ed-root.open) #floating-actions,#floating-actions.ed-hidden{display:none !important}
+/* Мини-плашка живого итога «~N кВт» (шаги ввода, узкие экраны; на ≥1024px есть live-panel).
+   Без backdrop-filter — он лагает скролл на слабых устройствах (см. память perf-overhaul). */
+#kw-mini{position:fixed;left:1rem;bottom:1.1rem;z-index:140;display:none;align-items:baseline;gap:.5rem;background:rgba(11,14,22,.97);border:1px solid rgba(245,158,11,.4);border-radius:999px;padding:.45rem .95rem;box-shadow:0 4px 20px rgba(0,0,0,.45);pointer-events:none}
+#kw-mini.on{display:flex}
+#kw-mini .kwm-v{font-weight:800;color:#f5b544;font-size:.95rem;white-space:nowrap}
+#kw-mini .kwm-s{font-size:.65rem;color:#8ea0bd;white-space:nowrap}
+@media(min-width:1024px){#kw-mini{display:none !important}}
+body:has(#ed-root.open) #kw-mini,body:has(.sec-overlay.open) #kw-mini,body:has(#paywall-overlay.open) #kw-mini{display:none !important}
 /* ══════════════════════════════════════════════
    HERO TRUST BADGES + GRADIENT DIVIDER
 ══════════════════════════════════════════════ */

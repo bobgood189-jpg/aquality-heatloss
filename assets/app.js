@@ -5608,36 +5608,43 @@ function toast(msg, kind){
 ════════════════════════════════════════════════════════════ */
 /* Расчётная зимняя температура — параметр Б (наиболее холодная пятидневка обеспеч. 0.92),
    КМК 2.01.01-94 «Строительная климатология», табл. 4, столбец 10. */
+/* tGround — расчётная температура под полом (подполье/грунт на глубине ~1.5 м) для
+   полов НЕ «на грунте» в ПРО-калькуляторе: чем холоднее город, тем холоднее грунт.
+   Дефолт при отсутствии поля — 6 °C (историческое поведение = Santexprog-бот). */
 const CITIES = [
-  {id:'fergana',name:'Фергана',region:'Ферганская обл.',t:-14},
-  {id:'tashkent',name:'Ташкент',region:'Ташкентская обл.',t:-14},
-  {id:'andijan',name:'Андижан',region:'Андижанская обл.',t:-13},
-  {id:'namangan',name:'Наманган',region:'Наманганская обл.',t:-14},
-  {id:'samarkand',name:'Самарканд',region:'Самаркандская обл.',t:-12},
-  {id:'bukhara',name:'Бухара',region:'Бухарская обл.',t:-12},
-  {id:'navoi',name:'Навои',region:'Навоийская обл.',t:-13},
-  {id:'kashkadarya',name:'Карши',region:'Кашкадарьинская обл.',t:-14},
-  {id:'nukus',name:'Нукус',region:'Каракалпакстан',t:-20},
-  {id:'termez',name:'Термез',region:'Сурхандарьинская обл.',t:-10},
-  {id:'urgench',name:'Ургенч',region:'Хорезмская обл.',t:-18},
-  {id:'gulistan',name:'Гулистан',region:'Сырдарьинская обл.',t:-19},
-  {id:'jizzakh',name:'Джизак',region:'Джизакская обл.',t:-16},
+  {id:'fergana',name:'Фергана',region:'Ферганская обл.',t:-14,tGround:6},
+  {id:'tashkent',name:'Ташкент',region:'Ташкентская обл.',t:-14,tGround:6},
+  {id:'andijan',name:'Андижан',region:'Андижанская обл.',t:-13,tGround:6},
+  {id:'namangan',name:'Наманган',region:'Наманганская обл.',t:-14,tGround:6},
+  {id:'samarkand',name:'Самарканд',region:'Самаркандская обл.',t:-12,tGround:7},
+  {id:'bukhara',name:'Бухара',region:'Бухарская обл.',t:-12,tGround:7},
+  {id:'navoi',name:'Навои',region:'Навоийская обл.',t:-13,tGround:6},
+  {id:'kashkadarya',name:'Карши',region:'Кашкадарьинская обл.',t:-14,tGround:6},
+  {id:'nukus',name:'Нукус',region:'Каракалпакстан',t:-20,tGround:3},
+  {id:'termez',name:'Термез',region:'Сурхандарьинская обл.',t:-10,tGround:8},
+  {id:'urgench',name:'Ургенч',region:'Хорезмская обл.',t:-18,tGround:4},
+  {id:'gulistan',name:'Гулистан',region:'Сырдарьинская обл.',t:-19,tGround:4},
+  {id:'jizzakh',name:'Джизак',region:'Джизакская обл.',t:-16,tGround:5},
 ];
 
+/* achMin — нормативная минимальная кратность воздухообмена (1/ч) по типу помещения
+   (КМК 2.01.04-18 / СНиП: кухня ≥1.0, ванная/санузел ≥1.5, жилые 0.5, кладовые/гаражи 0.3).
+   Итоговый ACH комнаты: естественная вентиляция → max(achMin, ACH герметичности);
+   механическая/рекуператор → achMin (организованный приток). */
 const ROOM_TYPES = [
-  {id:'living_room',  name:'Жилая комната', nameUz:'Yashash xonasi',   nameEn:'Living Room',       t:20},
-  {id:'bedroom',      name:'Спальня',        nameUz:'Yotoq xonasi',     nameEn:'Bedroom',           t:20},
-  {id:'children_room',name:'Детская',        nameUz:'Bolalar xonasi',   nameEn:"Children's Room",   t:22},
-  {id:'kitchen',      name:'Кухня',          nameUz:'Oshxona',          nameEn:'Kitchen',           t:18},
-  {id:'bathroom',     name:'Ванная',         nameUz:'Hammom',           nameEn:'Bathroom',          t:25},
-  {id:'toilet',       name:'Туалет',         nameUz:'Hojatxona',        nameEn:'Toilet',            t:20},
-  {id:'corridor',     name:'Коридор',        nameUz:"Yo'lak",           nameEn:'Hallway',           t:16},
-  {id:'storeroom',    name:'Кладовая',       nameUz:'Ombor xonasi',     nameEn:'Storage Room',      t:12},
-  {id:'garage',       name:'Гараж',          nameUz:'Garaj',            nameEn:'Garage',            t:5},
-  {id:'office',       name:'Офис',           nameUz:'Ofis',             nameEn:'Office',            t:20},
-  {id:'shop_floor',   name:'Торговый зал',   nameUz:'Savdo zali',       nameEn:'Shop Floor',        t:16},
-  {id:'workshop',     name:'Цех',            nameUz:'Ustaxona',         nameEn:'Workshop',          t:16},
-  {id:'warehouse',    name:'Склад',          nameUz:'Ombor',            nameEn:'Warehouse',         t:10},
+  {id:'living_room',  name:'Жилая комната', nameUz:'Yashash xonasi',   nameEn:'Living Room',       t:20, achMin:0.5},
+  {id:'bedroom',      name:'Спальня',        nameUz:'Yotoq xonasi',     nameEn:'Bedroom',           t:20, achMin:0.5},
+  {id:'children_room',name:'Детская',        nameUz:'Bolalar xonasi',   nameEn:"Children's Room",   t:22, achMin:0.5},
+  {id:'kitchen',      name:'Кухня',          nameUz:'Oshxona',          nameEn:'Kitchen',           t:18, achMin:1.0},
+  {id:'bathroom',     name:'Ванная',         nameUz:'Hammom',           nameEn:'Bathroom',          t:25, achMin:1.5},
+  {id:'toilet',       name:'Туалет',         nameUz:'Hojatxona',        nameEn:'Toilet',            t:20, achMin:1.5},
+  {id:'corridor',     name:'Коридор',        nameUz:"Yo'lak",           nameEn:'Hallway',           t:16, achMin:0.3},
+  {id:'storeroom',    name:'Кладовая',       nameUz:'Ombor xonasi',     nameEn:'Storage Room',      t:12, achMin:0.3},
+  {id:'garage',       name:'Гараж',          nameUz:'Garaj',            nameEn:'Garage',            t:5, achMin:0.3},
+  {id:'office',       name:'Офис',           nameUz:'Ofis',             nameEn:'Office',            t:20, achMin:0.7},
+  {id:'shop_floor',   name:'Торговый зал',   nameUz:'Savdo zali',       nameEn:'Shop Floor',        t:16, achMin:0.7},
+  {id:'workshop',     name:'Цех',            nameUz:'Ustaxona',         nameEn:'Workshop',          t:16, achMin:0.7},
+  {id:'warehouse',    name:'Склад',          nameUz:'Ombor',            nameEn:'Warehouse',         t:10, achMin:0.3},
 ];
 
 /* Built-in presets. R — полное сопротивление теплопередаче конструкции (м²·°C/Вт),
@@ -6829,7 +6836,7 @@ const _i18n = {
     'mr-room-type':'Тип','mr-room-name-ph':'Название (необязательно)',
     'mr-room-h-label':'↕ Высота комнаты, м','mr-room-h-reset':'Сбросить',
     'mr-verts':'углов',
-    'mr-pos-label':'Позиция:',
+    'mr-pos-label':'Позиция:','op-pos-note':'влияет только на отображение, не на расчёт',
     'mr-side-top':'Верх','mr-side-right':'Право','mr-side-bottom':'Низ','mr-side-left':'Лево',
     'mr-edge-n':'Ребро {n}',
     'mr-dup-title':'Дублировать','mr-rot-title':'Повернуть на 90°','mr-del-title':'Удалить',
@@ -7035,6 +7042,9 @@ const _i18n = {
     'simple-item-add':'Добавить','simple-item-none':'Пока не добавлено — нажмите «Добавить»',
     'simple-ceil-h':'Высота потолка',
     'simple-corner-lbl':'Положение комнаты',
+    'simple-corner-auto':'Авто — по числу наружных стен',
+    'simple-completeness-tip':'Что введено: ✓ есть · ✗ нет (занижает результат) · — не задано',
+    'simple-incomplete-banner':'В комнатах {rooms} не указан {what} — теплопотери занижены. Добавьте недостающие ограждения на шаге «Комнаты».',
     'simple-corner-one':'Одна наружная стена',
     'simple-corner-corner':'Угловая комната (2 стены)',
     'simple-corner-two':'Две и более наружных стены',
@@ -7377,7 +7387,7 @@ const _i18n = {
     "mr-room-type":"Turi","mr-room-name-ph":"Nomi (ixtiyoriy)",
     "mr-room-h-label":"↕ Xona balandligi, m",'mr-room-h-reset':'Tozalash',
     'mr-verts':'burchak',
-    'mr-pos-label':'Pozitsiya:',
+    'mr-pos-label':'Pozitsiya:','op-pos-note':"faqat ko'rinishga ta'sir qiladi, hisobga emas",
     'mr-side-top':'Yuqori',"mr-side-right":"O'ng",'mr-side-bottom':'Past','mr-side-left':'Chap',
     'mr-edge-n':'Qirra {n}',
     "mr-dup-title":"Nusxalash","mr-rot-title":"90° burish","mr-del-title":"O'chirish",
@@ -7583,6 +7593,9 @@ const _i18n = {
     'simple-item-add':"Qo'shish",'simple-item-none':"Hozircha qo'shilmagan — «Qo'shish»ni bosing",
     'simple-ceil-h':"Shift balandligi",
     'simple-corner-lbl':"Xona holati",
+    'simple-corner-auto':"Avto — tashqi devorlar soniga qarab",
+    'simple-completeness-tip':"Nima kiritilgan: ✓ bor · ✗ yo'q (natijani kamaytiradi) · — kiritilmagan",
+    'simple-incomplete-banner':"{rooms} xonalarida {what} ko'rsatilmagan — issiqlik yo'qotishlari kam chiqadi. «Xonalar» qadamida to'ldiring.",
     'simple-corner-one':"Bitta tashqi devor",
     'simple-corner-corner':"Burchak xona (2 devor)",
     'simple-corner-two':"Ikki va undan ortiq tashqi devor",
@@ -7940,7 +7953,7 @@ const _i18n = {
     'mr-room-type':'Type','mr-room-name-ph':'Name (optional)',
     'mr-room-h-label':'↕ Room height, m','mr-room-h-reset':'Reset',
     'mr-verts':'vertices',
-    'mr-pos-label':'Position:',
+    'mr-pos-label':'Position:','op-pos-note':'affects display only, not the calculation',
     'mr-side-top':'Top','mr-side-right':'Right','mr-side-bottom':'Bottom','mr-side-left':'Left',
     'mr-edge-n':'Edge {n}',
     'mr-dup-title':'Duplicate','mr-rot-title':'Rotate 90°','mr-del-title':'Delete',
@@ -8146,6 +8159,9 @@ const _i18n = {
     'simple-item-add':'Add','simple-item-none':'Nothing added yet — click "Add"',
     'simple-ceil-h':'Ceiling height',
     'simple-corner-lbl':'Room position',
+    'simple-corner-auto':'Auto — by exterior wall count',
+    'simple-completeness-tip':'Entered: ✓ present · ✗ missing (understates result) · — not set',
+    'simple-incomplete-banner':'Rooms {rooms} have no {what} — heat loss is understated. Add the missing envelope on the "Rooms" step.',
     'simple-corner-one':'One exterior wall',
     'simple-corner-corner':'Corner room (2 walls)',
     'simple-corner-two':'Two or more exterior walls',
@@ -8354,6 +8370,21 @@ function atticN(){
   return (ATTIC[ST.attic]||ATTIC.closed).n;
 }
 function airtightAch(){ return (AIRTIGHT[ST.airtight]||AIRTIGHT.normal).ach; }
+/* ── Вентиляция по нормам (Фаза 3 плана точности) ──
+   Итоговый воздухообмен комнаты:
+   · естественная ('natural', дефолт): max(achMin типа комнаты, ACH герметичности) —
+     нормативный минимум не может быть меньше фактической инфильтрации;
+   · механическая ('mech') и рекуператор ('hrv'): achMin по нормам — приток организован,
+     надбавка на герметичность не применяется.
+   Рекуператор дополнительно возвращает тепло: Q_вент × (1 − η). */
+function roomAchMin(typeId){ const r=ROOM_TYPES.find(x=>x.id===typeId); return (r&&r.achMin!=null)?r.achMin:0.5; }
+function ventAchFor(typeId){
+  const min=roomAchMin(typeId);
+  if(ST.ventMode==='mech'||ST.ventMode==='hrv') return min;
+  return Math.max(min, airtightAch());
+}
+function hrvEff(){ return Math.max(0.4, Math.min(0.95, ST.hrvEff!=null?ST.hrvEff:0.75)); }
+function ventFactor(){ return ST.ventMode==='hrv' ? (1-hrvEff()) : 1; }
 function heatRegime(){ return HEAT_REGIMES.find(r=>r.id===ST.heatRegime)||HEAT_REGIMES[0]; }
 /* Вт на секцию — логарифмический ΔT (LMTD) по EN 442 */
 function _lmtd(tin, tout, tr){
@@ -8504,14 +8535,24 @@ function externalLength(room, side, rooms){
 }
 
 /* Зональный расчёт пола на грунте: 4 зоны по 2 м от наружных стен */
-function zonalFloorAreas(room, rooms){
-  const A=roomArea(room);
-  let P=0; for(const s of roomExtSegs(room,rooms)) P+=s.len;
+/* Ядро зонального метода (Староверов): полосы по 2 м от наружных стен.
+   A — площадь пола (м²), P — периметр наружных стен (м). Общая для Макс и ПРО. */
+function zonalFloorZones(A, P){
   if(P<=0.01) return [{r:FLOOR_ZONE_R[3], a:A}];   // внутреннее помещение — глубокая зона
   const areas=[0,0,0,0]; let rem=A;
   for(let z=0; z<3 && rem>0; z++){ const strip=Math.min(rem, P*2); areas[z]=strip; rem-=strip; }
   areas[3]=Math.max(0,rem);
   return areas.map((a,i)=>({r:FLOOR_ZONE_R[i], a})).filter(z=>z.a>0.01);
+}
+/* Теплопотери пола на грунте зональным методом: Q = Σ ΔT/(R_зоны+addR)·S_зоны·n */
+function zonalFloorQ(A, P, addR, dTout, n){
+  let q=0;
+  for(const z of zonalFloorZones(A,P)) q+=(dTout/(z.r+(addR||0)))*z.a*(n!=null?n:1);
+  return q;
+}
+function zonalFloorAreas(room, rooms){
+  let P=0; for(const s of roomExtSegs(room,rooms)) P+=s.len;
+  return zonalFloorZones(roomArea(room), P);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -8692,7 +8733,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
 
   const V = area * H;
   const rho = (1.293*273)/(273+tExt);
-  breakdown.infil = 0.28*1.005*V*rho*dTout*airtightAch();
+  breakdown.infil = 0.28*1.005*V*rho*dTout*ventAchFor(room.typeId)*ventFactor();
 
   const qW = Object.values(breakdown).reduce((s,v)=>s+v,0);
   const sections = Math.ceil((qW*1.15)/sectionWatt(tInt));
@@ -9020,13 +9061,14 @@ function initEngineeringModules(){ try{ hvHydroCalc(); hvFloorCalc(); hvTankCalc
 const SELFTEST_PINNED_Q = 4198.1;   // Вт — эталон комнаты 4×5×3, brick_380/закр.чердак/normal, tInt20/tExt-14
                                     // (стены 3217 + потолок 218.5 + пол 214.7 + инфильтрация 547.7)
 function runSelfTest(){
-  const snap = JSON.stringify({mat:ST.mat,attic:ST.attic,airtight:ST.airtight,heatRegime:ST.heatRegime,northSide:ST.northSide,lambdaMode:ST.lambdaMode});
+  const snap = JSON.stringify({mat:ST.mat,attic:ST.attic,airtight:ST.airtight,heatRegime:ST.heatRegime,northSide:ST.northSide,lambdaMode:ST.lambdaMode,ventMode:ST.ventMode,hrvEff:ST.hrvEff});
   const results=[];
   const approx=(a,b,tol)=>b!==0 && Math.abs(a-b)<=Math.abs(b)*tol;
   const ok=(name,cond,info)=>results.push({name,pass:!!cond,info:info||''});
   try{
     ST.mat={wallId:'brick_380',windowId:'double_glazing_pvc',doorId:'door_metal_insulated',floorId:'floor_xps50',ceilingId:'ceil_i100'};
     ST.attic='closed'; ST.airtight='normal'; ST.heatRegime='90/70'; ST.northSide='top'; ST.lambdaMode='A';
+    ST.ventMode='natural'; ST.hrvEff=0.75;
     const tExt=-14;
     const mkRoom=(ops)=>({id:'__t',name:'test',typeId:'living_room',tInt:20,x:0,y:0,w:4,h:5,openings:ops||[]});
     const fl={id:'__f',name:'t',height:3.0,rooms:[]};
@@ -9118,6 +9160,69 @@ function runSelfTest(){
     ok('Толщина: L-план — длины наружных рёбер [6.8,3.8,3,3,3.8,6.8]', (()=>{for(let i=0;i<6;i++){const a=lO[i],b=lO[(i+1)%6];if(!approx(Math.hypot(b[0]-a[0],b[1]-a[1]),lExp[i],1e-6))return false;}return true;})(), '');
     ok('Толщина: L-план — наружная площадь габарита 37.24 м²', approx(polyAreaAbs(lO),37.24,1e-6), `A=${polyAreaAbs(lO).toFixed(2)} м²`);
     ok('Толщина: резолвер edgeWallThickMm — пресет brick_380 → 400 мм', edgeWallThickMm({},0)===400, `t=${edgeWallThickMm({},0)} мм`);
+
+    /* ── ПРО (simple): зональный пол, паритет с Макс, температуры (Фаза 2 плана точности) ── */
+    (()=>{
+      const snapS={simpleRooms:ST.simpleRooms, calcMode:ST.calcMode, cityId:ST.cityId, tGround:ST.tGround, tBasement:ST.tBasement, floorId:ST.mat.floorId};
+      try{
+        ST.cityId='fergana'; ST.tGround=null; ST.tBasement=null;
+        /* ядро зон: A=20, P=18 → вся площадь в зоне 1 (18·2=36>20) */
+        const z=zonalFloorZones(20,18);
+        ok('Зоны: A20/P18 → одна зона R=2.1 (20 м²)', z.length===1&&z[0].r===FLOOR_ZONE_R[0]&&approx(z[0].a,20,1e-9), JSON.stringify(z));
+        /* большая плита: A=200, P=20 → 40+40+40+80 по зонам */
+        const z2=zonalFloorZones(200,20);
+        ok('Зоны: A200/P20 → 40/40/40/80 м²', z2.length===4&&approx(z2[0].a,40,1e-9)&&approx(z2[3].a,80,1e-9), JSON.stringify(z2.map(x=>x.a)));
+        /* паритет пола Макс ↔ ПРО: комната 4×5, 4 наружные стены, пол «грунт без утепления» */
+        ST.mat.floorId='floor_ground_bare';
+        const mk={id:'__zt',name:'зт',typeId:'living_room',tInt:20,x:0,y:0,w:4,h:5,openings:[]};
+        const flZ={id:'__fz',name:'т',height:3.0,rooms:[mk]};
+        const rMax=computeRoom(mk,flZ,0,99,-14,[mk]);   // lastIndex=99 → потолок не считается
+        const rPro=computeSimpleRoom({name:'',typeId:'living_room',tInt:20,height:3.0,corner:'auto',
+          walls:[{length:4,height:3,basement:false},{length:5,height:3,basement:false},{length:4,height:3,basement:false},{length:5,height:3,basement:false}],
+          windows:[],doors:[],floors:[{length:4,width:5}],ceilings:[]},-14);
+        const dPct=Math.abs(rPro.breakdown.floor-rMax.breakdown.floor)/rMax.breakdown.floor*100;
+        ok('Паритет пола Макс↔ПРО (грунт, зоны): расхождение < 10%', dPct<10, `Макс=${rMax.breakdown.floor.toFixed(1)} / ПРО=${rPro.breakdown.floor.toFixed(1)} Вт (Δ${dPct.toFixed(1)}%)`);
+        /* не-ground пол: дефолт t под полом = 6 °C (историческое поведение) */
+        ST.mat.floorId='floor_xps50';
+        const rP2=computeSimpleRoom({name:'',typeId:'living_room',tInt:20,height:2.7,corner:'auto',walls:[],windows:[],doors:[],floors:[{length:5,width:4}],ceilings:[]},-14);
+        const fpX=findPreset('floors','floor_xps50');
+        const expF=( (20-6) / (regimeR(fpX.r,0.17,presetClass(fpX))+(fpX.addR||0)) )*20*(fpX.n!=null?fpX.n:1);
+        ok('ПРО: пол не на грунте — ΔT к t под полом (деф. +6), как раньше', approx(rP2.breakdown.floor,expF,1e-6), `floor=${rP2.breakdown.floor.toFixed(1)} Вт`);
+        /* настройка ST.tGround меняет результат не-ground пола */
+        ST.tGround=0;
+        const rP3=computeSimpleRoom({name:'',typeId:'living_room',tInt:20,height:2.7,corner:'auto',walls:[],windows:[],doors:[],floors:[{length:5,width:4}],ceilings:[]},-14);
+        ok('ПРО: t под полом настраивается (0 °C > потерь, чем +6)', rP3.breakdown.floor>rP2.breakdown.floor, `${rP2.breakdown.floor.toFixed(0)} → ${rP3.breakdown.floor.toFixed(0)} Вт`);
+      } finally {
+        ST.simpleRooms=snapS.simpleRooms; ST.calcMode=snapS.calcMode; ST.cityId=snapS.cityId;
+        ST.tGround=snapS.tGround; ST.tBasement=snapS.tBasement; ST.mat.floorId=snapS.floorId;
+      }
+    })();
+
+    /* ── Вентиляция по нормам (Фаза 3): ACH по типу комнаты, рекуператор ── */
+    (()=>{
+      try{
+        ST.ventMode='natural'; ST.hrvEff=0.75;
+        ok('ACH: жилая natural = max(0.5, 0.7) = 0.7 (герметичность)', ventAchFor('living_room')===0.7, `ach=${ventAchFor('living_room')}`);
+        ok('ACH: кухня natural = max(1.0, 0.7) = 1.0 (норма типа)', ventAchFor('kitchen')===1.0, `ach=${ventAchFor('kitchen')}`);
+        ok('ACH: санузел natural = 1.5', ventAchFor('bathroom')===1.5, `ach=${ventAchFor('bathroom')}`);
+        ST.ventMode='mech';
+        ok('ACH: кухня механическая = 1.0 (без надбавки на герметичность)', ventAchFor('kitchen')===1.0&&ventAchFor('living_room')===0.5, `kitchen=${ventAchFor('kitchen')}, living=${ventAchFor('living_room')}`);
+        /* рекуператор η=75% режет вентиляционную статью в 4 раза против механической */
+        const vRoom=mkRoom([]); fl.rooms=[vRoom];
+        const qMech=computeRoom(vRoom,fl,0,0,tExt,[vRoom]).breakdown.infil;
+        ST.ventMode='hrv'; ST.hrvEff=0.75;
+        const qHrv=computeRoom(vRoom,fl,0,0,tExt,[vRoom]).breakdown.infil;
+        ok('Рекуператор 75% снижает вентиляцию в 4 раза', approx(qMech/qHrv,4,0.001), `mech=${qMech.toFixed(1)} / hrv=${qHrv.toFixed(1)} Вт`);
+        /* сумма byType сходится с totalW в ПРО */
+        ST.ventMode='natural';
+        const sr={name:'',typeId:'kitchen',tInt:18,height:2.7,corner:'auto',
+          walls:[{length:4,height:2.7,basement:false}],windows:[],doors:[],
+          floors:[{length:4,width:3}],ceilings:[{sameAsFloor:true,attic:'closed'}]};
+        const crS=computeSimpleRoom(sr,tExt);
+        const sumS=Object.values(crS.breakdown).reduce((a,b)=>a+b,0);
+        ok('ПРО: Σ breakdown = qW (кухня, ACH 1.0)', approx(sumS,crS.qW,1e-9)&&crS.breakdown.infil>0, `qW=${crS.qW.toFixed(1)} Вт`);
+      } finally { ST.ventMode='natural'; ST.hrvEff=0.75; }
+    })();
   }catch(e){ ok('Без исключений', false, e&&e.message); }
   finally{ Object.assign(ST, JSON.parse(snap)); }
 
@@ -9155,6 +9260,10 @@ const ST = {
   airtight:'normal', heatRegime:'90/70', attic:'closed', lambdaMode:'A',
   pipeType:'pp', heatingTypes:['radiator'],
   basement: null, tExtManual:null,
+  tGround: null,       // ПРО: t под полом (не на грунте); null = авто по городу (CITIES.tGround, дефолт 6)
+  tBasement: null,     // ПРО: t за подвальной стеной; null = дефолт 6 (как в боте)
+  ventMode: 'natural', // вентиляция: 'natural' (инфильтрация) | 'mech' (приточно-вытяжная) | 'hrv' (рекуператор)
+  hrvEff: 0.75,        // КПД рекуператора (0.6–0.9), используется при ventMode==='hrv'
   calcMode: 'revit',   // 'revit' | 'simple'
   simpleRoomCount: 1,
   simpleRoomIdx: 0,
@@ -9194,6 +9303,8 @@ function calcSyncView(){
   if(choice) choice.style.display=on?'none':'';
   if(prog) prog.style.display=on?'':'none';
   if(wiz) wiz.style.display=on?'':'none';
+  /* мастер скрыт (лендинг/выбор калькулятора) → снять живую мини-плашку, чтобы не висела над страницей */
+  if(!on){ const km=document.getElementById('kw-mini'); if(km) km.classList.remove('on'); }
 }
 /* Служебный показ мастера (демо, пресеты, история, share, настройки) —
    без пейвол-логики: замок при необходимости отрисует renderStep. */
@@ -9269,8 +9380,24 @@ function activeFloor(){ return (ST.basement&&ST.basement.id===ST.activeFloorId)?
    LIVE PANEL
 ════════════════════════════════════════════════════════════ */
 let _prevKw=null, _kwAnim=null;
+let _kwMiniT=null;
+/* 4.1: закреплённая мини-плашка «~N кВт» для узких экранов (на десктопе живая панель справа).
+   Debounce 300 мс; видна на шагах ввода (Макс 2–5, ПРО 2), скрыта на результате и в редакторе. */
+function _updateKwMini(res){
+  clearTimeout(_kwMiniT);
+  _kwMiniT=setTimeout(()=>{
+    let el=document.getElementById('kw-mini');
+    const lastStep=ST.calcMode==='simple'?3:6;
+    const show=ST.step>=2&&ST.step<lastStep&&res&&res.roomCount>0&&res.totalW>0;
+    if(!show){ if(el) el.style.display=''; if(el) el.classList.remove('on'); return; }
+    if(!el){ el=document.createElement('div'); el.id='kw-mini'; document.body.appendChild(el); }
+    el.classList.add('on');
+    el.innerHTML=`<span class="kwm-v">~${res.totalKw.toFixed(1)} кВт</span><span class="kwm-s">${res.totalArea.toFixed(0)} м² · ${res.roomCount} ${t('room-abbr')||'комн.'}</span>`;
+  },300);
+}
 function updateLivePanel(){
   const res = computeObject();
+  _updateKwMini(res);
   const valEl=document.getElementById('kw-val');
   const unitEl=document.getElementById('kw-unit');
   const statusEl=document.getElementById('kw-status');
@@ -9540,10 +9667,10 @@ function s1(){
       <input type="checkbox" class="accent-amber" id="cb-manual-t" onchange="toggleManualTExt(this.checked)" ${ST.tExtManual!=null?'checked':''}>
       <span class="text-sm text-cream">Задать расчётную температуру вручную</span>
     </label>
-    <div id="manual-t-row" class="mt-2 flex items-center gap-2" style="display:${ST.tExtManual!=null?'flex':'none'}">
+    <div id="manual-t-row" class="mt-2 flex items-center gap-2 flex-wrap" style="display:${ST.tExtManual!=null?'flex':'none'}">
       <span class="text-xs text-muted flex-shrink-0">t °C</span>
       <input type="number" id="manual-t-val" class="wi w-24 py-2 text-sm text-center" min="-35" max="-5" step="1" value="${ST.tExtManual!=null?ST.tExtManual:(ST.tExt||-14)}" oninput="setManualTExt(+this.value)">
-      <span class="text-xs text-muted">КМК 2.01.01-94 парам. Б</span>
+      <span id="manual-t-hint" class="text-xs text-muted">${(()=>{const c=CITIES.find(x=>x.id===ST.cityId);return c?`Для ${c.name}: ${c.t} °C (КМК 2.01.01-94, парам. Б)`:'КМК 2.01.01-94 парам. Б';})()}</span>
     </div>
   </div>
 
@@ -9579,6 +9706,11 @@ function selectCity(id){
   const c=CITIES.find(x=>x.id===id); if(!c) return;
   ST.cityId=c.id; ST.cityName=c.name; ST.tExt=c.t; ST.tExtManual=null;
   document.querySelectorAll('#step-panel .sel-card').forEach(el=>el.classList.toggle('active',el.getAttribute('onclick')===`selectCity('${id}')`));
+  /* смена города сбрасывает ручной t (строкой выше) — синхронизируем блок ручного ввода и подсказку */
+  const hint=document.getElementById('manual-t-hint'); if(hint) hint.textContent=`Для ${c.name}: ${c.t} °C (КМК 2.01.01-94, парам. Б)`;
+  const cb=document.getElementById('cb-manual-t'); if(cb) cb.checked=false;
+  const row=document.getElementById('manual-t-row'); if(row) row.style.display='none';
+  const mv=document.getElementById('manual-t-val'); if(mv) mv.value=c.t;
   updateNavHint(); updateLivePanel();
 }
 function toggleManualTExt(on){
@@ -9604,12 +9736,64 @@ function simpleRoomValid(idx){
   if(!r) return false;
   return (r.walls||[]).length>0 && r.walls.every(w=>(w.length||0)>0 && (w.height||0)>0);
 }
+/* Полнота ограждений комнаты ПРО: что из стен/окон/пола/потолка реально введено.
+   Не блокирует расчёт — только чек-лист в аккордеоне и предупреждение на шаге результата
+   (без пола/потолка результат занижен). */
+function simpleRoomCompleteness(r){
+  const some=(arr,ok)=>(arr||[]).some(ok);
+  return {
+    walls:   some(r.walls,   w=>(w.length||0)>0&&(w.height||0)>0),
+    windows: some(r.windows, w=>(w.length||0)>0&&(w.height||0)>0),
+    doors:   some(r.doors,   d=>(d.length||0)>0&&(d.height||0)>0),
+    floor:   some(r.floors,  f=>(f.length||0)>0&&(f.width||0)>0),
+    ceiling: some(r.ceilings,c=>_srItemArea(r,'ceilings',c)>0),
+  };
+}
+/* Число наружных стен комнаты ПРО (не «подвальных») — для авто-режима угловой надбавки */
+function simpleExtWallCount(r){
+  return (r.walls||[]).filter(w=>!w.basement&&(w.length||0)>0&&(w.height||0)>0).length;
+}
+/* Угловая надбавка ПРО: 'auto' (дефолт) — по числу наружных стен, как в Макс (≥2 → +5%);
+   'one'/'corner'/'two' — ручной override (старые сохранённые комнаты не мигрируются). */
+function simpleCornerK(r){
+  const mode=r.corner||'auto';
+  const isCorner = mode==='auto' ? simpleExtWallCount(r)>=2 : mode!=='one';
+  return isCorner ? (1+CORNER_SURCHARGE) : 1;
+}
+/* Санити-чек результата (Фаза 4 плана точности): удельные теплопотери Вт/м² с оценкой диапазона */
+function sanityBadgeHTML(res){
+  if(!res||!(res.totalArea>0)||!(res.totalW>0)) return '';
+  const wm2=res.totalW/res.totalArea;
+  const b= wm2<70  ? {c:'#4ade80', txt:'отлично утеплён'} :
+           wm2<=120? {c:'#a3e635', txt:'типично для утеплённого дома'} :
+           wm2<=180? {c:'#fbbf24', txt:'выше типичного — проверьте окна и герметичность'} :
+                     {c:'#f87171', txt:'очень высокие — проверьте ввод: размеры, материалы, температуры'};
+  return `<div class="mb-5 flex items-center gap-2 flex-wrap">
+    <span style="font-size:11px;font-weight:700;color:${b.c};padding:3px 10px;border-radius:999px;border:1px solid ${b.c}55;background:${b.c}14">${Math.round(wm2)} Вт/м² — ${b.txt}</span>
+    <span class="text-[10px] text-muted" title="Итоговые теплопотери, делённые на отапливаемую площадь">удельные теплопотери</span>
+  </div>`;
+}
+/* Жёлтый баннер на шаге результата ПРО: у каких комнат не указан пол/потолок (результат занижен) */
+function simpleIncompleteBanner(){
+  if(ST.calcMode!=='simple') return '';
+  const bad=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)}))
+    .filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));   // без стен комната и так помечена «!»
+  if(!bad.length) return '';
+  const names=bad.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ');
+  const missFloor=bad.some(x=>!x.c.floor), missCeil=bad.some(x=>!x.c.ceiling);
+  const what=[missFloor?t('cat-floors').toLowerCase():null, missCeil?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / ');
+  const msg=t('simple-incomplete-banner').replace('{rooms}',names).replace('{what}',what);
+  return `<div class="mb-5 rounded-xl border border-amber/35 bg-amber/10 p-3 flex items-start gap-2.5">
+    <span class="flex-shrink-0 text-base">⚠️</span>
+    <p class="text-xs text-amber leading-relaxed">${msg}</p>
+  </div>`;
+}
 
 function initSimpleRooms(){
   const n=ST.simpleRoomCount;
   const ex=ST.simpleRooms||[];
   ST.simpleRooms=Array.from({length:n},(_,i)=>ex[i]||{
-    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'corner',
+    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'auto',
     walls:[], windows:[], doors:[], floors:[], ceilings:[]
   });
 }
@@ -9938,8 +10122,13 @@ function simpleRoomsEditorInner(){
     const rLabel=r.name||(rt?_pick(rt,'name','nameUz','nameEn'):'')||t('simple-room-name-ph').replace('{n}',i+1);
     const isOpen=i===_srFocusRoom;
     const hasErr=!simpleRoomValid(i);
-    const cornerOpts=[['one','simple-corner-one'],['corner','simple-corner-corner'],['two','simple-corner-two']]
-      .map(([v,k])=>`<option value="${v}" ${(r.corner||'corner')===v?'selected':''}>${t(k)}</option>`).join('');
+    const cornerOpts=[['auto','simple-corner-auto'],['one','simple-corner-one'],['corner','simple-corner-corner'],['two','simple-corner-two']]
+      .map(([v,k])=>`<option value="${v}" ${(r.corner||'auto')===v?'selected':''}>${t(k)}</option>`).join('');
+    const comp=simpleRoomCompleteness(r);
+    const compChip=(on,label,critical)=>`<span style="white-space:nowrap;${on?'color:rgba(74,222,128,.75)':critical?'color:rgba(251,191,36,.85)':'color:rgba(154,134,117,.5)'}">${label} ${on?'✓':critical?'✗':'—'}</span>`;
+    const checklist=`<span class="flex-shrink-0 hidden sm:flex items-center gap-1.5 text-[9px] font-medium" title="${t('simple-completeness-tip')}">
+      ${compChip(comp.walls,t('cat-walls'),true)}${compChip(comp.windows,t('cat-windows'),false)}${compChip(comp.floor,t('cat-floors'),true)}${compChip(comp.ceiling,t('cat-ceilings'),true)}
+    </span>`;
 
     return `<details ${isOpen?'open':''} ontoggle="if(this.open)_srFocusRoom=${i}" class="rounded-2xl border ${hasErr?'border-ember/30':'border-sand/10'} bg-w850/40 mb-3 overflow-hidden">
       <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
@@ -9947,6 +10136,7 @@ function simpleRoomsEditorInner(){
           <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-amber/15 text-amber text-xs font-bold">${i+1}</span>
           <span class="text-sm font-semibold text-cream truncate">${rLabel}</span>
           ${hasErr?'<span class="flex-shrink-0 text-[10px] font-bold text-ember bg-ember/10 rounded-full px-2 py-0.5">!</span>':''}
+          ${checklist}
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           ${ST.simpleRooms.length>1?`<button type="button" onclick="event.preventDefault();event.stopPropagation();srDeleteRoom(${i})"
@@ -10035,17 +10225,24 @@ function computeSimple(){
   };
 }
 
-/* Temp deltas mirror @Santexprog_bot project settings (Pol harorati / Podval devori = 6°C). */
-const SIMPLE_FLOOR_T = 6;      // температура грунта под полом
-const SIMPLE_BASEMENT_T = 6;   // температура за подвальной стеной
+/* Temp deltas mirror @Santexprog_bot project settings (Pol harorati / Podval devori = 6°C).
+   Теперь настраиваются в «Общих параметрах» (ST.tGround / ST.tBasement); константы — дефолты. */
+const SIMPLE_FLOOR_T = 6;      // дефолт: температура под полом (не на грунте)
+const SIMPLE_BASEMENT_T = 6;   // дефолт: температура за подвальной стеной
+function simpleGroundT(){
+  if(ST.tGround!=null) return ST.tGround;
+  const c=CITIES.find(x=>x.id===ST.cityId);
+  return (c&&c.tGround!=null)?c.tGround:SIMPLE_FLOOR_T;
+}
+function simpleBasementT(){ return ST.tBasement!=null?ST.tBasement:SIMPLE_BASEMENT_T; }
 
 function computeSimpleRoom(r,tExt){
   const tInt=r.tInt||20, H=r.height||2.7;
   const dTout=tInt-tExt;                                   // к наружному воздуху
-  const dTfloor=tInt-SIMPLE_FLOOR_T;                       // к грунту под полом
-  const dTbase=tInt-SIMPLE_BASEMENT_T;                     // к подвальной стене
+  const dTfloor=tInt-simpleGroundT();                      // под полом (не на грунте)
+  const dTbase=tInt-simpleBasementT();                     // к подвальной стене
   const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
-  const cornerK=(r.corner==='one')?1:(1+CORNER_SURCHARGE);
+  const cornerK=simpleCornerK(r);   // 'auto': ≥2 наружных стен → +5%, как в Макс
 
   // ── Стены (каждая — отдельная строка, как в боте) ──
   for(const w of (r.walls||[])){
@@ -10068,15 +10265,24 @@ function computeSimpleRoom(r,tExt){
     const dBeta=(BETA_DOOR[dr.doorType||'none']||BETA_DOOR.none).beta;
     if(dp&&dp.r>0&&dTout>0) bd.door+=(dTout/dp.r)*S*(1+dBeta)*cornerK;
   }
-  // ── Полы (ΔT к грунту 6°C, без зонального разбиения — как в боте) ──
+  // ── Полы: «на грунте» — зональный метод как в Макс (ΔT к улице, R грунта по зонам
+  //    + утепление addR); прочие (над подвалом/подпольем) — плоское R и ΔT к t под полом ──
   let floorArea=0;
+  const extP=(r.walls||[]).reduce((s,w)=>s+((!w.basement&&(w.length||0)>0&&(w.height||0)>0)?(w.length||0):0),0);
   for(const fl of (r.floors||[])){
     const S=(fl.length||0)*(fl.width||0); if(S<=0) continue;
     floorArea+=S;
     const fp=_srItemPreset('floors',fl); if(!fp) continue;
-    const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
     const n=fp.n!=null?fp.n:1;
-    if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
+    if(fp.ground){
+      /* периметр наружных стен — из введённых стен комнаты; если стен нет — прямоугольник пола */
+      const P=extP>0?extP:2*((fl.length||0)+(fl.width||0));
+      const addR=fp.__layered?fp.r:(fp.addR!=null?fp.addR:0);   // слои Мастерской = утепление поверх грунта
+      if(dTout>0) bd.floor+=zonalFloorQ(S,P,addR,dTout,n);
+    } else {
+      const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
+      if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
+    }
   }
   // ── Потолок / крыша ──
   for(const cl of (r.ceilings||[])){
@@ -10088,7 +10294,7 @@ function computeSimpleRoom(r,tExt){
   }
   // ── Инфильтрация (объём = площадь пола × высота) ──
   const V=floorArea*H, rho=(1.293*273)/(273+tExt);
-  if(V>0&&dTout>0) bd.infil=0.28*1.005*V*rho*dTout*airtightAch();
+  if(V>0&&dTout>0) bd.infil=0.28*1.005*V*rho*dTout*ventAchFor(r.typeId)*ventFactor();
 
   const qW=Object.values(bd).reduce((s,v)=>s+v,0);
   const area=floorArea;
@@ -13476,6 +13682,7 @@ function edProps(){
       </div>
       <label class="text-[10px] text-muted">${t('mr-pos-label')} ${op.pos!=null?op.pos:50}%</label>
       <input class="w-full" type="range" min="0" max="100" step="2.5" value="${op.pos!=null?op.pos:50}" oninput="edOpPos('${op.id}',this.value)" onchange="edCommit()">
+      <p class="text-[9px] text-muted/60" style="margin-top:-2px">${t('op-pos-note')}</p>
       ${buildOpMfPanel(op)}
     </div>`;
   }).join('');
@@ -13487,7 +13694,13 @@ function edProps(){
         <div><label class="text-[10px] text-muted">${t('mr-geom-y')}</label><input class="wi py-1.5 text-sm" type="number" step="0.5" min="0" value="${room.y}" onchange="edSetField('y',this.value)"></div>
         <div><label class="text-[10px] text-muted">${t('mr-geom-w')}</label><input class="wi py-1.5 text-sm" type="number" step="0.1" min="0.1" value="${room.w}" onchange="edSetField('w',this.value)"></div>
         <div><label class="text-[10px] text-muted">${t('mr-geom-d')}</label><input class="wi py-1.5 text-sm" type="number" step="0.1" min="0.1" value="${room.h}" onchange="edSetField('h',this.value)"></div>
-      </div>`;
+      </div>
+      ${(()=>{try{
+        /* 4.3: комната чертится по ВНУТРЕННЕЙ грани — показываем наружный обмер (КМК) явно */
+        const tmm=Math.max(...roomVerts(room).map((_,i)=>edgeWallThickMm(room,i)));
+        const od=roomOuterDims(room,tmm/1000);
+        return `<div class="rounded-lg bg-w800/40 border border-sand/10 p-2 text-[10px] text-muted mb-2" title="Размеры комнаты вводятся по внутренней (чистовой) грани стен; наружный обмер = внутренний + 2×толщина стены">Наружный обмер: <b class="text-cream">${od.w.toFixed(2)} × ${od.h.toFixed(2)} м</b> · стена ${tmm} мм</div>`;
+      }catch(e){return '';}})()}`;
   box.innerHTML=`<div class="ed-props-hd">
       <p class="font-bold text-cream" style="font-size:.82rem">${room.poly?t('mr-shape'):t('mr-room')}</p>
       <div class="flex gap-1 items-center">
@@ -14412,6 +14625,7 @@ function opRow(room,op,extSides){
       <label class="text-[10px] text-muted">${t('op-pos-lbl')||t('mr-pos-label')}: <span id="pos-${op.id}" class="text-sand font-semibold">${op.pos!=null?op.pos:50}%</span></label>
       <input class="w-full mt-0.5" type="range" min="0" max="100" step="5" value="${op.pos!=null?op.pos:50}"
         oninput="setOp('${room.id}','${op.id}','pos',this.value);var l=document.getElementById('pos-${op.id}');if(l)l.textContent=this.value+'%';">
+      <p class="text-[9px] text-muted/60 mt-0.5">${t('op-pos-note')}</p>
     </div>
   </div>`;
 }
@@ -14458,8 +14672,8 @@ function s5(){
   <p class="text-sm text-muted mb-2">${t('step5-sub')}</p>
   <button onclick="openWorkshop()" class="tool-btn mb-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t('workshop-btn')}</button>
   ${presetGrid(t('mat-walls'),'walls',ST.mat.wallId,'selWall')}
-  ${usedWindows?presetGrid(t('mat-windows-default'),'windows',ST.mat.windowId,'selWindow'):''}
-  ${usedDoors?presetGrid(t('mat-doors-default'),'doors',ST.mat.doorId,'selDoor'):''}
+  ${usedWindows?presetGrid(t('mat-windows-default'),'windows',ST.mat.windowId,'selWindow')+opOverridesNote('window'):''}
+  ${usedDoors?presetGrid(t('mat-doors-default'),'doors',ST.mat.doorId,'selDoor')+opOverridesNote('door'):''}
   ${presetGrid(t('mat-floor'),'floors',ST.mat.floorId,'selFloor')}
   ${presetGrid(t('mat-ceiling'),'ceilings',ST.mat.ceilingId,'selCeiling')}
   ${objectParamsBlock()}`;
@@ -14517,6 +14731,72 @@ function objectParamsBlock(){
         <p class="text-xs text-muted">${o.desc}</p>
       </button>`; }).join('')}
     </div>
+  </div>
+  ${ventModeBlock()}
+  ${simpleTempsBlock()}`;
+}
+/* Вентиляция: естественная / механическая / рекуператор (Фаза 3 плана точности).
+   Общая для Макс и ПРО — влияет на статью «вентиляция/инфильтрация» обоих ядер. */
+function ventModeBlock(){
+  const modes=[
+    {id:'natural', n:'Естественная', d:'Инфильтрация через окна и щели. ACH комнаты = максимум из нормы типа комнаты и герметичности здания.'},
+    {id:'mech',    n:'Механическая приточно-вытяжная', d:'Организованный приток: воздухообмен строго по нормам типа комнаты (кухня 1.0, санузлы 1.5, жилые 0.5), герметичность не добавляет.'},
+    {id:'hrv',     n:'Приточная с рекуператором', d:'То же, что механическая, но рекуператор возвращает тепло вытяжки: потери на вентиляцию × (1 − КПД).'},
+  ];
+  const vm=ST.ventMode||'natural';
+  const eff=Math.round(hrvEff()*100);
+  return `<div class="mb-6">
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">Вентиляция</h4>
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      ${modes.map(o=>`<button type="button" data-vm="${o.id}" onclick="selVentMode('${o.id}')" class="pcard text-left ${vm===o.id?'active':''}">
+        <p class="font-semibold text-cream text-sm leading-snug">${o.n}</p>
+        <p class="text-xs text-muted mt-1">${o.d}</p>
+      </button>`).join('')}
+    </div>
+    <div id="hrv-eff-row" class="mt-3 flex items-center gap-3 flex-wrap" style="display:${vm==='hrv'?'flex':'none'}">
+      <span class="text-xs text-muted flex-shrink-0">КПД рекуператора</span>
+      <input type="range" min="60" max="90" step="5" value="${eff}" style="width:180px"
+        oninput="setHrvEff(+this.value);var l=document.getElementById('hrv-eff-val');if(l)l.textContent=this.value+'%';">
+      <span id="hrv-eff-val" class="text-sm font-bold text-amber mono">${eff}%</span>
+      <span class="text-[10px] text-muted">типично 60–90% (роторные выше, пластинчатые ниже)</span>
+    </div>
+  </div>`;
+}
+function selVentMode(id){
+  ST.ventMode=(id==='mech'||id==='hrv')?id:'natural';
+  document.querySelectorAll('#step-panel [data-vm]').forEach(el=>el.classList.toggle('active',el.getAttribute('data-vm')===ST.ventMode));
+  const row=document.getElementById('hrv-eff-row'); if(row) row.style.display=ST.ventMode==='hrv'?'flex':'none';
+  if(typeof srResults==='function'&&ST.calcMode==='simple') srResults();
+  updateLivePanel();
+}
+function setHrvEff(pct){
+  ST.hrvEff=Math.max(0.4,Math.min(0.95,(+pct||75)/100));
+  if(typeof srResults==='function'&&ST.calcMode==='simple') srResults();
+  updateLivePanel();
+}
+/* ПРО: настраиваемые температуры под полом и за подвальной стеной (Фаза 2 плана точности).
+   Дефолты = историческое поведение (+6 °C, как в Santexprog-боте); «авто» для грунта — по городу. */
+function simpleTempsBlock(){
+  if(ST.calcMode!=='simple') return '';
+  const c=CITIES.find(x=>x.id===ST.cityId);
+  const cityG=(c&&c.tGround!=null)?c.tGround:SIMPLE_FLOOR_T;
+  const gOpts=[['','Авто — по городу (+'+cityG+' °C)'],[8,'+8 °C — тёплое подполье'],[6,'+6 °C — стандарт (как в боте)'],[4,'+4 °C — холодное подполье'],[2,'+2 °C'],[0,'0 °C — открытое подполье']];
+  const bOpts=[['','+6 °C — стандарт (как в боте)'],[10,'+10 °C — отапливаемый подвал'],[2,'+2 °C — полуотапливаемый'],[-3,'−3 °C — холодный'],[-6,'−6 °C — неотапливаемый']];
+  const sel=(opts,cur)=>opts.map(([v,l])=>`<option value="${v}" ${String(cur==null?'':cur)===String(v)?'selected':''}>${l}</option>`).join('');
+  return `<div class="mb-6">
+    <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-3">Температуры под полом и за подвалом</h4>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label class="block text-[11px] text-muted mb-1">Под полом (для полов НЕ «на грунте»)</label>
+        <select class="wi py-2 text-sm" onchange="ST.tGround=this.value===''?null:+this.value;if(typeof srResults==='function')srResults();updateLivePanel()">${sel(gOpts,ST.tGround)}</select>
+        <p class="text-[10px] text-muted mt-1">Полы «на грунте» считаются зонально от уличной t — эта настройка на них не влияет.</p>
+      </div>
+      <div>
+        <label class="block text-[11px] text-muted mb-1">За стеной подвала (стены «в подвал / грунт»)</label>
+        <select class="wi py-2 text-sm" onchange="ST.tBasement=this.value===''?null:+this.value;if(typeof srResults==='function')srResults();updateLivePanel()">${sel(bOpts,ST.tBasement)}</select>
+        <p class="text-[10px] text-muted mt-1">Чем холоднее за стеной, тем больше её теплопотери.</p>
+      </div>
+    </div>
   </div>`;
 }
 function selAirtight(id){ ST.airtight=id; refreshPcards('selAirtight',id); updateLivePanel(); }
@@ -14540,6 +14820,22 @@ function toggleHeatingType(id){
   }
   document.querySelectorAll('#step-panel [data-ht]').forEach(el=>el.classList.toggle('active',(ST.heatingTypes).includes(el.getAttribute('data-ht'))));
   updateLivePanel();
+}
+/* 4.4: у скольких проёмов задан собственный пресет/U — глобальный выбор на них не влияет */
+function opOverridesNote(type){
+  const globalId=type==='window'?ST.mat.windowId:ST.mat.doorId;
+  const list=[];
+  (ST.floors||[]).forEach(f=>(f.rooms||[]).forEach(r=>(r.openings||[]).forEach(op=>{
+    if(op.type!==type) return;
+    const own=(op.customU>0)||(op.presetId&&op.presetId!==globalId);
+    if(!own) return;
+    const what=op.customU>0?`U=${(+op.customU).toFixed(2)}${op.modelName?' ('+sxEsc(op.modelName)+')':''}`
+      :sxEsc((findPreset(type==='window'?'windows':'doors',op.presetId)||{}).name||op.presetId);
+    list.push(`${sxEsc(f.name)} · ${sxEsc(r.name||roomTypeName(r.typeId))}: ${what}${(op.count||1)>1?' ×'+op.count:''}`);
+  })));
+  if(!list.length) return '';
+  return `<details style="margin:-14px 0 22px"><summary style="font-size:11px;color:rgba(245,158,11,.85);cursor:pointer;user-select:none">переопределено у ${list.length} — глобальный выбор на эти проёмы не влияет</summary>
+    <ul style="margin-top:5px;font-size:11px;color:rgba(154,134,117,.9);padding-left:1.2rem;list-style:disc;line-height:1.7">${list.map(x=>`<li>${x}</li>`).join('')}</ul></details>`;
 }
 function presetGrid(label,cat,currentId,onselect){
   const isWall = cat==='walls';
@@ -14754,7 +15050,10 @@ function s6(){
   const res=computeObject();
   if(!res||res.roomCount===0){ return `<p class="text-muted py-8 text-center">${t('hint-4')}</p>`; }
   window._calcRes=res;
-  const TYPE={wall:t('col-component-wall')||'Стены',window:t('col-component-win')||'Окна',door:t('col-component-door')||'Двери',floor:t('col-component-floor')||'Пол',ceiling:t('col-component-ceil')||'Потолок',infil:t('col-component-infil')||'Инфильтрация'};
+  const _ventLabel = ST.ventMode==='hrv' ? `Вентиляция (рекуператор ${Math.round(hrvEff()*100)}%)`
+    : ST.ventMode==='mech' ? 'Вентиляция (механическая)'
+    : (t('col-component-infil')||'Инфильтрация');
+  const TYPE={wall:t('col-component-wall')||'Стены',window:t('col-component-win')||'Окна',door:t('col-component-door')||'Двери',floor:t('col-component-floor')||'Пол',ceiling:t('col-component-ceil')||'Потолок',infil:_ventLabel};
   const ip=interpret(res);
   const cost=costEstimate(res.totalKw);
   const boiler=recommendBoiler(res.boilerKw);
@@ -14810,6 +15109,8 @@ function s6(){
     <span class="flex items-center gap-1 text-xs text-muted/60 flex-shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${t('result-protected')}</span>
   </div>
   <p class="text-sm text-muted mb-7">${ST.cityName} · ${ST.floors.length} ${t('fl-abbr')} · ${res.roomCount} ${t('room-abbr')} · ${res.totalArea.toFixed(1)} м² · ${t('airtight-label')}: ${airtightName(ST.airtight).toLowerCase()} · ${t('regime-label')} ${heatRegime().name}</p>
+  ${simpleIncompleteBanner()}
+  ${sanityBadgeHTML(res)}
 
   <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
     <div class="rounded-2xl border border-amber/30 bg-gradient-to-b from-amber/10 to-transparent p-4">
@@ -15534,6 +15835,9 @@ function serializeState(){
     m:[ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId],
     pt:ST.pipeType||'pp', ht:ST.heatingTypes||['radiator'],
     f:ST.floors.map(_serFloor)};
+  if(ST.tGround!=null) obj.tg=ST.tGround;
+  if(ST.tBasement!=null) obj.tb=ST.tBasement;
+  if(ST.ventMode&&ST.ventMode!=='natural'){ obj.vm=ST.ventMode; obj.ve=hrvEff(); }
   if(ST.basement){ obj.bs=_serFloor(ST.basement); obj.bs.bt=ST.basement.tExt!=null?ST.basement.tExt:-6; }
   return obj;
 }
@@ -15547,6 +15851,10 @@ function loadState(o){
   ST.lambdaMode = (o.lm==='B')?'B':'A';
   ST.pipeType = PIPE_TYPES.some(x=>x.id===o.pt) ? o.pt : 'pp';
   ST.heatingTypes = (Array.isArray(o.ht)&&o.ht.length) ? o.ht : ['radiator'];
+  ST.tGround = (typeof o.tg==='number') ? o.tg : null;
+  ST.tBasement = (typeof o.tb==='number') ? o.tb : null;
+  ST.ventMode = (o.vm==='mech'||o.vm==='hrv') ? o.vm : 'natural';
+  ST.hrvEff = (typeof o.ve==='number') ? o.ve : 0.75;
   if(o.m){ [ST.mat.wallId,ST.mat.windowId,ST.mat.doorId,ST.mat.floorId,ST.mat.ceilingId]=o.m; }
   ST.floors=(o.f||[]).map(fl=>{
     const out={id:uid('fl'),name:fl.n,height:fl.h,rooms:(fl.r||[]).map(rm=>{
@@ -16179,7 +16487,7 @@ body{font-family:system-ui,-apple-system,sans-serif;font-size:13px;color:#1a1208
 <div class="stitle">Распределение по конструкциям</div>
 <table class="bt"><thead><tr><th>Ограждение</th><th class="r">Потери, Вт</th><th class="r">Доля</th></tr></thead>
 <tbody>${byTypeRows}<tr class="tot"><td>Итого</td><td class="r">${Math.round(res.totalW)}</td><td class="r">100%</td></tr></tbody></table>
-<p class="disc">Расчёт по КМК 2.01.04-18 (теплотехника) и КМК 2.01.01-94 (климатология, параметр Б): Q=(Δt/R)×S×n×(1+Σβ) для ограждений (Δt — к улице или к соседнему помещению через перегородку), R=Rвн(0.11)+Σδ/λ+Rнар(0.04), пол на грунте — зональный метод (Староверов), инфильтрация Q=0.28×1.005×V×ρ×Δt×ACH (ACH=${airtightAch().toFixed(1)}). Надбавки на ориентацию: С/СВ/СЗ/В +10%, З/ЮВ +5%, Ю/ЮЗ 0%; угловые +5%. Секции при режиме ${heatRegime().name}. Результат ориентировочный.</p>
+<p class="disc">Расчёт по КМК 2.01.04-18 (теплотехника) и КМК 2.01.01-94 (климатология, параметр Б): Q=(Δt/R)×S×n×(1+Σβ) для ограждений (Δt — к улице или к соседнему помещению через перегородку), R=Rвн(0.11)+Σδ/λ+Rнар(0.04), пол на грунте — зональный метод (Староверов), вентиляция/инфильтрация Q=0.28×1.005×V×ρ×Δt×ACH${ST.ventMode==='hrv'?`×(1−η), рекуператор η=${Math.round(hrvEff()*100)}%`:''} (ACH — ${ST.ventMode==='natural'?`max(норма типа комнаты, герметичность ${airtightAch().toFixed(1)})`:'по норме типа комнаты: кухня 1.0, санузлы 1.5, жилые 0.5'}). Надбавки на ориентацию: С/СВ/СЗ/В +10%, З/ЮВ +5%, Ю/ЮЗ 0%; угловые +5%. Секции при режиме ${heatRegime().name}. Результат ориентировочный.</p>
 <div class="footer"><div><strong>Aquality | WaterPro</strong> · ${CONTACT.address}</div><div>${CONTACT.phone} · wa.me/${CONTACT.whatsapp}</div></div>
 </div>
 <script>window.onload=function(){setTimeout(function(){window.print();},350)};<\/script>
@@ -16569,10 +16877,10 @@ function aiAdvisorHTML(res){
       desc:'Стеклопакет с аргоном и Low-E покрытием снижает потери через окна на 35–40%. Для Ферганы также важна правильная ориентация проёмов.',
       saving:`↓ ~${saving.toFixed(1)} кВт · ~${fmtSum(seasonSave)}/сезон · окупаемость 2–4 года`,color:'#22d3ee'});
   }
-  if(infilPct>0.16){
+  if(infilPct>0.16&&(ST.ventMode||'natural')==='natural'){
     const saving=(res.byType.infil/1000*0.18);
     recs.push({prio:'med',icon:'💨',title:`Инфильтрация ${(infilPct*100).toFixed(0)}% — уплотните проёмы для быстрой экономии`,
-      desc:'Дверные уплотнители, оконные щели, вентиляционные клапаны. Простые меры дают 5–15% экономии без капиталовложений.',
+      desc:'Дверные уплотнители, оконные щели, вентиляционные клапаны. Простые меры дают 5–15% экономии. Радикальнее — приточная вентиляция с рекуператором (см. «Вентиляция» в общих параметрах): возвращает 60–90% тепла вытяжки.',
       saving:`↓ ~${saving.toFixed(1)} кВт · работы окупаются за 1 сезон`,color:'#a78bfa'});
   }
   if(worst&&allRooms.length>1&&worst.qKw/res.totalKw>0.22){
@@ -18446,7 +18754,8 @@ function sxSaveProjects(list){
 function sxSnapshot(){
   return { calcMode:'simple', cityId:ST.cityId, cityName:ST.cityName, tExt:ST.tExt,
     mat:{...ST.mat}, attic:ST.attic, airtight:ST.airtight, heatRegime:ST.heatRegime, lambdaMode:ST.lambdaMode,
-    pipeType:ST.pipeType, heatingTypes:ST.heatingTypes,
+    pipeType:ST.pipeType, heatingTypes:ST.heatingTypes, tGround:ST.tGround, tBasement:ST.tBasement,
+    ventMode:ST.ventMode, hrvEff:ST.hrvEff,
     simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])) };
 }
 function sxRestore(s){
@@ -18455,7 +18764,8 @@ function sxRestore(s){
     if(s.cityId){ ST.cityId=s.cityId; ST.cityName=s.cityName; }
     if(s.tExt!=null) ST.tExt=s.tExt;
     if(s.mat) ST.mat={...ST.mat,...s.mat};
-    ['attic','airtight','heatRegime','lambdaMode','pipeType'].forEach(k=>{ if(s[k]!=null) ST[k]=s[k]; });
+    ST.tGround=null; ST.tBasement=null; ST.ventMode='natural'; ST.hrvEff=0.75;   // сбросить перед восстановлением — не тащить значения предыдущего проекта
+    ['attic','airtight','heatRegime','lambdaMode','pipeType','tGround','tBasement','ventMode','hrvEff'].forEach(k=>{ if(s[k]!=null) ST[k]=s[k]; });
     if(Array.isArray(s.heatingTypes)) ST.heatingTypes=s.heatingTypes;
     ST.simpleRooms=Array.isArray(s.simpleRooms)?JSON.parse(JSON.stringify(s.simpleRooms)):[];
     ST.simpleRoomCount=s.simpleRoomCount||ST.simpleRooms.length||1;
@@ -18632,9 +18942,12 @@ function sxRenderResults(){
   const gasDay=(res.totalKw*24/8.4);
   const rows=(res.floors&&res.floors[0]&&res.floors[0].rooms||[]).map(r=>`
     <tr><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.area||0).toFixed(1)}</td><td class="mono" style="text-align:right;color:#f5b544">${Math.round(r.qW||0)}</td></tr>`).join('');
+  const incompl=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)})).filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));
+  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ')).replace('{what}',[incompl.some(x=>!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
   host.innerHTML=`
     <div class="sx-card">
       <div class="sx-res-hd"><svg viewBox="0 0 24 24" fill="none" stroke="#5be0a0" stroke-width="2" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>${sxt('results')}</div>
+      ${incomplNote}
       <div class="sx-kpi">
         <div style="font-size:12px;color:#8ea0bd;margin-bottom:4px">${sxt('totalLoss')}</div>
         <div class="sx-kpi-v">${(res.totalKw).toFixed(2)} <span style="font-size:16px">kW</span></div>

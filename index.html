@@ -64,7 +64,7 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
 <!-- Three.js подключается лениво (ensureThree в app.js) только при открытии 3D -->
-<script defer src="/assets/app.js?v=20260705-perf1"></script>
+<script defer src="/assets/app.js?v=20260709-calc6"></script>
 <style>
 /* ═══ Критический CSS первого экрана: фон/цвет до прихода внешних CSS,
        CSS-заглушка WebGL-фона («кометы» — только transform/opacity). ═══ */
@@ -174,11 +174,11 @@ html.tier-low .thermal-path-bg{display:none!important}
 </script>
 <!-- Supabase JS подгружается ДИНАМИЧЕСКИ и только если заданы ключи (см. loadSupabaseLib).
      В офлайн-режиме внешний бэкенд-CDN не запрашивается вообще. -->
-<link rel="stylesheet" href="/assets/site.css?v=20260704-layers">
+<link rel="stylesheet" href="/assets/site.css?v=20260709-calc4">
 <!-- Tailwind: статическая сборка вместо CDN JIT (конфиг: tailwind.config.js, пересборка: npm run build:css).
      ВАЖНО: линк стоит ПОСЛЕ site.css — Play CDN вставлял свои стили в конец head,
      и утилиты Tailwind побеждали кастомные правила той же специфичности (проверено). -->
-<link rel="stylesheet" href="/assets/tailwind.css?v=20260703-fix3">
+<link rel="stylesheet" href="/assets/tailwind.css?v=20260709-calc6">
 </head>
 <body class="bg-w950">
 <!-- Scroll progress bar -->
