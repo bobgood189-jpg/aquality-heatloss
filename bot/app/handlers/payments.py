@@ -225,6 +225,13 @@ async def cmd_grant(message: Message):
             date = dt.astimezone().strftime("%d.%m.%Y")
         except Exception:
             date = expires_at[:10]
+    elif PAYWALL:
+        # Тот же риск, что и в review.cb_review_ok: сайт видит подписку только в
+        # Supabase — тихая запись в локальный SQLite создала бы рассинхрон.
+        return await message.answer(
+            "⚠️ SUPABASE_SERVICE_KEY не задан — активация через /grant невозможна, "
+            "пока paywall включён (сайт видит подписки только в Supabase)."
+        )
     else:
         v = storage.validate_promo(promo, uid) if promo else {"ok": False, "discount": 0}
         price = p["price"] * (1 - v["discount"] / 100) if v["ok"] else p["price"]

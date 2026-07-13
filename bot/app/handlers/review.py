@@ -13,7 +13,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
 from .. import storage
-from ..config import SHOP_PLANS, SB_CONFIGURED, SITE_URL, OWNER_USERNAME
+from ..config import SHOP_PLANS, SB_CONFIGURED, PAYWALL, SITE_URL, OWNER_USERNAME
 from .. import keyboards as K
 from .util import is_owner
 
@@ -63,6 +63,7 @@ async def cb_review_ok(cb: CallbackQuery):
     plan_id  = f"{plan}_m{months}"   # canonical id matching site's AQ_PLANS
 
     activated = False
+    res = {}
     if SB_CONFIGURED:
         from .. import supabase_db as _sb
         res = await _sb.activate_sub(tg_id, plan_id,
@@ -76,6 +77,15 @@ async def cb_review_ok(cb: CallbackQuery):
             await _sb.set_just_activated(str(res["sub_id"]))
         elif not activated:
             log.error("Activation failed for order %s: %s", order_id, res.get("reason"))
+    elif PAYWALL:
+        # Сайт проверяет подписку ТОЛЬКО в Supabase — без сервисного ключа активировать
+        # её там невозможно. Раньше здесь тихо писали в локальный SQLite и клиент всё
+        # равно получал "🎉" — это и есть баг "оплата подтверждена, сайт её не видит".
+        # Лучше явно отказать админу, чем соврать клиенту про открытый доступ.
+        res = {"reason": "SUPABASE_SERVICE_KEY не задан — активация невозможна"}
+        log.error("Order %s: PAYWALL включён, но SUPABASE_SERVICE_KEY не задан — "
+                  "активация отклонена (см. bot/.env или переменные окружения деплоя).",
+                  order_id)
     else:
         storage.activate_sub(tg_id, plan, days,
                              amount=order["final_price"],
@@ -123,6 +133,13 @@ async def cb_review_ok(cb: CallbackQuery):
         log.warning("Client notify failed for order %s: %s", order_id, e)
 
     suffix = f"\n\n✅ <b>ПОДТВЕРЖДЁН</b> {oid_str} → {expires_str}"
+    if res.get("email_mismatch"):
+        suffix += (
+            f"\n⚠️ <b>ВНИМАНИЕ:</b> подписка привязана к профилю "
+            f"<code>{res.get('email') or res.get('user_id') or '?'}</code>, "
+            f"а не к email заказа <code>{order['email']}</code> — "
+            "проверьте, тот ли это клиент (см. H3 в docs/fix-tg-sub-sync-prompt.md)."
+        )
     try:
         old = cb.message.caption or ""
         await cb.message.edit_caption(old + suffix, reply_markup=None)

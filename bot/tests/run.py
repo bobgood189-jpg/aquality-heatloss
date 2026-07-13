@@ -8,9 +8,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_engine  # noqa: E402
 import test_tools  # noqa: E402
 import test_routing  # noqa: E402
+import test_sub_sync  # noqa: E402
 
 total = failed = 0
-for mod in (test_engine, test_tools, test_routing):
+for mod in (test_engine, test_tools, test_routing, test_sub_sync):
     print(f"[{mod.__name__}]")
     for n in [x for x in dir(mod) if x.startswith("test_")]:
         total += 1

@@ -389,6 +389,24 @@ async function aqHydrate(){
     const { data:{ session } } = await c.auth.getSession();
     await aqLoadSession(session);
     c.auth.onAuthStateChange((_evt, sess)=>{ aqLoadSession(sess); });
+    // Догоняем подписку, если её активировали (бот подтвердил оплату), пока эта
+    // вкладка была открыта в фоне — без этого пришлось бы жать F5 (см. H5 в
+    // docs/fix-tg-sub-sync-prompt.md). onAuthStateChange одного тут не хватает:
+    // TOKEN_REFRESHED тикает по своему таймеру, а не при возврате на вкладку.
+    doc.addEventListener('visibilitychange', ()=>{
+      if(doc.hidden || !_AQ.user || !SB_CONFIGURED) return;
+      const hadAccess = aqHasAccess();
+      aqRefreshSub().then(()=>{
+        initAuthNav();
+        if(!hadAccess && aqHasAccess()){
+          if(typeof closePaywall==='function') closePaywall();
+          toast(pt('active'));
+          if(typeof renderStep==='function' && ST && ST.step) renderStep();
+        } else if(typeof renderPaywall==='function'){
+          renderPaywall();
+        }
+      });
+    });
   }catch(e){ console.warn('[AQ] hydrate error', e); }
   _AQ.hydrated = true;
   if(_AQ.user) aqMaybeMigrate();

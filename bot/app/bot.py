@@ -12,7 +12,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
-from .config import require_token, SB_CONFIGURED, ADMIN_CHAT_ID
+from .config import require_token, SB_CONFIGURED, ADMIN_CHAT_ID, PAYWALL
 from . import storage
 from . import supabase_db as _sb
 from . import keyboards as K
@@ -196,6 +196,13 @@ async def _review_reminder_loop(bot: Bot):
 
 async def main():
     token = require_token()
+    if PAYWALL and not SB_CONFIGURED:
+        log.error(
+            "ВНИМАНИЕ: PAYWALL=1, но SUPABASE_SERVICE_KEY не задан — подтверждённые "
+            "оплаты НЕ будут синхронизированы с сайтом (см. review.py/cmd_grant, "
+            "которые теперь отказывают в тихой локальной активации). Задайте "
+            "SUPABASE_SERVICE_KEY в переменных окружения деплоя перед приёмом платежей."
+        )
     storage.init_db()
     storage.seed_promos()
     bot = _make_bot(token)

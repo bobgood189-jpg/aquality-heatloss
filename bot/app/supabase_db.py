@@ -32,6 +32,12 @@ async def _rpc(fn: str, payload: dict) -> Optional[dict]:
             if r.status_code == 200:
                 return r.json()
             log.warning("rpc %s → %s %s", fn, r.status_code, r.text[:300])
+            # Surface the actual HTTP status instead of collapsing everything into a
+            # generic "rpc_error" — callers do `res or {"ok": False, "reason": "rpc_error"}",
+            # and this dict is truthy, so it flows straight through as the real reason
+            # (e.g. "http_300" for an ambiguous overloaded RPC name, "http_401" for a
+            # bad/rotated service key, "http_404" for a function PostgREST can't see).
+            return {"ok": False, "reason": f"http_{r.status_code}"}
     except Exception as e:
         log.error("rpc %s error: %s", fn, e)
     return None
