@@ -393,8 +393,8 @@ async function aqHydrate(){
     // вкладка была открыта в фоне — без этого пришлось бы жать F5 (см. H5 в
     // docs/fix-tg-sub-sync-prompt.md). onAuthStateChange одного тут не хватает:
     // TOKEN_REFRESHED тикает по своему таймеру, а не при возврате на вкладку.
-    doc.addEventListener('visibilitychange', ()=>{
-      if(doc.hidden || !_AQ.user || !SB_CONFIGURED) return;
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden || !_AQ.user || !SB_CONFIGURED) return;
       const hadAccess = aqHasAccess();
       aqRefreshSub().then(()=>{
         initAuthNav();

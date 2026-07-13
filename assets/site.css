@@ -437,9 +437,30 @@ section.bg-w900{
 /* Calculator needs more opacity for dense content readability.
    No border-top here: unlike other .bg-w900 sections (which sit on the
    plain page background), this one overlaps the section above via
-   negative margin — a hard border-top there reads as an ugly seam. */
+   negative margin — a hard border-top there reads as an ugly seam.
+   (The border-top:none below actually enforces that — .bg-w900's own
+   border-top is a different property than background, so the !important
+   background override alone never removed it; this is the fix.)
+   In its place: a soft gradient fade over the rounded top corner, so the
+   overlap blends instead of cutting sharply. Corners are matched to
+   rounded-t-[2rem] directly on the pseudo-element rather than clipping the
+   section with overflow:hidden, which would break #live-panel's lg:sticky. */
 section#calculator{
   background: rgba(10,14,28,.54) !important;
+  border-top: none;
+}
+section#calculator::before{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6rem;
+  border-top-left-radius: 2rem;
+  border-top-right-radius: 2rem;
+  background: linear-gradient(to bottom, rgba(7,9,15,.4), rgba(7,9,15,0));
+  pointer-events: none;
+}
+[data-theme="light"] section#calculator::before{
+  background: linear-gradient(to bottom, rgba(255,255,255,.3), rgba(255,255,255,0));
 }
 /* Phase 7: Section reveal animation */
 /* Скрытие до reveal — ТОЛЬКО при html.anim-ready (ставит initSectReveal в app.js).
@@ -1533,9 +1554,10 @@ html.webgl-on #shader-bg{opacity:.72}
 .kb-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(140,165,210,.06)}
 .kb-row:last-child{border-bottom:none}
 .kb-key{display:inline-flex;align-items:center;justify-content:center;padding:2px 8px;border-radius:6px;background:rgba(140,165,210,.1);border:1px solid rgba(140,165,210,.2);font-family:'JetBrains Mono',monospace;font-size:11px;color:#C5D0E8;min-width:28px}
-/* ══════ Back to Top Button ══════ */
-#btn-top{position:fixed;right:16px;bottom:80px;width:42px;height:42px;border-radius:50%;background:rgba(11,15,26,.92);border:1px solid rgba(245,158,11,.3);color:#f59e0b;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:7999;opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s,box-shadow .2s;box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:none}
-#btn-top.show{opacity:1;transform:translateY(0);pointer-events:auto}
+/* ══════ Back to Top Button — теперь часть #floating-actions (справа от
+   WhatsApp), а не отдельная плавающая кнопка над ними ══════ */
+#btn-top{width:0;height:42px;border-radius:50%;background:rgba(11,15,26,.92);border:1px solid rgba(245,158,11,.3);color:#f59e0b;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;opacity:0;transform:scale(.5);transition:opacity .3s,transform .3s,box-shadow .2s,width .3s;box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:none}
+#btn-top.show{width:42px;opacity:1;transform:scale(1);pointer-events:auto}
 #btn-top:hover{box-shadow:0 4px 20px rgba(245,158,11,.35);border-color:rgba(245,158,11,.6)}
 [data-theme="light"] #btn-top{background:rgba(248,252,255,.95);border-color:rgba(245,158,11,.4)}
 /* ══════ Demo Banner ══════ */

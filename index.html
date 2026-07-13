@@ -223,11 +223,6 @@ html.tier-low .thermal-path-bg{display:none!important}
   </div>
 </div>
 
-<!-- Back to top button -->
-<button id="btn-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх" title="Наверх">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="18 15 12 9 6 15"/></svg>
-</button>
-
 <!-- Demo mode banner (shown when viewing demo without auth) -->
 <div id="demo-banner">
   <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" width="16" height="16" class="flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -806,8 +801,12 @@ html.tier-low .thermal-path-bg{display:none!important}
   </div>
 </footer>
 
-<!-- ═══════ FLOATING ACTIONS (подписка слева + WhatsApp справа) ═══════ -->
+<!-- ═══════ FLOATING ACTIONS (подписка слева, WhatsApp, наверх справа) ═══════ -->
 <div id="floating-actions">
+<!-- Первый в разметке = крайний справа при flex-direction:row-reverse ниже -->
+<button id="btn-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх" title="Наверх">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
 <a id="floating-wa" href="https://wa.me/998772941555?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%BF%D1%80%D0%BE%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%BF%D0%BE%20%D0%BE%D1%82%D0%BE%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D1%8E." target="_blank" rel="noopener" aria-label="Написать в WhatsApp">
   <span class="wa-pulse" aria-hidden="true"></span>
   <span class="wa-pulse wa-pulse-2" aria-hidden="true"></span>
