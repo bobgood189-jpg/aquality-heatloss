@@ -7216,6 +7216,8 @@ const _i18n = {
     'mat-create-in-ws':'Создать в Мастерской','mat-mine-empty':'Пока пусто — создайте свой материал в Мастерской','sr-pick-title':'Выберите материал',
     'sr-floors-title':'Этажи и подвал','sr-add-floor':'Добавить этаж','sr-add-basement':'Добавить подвал','sr-floor-lbl':'Этаж','sr-floor-empty':'На этом этаже пока нет комнат','sr-basement-word':'подвал','sr-floor-remove':'Удалить этаж','sr-basement-remove':'Убрать подвал','sr-basement-t-title':'Расчётная температура подвала',
     'sr-dir-lbl':'Сторона света','sr-dir-none':'не задано','sr-height-tip':'Надбавка на высоту >4 м (СНиП): +2% за метр, максимум +15%',
+    'sr-room-dims':'Размеры комнаты Д×Ш, м','sr-room-dims-hint':'Нужны для объёма (инфильтрация), если полы не введены','sr-vol-warn':'Объём не задан — инфильтрация не считается. Введите пол или размеры комнаты.',
+    'sr-vent-nat':'естеств.','sr-vent-mech':'механ.','sr-vent-hrv':'рекуп.','sr-set-airtight':'Герметичность','sr-set-vent':'Вентиляция','sr-hrv-eff':'КПД','sr-by-type':'По конструкциям',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -7774,6 +7776,8 @@ const _i18n = {
     'mat-create-in-ws':"Ustaxonada yaratish",'mat-mine-empty':"Hozircha bo'sh — Ustaxonada o'z materialingizni yarating",'sr-pick-title':"Material tanlang",
     'sr-floors-title':"Qavatlar va yerto'la",'sr-add-floor':"Qavat qo'shish",'sr-add-basement':"Yerto'la qo'shish",'sr-floor-lbl':"Qavat",'sr-floor-empty':"Bu qavatda hozircha xona yo'q",'sr-basement-word':"yerto'la",'sr-floor-remove':"Qavatni o'chirish",'sr-basement-remove':"Yerto'lani olib tashlash",'sr-basement-t-title':"Yerto'laning hisobiy harorati",
     'sr-dir-lbl':"Dunyo tomoni",'sr-dir-none':"belgilanmagan",'sr-height-tip':"Balandlik >4 m uchun ustama (SNiP): metriga +2%, maksimum +15%",
+    'sr-room-dims':"Xona o'lchami U×K, m",'sr-room-dims-hint':"Hajm uchun kerak (infiltratsiya), agar pollar kiritilmagan bo'lsa",'sr-vol-warn':"Hajm berilmagan — infiltratsiya hisoblanmaydi. Pol yoki xona o'lchamini kiriting.",
+    'sr-vent-nat':"tabiiy",'sr-vent-mech':"mexanik",'sr-vent-hrv':"rekup.",'sr-set-airtight':"Germetiklik",'sr-set-vent':"Ventilyatsiya",'sr-hrv-eff':"FIK",'sr-by-type':"Konstruksiyalar bo'yicha",
     'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
     'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
     'simple-attic-lbl':"Cherdak / tom",
@@ -8356,6 +8360,8 @@ const _i18n = {
     'mat-create-in-ws':'Create in Workshop','mat-mine-empty':'Empty for now — create your material in the Workshop','sr-pick-title':'Choose a material',
     'sr-floors-title':'Floors & basement','sr-add-floor':'Add floor','sr-add-basement':'Add basement','sr-floor-lbl':'Floor','sr-floor-empty':'No rooms on this floor yet','sr-basement-word':'basement','sr-floor-remove':'Remove floor','sr-basement-remove':'Remove basement','sr-basement-t-title':'Basement design temperature',
     'sr-dir-lbl':'Orientation','sr-dir-none':'not set','sr-height-tip':'Height surcharge >4 m (SNiP): +2%/m, max +15%',
+    'sr-room-dims':'Room size L×W, m','sr-room-dims-hint':'Needed for volume (infiltration) when no floors are entered','sr-vol-warn':'Volume not set — infiltration is not computed. Enter a floor or the room size.',
+    'sr-vent-nat':'natural','sr-vent-mech':'mech.','sr-vent-hrv':'HRV','sr-set-airtight':'Airtightness','sr-set-vent':'Ventilation','sr-hrv-eff':'Eff.','sr-by-type':'By component',
     'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
     'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
     'simple-attic-lbl':'Attic / roof',
@@ -9402,6 +9408,32 @@ function runSelfTest(){
       const rMax=34/calcLayerR([{name:'Кирпич',lambda:0.7,thick:380},{name:'Минвата',lambda:0.045,thick:100}],'wall');
       return rPro>0 && Math.abs(rPro-rMax)<0.5;   // S=1, cornerK=1, hs=0 при H=2.7
     })(), 'слои ПРО == слои МАКС');
+    /* ── Фаза 5: инфильтрация в ПРО ── */
+    ok('Ф5.1 инфильтрация от габаритов комнаты (без введённых полов)', (()=>{
+      const sv=ST.ventMode, sa=ST.airtight; ST.ventMode='natural'; ST.airtight='normal';
+      const room={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:5,width:4,
+        walls:[{length:5,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],floors:[],ceilings:[]};
+      const inf=computeSimpleRoom(room,-14).breakdown.infil;
+      const inf0=computeSimpleRoom({...room,length:0,width:0},-14).breakdown.infil;   // без габаритов и полов → 0
+      ST.ventMode=sv; ST.airtight=sa;
+      return inf>300 && inf<900 && inf0===0;
+    })(), 'габариты 5×4×2.7 → V>0; без объёма → 0 (совместимость)');
+    ok('Ф5.1 рекуператор заметно уменьшает инфильтрацию', (()=>{
+      const sv=ST.ventMode, se=ST.hrvEff;
+      const room={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:5,width:4,
+        walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+      ST.ventMode='natural'; const nat=computeSimpleRoom(room,-14).breakdown.infil;
+      ST.ventMode='hrv'; ST.hrvEff=0.75; const hrv=computeSimpleRoom(room,-14).breakdown.infil;
+      ST.ventMode=sv; ST.hrvEff=se;
+      return nat>0 && hrv>0 && hrv<nat*0.3;   // рекуператор + режим нормы → сильное снижение
+    })(), 'HRV 75% снижает инфильтрацию в разы');
+    ok('Ф5.1 площадь комнаты = сумма полов, иначе габариты', (()=>{
+      const withFloor={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:9,width:9,
+        walls:[],windows:[],doors:[],floors:[{length:5,width:4}],ceilings:[]};
+      const noFloor ={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:5,width:4,
+        walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+      return Math.abs(computeSimpleRoom(withFloor,-14).area-20)<1e-9 && Math.abs(computeSimpleRoom(noFloor,-14).area-20)<1e-9;
+    })(), 'полы (5×4) приоритетнее габаритов; иначе Д×Ш');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -10112,6 +10144,12 @@ function sfRemoveBasement(){
 function sfSetBasementT(v){ if(ST.simpleBasement){ ST.simpleBasement.tExt=+v; srResults(); } }
 function sfSetBasementName(v){ if(ST.simpleBasement){ ST.simpleBasement.name=v; srResults(); } }
 function srSetRoomFloor(i,fid){ const r=ST.simpleRooms[i]; if(!r) return; r.floorId=fid; _srFocusRoom=i; srRerender(); }
+function srSetRoomDim(i,field,val){ const r=ST.simpleRooms[i]; if(!r) return; r[field]=Math.max(0,parseFloat(val)||0); srResults(); }
+/* Ф5.1: объём комнаты задан? (для инфильтрации) — есть введённые полы ИЛИ габариты Д×Ш */
+function _srRoomHasVolume(r){
+  const fa=(r&&r.floors||[]).reduce((s,f)=>s+((f.length||0)*(f.width||0)),0);
+  return fa>0 || ((r&&r.length||0)>0 && (r&&r.width||0)>0);
+}
 /* Панель управления этажами/подвалом ПРО (упрощённая копия s3) */
 function _sfPanel(){
   _ensureSimpleFloors();
@@ -10706,6 +10744,16 @@ function simpleRoomsEditorInner(){
           ${floorSel}
         </div>
 
+        <div>
+          <label class="block text-[11px] text-muted mb-1">${t('sr-room-dims')} <span class="text-muted/70 font-normal">${t('simple-opt-lbl')}</span></label>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="0" step="0.1" placeholder="${t('simple-len')}" value="${r.length||''}" oninput="srSetRoomDim(${i},'length',this.value)" onchange="srRerender()">
+            <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="0" step="0.1" placeholder="${t('simple-wid')}" value="${r.width||''}" oninput="srSetRoomDim(${i},'width',this.value)" onchange="srRerender()">
+          </div>
+          <p class="text-[10px] text-muted mt-1">${t('sr-room-dims-hint')}</p>
+          ${(comp.walls && !_srRoomHasVolume(r))?`<p class="text-[10px] text-amber mt-1">⚠️ ${t('sr-vol-warn')}</p>`:''}
+        </div>
+
         <div class="space-y-3 pt-1">
           ${SR_SECTIONS.map(cfg=>section(i,r,cfg)).join('')}
         </div>
@@ -10741,11 +10789,18 @@ function simpleRoomsEditorInner(){
    (герметичность, режим, λ, трубы, тип отопления) + покомнатный редактор,
    где материалы задаются у каждой поверхности. Бывший отдельный «Шаг
    материалов» распущен внутрь комнат — как в @Santexprog_bot. */
+/* Ф5.2: краткая сводка герметичности/вентиляции — видна в шапке свёрнутых настроек */
+function _srSettingsSummary(){
+  const at=AIRTIGHT[ST.airtight]||AIRTIGHT.normal;
+  const vm=ST.ventMode||'natural';
+  const ventShort = vm==='hrv'?(t('sr-vent-hrv')+' '+Math.round(hrvEff()*100)+'%') : vm==='mech'?t('sr-vent-mech') : t('sr-vent-nat');
+  return sxEsc(_pick(at,'name','nameUz','nameEn'))+' · '+at.ach+' 1/ч · '+ventShort;
+}
 function sSimpleRooms(){
   return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
   <p class="text-sm text-muted mb-4">${t('simple-step-enter-sub')}</p>
   <details class="help mb-5">
-    <summary>${t('simple-gen-settings')}</summary>
+    <summary>${t('simple-gen-settings')} <span class="text-[10px] font-normal" style="color:rgba(245,158,11,.85)">· ${_srSettingsSummary()}</span></summary>
     <div class="help-body pt-4">
       <button onclick="openWorkshop()" class="tool-btn mb-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t('workshop-btn')}</button>
       ${objectParamsBlock()}
@@ -10859,12 +10914,15 @@ function computeSimpleRoom(r,tExt,isBasement){
     const n=(cp.flat)?1:(ATTIC[cl.attic]||ATTIC.closed).n;  /* C1: без чердака → n=1 */
     if(R>0&&dTout>0) bd.ceiling+=(dTout/R)*S*n;
   }
-  // ── Инфильтрация (объём = площадь пола × высота) ──
-  const V=floorArea*H, rho=(1.293*273)/(273+tExt);
+  // ── Инфильтрация (объём = площадь комнаты × высота) ──
+  //   Ф5.1: площадь = сумма введённых полов, иначе габариты комнаты Д×Ш (не зависеть
+  //   от полов — комната среднего этажа без полов тоже считается). Без полов и габаритов → V=0.
+  const effArea = floorArea>0 ? floorArea : ((r.length||0)*(r.width||0));
+  const V=effArea*H, rho=(1.293*273)/(273+tExt);
   if(V>0&&dTout>0) bd.infil=0.28*1.005*V*rho*dTout*ventAchFor(r.typeId)*ventFactor();
 
   const qW=Object.values(bd).reduce((s,v)=>s+v,0);
-  const area=floorArea;
+  const area=effArea;
   return {area,qW,breakdown:bd,sections:Math.ceil((qW*1.15)/sectionWatt(tInt))};
 }
 
@@ -19509,6 +19567,10 @@ function sxRenderPage(){
   else if(SW.page==='engineering'){ host.innerHTML=sxEngineeringPage(); try{ if(typeof initEngineeringModules==='function') setTimeout(initEngineeringModules,60); }catch(e){} }
   if(SW.page==='heat') sxRenderResults();
 }
+/* Ф5.2: герметичность/вентиляция прямо в воркспейсе */
+function sxSetAirtight(id){ if(AIRTIGHT[id]) ST.airtight=id; sxRenderPage(); }
+function sxSetVent(id){ ST.ventMode=(id==='mech'||id==='hrv')?id:'natural'; sxRenderPage(); }
+function sxSetHrv(pct){ ST.hrvEff=Math.max(0.4,Math.min(0.95,(+pct||75)/100)); try{ sxRenderResults(); }catch(e){} }
 
 /* ── PAGE: heat loss (reuses room editor) ── */
 function sxHeatPage(){
@@ -19523,6 +19585,23 @@ function sxHeatPage(){
           <div><label style="font-size:11px;color:#8ea0bd;display:block;margin-bottom:5px">${sxt('extT')}</label>
             <input type="number" class="sx-input" value="${ST.tExt!=null?ST.tExt:-14}" onchange="ST.tExt=parseFloat(this.value)||0;srResults()"></div>
         </div>
+        <div style="margin-top:14px">
+          <label style="font-size:11px;color:#8ea0bd;display:block;margin-bottom:6px">${t('sr-set-airtight')}</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${Object.entries(AIRTIGHT).map(([id,o])=>{const on=ST.airtight===id;return `<button type="button" onclick="sxSetAirtight('${id}')" style="font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;border:1px solid ${on?'rgba(245,181,68,.6)':'rgba(255,255,255,.12)'};background:${on?'rgba(245,181,68,.14)':'rgba(255,255,255,.03)'};color:${on?'#f5b544':'#c8d4e6'}">${sxEsc(_pick(o,'name','nameUz','nameEn'))} · ${o.ach} 1/ч</button>`;}).join('')}
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <label style="font-size:11px;color:#8ea0bd;display:block;margin-bottom:6px">${t('sr-set-vent')}</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${[['natural',t('sr-vent-nat')],['mech',t('sr-vent-mech')],['hrv',t('sr-vent-hrv')]].map(([id,lbl])=>{const on=(ST.ventMode||'natural')===id;return `<button type="button" onclick="sxSetVent('${id}')" style="font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;border:1px solid ${on?'rgba(91,224,160,.5)':'rgba(255,255,255,.12)'};background:${on?'rgba(91,224,160,.12)':'rgba(255,255,255,.03)'};color:${on?'#5be0a0':'#c8d4e6'}">${lbl}</button>`;}).join('')}
+          </div>
+          ${(ST.ventMode==='hrv')?`<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:#8ea0bd">${t('sr-hrv-eff')}</span>
+            <input type="range" min="60" max="90" step="5" value="${Math.round(hrvEff()*100)}" oninput="sxSetHrv(this.value)" style="width:140px">
+            <span style="font-size:12px;color:#f5b544;font-weight:700">${Math.round(hrvEff()*100)}%</span>
+          </div>`:''}
+        </div>
       </div>
       ${simpleRoomsEditorHTML()}
     </div>
@@ -19534,10 +19613,16 @@ function sxRenderResults(){
   let res=null; try{ res=computeSimple(); }catch(e){}
   if(!res){ host.innerHTML=`<div class="sx-card">${sxt('addFirst')}</div>`; return; }
   const gasDay=(res.totalKw*24/8.4);
-  const rows=(res.floors&&res.floors[0]&&res.floors[0].rooms||[]).map(r=>`
+  const allRooms=(res.floors||[]).flatMap(f=>f.rooms||[]);   // Ф3: все этажи, не только первый
+  const rows=allRooms.map(r=>`
     <tr><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.area||0).toFixed(1)}</td><td class="mono" style="text-align:right;color:#f5b544">${Math.round(r.qW||0)}</td></tr>`).join('');
-  const incompl=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)})).filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));
-  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ')).replace('{what}',[incompl.some(x=>!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
+  const incompl=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r),e:_srFloorExpectations(r.floorId)})).filter(x=>x.c.walls&&((x.e.floor&&!x.c.floor)||(x.e.ceiling&&!x.c.ceiling)));
+  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ')).replace('{what}',[incompl.some(x=>x.e.floor&&!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>x.e.ceiling&&!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
+  /* Ф5.2: мини-разбивка по конструкциям (в т.ч. инфильтрация) с процентами */
+  const _infLbl = ST.ventMode==='hrv'?(t('col-component-infil')+' ('+t('sr-vent-hrv')+' '+Math.round(hrvEff()*100)+'%)') : ST.ventMode==='mech'?(t('sr-set-vent')+' ('+t('sr-vent-mech')+')') : t('col-component-infil');
+  const BT=[['wall',t('col-component-wall')],['window',t('col-component-window')],['door',t('col-component-door')],['floor',t('col-component-floor')],['ceiling',t('col-component-ceiling')],['infil',_infLbl]];
+  const bt=res.byType||{}, sumW=res.totalW||1;
+  const btRows=BT.filter(([k])=>(bt[k]||0)>0).map(([k,lbl])=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:#c8d4e6">${lbl}</span><span class="mono" style="color:#8ea0bd">${Math.round(bt[k])} Вт · ${Math.round(bt[k]/sumW*100)}%</span></div>`).join('');
   host.innerHTML=`
     <div class="sx-card">
       <div class="sx-res-hd"><svg viewBox="0 0 24 24" fill="none" stroke="#5be0a0" stroke-width="2" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>${sxt('results')}</div>
@@ -19550,6 +19635,7 @@ function sxRenderResults(){
         <div class="sx-mini"><div style="font-size:11px;color:#8ea0bd">${sxt('boiler')}</div><div class="sx-num" style="font-weight:700;font-size:17px">${(res.boilerKw).toFixed(1)} kW</div></div>
         <div class="sx-mini"><div style="font-size:11px;color:#8ea0bd">${sxt('gasDay')}</div><div class="sx-num" style="font-weight:700;font-size:17px">${gasDay.toFixed(1)} m³</div></div>
       </div>
+      ${btRows?`<div style="font-size:11px;color:#6a7b9e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${t('sr-by-type')||'По конструкциям'}</div><div style="margin-bottom:12px">${btRows}</div>`:''}
       <div style="font-size:11px;color:#6a7b9e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${sxt('perRoom')}</div>
       <table class="sx-tbl"><thead><tr><th>${sxt('room')}</th><th style="text-align:right">${sxt('area')}</th><th style="text-align:right">${sxt('q')}</th></tr></thead><tbody>${rows}</tbody></table>
     </div>`;
@@ -19560,7 +19646,7 @@ function sxReportPage(){
   let res=null; try{ res=computeSimple(); }catch(e){}
   if(!res) return `<div class="sx-page-h">${sxt('pReport')}</div><div class="sx-card">${sxt('addFirst')}</div>`;
   const gasDay=(res.totalKw*24/8.4);
-  const rooms=(res.floors[0].rooms||[]);
+  const rooms=(res.floors||[]).flatMap(f=>f.rooms||[]);   // Ф3: все этажи
   const rows=rooms.map((r,i)=>{
     const b=r.breakdown||{};
     return `<tr><td>${i+1}</td><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.tInt||20)}</td>
