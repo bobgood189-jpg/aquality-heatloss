@@ -4809,11 +4809,11 @@ function _wsRunCompare(){
   el.innerHTML = `<div class="space-y-2 mt-2">
     ${picked.map(p=>`
       <div class="rounded-xl border border-sand/10 bg-sand/3 p-3">
-        <div class="flex justify-between mb-1"><span class="text-sm font-bold text-cream">${p.name}</span><span class="mono text-amber font-bold">R ${(p.r||0).toFixed(3)}</span></div>
+        <div class="flex justify-between mb-1"><span class="text-sm font-bold text-cream">${sxEsc(p.name)}</span><span class="mono text-amber font-bold">R ${(p.r||0).toFixed(3)}</span></div>
         <div class="rounded-full overflow-hidden h-2" style="background:rgba(255,255,255,.08)">
           <div class="h-full rounded-full" style="width:${Math.round((p.r||0)/maxR*100)}%;background:var(--aq-accent)"></div>
         </div>
-        <p class="text-xs text-muted mt-1">${p.desc||''}</p>
+        <p class="text-xs text-muted mt-1">${sxEsc(p.desc||'')}</p>
       </div>`).join('')}
   </div>`;
 }
@@ -6339,6 +6339,22 @@ function _presetOptsList(cat,curId){
   if(curId&&!list.some(p=>p.id===curId)){ const c=findPreset(cat,curId); if(c) list=[c,...list]; }
   return list;
 }
+/* Опции <select> с папками-optgroup: 🛠 Мои → ⭐ Популярно → 📁 Каталог (встроенные).
+   Единый вид для всех селектов материалов (ПРО, проёмы мини-Ревита, стена). */
+function _matOptGroups(cat,curId){
+  const list=_presetOptsList(cat,curId);
+  const custom=list.filter(p=>p.custom);
+  const builtin=list.filter(p=>!p.custom);
+  const popSet=new Set((typeof POPULAR_UZ!=='undefined'&&POPULAR_UZ[cat])||[]);
+  const popular=builtin.filter(p=>popSet.has(p.id));
+  const rest=builtin.filter(p=>!popSet.has(p.id));
+  const opt=p=>`<option value="${p.id}" ${p.id===curId?'selected':''}>${sxEsc(p.name)} (R ${(p.r||0).toFixed(2)})</option>`;
+  let html='';
+  if(custom.length)  html+=`<optgroup label="🛠 ${t('mat-folder-mine')}">${custom.map(opt).join('')}</optgroup>`;
+  if(popular.length) html+=`<optgroup label="⭐ ${t('mat-folder-popular')}">${popular.map(opt).join('')}</optgroup>`;
+  if(rest.length)    html+=`<optgroup label="📁 ${t('mat-folder-catalog')}">${rest.map(opt).join('')}</optgroup>`;
+  return html;
+}
 const _MAT_ID_KEYS={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
 /* Перерисовать всё, что зависит от каталога (после скрытия/возврата пресета) */
 function _afterCatalogChange(){
@@ -6403,8 +6419,8 @@ function renderCard(p, fn, currentId, isWall, view){
     return `<div onclick="${fn}('${p.id}')" class="pcard pcard-compact text-left relative ${activeCls}" style="cursor:pointer">
       <div class="flex items-center gap-2">
         <div class="flex-1 min-w-0">
-          <p class="font-medium text-cream text-xs leading-tight truncate">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber">★</span>':''}</p>
-          ${p.desc?`<p class="text-[10px] text-muted truncate">${p.desc}</p>`:''}
+          <p class="font-medium text-cream text-xs leading-tight truncate">${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber">★</span>':''}</p>
+          ${p.desc?`<p class="text-[10px] text-muted truncate">${sxEsc(p.desc)}</p>`:''}
         </div>
         <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20 flex-shrink-0">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
@@ -6418,26 +6434,26 @@ function renderCard(p, fn, currentId, isWall, view){
         <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
       </div>
-      <p class="font-semibold text-cream text-xs leading-snug">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber text-[9px] ml-0.5">★</span>':''}</p>
-      ${p.desc?`<p class="text-[10px] text-muted mt-0.5 leading-tight" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.desc}</p>`:''}
+      <p class="font-semibold text-cream text-xs leading-snug">${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber text-[9px] ml-0.5">★</span>':''}</p>
+      ${p.desc?`<p class="text-[10px] text-muted mt-0.5 leading-tight" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${sxEsc(p.desc)}</p>`:''}
     </div>`;
   }
 
   // list view (full card)
   const uVal  = p.u!=null ? p.u : (p.r>0 ? Math.round((1/p.r)*100)/100 : null);
   const chips = [];
-  if(p.brand) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-sky-900/40 text-sky-300 border border-sky-700/30">${p.brand}</span>`);
+  if(p.brand) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-sky-900/40 text-sky-300 border border-sky-700/30">${sxEsc(p.brand)}</span>`);
   if(p.thickness) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-w800/60 text-muted border border-white/10">${p.thickness}мм</span>`);
   return `<div onclick="${fn}('${p.id}')" class="pcard text-left relative ${activeCls}" style="cursor:pointer">
     <div class="flex items-start justify-between gap-1">
-      <p class="font-semibold text-cream text-sm leading-snug flex-1">${p.name}${p.custom?' <span class="chip ml-1">своё</span>':''}${p.recommended?' <span class="inline-block px-1 py-0 rounded text-[10px] bg-amber/15 text-amber border border-amber/30 ml-1">★ Рекомендуем</span>':''}</p>
+      <p class="font-semibold text-cream text-sm leading-snug flex-1">${sxEsc(p.name)}${p.custom?' <span class="chip ml-1">своё</span>':''}${p.recommended?' <span class="inline-block px-1 py-0 rounded text-[10px] bg-amber/15 text-amber border border-amber/30 ml-1">★ Рекомендуем</span>':''}</p>
       <div class="flex items-center gap-1 flex-shrink-0">
         <span class="rounded-md bg-w900 px-2 py-0.5 mono text-xs text-amber border border-amber/20">R ${rEff!=null?rEff.toFixed(3):p.r.toFixed(3)}</span>
         ${menuBtn}
       </div>
     </div>
     ${chips.length?`<div class="flex gap-1 mt-1 flex-wrap">${chips.join('')}</div>`:''}
-    <p class="text-xs text-muted mt-1">${p.desc||''}</p>
+    <p class="text-xs text-muted mt-1">${sxEsc(p.desc||'')}</p>
     ${lv!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">λ = ${lv} Вт/(м·°C)</p>`:''}
     ${p.u!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">U = ${uVal} Вт/(м²·°C)</p>`:''}
     ${isWall&&p.homog!=null?`<p class="text-xs text-muted/60 mt-0.5 mono">номин. R ${p.r.toFixed(3)} × r₀ ${p.homog}</p>`:''}
@@ -6517,11 +6533,32 @@ function pcardDelete(id, cat){
   toast(t('mat-deleted-toast'));
 }
 
-function toggleGrp(cat, grp){
-  const key = cat+'|'+grp;
-  _grpOpen[key] = (_grpOpen[key]===false) ? true : false;
+/* Явно задать состояние папки/группы (val передаётся из разметки как !текущее —
+   без «двух кликов», в отличие от прежнего toggleGrp). */
+function setGrpOpen(cat, grp, val){
+  _grpOpen[cat+'|'+grp] = !!val;
   const el = document.getElementById('matgrid-'+cat);
   if(el) el.innerHTML = renderMatCards(cat);
+}
+function toggleGrp(cat, grp){   /* совместимость: инвертируем текущее эффективное значение */
+  setGrpOpen(cat, grp, !(_grpOpen[cat+'|'+grp]===true));
+}
+/* Шапка сворачиваемой папки каталога (Мои / Каталог). isMine → фиолетовый акцент. */
+function _matFolderHtml(cat, gkey, label, count, hasActive, open, inner, isMine){
+  const tint = isMine ? '192,132,252' : '245,158,11';
+  const hdrStyle = hasActive ? `background:rgba(${tint},.12);border-color:rgba(${tint},.32)` : '';
+  return `<div class="mb-1.5">
+    <button type="button" onclick="setGrpOpen('${cat}','${gkey}',${open?'false':'true'})"
+      class="w-full flex items-center justify-between px-3 py-2 rounded-xl mb-1 border transition-colors ${hasActive?'':'bg-w900/60 border-w800/40 hover:border-w800/70'}" style="${hdrStyle}">
+      <span class="text-xs font-semibold uppercase tracking-wide" style="color:${isMine?'#d8b4fe':'rgba(226,215,190,.92)'}">${label}</span>
+      <span class="flex items-center gap-2 flex-shrink-0">
+        ${hasActive?`<span class="w-1.5 h-1.5 rounded-full inline-block" style="background:rgb(${tint})"></span>`:''}
+        <span class="text-xs text-muted">${count}</span>
+        <svg class="w-3 h-3 text-muted transition-transform duration-150 ${open?'':'rotate-[-90deg]'}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    ${open?inner:''}
+  </div>`;
 }
 
 function renderMatCards(cat){
@@ -6552,34 +6589,17 @@ function renderMatCards(cat){
     if(!list.length) return viewBar + '<p class="text-xs text-muted py-3 text-center">Ничего не найдено</p>';
     return viewBar + `<div class="${gridCls}">${list.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`;
   }
-  // Popular block (Fergana oblast) — always open, not shown during search
+  // ── Разделяем: свои конструкции (Мастерская) ↕ встроенный каталог ──
+  const customList  = list.filter(p=>p.custom);
+  const builtinList = list.filter(p=>!p.custom);
   const popIds = POPULAR_UZ[cat]||[];
-  let popularHtml = '';
-  if(popIds.length){
-    const popItems = popIds.map(id=>list.find(p=>p.id===id)).filter(Boolean);
-    if(popItems.length){
-      popularHtml = `<div class="mb-2">
-        <div class="px-1 mb-1.5"><span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">⭐ Популярно в Ферганской обл.</span></div>
-        <div class="${gridCls}">${popItems.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>
-        <div class="border-b border-white/5 mt-2 mb-2"></div>
-      </div>`;
-    }
-  }
-  // Grouped accordion view
-  const grpMap={}, grpOrder=[];
-  list.forEach(p=>{
-    const g=p.group||'Прочее';
-    if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);}
-    grpMap[g].push(p);
-  });
 
-  return viewBar + popularHtml + grpOrder.map(grp=>{
-    const items=grpMap[grp];
+  // одна группа-аккордеон встроенного каталога (как раньше), но с явным setGrpOpen
+  const grpBlock = (grp, items)=>{
     const hasActive=items.some(p=>p.id===currentId);
-    const key=cat+'|'+grp;
-    const open=_grpOpen.hasOwnProperty(key) ? _grpOpen[key]===true : hasActive;
+    const open=_grpOpen.hasOwnProperty(cat+'|'+grp) ? _grpOpen[cat+'|'+grp]===true : hasActive;
     return `<div class="mb-1.5">
-      <button type="button" onclick="toggleGrp('${cat}','${grp}')"
+      <button type="button" onclick="setGrpOpen('${cat}','${grp}',${open?'false':'true'})"
         class="w-full flex items-center justify-between px-3 py-2 rounded-xl mb-1 border transition-colors
                ${hasActive?'bg-amber/10 border-amber/25':'bg-w900/60 border-w800/40 hover:border-w800/70'}">
         <span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">${grp}</span>
@@ -6591,7 +6611,38 @@ function renderMatCards(cat){
       </button>
       ${open?`<div class="${gridCls} pl-1">${items.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`:''}
     </div>`;
-  }).join('');
+  };
+
+  // ── Папка «Мои материалы» (свои конструкции) — сверху, открыта по умолчанию ──
+  const createBtn = `<button type="button" onclick="openWorkshop('${cat}')" class="w-full mt-1 rounded-xl border border-dashed py-2 text-xs font-semibold transition-colors" style="border-color:rgba(192,132,252,.4);background:rgba(192,132,252,.06);color:#c084fc" onmouseover="this.style.background='rgba(192,132,252,.12)'" onmouseout="this.style.background='rgba(192,132,252,.06)'">+ ${t('mat-create-in-ws')}</button>`;
+  const mineInner = (customList.length
+    ? `<div class="${gridCls} pl-1">${customList.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`
+    : `<p class="text-[11px] text-muted italic px-1 pb-1">${t('mat-mine-empty')}</p>`) + createBtn;
+  const mineActive = customList.some(p=>p.id===currentId);
+  const mineOpen = _grpOpen.hasOwnProperty(cat+'|__mine') ? _grpOpen[cat+'|__mine']===true : true;
+  const mineFolder = _matFolderHtml(cat,'__mine','🛠 '+t('mat-folder-mine'),customList.length,mineActive,mineOpen,mineInner,true);
+
+  // ── Популярно (как раньше, всегда открыто) ──
+  let popularHtml = '';
+  if(popIds.length){
+    const popItems = popIds.map(id=>builtinList.find(p=>p.id===id)).filter(Boolean);
+    if(popItems.length){
+      popularHtml = `<div class="mb-2">
+        <div class="px-1 mb-1.5"><span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">⭐ Популярно в Ферганской обл.</span></div>
+        <div class="${gridCls}">${popItems.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>
+      </div>`;
+    }
+  }
+
+  // ── Папка «Каталог материалов» (все встроенные, свёрнута; авто-открытие если выбран встроенный) ──
+  const grpMap={}, grpOrder=[];
+  builtinList.forEach(p=>{ const g=p.group||'Прочее'; if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);} grpMap[g].push(p); });
+  const catalogInner = `<div class="pl-1">${grpOrder.map(grp=>grpBlock(grp,grpMap[grp])).join('')}</div>`;
+  const catalogActive = builtinList.some(p=>p.id===currentId) && popIds.indexOf(currentId)<0;
+  const catalogOpen = _grpOpen.hasOwnProperty(cat+'|__catalog') ? _grpOpen[cat+'|__catalog']===true : catalogActive;
+  const catalogFolder = _matFolderHtml(cat,'__catalog','📁 '+t('mat-folder-catalog'),builtinList.length,catalogActive,catalogOpen,catalogInner,false);
+
+  return viewBar + mineFolder + popularHtml + catalogFolder;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -7161,6 +7212,8 @@ const _i18n = {
     'sr-save-mat':'Сохранить материал (имя + λ) в «Мои материалы»',
     'sr-open-workshop-tip':'Мастерская: создать конструкцию и сохранить в свой список','sr-workshop-short':'Мастерская',
     'sr-r-from-layers':'R из слоёв','sr-r-from-layers-tip':'R берётся из слоёв ниже — выбранный пресет не участвует',
+    'mat-folder-mine':'Мои материалы','mat-folder-catalog':'Каталог материалов','mat-folder-popular':'Популярно',
+    'mat-create-in-ws':'Создать в Мастерской','mat-mine-empty':'Пока пусто — создайте свой материал в Мастерской',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -7715,6 +7768,8 @@ const _i18n = {
     'sr-save-mat':"Materialni (nom + λ) «Mening materiallarim»ga saqlash",
     'sr-open-workshop-tip':"Ustaxona: konstruksiya yaratib, ro'yxatga saqlash",'sr-workshop-short':"Ustaxona",
     'sr-r-from-layers':"R qatlamlardan",'sr-r-from-layers-tip':"R quyidagi qatlamlardan olinadi — tanlangan preset qatnashmaydi",
+    'mat-folder-mine':"Mening materiallarim",'mat-folder-catalog':"Materiallar katalogi",'mat-folder-popular':"Ommabop",
+    'mat-create-in-ws':"Ustaxonada yaratish",'mat-mine-empty':"Hozircha bo'sh — Ustaxonada o'z materialingizni yarating",
     'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
     'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
     'simple-attic-lbl':"Cherdak / tom",
@@ -8293,6 +8348,8 @@ const _i18n = {
     'sr-save-mat':'Save material (name + λ) to “My materials”',
     'sr-open-workshop-tip':'Workshop: build a construction and save it to your list','sr-workshop-short':'Workshop',
     'sr-r-from-layers':'R from layers','sr-r-from-layers-tip':'R is taken from the layers below — the selected preset is not used',
+    'mat-folder-mine':'My materials','mat-folder-catalog':'Materials catalog','mat-folder-popular':'Popular',
+    'mat-create-in-ws':'Create in Workshop','mat-mine-empty':'Empty for now — create your material in the Workshop',
     'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
     'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
     'simple-attic-lbl':'Attic / roof',
@@ -9958,6 +10015,73 @@ function setSimpleRoomCount(n){
 
 /* --- Simple step helpers --- */
 let _srFocusRoom=0;
+/* ── ПРО: сворачиваемый пикер материала (замена нативного select — optgroup не
+   сворачивается). Открыт один пикер за раз (_srMatPick), состояние папок — в _grpOpen
+   под ключами 'srp|cat|...'. По умолчанию видна только «🛠 Мои материалы»; папка с
+   текущим выбором авто-раскрывается. ── */
+let _srMatPick=null;
+function srToggleMatPick(i,kind,ii){
+  const key=i+'|'+kind+'|'+ii;
+  _srMatPick=(_srMatPick===key)?null:key;
+  _srFocusRoom=i; srRerender();
+}
+function srPickMat(i,kind,ii,id){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii]; if(!it) return;
+  it.presetId=id; _srMatPick=null; _srFocusRoom=i; srRerender();
+}
+function srPickFolder(cat,gkey,open){ _grpOpen['srp|'+cat+'|'+gkey]=!!open; srRerender(); }
+function _srMatRow(i,kind,ii,p,curId){
+  const active=p.id===curId;
+  return `<button type="button" onclick="srPickMat(${i},'${kind}',${ii},'${p.id}')" class="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg text-left transition-colors ${active?'bg-amber/15':'hover:bg-white/5'}">
+    <span class="truncate text-xs ${active?'text-amber font-semibold':'text-cream'}">${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}</span>
+    <span class="mono text-[10px] flex-shrink-0 ${active?'text-amber':'text-muted'}">R ${(p.r||0).toFixed(2)}</span>
+  </button>`;
+}
+function _srMatFolderHdr(cat,gkey,icon,label,count,open,isMine){
+  return `<button type="button" onclick="srPickFolder('${cat}','${gkey}',${open?'false':'true'})" class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg mb-0.5 border border-white/5 bg-w800/40 hover:bg-white/5">
+    <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:${isMine?'#d8b4fe':'rgba(226,215,190,.85)'}">${icon?icon+' ':''}${label}</span>
+    <span class="flex items-center gap-1.5 text-muted"><span class="text-[10px]">${count}</span><svg class="w-3 h-3 transition-transform ${open?'':'rotate-[-90deg]'}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+  </button>`;
+}
+function _srMatPanel(i,kind,ii,cat,curId){
+  const list=_presetOptsList(cat,curId);
+  const custom=list.filter(p=>p.custom);
+  const builtin=list.filter(p=>!p.custom);
+  const popSet=new Set((typeof POPULAR_UZ!=='undefined'&&POPULAR_UZ[cat])||[]);
+  const popular=builtin.filter(p=>popSet.has(p.id));
+  const rest=builtin.filter(p=>!popSet.has(p.id));
+  const isOpen=(gk,def)=>{ const k='srp|'+cat+'|'+gk; return _grpOpen.hasOwnProperty(k)?_grpOpen[k]===true:def; };
+  const row=p=>_srMatRow(i,kind,ii,p,curId);
+
+  // 🛠 Мои — открыта по умолчанию
+  const mineOpen=isOpen('__mine',true);
+  const createBtn=`<button type="button" onclick="openWorkshop('${cat}')" class="w-full mt-0.5 rounded-lg border border-dashed py-1.5 text-[11px] font-semibold" style="border-color:rgba(192,132,252,.4);background:rgba(192,132,252,.06);color:#c084fc">+ ${t('mat-create-in-ws')}</button>`;
+  const mineBody=mineOpen?`<div class="pl-1 space-y-0.5 mb-1">${custom.length?custom.map(row).join(''):`<p class="text-[10px] text-muted italic px-1 py-0.5">${t('mat-mine-empty')}</p>`}${createBtn}</div>`:'';
+
+  // ⭐ Популярно — свёрнуто (авто-раскрытие, если выбран популярный)
+  const popOpen=popular.length?isOpen('__popular',popSet.has(curId)):false;
+  const popBody=popular.length&&popOpen?`<div class="pl-1 space-y-0.5 mb-1">${popular.map(row).join('')}</div>`:'';
+
+  // 📁 Каталог — свёрнуто; внутри группы (Кирпич/Газоблок…), авто-раскрытие группы с выбором
+  const catDef=builtin.some(p=>p.id===curId)&&!popSet.has(curId);
+  const catOpen=isOpen('__catalog',catDef);
+  let catBody='';
+  if(catOpen){
+    const grpMap={},grpOrder=[];
+    rest.forEach(p=>{ const g=p.group||'Прочее'; if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);} grpMap[g].push(p); });
+    catBody=`<div class="pl-1 mb-1">${grpOrder.map(g=>{
+      const gk='g__'+g;
+      const gOpen=isOpen(gk, grpMap[g].some(p=>p.id===curId));
+      return _srMatFolderHdr(cat,gk,'',g,grpMap[g].length,gOpen,false)+(gOpen?`<div class="pl-1 space-y-0.5 mb-0.5">${grpMap[g].map(row).join('')}</div>`:'');
+    }).join('')}</div>`;
+  }
+
+  return `<div id="sr-matpick-${i}-${kind}-${ii}" class="mt-1 rounded-xl border border-sand/15 bg-w900/95 p-2 overflow-y-auto" style="max-height:19rem" data-lenis-prevent>
+    ${_srMatFolderHdr(cat,'__mine','🛠',t('mat-folder-mine'),custom.length,mineOpen,true)}${mineBody}
+    ${popular.length?_srMatFolderHdr(cat,'__popular','⭐',t('mat-folder-popular'),popular.length,popOpen,false)+popBody:''}
+    ${_srMatFolderHdr(cat,'__catalog','📁',t('mat-folder-catalog'),rest.length,catOpen,false)}${catBody}
+  </div>`;
+}
 function srSetType(i,typeId){
   const rt=ROOM_TYPES.find(x=>x.id===typeId);
   const r=ST.simpleRooms[i]; if(!r) return;
@@ -10081,7 +10205,7 @@ const SR_SECTIONS = [
   {kind:'ceilings', color:'#fb923c', dims:'lw'},
 ];
 function _srMatOpts(cat,curId){
-  return _presetOptsList(cat,curId).map(p=>`<option value="${p.id}" ${p.id===curId?'selected':''}>${p.name} (R=${(p.r||0).toFixed(2)})</option>`).join('');
+  return _matOptGroups(cat,curId);
 }
 function _srItemArea(r,kind,it){
   if(kind==='ceilings'&&it.sameAsFloor){ const f=(r.floors||[])[0]; return f?(f.length||0)*(f.width||0):0; }
@@ -10240,9 +10364,22 @@ function simpleRoomsEditorInner(){
   const matFld=(i,kind,ii,cat,it)=>{
     const curId=it.presetId;
     const layered=_srItemR(kind,it)!=null;
+    const key=i+'|'+kind+'|'+ii;
+    const pickOpen=_srMatPick===key;
+    const cur=findPreset(cat,curId)||_presetOptsList(cat,curId)[0]||null;
+    const curName=cur?cur.name:'—';
+    const curR=cur?(cur.r||0).toFixed(2):'—';
+    /* окна/двери не имеют блока слоёв — даём кнопку Мастерской прямо у поля */
+    const wsBtn=(kind==='windows'||kind==='doors')?`<button type="button" onclick="openWorkshop('${cat}')" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:0 5px;margin-left:5px">🛠</button>`:'';
+    /* Сворачиваемый пикер вместо нативного select: у native <optgroup> нельзя
+       свернуть группы — поэтому кнопка текущего материала + инлайн-панель с папками. */
     return `
-    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-mat-lbl')}<span id="sr-rfl-${i}-${kind}-${ii}" class="${layered?'':'hidden'}" style="font-size:8px;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:3px;padding:0 4px;margin-left:4px;white-space:nowrap" title="${t('sr-r-from-layers-tip')}">${t('sr-r-from-layers')}</span></label>
-      <select id="sr-sel-${i}-${kind}-${ii}" class="wi py-1.5 text-sm" style="${layered?'opacity:.5':''}" title="${layered?t('sr-r-from-layers-tip'):''}" onchange="srSetItemStr(${i},'${kind}',${ii},'presetId',this.value)">${_srMatOpts(cat,curId)}</select></div>`;
+    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-mat-lbl')}<span id="sr-rfl-${i}-${kind}-${ii}" class="${layered?'':'hidden'}" style="font-size:8px;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:3px;padding:0 4px;margin-left:4px;white-space:nowrap" title="${t('sr-r-from-layers-tip')}">${t('sr-r-from-layers')}</span>${wsBtn}</label>
+      <button type="button" id="sr-sel-${i}-${kind}-${ii}" onclick="srToggleMatPick(${i},'${kind}',${ii})" class="wi py-1.5 text-sm w-full flex items-center justify-between gap-2 text-left" style="${layered?'opacity:.6':''}" title="${layered?t('sr-r-from-layers-tip'):t('simple-mat-lbl')}">
+        <span class="truncate">${sxEsc(curName)}</span>
+        <span class="flex items-center gap-1.5 flex-shrink-0"><span class="mono text-[11px] text-amber">R ${curR}</span><svg class="w-3 h-3 text-muted transition-transform ${pickOpen?'rotate-180':''}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </button>
+      ${pickOpen?_srMatPanel(i,kind,ii,cat,curId):''}</div>`;
   };
 
   const itemFields=(i,kind,it,ii,color)=>{
@@ -14103,7 +14240,7 @@ function buildWallMatsPanel(room){
       <label class="text-[10px] text-muted mb-1 block">Конструкция стены</label>
       <select class="wi mb-2 text-xs py-1.5" onchange="edSetEdgeMat('${room.id}',${sel},'preset',this.value)">
         <option value="">— Глобальный пресет этажа</option>
-        ${_presetOptsList('walls',selPreset).map(p=>`<option value="${p.id}" ${selPreset===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
+        ${_matOptGroups('walls',selPreset)}
         <option value="__manual" ${isManual?'selected':''}>✏ Ручной λ + толщина</option>
         <option value="__manualR" ${hasCustomR?'selected':''}>✏ Ручное R (готовое значение)</option>
         <option value="__layers" ${(hasLayersSel||em.layersMode)?'selected':''}>🧱 Многослойная конструкция (слои)</option>
@@ -14829,7 +14966,7 @@ function opRow(room,op,extSides){
       <button onclick="removeOpening('${room.id}','${op.id}')" class="text-muted hover:text-ember"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <select class="wi text-xs py-1" onchange="setOp('${room.id}','${op.id}','presetId',this.value)">
-      ${_presetOptsList(pl,op.presetId).map(p=>`<option value="${p.id}" ${op.presetId===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
+      ${_matOptGroups(pl,op.presetId)}
     </select>
     <div class="grid grid-cols-3 gap-1.5">
       <div><label class="text-[10px] text-muted">${t('op-w-lbl')||'W'}</label><input class="wi text-xs py-1" type="number" min="0.1" step="0.1" value="${op.w}" oninput="setOp('${room.id}','${op.id}','w',this.value)"></div>
@@ -15160,7 +15297,7 @@ function renderWorkshop(cat){
       <div class="space-y-1.5">${CUSTOM[cat].map(p=>`
         <div class="flex items-center gap-2 text-xs rounded-lg border border-sand/10 bg-w800/30 px-3 py-2">
           <div class="flex-1">
-            <span class="font-semibold text-cream">${p.name}</span>
+            <span class="font-semibold text-cream">${sxEsc(p.name)}</span>
             ${p.layers&&p.layers.length?`<span class="text-muted ml-1">(${p.layers.length} ${t('ws-layers-abbr')})</span>`:''}
           </div>
           <span class="mono text-amber font-bold">R ${p.r.toFixed(3)}</span>
