@@ -7214,6 +7214,7 @@ const _i18n = {
     'sr-r-from-layers':'R из слоёв','sr-r-from-layers-tip':'R берётся из слоёв ниже — выбранный пресет не участвует',
     'mat-folder-mine':'Мои материалы','mat-folder-catalog':'Каталог материалов','mat-folder-popular':'Популярно',
     'mat-create-in-ws':'Создать в Мастерской','mat-mine-empty':'Пока пусто — создайте свой материал в Мастерской','sr-pick-title':'Выберите материал',
+    'sr-floors-title':'Этажи и подвал','sr-add-floor':'Добавить этаж','sr-add-basement':'Добавить подвал','sr-floor-lbl':'Этаж','sr-floor-empty':'На этом этаже пока нет комнат','sr-basement-word':'подвал','sr-floor-remove':'Удалить этаж','sr-basement-remove':'Убрать подвал','sr-basement-t-title':'Расчётная температура подвала',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -7770,6 +7771,7 @@ const _i18n = {
     'sr-r-from-layers':"R qatlamlardan",'sr-r-from-layers-tip':"R quyidagi qatlamlardan olinadi — tanlangan preset qatnashmaydi",
     'mat-folder-mine':"Mening materiallarim",'mat-folder-catalog':"Materiallar katalogi",'mat-folder-popular':"Ommabop",
     'mat-create-in-ws':"Ustaxonada yaratish",'mat-mine-empty':"Hozircha bo'sh — Ustaxonada o'z materialingizni yarating",'sr-pick-title':"Material tanlang",
+    'sr-floors-title':"Qavatlar va yerto'la",'sr-add-floor':"Qavat qo'shish",'sr-add-basement':"Yerto'la qo'shish",'sr-floor-lbl':"Qavat",'sr-floor-empty':"Bu qavatda hozircha xona yo'q",'sr-basement-word':"yerto'la",'sr-floor-remove':"Qavatni o'chirish",'sr-basement-remove':"Yerto'lani olib tashlash",'sr-basement-t-title':"Yerto'laning hisobiy harorati",
     'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
     'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
     'simple-attic-lbl':"Cherdak / tom",
@@ -8350,6 +8352,7 @@ const _i18n = {
     'sr-r-from-layers':'R from layers','sr-r-from-layers-tip':'R is taken from the layers below — the selected preset is not used',
     'mat-folder-mine':'My materials','mat-folder-catalog':'Materials catalog','mat-folder-popular':'Popular',
     'mat-create-in-ws':'Create in Workshop','mat-mine-empty':'Empty for now — create your material in the Workshop','sr-pick-title':'Choose a material',
+    'sr-floors-title':'Floors & basement','sr-add-floor':'Add floor','sr-add-basement':'Add basement','sr-floor-lbl':'Floor','sr-floor-empty':'No rooms on this floor yet','sr-basement-word':'basement','sr-floor-remove':'Remove floor','sr-basement-remove':'Remove basement','sr-basement-t-title':'Basement design temperature',
     'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
     'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
     'simple-attic-lbl':'Attic / roof',
@@ -9350,6 +9353,26 @@ function runSelfTest(){
       const rMax=calcLayerR([{name:'XPS',lambda:0.034,thick:100},{name:'Стяжка',lambda:1.2,thick:50}],'floor');
       return Math.abs(rPro-rMax)<1e-3;
     })(), 'слоёный пол ПРО == слоёный пол МАКС');
+    /* ── Фаза 3: этажи + подвал в ПРО ── */
+    ok('Ф3 миграция: комната без floorId → первый этаж, один уровень результата', (()=>{
+      const sf=ST.simpleFloors, sb=ST.simpleBasement, sr=ST.simpleRooms, st=ST.tExt;
+      ST.tExt=-14; ST.simpleFloors=[]; ST.simpleBasement=null;
+      ST.simpleRooms=[{typeId:'living_room',tInt:20,height:2.7,corner:'auto',
+        walls:[{length:5,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],
+        floors:[{length:5,width:4,presetId:ST.mat.floorId}],ceilings:[]}];
+      const res=computeSimple();
+      const okOne=res.floors.length===1 && !res.floors[0].isBasement;
+      const migrated=ST.simpleRooms[0].floorId===ST.simpleFloors[0].id;
+      ST.simpleFloors=sf; ST.simpleBasement=sb; ST.simpleRooms=sr; ST.tExt=st;
+      return okOne && migrated;
+    })(), 'старый плоский расчёт = один этаж, floorId проставлен');
+    ok('Ф3 подвал: комната считается от t подвала (−6), а не от улицы (−14)', (()=>{
+      const room={typeId:'living_room',tInt:20,height:2.7,corner:'auto',floorId:'b',
+        walls:[{length:5,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],floors:[],ceilings:[]};
+      const wBasement=computeSimpleRoom(room,-6,true).breakdown.wall;
+      const wOutdoor =computeSimpleRoom(room,-14,false).breakdown.wall;
+      return wBasement>0 && wBasement<wOutdoor;   // ΔT к −6 меньше, чем к −14 → меньше потерь
+    })(), 'подвал −6 даёт меньше потерь стены, чем улица −14');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -9489,6 +9512,8 @@ const ST = {
   simpleRoomCount: 1,
   simpleRoomIdx: 0,
   simpleRooms: [],
+  simpleFloors: [],       // ПРО-этажи [{id,name}]; дефолт создаётся в _ensureSimpleFloors (uid ещё не готов в литерале)
+  simpleBasement: null,   // ПРО-подвал {id,name,tExt:10|2|-3|-6} | null
 };
 
 /* ════════════════════════════════════════════════════════════
@@ -9997,11 +10022,11 @@ function sanityBadgeHTML(res){
 /* Жёлтый баннер на шаге результата ПРО: у каких комнат не указан пол/потолок (результат занижен) */
 function simpleIncompleteBanner(){
   if(ST.calcMode!=='simple') return '';
-  const bad=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)}))
-    .filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));   // без стен комната и так помечена «!»
+  const bad=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r),e:_srFloorExpectations(r.floorId)}))
+    .filter(x=>x.c.walls&&((x.e.floor&&!x.c.floor)||(x.e.ceiling&&!x.c.ceiling)));   // пол/потолок ждём только там, где они есть (нижний/верхний этаж/подвал)
   if(!bad.length) return '';
   const names=bad.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ');
-  const missFloor=bad.some(x=>!x.c.floor), missCeil=bad.some(x=>!x.c.ceiling);
+  const missFloor=bad.some(x=>x.e.floor&&!x.c.floor), missCeil=bad.some(x=>x.e.ceiling&&!x.c.ceiling);
   const what=[missFloor?t('cat-floors').toLowerCase():null, missCeil?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / ');
   const msg=t('simple-incomplete-banner').replace('{rooms}',names).replace('{what}',what);
   return `<div class="mb-5 rounded-xl border border-amber/35 bg-amber/10 p-3 flex items-start gap-2.5">
@@ -10010,13 +10035,94 @@ function simpleIncompleteBanner(){
   </div>`;
 }
 
+/* ════════════════════════════════════════════════════════════
+   ПРО: этажи + подвал (паритет с МАКС ST.floors/ST.basement)
+   ST.simpleFloors=[{id,name}] · ST.simpleBasement={id,name,tExt}|null
+   У комнаты — floorId; комнаты без floorId (старые расчёты) → первый этаж.
+════════════════════════════════════════════════════════════ */
+const SIMPLE_BASEMENT_TEXTS=[{v:10,l:'Отапл. +10°C'},{v:2,l:'Полу +2°C'},{v:-3,l:'Холод. −3°C'},{v:-6,l:'Неотапл. −6°C'}];
+/* Гарант целостности: есть ≥1 этаж, все комнаты привязаны к существующему уровню */
+function _ensureSimpleFloors(){
+  if(!Array.isArray(ST.simpleFloors)||!ST.simpleFloors.length){ ST.simpleFloors=[{id:uid('sf'),name:'1 этаж'}]; }
+  if(ST.simpleBasement && !ST.simpleBasement.id) ST.simpleBasement=null;
+  const valid=new Set(ST.simpleFloors.map(f=>f.id));
+  if(ST.simpleBasement) valid.add(ST.simpleBasement.id);
+  const firstId=ST.simpleFloors[0].id;
+  for(const r of (ST.simpleRooms||[])){ if(!r.floorId||!valid.has(r.floorId)) r.floorId=firstId; }
+}
+/* Уровни в порядке отображения/расчёта: этажи сверху вниз (как заданы), подвал — в конце */
+function _srLevels(){
+  _ensureSimpleFloors();
+  const lv=ST.simpleFloors.map(f=>({id:f.id,name:f.name,tExt:ST.tExt,isBasement:false}));
+  if(ST.simpleBasement) lv.push({id:ST.simpleBasement.id,name:ST.simpleBasement.name,tExt:(ST.simpleBasement.tExt!=null?ST.simpleBasement.tExt:-6),isBasement:true});
+  return lv;
+}
+/* Ожидается ли пол/потолок у комнаты этого уровня: пол — только нижний этаж/подвал, потолок — только верхний/подвал */
+function _srFloorExpectations(floorId){
+  _ensureSimpleFloors();
+  if(ST.simpleBasement && floorId===ST.simpleBasement.id) return {floor:true,ceiling:true};
+  const idx=ST.simpleFloors.findIndex(f=>f.id===floorId), i=idx<0?0:idx;
+  return {floor:i===0, ceiling:i===ST.simpleFloors.length-1};
+}
+function sfAddFloor(){ _ensureSimpleFloors(); ST.simpleFloors.push({id:uid('sf'),name:(ST.simpleFloors.length+1)+' этаж'}); srRerender(); }
+function sfRemoveFloor(id){
+  _ensureSimpleFloors();
+  if(ST.simpleFloors.length<=1){ toast('Нужен хотя бы один этаж','err'); return; }
+  const idx=ST.simpleFloors.findIndex(f=>f.id===id); if(idx<0) return;
+  const nb=ST.simpleFloors[idx-1]||ST.simpleFloors[idx+1];   // сосед для переноса комнат
+  let moved=0; for(const r of (ST.simpleRooms||[])){ if(r.floorId===id){ r.floorId=nb.id; moved++; } }
+  ST.simpleFloors.splice(idx,1); srRerender();
+  if(moved) toast('Комнат перенесено на «'+nb.name+'»: '+moved);
+}
+function sfSetFloorName(id,v){ const f=(ST.simpleFloors||[]).find(x=>x.id===id); if(f) f.name=v; srResults(); }
+function sfAddBasement(){ ST.simpleBasement={id:uid('sb'),name:'Подвал',tExt:-6}; srRerender(); }
+function sfRemoveBasement(){
+  if(ST.simpleBasement){ const bid=ST.simpleBasement.id; _ensureSimpleFloors(); const fid=ST.simpleFloors[0].id; for(const r of (ST.simpleRooms||[])){ if(r.floorId===bid) r.floorId=fid; } }
+  ST.simpleBasement=null; srRerender();
+}
+function sfSetBasementT(v){ if(ST.simpleBasement){ ST.simpleBasement.tExt=+v; srResults(); } }
+function sfSetBasementName(v){ if(ST.simpleBasement){ ST.simpleBasement.name=v; srResults(); } }
+function srSetRoomFloor(i,fid){ const r=ST.simpleRooms[i]; if(!r) return; r.floorId=fid; _srFocusRoom=i; srRerender(); }
+/* Панель управления этажами/подвалом ПРО (упрощённая копия s3) */
+function _sfPanel(){
+  _ensureSimpleFloors();
+  const rows=ST.simpleFloors.map((f,i)=>`
+    <div class="flex items-center gap-2 rounded-lg border border-sand/12 bg-w800/40 p-2">
+      <span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-amber/15 text-amber font-bold text-xs">${i+1}</span>
+      <input class="wi flex-1 min-w-0 py-1.5 text-sm" value="${sxEsc(f.name)}" oninput="sfSetFloorName('${f.id}',this.value)">
+      <button type="button" onclick="sfRemoveFloor('${f.id}')" class="flex-shrink-0 text-muted hover:text-ember text-sm px-1.5 ${ST.simpleFloors.length<=1?'opacity-30 pointer-events-none':''}" title="${t('sr-floor-remove')}">✕</button>
+    </div>`).join('');
+  const bs=ST.simpleBasement?`
+    <div class="flex items-center gap-2 rounded-lg border border-blue-400/25 bg-blue-900/15 p-2">
+      <span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-blue-700/40 text-blue-300 font-bold text-xs">B</span>
+      <input class="wi flex-1 min-w-0 py-1.5 text-sm" value="${sxEsc(ST.simpleBasement.name)}" oninput="sfSetBasementName(this.value)">
+      <select class="wi py-1.5 text-sm flex-shrink-0" style="width:132px" title="${t('sr-basement-t-title')}" onchange="sfSetBasementT(this.value)">${SIMPLE_BASEMENT_TEXTS.map(o=>`<option value="${o.v}" ${((ST.simpleBasement.tExt==null?-6:ST.simpleBasement.tExt))===o.v?'selected':''}>${o.l}</option>`).join('')}</select>
+      <button type="button" onclick="sfRemoveBasement()" class="flex-shrink-0 text-muted hover:text-ember text-sm px-1.5" title="${t('sr-basement-remove')}">✕</button>
+    </div>`:'';
+  const open=(ST.simpleFloors.length>1||ST.simpleBasement);
+  return `<details class="help mb-4" ${open?'open':''}>
+    <summary>${t('sr-floors-title')} <span class="text-muted font-normal">· ${ST.simpleFloors.length}${ST.simpleBasement?' + '+t('sr-basement-word'):''}</span></summary>
+    <div class="help-body pt-3 space-y-2">
+      ${rows}
+      ${bs}
+      <div class="flex flex-wrap gap-2 pt-1">
+        <button type="button" onclick="sfAddFloor()" class="tool-btn text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${t('sr-add-floor')}</button>
+        ${ST.simpleBasement?'':`<button type="button" onclick="sfAddBasement()" class="tool-btn text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${t('sr-add-basement')}</button>`}
+      </div>
+    </div>
+  </details>`;
+}
+
 function initSimpleRooms(){
+  _ensureSimpleFloors();
   const n=ST.simpleRoomCount;
   const ex=ST.simpleRooms||[];
+  const fid=ST.simpleFloors[0].id;
   ST.simpleRooms=Array.from({length:n},(_,i)=>ex[i]||{
-    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'auto',
+    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'auto', floorId:fid,
     walls:[], windows:[], doors:[], floors:[], ceilings:[]
   });
+  _ensureSimpleFloors();   // проставить floorId старым комнатам без него
 }
 
 function setSimpleRoomCount(n){
@@ -10166,10 +10272,13 @@ function srSetRoomField(i,field,val){
   r[field]=val;
   srResults();
 }
-function srAddRoom(){
-  ST.simpleRoomCount++;
-  initSimpleRooms();
-  _srFocusRoom=ST.simpleRoomCount-1; srRerender();
+function srAddRoom(floorId){
+  _ensureSimpleFloors();
+  const fid=floorId||ST.simpleFloors[0].id;
+  ST.simpleRooms.push({name:'',typeId:'living_room',tInt:20,height:2.7,corner:'auto',floorId:fid,
+    walls:[],windows:[],doors:[],floors:[],ceilings:[]});
+  ST.simpleRoomCount=ST.simpleRooms.length;
+  _srFocusRoom=ST.simpleRooms.length-1; srRerender();
   setTimeout(()=>{const d=document.querySelectorAll('#sr-editor details');if(d.length)d[d.length-1].scrollIntoView({behavior:'smooth',block:'start'});},50);
 }
 function srDeleteRoom(i){
@@ -10492,7 +10601,7 @@ function simpleRoomsEditorInner(){
     </div>`;
   };
 
-  const cards=ST.simpleRooms.map((r,i)=>{
+  const roomCard=(r,i)=>{
     ['walls','windows','doors','floors','ceilings'].forEach(k=>{ if(!Array.isArray(r[k])) r[k]=[]; });
     const rtBtns=ROOM_TYPES.slice(0,10).map(rt=>`
       <button type="button" onclick="srSetType(${i},'${rt.id}')"
@@ -10504,10 +10613,16 @@ function simpleRoomsEditorInner(){
     const cornerOpts=[['auto','simple-corner-auto'],['one','simple-corner-one'],['corner','simple-corner-corner'],['two','simple-corner-two']]
       .map(([v,k])=>`<option value="${v}" ${(r.corner||'auto')===v?'selected':''}>${t(k)}</option>`).join('');
     const comp=simpleRoomCompleteness(r);
+    const exp=_srFloorExpectations(r.floorId);   // пол/потолок критичны только для нижнего/верхнего этажа/подвала
     const compChip=(on,label,critical)=>`<span style="white-space:nowrap;${on?'color:rgba(74,222,128,.75)':critical?'color:rgba(251,191,36,.85)':'color:rgba(154,134,117,.5)'}">${label} ${on?'✓':critical?'✗':'—'}</span>`;
     const checklist=`<span class="flex-shrink-0 hidden sm:flex items-center gap-1.5 text-[9px] font-medium" title="${t('simple-completeness-tip')}">
-      ${compChip(comp.walls,t('cat-walls'),true)}${compChip(comp.windows,t('cat-windows'),false)}${compChip(comp.floor,t('cat-floors'),true)}${compChip(comp.ceiling,t('cat-ceilings'),true)}
+      ${compChip(comp.walls,t('cat-walls'),true)}${compChip(comp.windows,t('cat-windows'),false)}${compChip(comp.floor,t('cat-floors'),exp.floor)}${compChip(comp.ceiling,t('cat-ceilings'),exp.ceiling)}
     </span>`;
+    const levels=_srLevels();
+    const floorSel=(levels.length>1)?`<div>
+          <label class="block text-[11px] text-muted mb-1">${t('sr-floor-lbl')}</label>
+          <select class="wi py-1.5 text-sm" onchange="srSetRoomFloor(${i},this.value)">${levels.map(lv=>`<option value="${lv.id}" ${(r.floorId||levels[0].id)===lv.id?'selected':''}>${sxEsc(lv.name)}${lv.isBasement?' ('+t('sr-basement-word')+')':''}</option>`).join('')}</select>
+        </div>`:'';
 
     return `<details ${isOpen?'open':''} ontoggle="if(this.open)_srFocusRoom=${i}" class="rounded-2xl border ${hasErr?'border-ember/30':'border-sand/10'} bg-w850/40 mb-3 overflow-hidden">
       <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
@@ -10544,9 +10659,12 @@ function simpleRoomsEditorInner(){
               value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7);srResults()"></div>
         </div>
 
-        <div>
-          <label class="block text-[11px] text-muted mb-1">${t('simple-corner-lbl')}</label>
-          <select class="wi py-1.5 text-sm" onchange="srSetRoomField(${i},'corner',this.value)">${cornerOpts}</select>
+        <div class="grid ${floorSel?'grid-cols-2':'grid-cols-1'} gap-2">
+          <div>
+            <label class="block text-[11px] text-muted mb-1">${t('simple-corner-lbl')}</label>
+            <select class="wi py-1.5 text-sm" onchange="srSetRoomField(${i},'corner',this.value)">${cornerOpts}</select>
+          </div>
+          ${floorSel}
         </div>
 
         <div class="space-y-3 pt-1">
@@ -10554,16 +10672,30 @@ function simpleRoomsEditorInner(){
         </div>
       </div>
     </details>`;
+  };
+
+  /* Комнаты сгруппированы по уровням (этажи + подвал). Один уровень → без заголовков. */
+  const firstId=ST.simpleFloors[0].id;
+  const levels=_srLevels();
+  const multi=levels.length>1;
+  const grouped=levels.map(lv=>{
+    const rr=ST.simpleRooms.map((r,i)=>[r,i]).filter(x=>(x[0].floorId||firstId)===lv.id);
+    const header=multi?`<div class="flex items-center gap-2 mt-4 mb-2 px-1">
+        <span class="text-xs font-bold uppercase tracking-wide ${lv.isBasement?'text-blue-300':'text-amber/85'}">${lv.isBasement?'▽ ':'▨ '}${sxEsc(lv.name)}</span>
+        <span class="text-[10px] text-muted">· ${rr.length}</span>
+        <div class="flex-1 border-b ${lv.isBasement?'border-blue-400/15':'border-amber/15'}"></div>
+      </div>`:'';
+    const body=rr.length?rr.map(x=>roomCard(x[0],x[1])).join(''):`<p class="text-[11px] text-muted italic px-1 py-2">${t('sr-floor-empty')}</p>`;
+    const add=`<button type="button" onclick="srAddRoom('${lv.id}')"
+      class="mt-1 mb-2 w-full rounded-2xl border border-dashed ${lv.isBasement?'border-blue-400/30 bg-blue-900/10 text-blue-300 hover:bg-blue-900/20':'border-amber/30 bg-amber/5 text-amber hover:bg-amber/10'} py-2.5 text-sm font-semibold transition-colors">+ ${t('simple-add-room')}${multi?' — «'+sxEsc(lv.name)+'»':''}</button>`;
+    return header+body+add;
   }).join('');
 
   return `<datalist id="sr-rm-list-walls">${_srDatalist('walls')}</datalist>
   <datalist id="sr-rm-list-floors">${_srDatalist('floors')}</datalist>
   <datalist id="sr-rm-list-ceilings">${_srDatalist('ceilings')}</datalist>
-  ${cards}
-  <button type="button" onclick="srAddRoom()"
-    class="mt-1 w-full rounded-2xl border border-dashed border-amber/30 bg-amber/5 py-3 text-sm font-semibold text-amber hover:bg-amber/10 transition-colors">
-    + ${t('simple-add-room')}
-  </button>`;
+  ${_sfPanel()}
+  ${grouped}`;
 }
 
 /* ПРО (простой) — единый шаг «Комнаты»: свёрнутые общие настройки объекта
@@ -10588,18 +10720,26 @@ function sSimple5(){ return s6(); }
 /* --- Simple mode computation --- */
 function computeSimple(){
   if(ST.tExt==null||!ST.simpleRooms||!ST.simpleRooms.length) return null;
-  let totalW=0, totalArea=0, totalSections=0, roomCount=0;
+  _ensureSimpleFloors();
+  let totalW=0, totalArea=0, totalSections=0, roomCount=0, gi=0;
   const byType={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
-  const rres=[];
-  for(const r of ST.simpleRooms){
-    const cr=computeSimpleRoom(r,ST.tExt);
-    totalW+=cr.qW; totalArea+=cr.area; totalSections+=cr.sections; roomCount++;
-    for(const k in byType) byType[k]+=cr.breakdown[k];
-    const rn=r.name||(roomTypeName(r.typeId)||('Помещение '+(rres.length+1)));
-    rres.push({id:'sr'+rres.length,name:rn,typeId:r.typeId,tInt:r.tInt,qKw:cr.qW/1000,...cr});
+  const firstId=ST.simpleFloors[0].id;
+  const fres=[];
+  for(const lv of _srLevels()){
+    const roomsHere=ST.simpleRooms.filter(r=>(r.floorId||firstId)===lv.id);
+    let fW=0,fArea=0,fSec=0; const rres=[];
+    for(const r of roomsHere){
+      const cr=computeSimpleRoom(r, lv.tExt, lv.isBasement);
+      fW+=cr.qW; fArea+=cr.area; fSec+=cr.sections; roomCount++;
+      for(const k in byType) byType[k]+=cr.breakdown[k];
+      const rn=r.name||(roomTypeName(r.typeId)||('Помещение '+(gi+1)));
+      rres.push({id:'sr'+(gi++),name:rn,typeId:r.typeId,tInt:r.tInt,qKw:cr.qW/1000,...cr});
+    }
+    totalW+=fW; totalArea+=fArea; totalSections+=fSec;
+    fres.push({id:lv.id,name:lv.name,height:2.7,qW:fW,qKw:fW/1000,area:fArea,sections:fSec,rooms:rres,isBasement:lv.isBasement});
   }
   return {
-    floors:[{id:'simple',name:'Объект',height:2.7,qW:totalW,qKw:totalW/1000,area:totalArea,sections:totalSections,rooms:rres}],
+    floors:fres,
     byType, totalW, totalKw:totalW/1000,
     boilerKw:(totalW/1000)*_tgG('safeFactor',1.25)/(_tgG('boilerEff',90)/100),
     totalArea, totalSections, roomCount
@@ -10617,11 +10757,13 @@ function simpleGroundT(){
 }
 function simpleBasementT(){ return ST.tBasement!=null?ST.tBasement:SIMPLE_BASEMENT_T; }
 
-function computeSimpleRoom(r,tExt){
+function computeSimpleRoom(r,tExt,isBasement){
   const tInt=r.tInt||20, H=r.height||2.7;
-  const dTout=tInt-tExt;                                   // к наружному воздуху
-  const dTfloor=tInt-simpleGroundT();                      // под полом (не на грунте)
-  const dTbase=tInt-simpleBasementT();                     // к подвальной стене
+  const dTout=tInt-tExt;                                   // к наружному воздуху (для подвала tExt = t подвала)
+  /* Комната подвала: весь конверт к t подвала (как МАКС computeRoom — единый ΔT).
+     Обычная комната: пол к t под полом, «подвальная» стена — к t за подвалом. */
+  const dTfloor=isBasement?dTout:(tInt-simpleGroundT());   // под полом (не на грунте)
+  const dTbase=isBasement?dTout:(tInt-simpleBasementT());  // к подвальной стене
   const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
   const cornerK=simpleCornerK(r);   // 'auto': ≥2 наружных стен → +5%, как в Макс
 
@@ -19160,7 +19302,8 @@ function sxSnapshot(){
     mat:{...ST.mat}, attic:ST.attic, airtight:ST.airtight, heatRegime:ST.heatRegime, lambdaMode:ST.lambdaMode,
     pipeType:ST.pipeType, heatingTypes:ST.heatingTypes, tGround:ST.tGround, tBasement:ST.tBasement,
     ventMode:ST.ventMode, hrvEff:ST.hrvEff,
-    simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])) };
+    simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])),
+    simpleFloors:JSON.parse(JSON.stringify(ST.simpleFloors||[])), simpleBasement:ST.simpleBasement?JSON.parse(JSON.stringify(ST.simpleBasement)):null };
 }
 function sxRestore(s){
   ST.calcMode='simple';
@@ -19173,6 +19316,9 @@ function sxRestore(s){
     if(Array.isArray(s.heatingTypes)) ST.heatingTypes=s.heatingTypes;
     ST.simpleRooms=Array.isArray(s.simpleRooms)?JSON.parse(JSON.stringify(s.simpleRooms)):[];
     ST.simpleRoomCount=s.simpleRoomCount||ST.simpleRooms.length||1;
+    ST.simpleFloors=Array.isArray(s.simpleFloors)?JSON.parse(JSON.stringify(s.simpleFloors)):[];
+    ST.simpleBasement=s.simpleBasement?JSON.parse(JSON.stringify(s.simpleBasement)):null;
+    _ensureSimpleFloors();   // старый проект без этажей → один «1 этаж», комнаты к нему
   }
   if(ST.tExt==null) ST.tExt=-14;   // проектная наружная t по умолчанию (как в боте)
   if(!ST.cityName) ST.cityName='Фергана';
