@@ -9434,6 +9434,31 @@ function runSelfTest(){
         walls:[],windows:[],doors:[],floors:[],ceilings:[]};
       return Math.abs(computeSimpleRoom(withFloor,-14).area-20)<1e-9 && Math.abs(computeSimpleRoom(noFloor,-14).area-20)<1e-9;
     })(), 'полы (5×4) приоритетнее габаритов; иначе Д×Ш');
+    /* ── Ревью-фиксы: паритет режима Б для слоёв ПРО + перегенерация id этажей ── */
+    ok('Режим Б: слоёная стена ПРО == МАКС (per-layer wetRatio)', (()=>{
+      const sm=ST.lambdaMode; ST.lambdaMode='B';
+      const lp=[{name:'Кирпич глиняный',d:'380',l:'0.7'},{name:'Минеральная вата',d:'100',l:'0.045'}];
+      const rPro=_srItemR('walls',{layers:lp});
+      const rMax=calcLayerR([{name:'Кирпич глиняный',lambda:0.7,thick:380},{name:'Минеральная вата',lambda:0.045,thick:100}],'wall');
+      ST.lambdaMode=sm;
+      return Math.abs(rPro-rMax)<1e-3;   // calcLayerR округляет до 4 знаков (.toFixed(4))
+    })(), 'влажностная поправка Б учтена в ΣR слоёв ПРО, как в МАКС');
+    ok('Режим А: слои ПРО без изменений (wetRatio≡1)', (()=>{
+      const sm=ST.lambdaMode; ST.lambdaMode='A';
+      const r=_srItemR('walls',{layers:[{name:'Кирпич глиняный',d:'380',l:'0.7'}]});
+      ST.lambdaMode=sm;
+      return Math.abs(r-(0.38/0.7+0.17))<1e-6;   // как раньше
+    })(), 'режим А не тронут (совместимость)');
+    ok('Ф3: sxRestore перегенерирует id этажей/подвала (нет коллизии uid)', (()=>{
+      const KEYS=['calcMode','cityId','cityName','tExt','tGround','tBasement','ventMode','hrvEff','airtight','heatRegime','lambdaMode','pipeType','heatingTypes','attic','simpleRooms','simpleRoomCount','simpleFloors','simpleBasement'];
+      const snap={}; KEYS.forEach(k=>snap[k]=ST[k]); const matSnap={...ST.mat};
+      sxRestore({calcMode:'simple',tExt:-14,simpleRoomCount:1,
+        simpleRooms:[{typeId:'living_room',tInt:20,height:2.7,corner:'auto',floorId:'sf_dup',walls:[],windows:[],doors:[],floors:[],ceilings:[]}],
+        simpleFloors:[{id:'sf_dup',name:'1 этаж'}], simpleBasement:{id:'sb_dup',name:'Подвал',tExt:-6}});
+      const okRemap = ST.simpleFloors[0].id!=='sf_dup' && ST.simpleRooms[0].floorId===ST.simpleFloors[0].id && ST.simpleBasement && ST.simpleBasement.id!=='sb_dup';
+      KEYS.forEach(k=>ST[k]=snap[k]); ST.mat=matSnap;
+      return okRemap;
+    })(), 'id сменились, floorId комнаты синхронизирован');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -10413,7 +10438,8 @@ function _srItemArea(r,kind,it){
    поверхности есть валидные слои — R берётся по ним, иначе по готовому пресету. */
 function _srLayersSum(it){
   let sum=0;
-  for(const ly of (it&&it.layers||[])){ const d=parseFloat(ly.d), la=parseFloat(ly.l); if(d>0&&la>0) sum+=d/1000/la; }
+  /* per-layer влажностная поправка (режим Б) — точно как МАКС calcLayerSum; в режиме А wetRatio≡1 */
+  for(const ly of (it&&it.layers||[])){ const d=parseFloat(ly.d), la=parseFloat(ly.l); if(d>0&&la>0) sum+=d/1000/(la*wetRatio(clsOf(ly.name))); }
   return sum;
 }
 /* ── «Мои материалы» в слоях ПРО (паритет с единым le-редактором) ──
@@ -10553,6 +10579,7 @@ function sSimple4(){
 function simpleRoomsEditorHTML(){ return `<div id="sr-editor">${simpleRoomsEditorInner()}</div>`; }
 function simpleRoomsEditorInner(){
   if(!ST.simpleRooms||!ST.simpleRooms.length) initSimpleRooms();
+  _ensureSimpleFloors();   // гарантируем этажи до чтения ST.simpleFloors[0].id ниже
 
   const numFld=(i,kind,ii,field,val,label,min,step)=>`
     <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${label}</label>
@@ -10705,7 +10732,7 @@ function simpleRoomsEditorInner(){
       <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
         <div class="flex items-center gap-2.5 min-w-0">
           <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-amber/15 text-amber text-xs font-bold">${i+1}</span>
-          <span class="text-sm font-semibold text-cream truncate">${rLabel}</span>
+          <span class="text-sm font-semibold text-cream truncate">${sxEsc(rLabel)}</span>
           ${hasErr?'<span class="flex-shrink-0 text-[10px] font-bold text-ember bg-ember/10 rounded-full px-2 py-0.5">!</span>':''}
           ${checklist}
         </div>
@@ -10719,7 +10746,7 @@ function simpleRoomsEditorInner(){
         <div>
           <label class="block text-xs font-semibold text-sand mb-1.5">${t('simple-name-lbl')} <span class="text-muted font-normal">${t('simple-opt-lbl')}</span></label>
           <input class="wi" type="text" maxlength="40" placeholder="${t('simple-room-name-ph').replace('{n}',i+1)}"
-            value="${r.name||''}" oninput="ST.simpleRooms[${i}].name=this.value">
+            value="${sxEsc(r.name||'')}" oninput="ST.simpleRooms[${i}].name=this.value">
         </div>
 
         <div>
@@ -10902,7 +10929,8 @@ function computeSimpleRoom(r,tExt,isBasement){
       const addR=fp.__layered?fp.r:(fp.addR!=null?fp.addR:0);   // слои Мастерской = утепление поверх грунта
       if(dTout>0) bd.floor+=zonalFloorQ(S,P,addR,dTout,n);
     } else {
-      const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
+      /* слои уже несут per-layer wetRatio в fp.r → без regimeR (иначе двойная поправка в режиме Б); пресеты — regimeR */
+      const R=fp.__layered?fp.r:(regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0));
       if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
     }
   }
@@ -10910,7 +10938,7 @@ function computeSimpleRoom(r,tExt,isBasement){
   for(const cl of (r.ceilings||[])){
     const S=_srItemArea(r,'ceilings',cl); if(S<=0) continue;
     const cp=_srItemPreset('ceilings',cl); if(!cp) continue;
-    const R=regimeR(cp.r,0.17,presetClass(cp));
+    const R=cp.__layered?cp.r:regimeR(cp.r,0.17,presetClass(cp));   // слои: per-layer wetRatio уже в cp.r
     const n=(cp.flat)?1:(ATTIC[cl.attic]||ATTIC.closed).n;  /* C1: без чердака → n=1 */
     if(R>0&&dTout>0) bd.ceiling+=(dTout/R)*S*n;
   }
@@ -19420,6 +19448,14 @@ function sxRestore(s){
     ST.simpleRoomCount=s.simpleRoomCount||ST.simpleRooms.length||1;
     ST.simpleFloors=Array.isArray(s.simpleFloors)?JSON.parse(JSON.stringify(s.simpleFloors)):[];
     ST.simpleBasement=s.simpleBasement?JSON.parse(JSON.stringify(s.simpleBasement)):null;
+    /* uid-счётчик сбрасывается при перезагрузке → сохранённые id этажей могут совпасть с новыми
+       (коллизия → computeSimple задваивает этаж). Перегенерируем id как MAX loadState, floorId комнат — по карте. */
+    if(ST.simpleFloors.length || ST.simpleBasement){
+      const map={};
+      ST.simpleFloors.forEach(f=>{ const nid=uid('sf'); if(f&&f.id){ map[f.id]=nid; f.id=nid; } });
+      if(ST.simpleBasement){ const nid=uid('sb'); if(ST.simpleBasement.id) map[ST.simpleBasement.id]=nid; ST.simpleBasement.id=nid; }
+      (ST.simpleRooms||[]).forEach(r=>{ if(r&&r.floorId&&map[r.floorId]) r.floorId=map[r.floorId]; });
+    }
     _ensureSimpleFloors();   // старый проект без этажей → один «1 этаж», комнаты к нему
   }
   if(ST.tExt==null) ST.tExt=-14;   // проектная наружная t по умолчанию (как в боте)
@@ -19499,7 +19535,9 @@ function sxCreateProject(){
   const inp=document.getElementById('sx-new-name');
   const name=(inp&&inp.value.trim())||sxt('untitled');
   const list=sxLoadProjects();
-  ST.calcMode='simple'; ST.simpleRooms=[]; ST.simpleRoomCount=1; initSimpleRooms();
+  ST.calcMode='simple'; ST.simpleRooms=[]; ST.simpleRoomCount=1;
+  ST.simpleFloors=[]; ST.simpleBasement=null;   // не тащить этажи/подвал предыдущего проекта
+  initSimpleRooms();
   const proj={ id:'sx'+Date.now(), label:name, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(),
     roomCount:1, kw:0, sx:sxSnapshot() };
   list.unshift(proj); sxSaveProjects(list);
@@ -19570,7 +19608,7 @@ function sxRenderPage(){
 /* Ф5.2: герметичность/вентиляция прямо в воркспейсе */
 function sxSetAirtight(id){ if(AIRTIGHT[id]) ST.airtight=id; sxRenderPage(); }
 function sxSetVent(id){ ST.ventMode=(id==='mech'||id==='hrv')?id:'natural'; sxRenderPage(); }
-function sxSetHrv(pct){ ST.hrvEff=Math.max(0.4,Math.min(0.95,(+pct||75)/100)); try{ sxRenderResults(); }catch(e){} }
+function sxSetHrv(pct){ ST.hrvEff=Math.max(0.4,Math.min(0.95,(+pct||75)/100)); const el=document.getElementById('sx-hrv-pct'); if(el) el.textContent=Math.round(hrvEff()*100)+'%'; try{ sxRenderResults(); }catch(e){} }
 
 /* ── PAGE: heat loss (reuses room editor) ── */
 function sxHeatPage(){
@@ -19599,7 +19637,7 @@ function sxHeatPage(){
           ${(ST.ventMode==='hrv')?`<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
             <span style="font-size:11px;color:#8ea0bd">${t('sr-hrv-eff')}</span>
             <input type="range" min="60" max="90" step="5" value="${Math.round(hrvEff()*100)}" oninput="sxSetHrv(this.value)" style="width:140px">
-            <span style="font-size:12px;color:#f5b544;font-weight:700">${Math.round(hrvEff()*100)}%</span>
+            <span id="sx-hrv-pct" style="font-size:12px;color:#f5b544;font-weight:700">${Math.round(hrvEff()*100)}%</span>
           </div>`:''}
         </div>
       </div>
@@ -19677,7 +19715,7 @@ function sxReportPage(){
 function sxRadiatorsPage(){
   let res=null; try{ res=computeSimple(); }catch(e){}
   if(!res) return `<div class="sx-page-h">${sxt('pRad')}</div><div class="sx-card">${sxt('addFirst')}</div>`;
-  const rows=(res.floors[0].rooms||[]).map(r=>{
+  const rows=(res.floors||[]).flatMap(f=>f.rooms||[]).map(r=>{   // Ф3: все этажи, не только первый
     const reqW=Math.round(r.qW||0);
     let panel='—';
     try{ const opts=autoSelectPanels(reqW, r.tInt||20); if(opts&&opts.length){ const o=opts[0]; panel=`${o.n}× Tip${o.type} ${o.h}×${o.l} <span style="color:#7f90ad">(${o.cover}%)</span>`; } }catch(e){}
