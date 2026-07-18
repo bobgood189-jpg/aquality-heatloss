@@ -10448,8 +10448,9 @@ function _srSurfaceMats(kind){ return kind==='floors'?FLOOR_MATS:kind==='ceiling
 /* datalist для строки слоя: «Мои материалы» первыми + пул поверхности + весь справочник, без дублей по имени */
 function _srDatalist(kind){
   const seen=new Set(), opts=[];
+  /* только value (без текста-λ): native datalist иначе рисует λ второй строкой (см. _leDatalist) */
   for(const pool of [CUSTOM_MATS,_srSurfaceMats(kind),RAW_MATERIALS]){
-    for(const m of pool){ if(m&&m.name&&!seen.has(m.name)){ seen.add(m.name); const lam=leMatLambda(m); opts.push(`<option value="${sxEsc(m.name)}">${lam!=null?'λ '+lam:''}</option>`); } }
+    for(const m of pool){ if(m&&m.name&&!seen.has(m.name)){ seen.add(m.name); opts.push(`<option value="${sxEsc(m.name)}"></option>`); } }
   }
   return opts.join('');
 }
@@ -14704,9 +14705,11 @@ function _leTotHtml(key,t){
 }
 function _leDatalist(cfg){
   const seen=new Set(), opts=[];
-  /* «Мои материалы» первыми — они у пользователя под свой вкус */
+  /* «Мои материалы» первыми — они у пользователя под свой вкус.
+     Только value (без текста-λ): иначе native datalist рисует λ отдельной строкой и
+     список раздувается/наезжает на поля (λ и так подставляется в поле при выборе). */
   for(const pool of [(cfg&&cfg.mats)||[], CUSTOM_MATS, RAW_MATERIALS]){
-    for(const m of pool){ if(!seen.has(m.name)){ seen.add(m.name); const lam=leMatLambda(m); opts.push(`<option value="${m.name.replace(/"/g,'&quot;')}">${lam!=null?'λ '+lam:''}</option>`); } }
+    for(const m of pool){ if(!seen.has(m.name)){ seen.add(m.name); opts.push(`<option value="${sxEsc(m.name)}"></option>`); } }
   }
   return opts.join('');
 }
