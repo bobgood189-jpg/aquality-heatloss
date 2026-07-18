@@ -9338,6 +9338,18 @@ function runSelfTest(){
       CUSTOM_MATS.length=0; snapM.forEach(x=>CUSTOM_MATS.push(x));
       return lamOk;
     })(), 'своя λ подставится в слой пола ПРО');
+    /* ── Фаза 2: конверт слоёв ПРО по направлению потока (пол 0.21 / потолок 0.14 / стена 0.17) ── */
+    ok('PRO _srItemR: конверт пол 0.21 / потолок 0.14 / стена 0.17 (как МАКС)', (()=>{
+      const it={layers:[{name:'XPS',d:'100',l:'0.034'}]};   // ΣR = 0.1/0.034 ≈ 2.941
+      const sum=0.1/0.034;
+      const rF=_srItemR('floors',it), rC=_srItemR('ceilings',it), rW=_srItemR('walls',it);
+      return Math.abs(rF-(sum+0.21))<1e-6 && Math.abs(rC-(sum+0.14))<1e-6 && Math.abs(rW-(sum+0.17))<1e-6;
+    })(), 'пол +0.21, потолок +0.14, стена +0.17');
+    ok('PRO слои пола = МАКС calcLayerR(...,floor) (одинаковый конверт)', (()=>{
+      const rPro=_srItemR('floors',{layers:[{name:'XPS',d:'100',l:'0.034'},{name:'Стяжка',d:'50',l:'1.2'}]});
+      const rMax=calcLayerR([{name:'XPS',lambda:0.034,thick:100},{name:'Стяжка',lambda:1.2,thick:50}],'floor');
+      return Math.abs(rPro-rMax)<1e-3;
+    })(), 'слоёный пол ПРО == слоёный пол МАКС');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -10057,7 +10069,7 @@ function _srMatPanel(i,kind,ii,cat,curId){
 
   // 🛠 Мои — открыта по умолчанию
   const mineOpen=isOpen('__mine',true);
-  const createBtn=`<button type="button" onclick="openWorkshop('${cat}')" class="w-full rounded-lg border border-dashed py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1 transition-colors" style="border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.07);color:#c084fc" onmouseover="this.style.background='rgba(192,132,252,.14)'" onmouseout="this.style.background='rgba(192,132,252,.07)'">+ ${t('mat-create-in-ws')}</button>`;
+  const createBtn=`<button type="button" onclick="srOpenItemWorkshop(${i},'${kind}',${ii})" class="w-full rounded-lg border border-dashed py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1 transition-colors" style="border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.07);color:#c084fc" onmouseover="this.style.background='rgba(192,132,252,.14)'" onmouseout="this.style.background='rgba(192,132,252,.07)'">+ ${t('mat-create-in-ws')}</button>`;
   const mineBody=mineOpen?`<div class="pt-1.5 pb-1">${custom.length?`<div class="${rg} mb-1.5">${custom.map(p=>_srMatRow(i,kind,ii,p,curId)).join('')}</div>`:`<p class="text-[11px] text-muted italic px-1 py-1.5">${t('mat-mine-empty')}</p>`}${createBtn}</div>`:'';
 
   // ⭐ Популярно — свёрнуто (авто-раскрытие, если выбран популярный)
@@ -10265,7 +10277,10 @@ function srInsertMat(i,kind,ii,id){
 function srDeleteMat(i,id){ removeCustomMat(id); _srFocusRoom=i; srRerender(); }
 function _srItemR(kind,it){
   const s=_srLayersSum(it); if(s<=0) return null;
-  return kind==='walls' ? s+WALL_ENVELOPE_R : s;
+  /* Rsi+Rse по направлению потока — как в МАКС calcLayerR: стена 0.17 / пол 0.21 / потолок 0.14.
+     (раньше конверт добавлялся только стенам, пол/потолок считались голой ΣR — исправлено.) */
+  const k = kind==='walls'?'wall':kind==='floors'?'floor':kind==='ceilings'?'ceiling':null;
+  return k ? s+envelopeR(k) : s;
 }
 /* пресет для движка: при заданных слоях подменяем только R (коэффициенты n/flat/
    однородность берём от выбранного базового материала). */
@@ -10343,7 +10358,7 @@ function _srLayersBlock(i,kind,it,ii){
     <div class="flex items-center justify-between gap-2 mb-1.5">
       <span class="text-[11px] font-semibold" style="color:rgba(245,158,11,.85)">${t('sr-layers-title')}</span>
       <div class="flex items-center gap-1.5 flex-shrink-0">
-        <button type="button" onclick="openWorkshop('${kind}')" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:1px 6px;white-space:nowrap">🛠 ${t('sr-workshop-short')}</button>
+        <button type="button" onclick="srOpenItemWorkshop(${i},'${kind}',${ii})" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:1px 6px;white-space:nowrap">🛠 ${t('sr-workshop-short')}</button>
         <span id="sr-sumr-${i}-${kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded ${sum!=null?'':'hidden'}" style="background:rgba(245,158,11,.12);color:#f59e0b">ΣR ${(sum||0).toFixed(2)}</span>
       </div>
     </div>
@@ -10378,7 +10393,7 @@ function simpleRoomsEditorInner(){
     const curName=cur?cur.name:'—';
     const curR=cur?(cur.r||0).toFixed(2):'—';
     /* окна/двери не имеют блока слоёв — даём кнопку Мастерской прямо у поля */
-    const wsBtn=(kind==='windows'||kind==='doors')?`<button type="button" onclick="openWorkshop('${cat}')" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:0 5px;margin-left:5px">🛠</button>`:'';
+    const wsBtn=(kind==='windows'||kind==='doors')?`<button type="button" onclick="srOpenItemWorkshop(${i},'${kind}',${ii})" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:0 5px;margin-left:5px">🛠</button>`:'';
     /* Сворачиваемый пикер вместо нативного select: у native <optgroup> нельзя
        свернуть группы — поэтому кнопка текущего материала + инлайн-панель с папками. */
     return `
@@ -15376,6 +15391,13 @@ function _wsApplyToTarget(cat, obj){
     } else if(c.target==='floorSlab'||c.target==='floorCeil'){
       const f=(ST.basement&&ST.basement.id===c.floorId)?ST.basement:(ST.floors.find(x=>x.id===c.floorId)||activeFloor());
       f[c.target==='floorSlab'?'floorLayers':'ceilingLayers']=mkLayers();
+    } else if(c.target==='srItem'){
+      /* ПРО-комната: применить созданную конструкцию как выбранный пресет item'а */
+      if(cat!==c.kind) return false;   // переключили вкладку категории в Мастерской — не применяем к чужому item'у
+      const it=ST.simpleRooms[c.i]&&ST.simpleRooms[c.i][c.kind]&&ST.simpleRooms[c.i][c.kind][c.ii]; if(!it) return false;
+      it.presetId=obj.id; it.layers=[];   // ручные слои очищаем — теперь материал берётся из конструкции
+      _srMatPick=null; _srFocusRoom=c.i;
+      return true;   // без edPushHist (это ПРО, не мини-Revit)
     } else return false;
     if(typeof edPushHist==='function') edPushHist();
     return true;
@@ -15415,8 +15437,11 @@ function saveWorkshop(cat){
   if(ST.step===5) renderStep();
   updateLivePanel();
   if(document.getElementById('ed-props')&&typeof edProps==='function') edProps();
+  if(typeof srRerender==='function' && document.getElementById('sr-editor')) srRerender();   // ПРО-редактор (в т.ч. Santex Workspace)
   toast(applied?'Сохранено и применено к элементу':t('toast-ws-mat-saved'));
 }
+/* Открыть Мастерскую для конкретного item'а ПРО — созданная конструкция применится к нему */
+function srOpenItemWorkshop(i,kind,ii){ openWorkshop(kind,{fromEditor:true,target:'srItem',i:i,kind:kind,ii:ii}); }
 function deleteCustom(cat,id,silent){
   CUSTOM[cat]=CUSTOM[cat].filter(p=>p.id!==id); saveCustom();
   const map={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
