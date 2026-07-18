@@ -355,6 +355,7 @@ async function aqLoadSession(session){
     _aqCacheProf(prof, u.id);
     try{ if(typeof aqMergeCloudPresets==='function') aqMergeCloudPresets(prof); }catch(e){}
     try{ if(typeof aqMergeCloudMats==='function') aqMergeCloudMats(prof); }catch(e){}
+    try{ if(typeof aqMergeCloudHidden==='function') aqMergeCloudHidden(prof); }catch(e){}
   } else {
     console.warn('[AQ] профиль не загружен', profRes.reason);
     prof = _aqReadCachedProf(u.id);   // резерв: сохранённые роль/имя, чтобы не терять админа
@@ -6291,8 +6292,81 @@ function addCustomMat(name, lambda){
   return {ok:true};
 }
 function removeCustomMat(id){ CUSTOM_MATS=CUSTOM_MATS.filter(m=>m.id!==id); saveCustomMats(); }
-function presetList(cat){ return [...BASE_PRESETS[cat], ...CUSTOM[cat].map(p=>({...p,custom:true}))]; }
+function presetList(cat){ return [...BASE_PRESETS[cat], ...CUSTOM[cat].map(p=>({...p,custom:true}))]; }   /* ПОЛНЫЙ список — для findPreset/расчёта, старые расчёты не рвём */
 function findPreset(cat,id){ return presetList(cat).find(p=>p.id===id)||null; }
+
+/* ── Скрытые встроенные пресеты: пользователь прячет ненужные из каталога ──
+   Ключ aq_hidden_presets_v1 + зеркало profiles.hidden_presets (как custom_presets).
+   Прячем ТОЛЬКО встроенные (BASE_PRESETS); свои удаляются через deleteCustom.
+   Скрытие — чисто отображение: findPreset и расчёт по-прежнему видят пресет,
+   поэтому сохранённые расчёты со скрытым материалом дают прежний результат. */
+const HIDDEN_KEY='aq_hidden_presets_v1';
+function loadHidden(){
+  try{ const h=JSON.parse(localStorage.getItem(HIDDEN_KEY)); if(h&&typeof h==='object') return Object.assign({walls:[],windows:[],doors:[],floors:[],ceilings:[]},h); }catch(e){}
+  return {walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+}
+let HIDDEN=loadHidden();
+let _hpSyncT=null;
+function saveHidden(){
+  try{ localStorage.setItem(HIDDEN_KEY,JSON.stringify(HIDDEN)); }catch(e){}
+  try{ clearTimeout(_hpSyncT); _hpSyncT=setTimeout(aqSyncHiddenPresets,1500); }catch(e){}
+}
+async function aqSyncHiddenPresets(){
+  try{
+    if(typeof sb!=='function'||typeof _AQ==='undefined') return;
+    const c=sb(), u=_AQ&&_AQ.user;
+    if(!c||!u||!u._sb) return;
+    await c.from('profiles').update({hidden_presets:HIDDEN}).eq('id',u.id);
+  }catch(e){ /* колонки hidden_presets может не быть — работаем только с localStorage */ }
+}
+function aqMergeCloudHidden(prof){
+  const cloud=prof&&prof.hidden_presets;
+  if(!cloud||typeof cloud!=='object') return;
+  let added=0;
+  for(const cat of ['walls','windows','doors','floors','ceilings']){
+    const arr=Array.isArray(cloud[cat])?cloud[cat]:[];
+    if(!Array.isArray(HIDDEN[cat])) HIDDEN[cat]=[];
+    for(const id of arr){ if(id&&!HIDDEN[cat].includes(id)){ HIDDEN[cat].push(id); added++; } }
+  }
+  if(added){ try{ localStorage.setItem(HIDDEN_KEY,JSON.stringify(HIDDEN)); }catch(e){} }
+}
+function isPresetHidden(cat,id){ return (HIDDEN[cat]||[]).includes(id); }
+/* Видимый каталог: скрытые встроенные убраны, свои (custom) не прячем */
+function presetListVisible(cat){ const hid=HIDDEN[cat]||[]; return presetList(cat).filter(p=>p.custom||!hid.includes(p.id)); }
+/* Список для селекта-пикера: гарантирует, что выбранный пресет присутствует, даже если скрыт */
+function _presetOptsList(cat,curId){
+  let list=presetListVisible(cat);
+  if(curId&&!list.some(p=>p.id===curId)){ const c=findPreset(cat,curId); if(c) list=[c,...list]; }
+  return list;
+}
+const _MAT_ID_KEYS={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
+/* Перерисовать всё, что зависит от каталога (после скрытия/возврата пресета) */
+function _afterCatalogChange(){
+  try{ if(ST.step===5 && typeof renderStep==='function') renderStep(); }catch(e){}
+  try{ if(typeof srRerender==='function' && document.getElementById('sr-editor')) srRerender(); }catch(e){}
+  try{ if(typeof updateLivePanel==='function') updateLivePanel(); }catch(e){}
+  try{ if(document.getElementById('ed-props')&&typeof edProps==='function') edProps(); }catch(e){}
+}
+/* Скрыть встроенный пресет из каталога (нельзя скрыть последний видимый) */
+function hidePreset(cat,id){
+  if(isPresetHidden(cat,id)) return;
+  if(presetListVisible(cat).length<=1){ toast(t('mat-hide-last-err'),'err'); return; }
+  if(!Array.isArray(HIDDEN[cat])) HIDDEN[cat]=[];
+  HIDDEN[cat].push(id); saveHidden();
+  const k=_MAT_ID_KEYS[cat];
+  if(ST&&ST.mat&&ST.mat[k]===id){ const nv=presetListVisible(cat)[0]; if(nv){ ST.mat[k]=nv.id; toast(t('mat-hide-reselect').replace('{name}',nv.name)); } }
+  else toast(t('mat-hidden-toast'));
+  _afterCatalogChange();
+}
+/* Вернуть скрытый пресет в каталог */
+function unhidePreset(cat,id){ HIDDEN[cat]=(HIDDEN[cat]||[]).filter(x=>x!==id); saveHidden(); _afterCatalogChange(); }
+function unhideAll(cat){
+  if(cat) HIDDEN[cat]=[]; else HIDDEN={walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+  saveHidden(); _afterCatalogChange();
+}
+/* Возврат из Мастерской: снять скрытие и перерисовать модалку */
+function wsUnhide(cat,id){ unhidePreset(cat,id); if(typeof renderWorkshop==='function') renderWorkshop(cat); }
+function wsUnhideAll(cat){ unhideAll(cat); if(typeof renderWorkshop==='function') renderWorkshop(cat); }
 
 /* ── Поиск в пикере материалов (шаг 5) ── */
 const _matSearch = {walls:'',windows:'',doors:'',floors:'',ceilings:''};
@@ -6379,16 +6453,20 @@ document.addEventListener('click', _closePcardMenu);
 function pcardMenu(btn, id, cat, r){
   _closePcardMenu();
   const p = findPreset(cat, id);
+  const isCustom = !!(p&&p.custom);
   const rect = btn.getBoundingClientRect();
   const menu = document.createElement('div');
   menu.className = 'pcard-menu';
   menu.innerHTML = `
     <button onclick="_closePcardMenu();pcardChangeR('${id}','${cat}',${r})">✏ Изменить R</button>
     <button onclick="_closePcardMenu();pcardCopyToCustom('${id}','${cat}')">⧉ Копировать в своё</button>
-    <button onclick="_closePcardMenu();pcardInfo('${id}','${cat}')">ℹ Инфо</button>`;
+    <button onclick="_closePcardMenu();pcardInfo('${id}','${cat}')">ℹ Инфо</button>
+    ${isCustom
+      ? `<button onclick="_closePcardMenu();pcardDelete('${id}','${cat}')" style="color:#f87171">🗑 ${t('mat-delete')}</button>`
+      : `<button onclick="_closePcardMenu();hidePreset('${cat}','${id}')">🚫 ${t('mat-hide')}</button>`}`;
   document.body.appendChild(menu);
   _pcardMenuEl = menu;
-  const mw = 170, mh = 100;
+  const mw = 190, mh = 132;
   let top = rect.bottom + 4, left = rect.left - mw + rect.width;
   if(top + mh > window.innerHeight) top = rect.top - mh - 4;
   if(left < 4) left = 4;
@@ -6430,6 +6508,14 @@ function pcardInfo(id, cat){
   if(p.desc) lines.push(`Описание: ${p.desc}`);
   alert(lines.join('\n'));
 }
+/* Удалить свой (custom) материал из каталога — из меню карточки «⋮» */
+function pcardDelete(id, cat){
+  const p=findPreset(cat,id); if(!p||!p.custom) return;
+  if(!confirm(t('mat-delete-confirm').replace('{name}',p.name))) return;
+  deleteCustom(cat, id);   // сам сохраняет, переселектит и перерисовывает Мастерскую/шаг5/live
+  _afterCatalogChange();
+  toast(t('mat-deleted-toast'));
+}
 
 function toggleGrp(cat, grp){
   const key = cat+'|'+grp;
@@ -6458,7 +6544,9 @@ function renderMatCards(cat){
     </button>
   </div>`;
 
-  let list = presetList(cat);
+  let list = presetListVisible(cat);
+  /* выбранный, но скрытый (напр. из сохранённого расчёта) — всё равно показываем как активный */
+  if(currentId && !list.some(p=>p.id===currentId)){ const cur=findPreset(cat,currentId); if(cur) list=[...list,cur]; }
   if(q){
     list = list.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q));
     if(!list.length) return viewBar + '<p class="text-xs text-muted py-3 text-center">Ничего не найдено</p>';
@@ -7061,6 +7149,18 @@ const _i18n = {
     'sr-layer-add':'слой',
     'sr-layer-mat-ph':'материал',
     'sr-layers-hint':'Добавьте слои: материал → толщина (мм) → λ. R посчитается сам.',
+    // ── Фаза 1: каталог (скрытие) + «Мои материалы» в слоях ПРО ──
+    'mat-hide':'Скрыть из списка','mat-delete':'Удалить',
+    'mat-hide-last-err':'Нельзя скрыть последний материал в категории',
+    'mat-hide-reselect':'Материал скрыт → выбран «{name}»',
+    'mat-hidden-toast':'Материал скрыт · вернуть можно в Мастерской',
+    'mat-delete-confirm':'Удалить свой материал «{name}»?','mat-deleted-toast':'Материал удалён',
+    'ws-hidden-lbl':'Скрытые','ws-unhide':'Вернуть','ws-unhide-all':'Вернуть все',
+    'sr-my-mats':'Мои материалы','sr-my-mats-hint':'клик — добавить слоем',
+    'sr-my-mats-add':'Добавить слой из этого материала','sr-my-mats-del':'Удалить из «Моих материалов»',
+    'sr-save-mat':'Сохранить материал (имя + λ) в «Мои материалы»',
+    'sr-open-workshop-tip':'Мастерская: создать конструкцию и сохранить в свой список','sr-workshop-short':'Мастерская',
+    'sr-r-from-layers':'R из слоёв','sr-r-from-layers-tip':'R берётся из слоёв ниже — выбранный пресет не участвует',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -7603,6 +7703,18 @@ const _i18n = {
     'simple-same-floor':"Pol bilan bir xil o'lcham (avto)",
     'simple-door-type-lbl':"Eshik turi",
     'simple-mat-lbl':"Material",
+    // ── Faza 1: katalog (yashirish) + «Mening materiallarim» PRO qatlamlarida ──
+    'mat-hide':"Ro'yxatdan yashirish",'mat-delete':"O'chirish",
+    'mat-hide-last-err':"Bo'limdagi oxirgi materialni yashirib bo'lmaydi",
+    'mat-hide-reselect':"Material yashirildi → «{name}» tanlandi",
+    'mat-hidden-toast':"Material yashirildi · Ustaxonada qaytarish mumkin",
+    'mat-delete-confirm':"«{name}» materialingizni o'chirilsinmi?",'mat-deleted-toast':"Material o'chirildi",
+    'ws-hidden-lbl':"Yashirilgan",'ws-unhide':"Qaytarish",'ws-unhide-all':"Hammasini qaytarish",
+    'sr-my-mats':"Mening materiallarim",'sr-my-mats-hint':"bosing — qatlam qo'shiladi",
+    'sr-my-mats-add':"Shu materialdan qatlam qo'shish",'sr-my-mats-del':"«Mening materiallarim»dan o'chirish",
+    'sr-save-mat':"Materialni (nom + λ) «Mening materiallarim»ga saqlash",
+    'sr-open-workshop-tip':"Ustaxona: konstruksiya yaratib, ro'yxatga saqlash",'sr-workshop-short':"Ustaxona",
+    'sr-r-from-layers':"R qatlamlardan",'sr-r-from-layers-tip':"R quyidagi qatlamlardan olinadi — tanlangan preset qatnashmaydi",
     'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
     'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
     'simple-attic-lbl':"Cherdak / tom",
@@ -8169,6 +8281,18 @@ const _i18n = {
     'simple-same-floor':'Same size as floor (auto)',
     'simple-door-type-lbl':'Door type',
     'simple-mat-lbl':'Material',
+    // ── Phase 1: catalog (hide) + “My materials” in PRO layers ──
+    'mat-hide':'Hide from list','mat-delete':'Delete',
+    'mat-hide-last-err':'Cannot hide the last material in a category',
+    'mat-hide-reselect':'Material hidden → selected “{name}”',
+    'mat-hidden-toast':'Material hidden · restore it in the Workshop',
+    'mat-delete-confirm':'Delete your material “{name}”?','mat-deleted-toast':'Material deleted',
+    'ws-hidden-lbl':'Hidden','ws-unhide':'Restore','ws-unhide-all':'Restore all',
+    'sr-my-mats':'My materials','sr-my-mats-hint':'click to add as a layer',
+    'sr-my-mats-add':'Add a layer from this material','sr-my-mats-del':'Remove from “My materials”',
+    'sr-save-mat':'Save material (name + λ) to “My materials”',
+    'sr-open-workshop-tip':'Workshop: build a construction and save it to your list','sr-workshop-short':'Workshop',
+    'sr-r-from-layers':'R from layers','sr-r-from-layers-tip':'R is taken from the layers below — the selected preset is not used',
     'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
     'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
     'simple-attic-lbl':'Attic / roof',
@@ -9129,6 +9253,34 @@ function runSelfTest(){
       CUSTOM_MATS.length=0; snapM.forEach(m=>CUSTOM_MATS.push(m));   // восстановить
       return r1.ok && lamOk;
     })(), 'своя λ подставляется из «Моих материалов»');
+    /* ── Фаза 1: скрытие пресетов ── */
+    ok('Скрытие: presetListVisible прячет, findPreset/расчёт — нет', (()=>{
+      const snap=HIDDEN.walls.slice();
+      const tid=BASE_PRESETS.walls[1].id;
+      if(!HIDDEN.walls.includes(tid)) HIDDEN.walls.push(tid);
+      const gone=!presetListVisible('walls').some(p=>p.id===tid);
+      const stillFound=!!findPreset('walls',tid);
+      HIDDEN.walls.length=0; snap.forEach(x=>HIDDEN.walls.push(x));   // восстановить
+      return gone && stillFound;
+    })(), 'скрытый исчезает из каталога, но расчёт его находит');
+    ok('_srMatOpts всегда включает выбранный пресет, даже если он скрыт', (()=>{
+      const snap=HIDDEN.walls.slice();
+      const tid=BASE_PRESETS.walls[1].id;
+      if(!HIDDEN.walls.includes(tid)) HIDDEN.walls.push(tid);
+      const opts=_srMatOpts('walls', tid);
+      HIDDEN.walls.length=0; snap.forEach(x=>HIDDEN.walls.push(x));
+      return opts.indexOf('value="'+tid+'"')>=0;
+    })(), 'скрытый-но-выбранный остаётся в селекте');
+    ok('PRO-слои: авто-λ пола ищет и «Мои материалы» (пул поверхности)', (()=>{
+      const snapM=CUSTOM_MATS.slice();
+      const uniq='__ТестПол '+Math.random().toString(36).slice(2,6);
+      addCustomMat(uniq, 0.033);
+      const m=leMatByName({mats:_srSurfaceMats('floors')}, uniq);
+      const lamOk=m && Math.abs(leMatLambda(m)-0.033)<1e-9;
+      const idx=CUSTOM_MATS.findIndex(x=>x.name===uniq); if(idx>=0) removeCustomMat(CUSTOM_MATS[idx].id);
+      CUSTOM_MATS.length=0; snapM.forEach(x=>CUSTOM_MATS.push(x));
+      return lamOk;
+    })(), 'своя λ подставится в слой пола ПРО');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -9929,7 +10081,7 @@ const SR_SECTIONS = [
   {kind:'ceilings', color:'#fb923c', dims:'lw'},
 ];
 function _srMatOpts(cat,curId){
-  return presetList(cat).map(p=>`<option value="${p.id}" ${p.id===curId?'selected':''}>${p.name} (R=${(p.r||0).toFixed(2)})</option>`).join('');
+  return _presetOptsList(cat,curId).map(p=>`<option value="${p.id}" ${p.id===curId?'selected':''}>${p.name} (R=${(p.r||0).toFixed(2)})</option>`).join('');
 }
 function _srItemArea(r,kind,it){
   if(kind==='ceilings'&&it.sameAsFloor){ const f=(r.floors||[])[0]; return f?(f.length||0)*(f.width||0):0; }
@@ -9944,6 +10096,41 @@ function _srLayersSum(it){
   for(const ly of (it&&it.layers||[])){ const d=parseFloat(ly.d), la=parseFloat(ly.l); if(d>0&&la>0) sum+=d/1000/la; }
   return sum;
 }
+/* ── «Мои материалы» в слоях ПРО (паритет с единым le-редактором) ──
+   Пул поверхности: стены → RAW_MATERIALS, полы → FLOOR_MATS, потолки → CEIL_MATS. */
+function _srSurfaceMats(kind){ return kind==='floors'?FLOOR_MATS:kind==='ceilings'?CEIL_MATS:RAW_MATERIALS; }
+/* datalist для строки слоя: «Мои материалы» первыми + пул поверхности + весь справочник, без дублей по имени */
+function _srDatalist(kind){
+  const seen=new Set(), opts=[];
+  for(const pool of [CUSTOM_MATS,_srSurfaceMats(kind),RAW_MATERIALS]){
+    for(const m of pool){ if(m&&m.name&&!seen.has(m.name)){ seen.add(m.name); const lam=leMatLambda(m); opts.push(`<option value="${sxEsc(m.name)}">${lam!=null?'λ '+lam:''}</option>`); } }
+  }
+  return opts.join('');
+}
+/* Материал слоя уже в справочнике/«Моих» с той же λ? Тогда 💾 не предлагаем */
+function _srMatKnown(kind,ly){
+  const nm=(ly&&ly.name||'').trim(); const la=parseFloat(ly&&ly.l);
+  if(!nm||!(la>0)) return true;
+  const m=leMatByName({mats:_srSurfaceMats(kind)}, nm);
+  return !!(m && Math.abs((leMatLambda(m)||0)-la)<1e-6);
+}
+/* 💾 из строки слоя ПРО: сохранить материал (имя+λ) в «Мои материалы» */
+function srSaveLayerMat(i,kind,ii,li){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii];
+  const ly=it&&it.layers&&it.layers[li]; if(!ly) return;
+  const res=addCustomMat(ly.name, ly.l);
+  if(res.ok){ toast(res.updated?'λ обновлена в «Моих материалах»':'Материал сохранён в «Мои материалы»'); _srFocusRoom=i; srRerender(); }
+  else toast(res.err||'Не сохранено','err');
+}
+/* Чип «Мои материалы» → вставить новым слоем */
+function srInsertMat(i,kind,ii,id){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii];
+  const m=CUSTOM_MATS.find(x=>x.id===id); if(!it||!m) return;
+  _srEnsureLayers(it).push({name:m.name,d:'',l:String(m.lambda)});
+  _srFocusRoom=i; srRerender();
+}
+/* × на чипе «Мои материалы» → удалить из личной библиотеки */
+function srDeleteMat(i,id){ removeCustomMat(id); _srFocusRoom=i; srRerender(); }
 function _srItemR(kind,it){
   const s=_srLayersSum(it); if(s<=0) return null;
   return kind==='walls' ? s+WALL_ENVELOPE_R : s;
@@ -9973,8 +10160,9 @@ function srSetLayerName(i,kind,ii,li,val){
   const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
   _srEnsureLayers(it); if(!it.layers[li]) return;
   it.layers[li].name=val;
-  const mat=RAW_MATERIALS.find(m=>m.name===val);           // авто-λ из базы
-  if(mat && !(parseFloat(it.layers[li].l)>0)) it.layers[li].l=String(mat.λ);
+  const mat=leMatByName({mats:_srSurfaceMats(kind)}, val);   // авто-λ: пул поверхности → Мои материалы → справочник
+  const lam=leMatLambda(mat);
+  if(lam!=null && !(parseFloat(it.layers[li].l)>0)) it.layers[li].l=String(lam);
   _srFocusRoom=i; srRerender();
 }
 /* живое обновление R по слою + ΣR без полного ре-рендера (сохраняет фокус) */
@@ -9988,27 +10176,46 @@ function _srRecalcLayers(i,kind,ii){
   const sum=_srItemR(kind,it);
   const badge=document.getElementById(`sr-sumr-${i}-${kind}-${ii}`);
   if(badge){ if(sum!=null){ badge.textContent='ΣR '+sum.toFixed(2); badge.classList.remove('hidden'); } else badge.classList.add('hidden'); }
+  /* «R из слоёв» бейдж + приглушение селекта пресета — вживую вслед за ΣR */
+  const layered=sum!=null;
+  const rfl=document.getElementById(`sr-rfl-${i}-${kind}-${ii}`); if(rfl) rfl.classList.toggle('hidden', !layered);
+  const sel=document.getElementById(`sr-sel-${i}-${kind}-${ii}`); if(sel) sel.style.opacity=layered?'0.5':'';
   srResults();
 }
 function _srLayersBlock(i,kind,it,ii){
   const layers=Array.isArray(it.layers)?it.layers:[];
   const sum=_srItemR(kind,it);
-  const gc='grid-template-columns:1fr 52px 58px 44px 18px';
+  const gc='grid-template-columns:1fr 46px 50px 62px 16px';
   const rows=layers.map((ly,li)=>{
     const d=parseFloat(ly.d), la=parseFloat(ly.l); const lr=(d>0&&la>0)?d/1000/la:0;
+    const canSave=!_srMatKnown(kind,ly);
     return `<div class="grid gap-1 items-center" style="${gc}">
-      <input list="sr-rm-list" class="wi py-1 px-1.5 text-xs" placeholder="${t('sr-layer-mat-ph')}" value="${(ly.name||'').replace(/"/g,'&quot;')}" onchange="srSetLayerName(${i},'${kind}',${ii},${li},this.value)" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'name',this.value)">
-      <input type="number" min="0" step="1" class="wi py-1 px-0.5 text-xs text-center" placeholder="мм" value="${ly.d}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'d',this.value)">
-      <input type="number" min="0.001" step="0.001" class="wi py-1 px-0.5 text-xs text-center" placeholder="λ" value="${ly.l}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'l',this.value)">
-      <span id="sr-lr-${i}-${kind}-${ii}-${li}" class="text-[10px] font-mono text-center" style="color:#f59e0b">${lr>0?('R'+lr.toFixed(2)):'—'}</span>
+      <input list="sr-rm-list-${kind}" class="wi py-1 px-1.5 text-xs" placeholder="${t('sr-layer-mat-ph')}" value="${(ly.name||'').replace(/"/g,'&quot;')}" onchange="srSetLayerName(${i},'${kind}',${ii},${li},this.value)" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'name',this.value)">
+      <input type="number" min="0" step="1" class="wi py-1 px-0.5 text-xs text-center" placeholder="мм" value="${ly.d}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'d',this.value)" onchange="srRerender()">
+      <input type="number" min="0.001" step="0.001" class="wi py-1 px-0.5 text-xs text-center" placeholder="λ" value="${ly.l}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'l',this.value)" onchange="srRerender()">
+      <div class="flex items-center justify-center gap-0.5" style="min-width:0">
+        <span id="sr-lr-${i}-${kind}-${ii}-${li}" class="text-[10px] font-mono" style="color:#f59e0b">${lr>0?('R'+lr.toFixed(2)):'—'}</span>
+        ${canSave?`<button type="button" onclick="srSaveLayerMat(${i},'${kind}',${ii},${li})" title="${t('sr-save-mat')}" style="font-size:10px;line-height:1;color:#c084fc;background:none;border:none;cursor:pointer;padding:0">💾</button>`:''}
+      </div>
       <button type="button" onclick="srRemoveLayer(${i},'${kind}',${ii},${li})" class="text-muted hover:text-ember text-sm leading-none">×</button>
     </div>`;
   }).join('');
+  const myMats=CUSTOM_MATS.length?`<div class="mb-1.5">
+    <div style="font-size:9px;color:rgba(192,132,252,.75);margin-bottom:3px;letter-spacing:.04em;text-transform:uppercase">🛠 ${t('sr-my-mats')} <span style="opacity:.6;text-transform:none">— ${t('sr-my-mats-hint')}</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px">${CUSTOM_MATS.map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 4px 2px 7px;border-radius:4px;background:rgba(192,132,252,.09);border:1px solid rgba(192,132,252,.24);color:#d8b4fe;white-space:nowrap">
+      <button type="button" onclick="srInsertMat(${i},'${kind}',${ii},'${m.id}')" title="${t('sr-my-mats-add')}" style="background:none;border:none;color:inherit;cursor:pointer;font-size:9px;padding:0">${sxEsc(m.name)} · λ${m.lambda}</button>
+      <button type="button" onclick="srDeleteMat(${i},'${m.id}')" title="${t('sr-my-mats-del')}" style="background:none;border:none;color:rgba(248,113,113,.8);cursor:pointer;font-size:10px;padding:0;line-height:1">×</button>
+    </span>`).join('')}</div>
+  </div>`:'';
   return `<div class="mt-2 rounded-lg border border-amber/15 p-2" style="background:rgba(245,158,11,.04)">
-    <div class="flex items-center justify-between mb-1.5">
+    <div class="flex items-center justify-between gap-2 mb-1.5">
       <span class="text-[11px] font-semibold" style="color:rgba(245,158,11,.85)">${t('sr-layers-title')}</span>
-      <span id="sr-sumr-${i}-${kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded ${sum!=null?'':'hidden'}" style="background:rgba(245,158,11,.12);color:#f59e0b">ΣR ${(sum||0).toFixed(2)}</span>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <button type="button" onclick="openWorkshop('${kind}')" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:1px 6px;white-space:nowrap">🛠 ${t('sr-workshop-short')}</button>
+        <span id="sr-sumr-${i}-${kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded ${sum!=null?'':'hidden'}" style="background:rgba(245,158,11,.12);color:#f59e0b">ΣR ${(sum||0).toFixed(2)}</span>
+      </div>
     </div>
+    ${myMats}
     ${layers.length?`<div class="grid gap-1 mb-1 text-[9px] text-muted px-0.5" style="${gc}"><span>${t('sr-layer-mat-ph')}</span><span class="text-center">мм</span><span class="text-center">λ</span><span class="text-center">R</span><span></span></div>`:''}
     <div class="space-y-1">${rows||`<p class="text-[10px] text-muted italic">${t('sr-layers-hint')}</p>`}</div>
     <button type="button" onclick="srAddLayer(${i},'${kind}',${ii})" class="text-[11px] font-semibold mt-1.5 hover:underline" style="color:#f59e0b">+ ${t('sr-layer-add')}</button>
@@ -10028,9 +10235,15 @@ function simpleRoomsEditorInner(){
     <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${label}</label>
       <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="${min}" step="${step}"
         value="${val}" oninput="srSetItemNum(${i},'${kind}',${ii},'${field}',this.value)"></div>`;
-  const matFld=(i,kind,ii,cat,curId)=>`
-    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-mat-lbl')}</label>
-      <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'${kind}',${ii},'presetId',this.value)">${_srMatOpts(cat,curId)}</select></div>`;
+  /* Селект пресета. Если у элемента заданы валидные слои (_srItemR!=null), R берётся
+     из слоёв, а не из пресета — приглушаем селект и показываем бейдж «R из слоёв». */
+  const matFld=(i,kind,ii,cat,it)=>{
+    const curId=it.presetId;
+    const layered=_srItemR(kind,it)!=null;
+    return `
+    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-mat-lbl')}<span id="sr-rfl-${i}-${kind}-${ii}" class="${layered?'':'hidden'}" style="font-size:8px;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:3px;padding:0 4px;margin-left:4px;white-space:nowrap" title="${t('sr-r-from-layers-tip')}">${t('sr-r-from-layers')}</span></label>
+      <select id="sr-sel-${i}-${kind}-${ii}" class="wi py-1.5 text-sm" style="${layered?'opacity:.5':''}" title="${layered?t('sr-r-from-layers-tip'):''}" onchange="srSetItemStr(${i},'${kind}',${ii},'presetId',this.value)">${_srMatOpts(cat,curId)}</select></div>`;
+  };
 
   const itemFields=(i,kind,it,ii,color)=>{
     if(kind==='walls') return `
@@ -10040,14 +10253,14 @@ function simpleRoomsEditorInner(){
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'walls',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'walls',ii,'height',it.height||2.7,t('simple-hgt'),0.1,0.1)}
-        ${matFld(i,'walls',ii,'walls',it.presetId)}
+        ${matFld(i,'walls',ii,'walls',it)}
       </div>
       ${_srLayersBlock(i,'walls',it,ii)}`;
     if(kind==='windows') return `
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'windows',ii,'length',it.length||1.2,t('simple-len'),0.1,0.05)}
         ${numFld(i,'windows',ii,'height',it.height||1.4,t('simple-hgt'),0.1,0.05)}
-        ${matFld(i,'windows',ii,'windows',it.presetId)}
+        ${matFld(i,'windows',ii,'windows',it)}
       </div>`;
     if(kind==='doors') return `
       <div class="mb-2"><label class="block text-[11px] text-muted mb-1">${t('simple-door-type-lbl')}</label>
@@ -10056,13 +10269,13 @@ function simpleRoomsEditorInner(){
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'doors',ii,'length',it.length||0.9,t('simple-len'),0.1,0.05)}
         ${numFld(i,'doors',ii,'height',it.height||2.1,t('simple-hgt'),0.1,0.05)}
-        ${matFld(i,'doors',ii,'doors',it.presetId)}
+        ${matFld(i,'doors',ii,'doors',it)}
       </div>`;
     if(kind==='floors') return `
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'floors',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'floors',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
-        ${matFld(i,'floors',ii,'floors',it.presetId)}
+        ${matFld(i,'floors',ii,'floors',it)}
       </div>
       ${_srLayersBlock(i,'floors',it,ii)}`;
     /* ceilings */
@@ -10082,7 +10295,7 @@ function simpleRoomsEditorInner(){
             :`<div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-attic-lbl')}</label>
               <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'ceilings',${ii},'attic',this.value)">
                 ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>`;})()}
-        ${matFld(i,'ceilings',ii,'ceilings',it.presetId)}
+        ${matFld(i,'ceilings',ii,'ceilings',it)}
       </div>
       ${_srLayersBlock(i,'ceilings',it,ii)}`;
   };
@@ -10177,7 +10390,9 @@ function simpleRoomsEditorInner(){
     </details>`;
   }).join('');
 
-  return `<datalist id="sr-rm-list">${RAW_MATERIALS.map(m=>`<option value="${m.name}">`).join('')}</datalist>
+  return `<datalist id="sr-rm-list-walls">${_srDatalist('walls')}</datalist>
+  <datalist id="sr-rm-list-floors">${_srDatalist('floors')}</datalist>
+  <datalist id="sr-rm-list-ceilings">${_srDatalist('ceilings')}</datalist>
   ${cards}
   <button type="button" onclick="srAddRoom()"
     class="mt-1 w-full rounded-2xl border border-dashed border-amber/30 bg-amber/5 py-3 text-sm font-semibold text-amber hover:bg-amber/10 transition-colors">
@@ -13888,7 +14103,7 @@ function buildWallMatsPanel(room){
       <label class="text-[10px] text-muted mb-1 block">Конструкция стены</label>
       <select class="wi mb-2 text-xs py-1.5" onchange="edSetEdgeMat('${room.id}',${sel},'preset',this.value)">
         <option value="">— Глобальный пресет этажа</option>
-        ${wallPresets.map(p=>`<option value="${p.id}" ${selPreset===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
+        ${_presetOptsList('walls',selPreset).map(p=>`<option value="${p.id}" ${selPreset===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
         <option value="__manual" ${isManual?'selected':''}>✏ Ручной λ + толщина</option>
         <option value="__manualR" ${hasCustomR?'selected':''}>✏ Ручное R (готовое значение)</option>
         <option value="__layers" ${(hasLayersSel||em.layersMode)?'selected':''}>🧱 Многослойная конструкция (слои)</option>
@@ -14614,7 +14829,7 @@ function opRow(room,op,extSides){
       <button onclick="removeOpening('${room.id}','${op.id}')" class="text-muted hover:text-ember"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <select class="wi text-xs py-1" onchange="setOp('${room.id}','${op.id}','presetId',this.value)">
-      ${presetList(pl).map(p=>`<option value="${p.id}" ${op.presetId===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
+      ${_presetOptsList(pl,op.presetId).map(p=>`<option value="${p.id}" ${op.presetId===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
     </select>
     <div class="grid grid-cols-3 gap-1.5">
       <div><label class="text-[10px] text-muted">${t('op-w-lbl')||'W'}</label><input class="wi text-xs py-1" type="number" min="0.1" step="0.1" value="${op.w}" oninput="setOp('${room.id}','${op.id}','w',this.value)"></div>
@@ -14839,7 +15054,7 @@ function opOverridesNote(type){
 }
 function presetGrid(label,cat,currentId,onselect){
   const isWall = cat==='walls';
-  const total = presetList(cat).length;
+  const total = presetListVisible(cat).length;
   return `<div class="mb-6">
     <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-2">${label}${isWall?' '+tip('homog'):''}</h4>
     <div class="relative mb-2">
@@ -14956,6 +15171,19 @@ function renderWorkshop(cat){
           </button>
         </div>`).join('')}
       </div>
+    </div>`:''}
+
+    ${(HIDDEN[cat]&&HIDDEN[cat].length)?`<div class="mt-5 border-t border-sand/10 pt-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-semibold text-sand">${t('ws-hidden-lbl')} (${HIDDEN[cat].length})</p>
+        <button onclick="wsUnhideAll('${cat}')" class="text-[11px] text-amber hover:underline">${t('ws-unhide-all')}</button>
+      </div>
+      <div class="space-y-1.5">${HIDDEN[cat].map(id=>{ const bp=BASE_PRESETS[cat].find(p=>p.id===id); if(!bp) return ''; return `
+        <div class="flex items-center gap-2 text-xs rounded-lg border border-sand/10 bg-w800/20 px-3 py-2 opacity-70">
+          <span class="flex-1 text-cream truncate">${bp.name}</span>
+          <span class="mono text-muted flex-shrink-0">R ${(bp.r||0).toFixed(2)}</span>
+          <button onclick="wsUnhide('${cat}','${id}')" class="text-[11px] text-amber px-2 py-0.5 rounded border border-amber/30 hover:bg-amber/10 flex-shrink-0">${t('ws-unhide')}</button>
+        </div>`; }).join('')}</div>
     </div>`:''}`;
 }
 
@@ -15041,7 +15269,7 @@ function saveWorkshop(cat){
 function deleteCustom(cat,id,silent){
   CUSTOM[cat]=CUSTOM[cat].filter(p=>p.id!==id); saveCustom();
   const map={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
-  if(ST.mat[map[cat]]===id) ST.mat[map[cat]]=BASE_PRESETS[cat][0].id;
+  if(ST.mat[map[cat]]===id){ const nv=(typeof presetListVisible==='function'&&presetListVisible(cat)[0])||BASE_PRESETS[cat][0]; ST.mat[map[cat]]=nv.id; }
   if(!silent){ renderWorkshop(cat); if(ST.step===5) renderStep(); updateLivePanel(); if(document.getElementById('ed-props')&&typeof edProps==='function') edProps(); }
 }
 
