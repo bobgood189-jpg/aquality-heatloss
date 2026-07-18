@@ -7213,7 +7213,7 @@ const _i18n = {
     'sr-open-workshop-tip':'Мастерская: создать конструкцию и сохранить в свой список','sr-workshop-short':'Мастерская',
     'sr-r-from-layers':'R из слоёв','sr-r-from-layers-tip':'R берётся из слоёв ниже — выбранный пресет не участвует',
     'mat-folder-mine':'Мои материалы','mat-folder-catalog':'Каталог материалов','mat-folder-popular':'Популярно',
-    'mat-create-in-ws':'Создать в Мастерской','mat-mine-empty':'Пока пусто — создайте свой материал в Мастерской',
+    'mat-create-in-ws':'Создать в Мастерской','mat-mine-empty':'Пока пусто — создайте свой материал в Мастерской','sr-pick-title':'Выберите материал',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -7769,7 +7769,7 @@ const _i18n = {
     'sr-open-workshop-tip':"Ustaxona: konstruksiya yaratib, ro'yxatga saqlash",'sr-workshop-short':"Ustaxona",
     'sr-r-from-layers':"R qatlamlardan",'sr-r-from-layers-tip':"R quyidagi qatlamlardan olinadi — tanlangan preset qatnashmaydi",
     'mat-folder-mine':"Mening materiallarim",'mat-folder-catalog':"Materiallar katalogi",'mat-folder-popular':"Ommabop",
-    'mat-create-in-ws':"Ustaxonada yaratish",'mat-mine-empty':"Hozircha bo'sh — Ustaxonada o'z materialingizni yarating",
+    'mat-create-in-ws':"Ustaxonada yaratish",'mat-mine-empty':"Hozircha bo'sh — Ustaxonada o'z materialingizni yarating",'sr-pick-title':"Material tanlang",
     'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
     'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
     'simple-attic-lbl':"Cherdak / tom",
@@ -8349,7 +8349,7 @@ const _i18n = {
     'sr-open-workshop-tip':'Workshop: build a construction and save it to your list','sr-workshop-short':'Workshop',
     'sr-r-from-layers':'R from layers','sr-r-from-layers-tip':'R is taken from the layers below — the selected preset is not used',
     'mat-folder-mine':'My materials','mat-folder-catalog':'Materials catalog','mat-folder-popular':'Popular',
-    'mat-create-in-ws':'Create in Workshop','mat-mine-empty':'Empty for now — create your material in the Workshop',
+    'mat-create-in-ws':'Create in Workshop','mat-mine-empty':'Empty for now — create your material in the Workshop','sr-pick-title':'Choose a material',
     'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
     'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
     'simple-attic-lbl':'Attic / roof',
@@ -10032,15 +10032,16 @@ function srPickMat(i,kind,ii,id){
 function srPickFolder(cat,gkey,open){ _grpOpen['srp|'+cat+'|'+gkey]=!!open; srRerender(); }
 function _srMatRow(i,kind,ii,p,curId){
   const active=p.id===curId;
-  return `<button type="button" onclick="srPickMat(${i},'${kind}',${ii},'${p.id}')" class="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg text-left transition-colors ${active?'bg-amber/15':'hover:bg-white/5'}">
-    <span class="truncate text-xs ${active?'text-amber font-semibold':'text-cream'}">${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}</span>
-    <span class="mono text-[10px] flex-shrink-0 ${active?'text-amber':'text-muted'}">R ${(p.r||0).toFixed(2)}</span>
+  const lv=(typeof dispLambda==='function')?dispLambda(p):null;
+  return `<button type="button" onclick="srPickMat(${i},'${kind}',${ii},'${p.id}')" title="${sxEsc(p.name)}" class="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-left border transition-colors ${active?'border-amber/50 bg-amber/10':'border-white/[.06] bg-w800/30 hover:border-white/20 hover:bg-white/[.04]'}">
+    <span class="min-w-0 flex-1 text-xs leading-snug ${active?'text-amber font-semibold':'text-cream'}"><span class="block truncate">${active?'✓ ':''}${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}</span></span>
+    <span class="mono text-[10px] flex-shrink-0 text-right ${active?'text-amber':'text-muted'}">R ${(p.r||0).toFixed(2)}${lv!=null?`<span class="block text-[9px] opacity-70">λ${lv}</span>`:''}</span>
   </button>`;
 }
 function _srMatFolderHdr(cat,gkey,icon,label,count,open,isMine){
-  return `<button type="button" onclick="srPickFolder('${cat}','${gkey}',${open?'false':'true'})" class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg mb-0.5 border border-white/5 bg-w800/40 hover:bg-white/5">
-    <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:${isMine?'#d8b4fe':'rgba(226,215,190,.85)'}">${icon?icon+' ':''}${label}</span>
-    <span class="flex items-center gap-1.5 text-muted"><span class="text-[10px]">${count}</span><svg class="w-3 h-3 transition-transform ${open?'':'rotate-[-90deg]'}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+  return `<button type="button" onclick="srPickFolder('${cat}','${gkey}',${open?'false':'true'})" class="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border transition-colors ${open?'border-white/10 bg-white/[.05]':'border-white/[.06] bg-w800/40 hover:bg-white/[.04]'}">
+    <span class="flex items-center gap-1.5 min-w-0 text-[11px] font-bold uppercase tracking-wide" style="color:${isMine?'#d8b4fe':'rgba(226,215,190,.9)'}">${icon?`<span class="flex-shrink-0">${icon}</span>`:''}<span class="truncate">${label}</span></span>
+    <span class="flex items-center gap-2 flex-shrink-0 text-muted"><span class="text-[10px] font-semibold rounded-full px-1.5 py-0.5" style="background:rgba(255,255,255,.07)">${count}</span><svg class="w-3.5 h-3.5 transition-transform duration-150 ${open?'':'rotate-[-90deg]'}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
   </button>`;
 }
 function _srMatPanel(i,kind,ii,cat,curId){
@@ -10051,16 +10052,17 @@ function _srMatPanel(i,kind,ii,cat,curId){
   const popular=builtin.filter(p=>popSet.has(p.id));
   const rest=builtin.filter(p=>!popSet.has(p.id));
   const isOpen=(gk,def)=>{ const k='srp|'+cat+'|'+gk; return _grpOpen.hasOwnProperty(k)?_grpOpen[k]===true:def; };
-  const row=p=>_srMatRow(i,kind,ii,p,curId);
+  const rg='grid grid-cols-1 sm:grid-cols-2 gap-1.5';
+  const rows=arr=>`<div class="${rg} pt-1.5 pb-1">${arr.map(p=>_srMatRow(i,kind,ii,p,curId)).join('')}</div>`;
 
   // 🛠 Мои — открыта по умолчанию
   const mineOpen=isOpen('__mine',true);
-  const createBtn=`<button type="button" onclick="openWorkshop('${cat}')" class="w-full mt-0.5 rounded-lg border border-dashed py-1.5 text-[11px] font-semibold" style="border-color:rgba(192,132,252,.4);background:rgba(192,132,252,.06);color:#c084fc">+ ${t('mat-create-in-ws')}</button>`;
-  const mineBody=mineOpen?`<div class="pl-1 space-y-0.5 mb-1">${custom.length?custom.map(row).join(''):`<p class="text-[10px] text-muted italic px-1 py-0.5">${t('mat-mine-empty')}</p>`}${createBtn}</div>`:'';
+  const createBtn=`<button type="button" onclick="openWorkshop('${cat}')" class="w-full rounded-lg border border-dashed py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1 transition-colors" style="border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.07);color:#c084fc" onmouseover="this.style.background='rgba(192,132,252,.14)'" onmouseout="this.style.background='rgba(192,132,252,.07)'">+ ${t('mat-create-in-ws')}</button>`;
+  const mineBody=mineOpen?`<div class="pt-1.5 pb-1">${custom.length?`<div class="${rg} mb-1.5">${custom.map(p=>_srMatRow(i,kind,ii,p,curId)).join('')}</div>`:`<p class="text-[11px] text-muted italic px-1 py-1.5">${t('mat-mine-empty')}</p>`}${createBtn}</div>`:'';
 
   // ⭐ Популярно — свёрнуто (авто-раскрытие, если выбран популярный)
   const popOpen=popular.length?isOpen('__popular',popSet.has(curId)):false;
-  const popBody=popular.length&&popOpen?`<div class="pl-1 space-y-0.5 mb-1">${popular.map(row).join('')}</div>`:'';
+  const popBody=popular.length&&popOpen?rows(popular):'';
 
   // 📁 Каталог — свёрнуто; внутри группы (Кирпич/Газоблок…), авто-раскрытие группы с выбором
   const catDef=builtin.some(p=>p.id===curId)&&!popSet.has(curId);
@@ -10069,17 +10071,23 @@ function _srMatPanel(i,kind,ii,cat,curId){
   if(catOpen){
     const grpMap={},grpOrder=[];
     rest.forEach(p=>{ const g=p.group||'Прочее'; if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);} grpMap[g].push(p); });
-    catBody=`<div class="pl-1 mb-1">${grpOrder.map(g=>{
+    catBody=`<div class="mt-1 ml-1 pl-2 border-l border-white/[.07] space-y-1">${grpOrder.map(g=>{
       const gk='g__'+g;
       const gOpen=isOpen(gk, grpMap[g].some(p=>p.id===curId));
-      return _srMatFolderHdr(cat,gk,'',g,grpMap[g].length,gOpen,false)+(gOpen?`<div class="pl-1 space-y-0.5 mb-0.5">${grpMap[g].map(row).join('')}</div>`:'');
+      return `<div>${_srMatFolderHdr(cat,gk,'',g,grpMap[g].length,gOpen,false)}${gOpen?rows(grpMap[g]):''}</div>`;
     }).join('')}</div>`;
   }
 
-  return `<div id="sr-matpick-${i}-${kind}-${ii}" class="mt-1 rounded-xl border border-sand/15 bg-w900/95 p-2 overflow-y-auto" style="max-height:19rem" data-lenis-prevent>
-    ${_srMatFolderHdr(cat,'__mine','🛠',t('mat-folder-mine'),custom.length,mineOpen,true)}${mineBody}
-    ${popular.length?_srMatFolderHdr(cat,'__popular','⭐',t('mat-folder-popular'),popular.length,popOpen,false)+popBody:''}
-    ${_srMatFolderHdr(cat,'__catalog','📁',t('mat-folder-catalog'),rest.length,catOpen,false)}${catBody}
+  return `<div id="sr-matpick-${i}-${kind}-${ii}" class="mt-2 rounded-xl border border-sand/15 p-2.5" style="background:rgba(8,10,18,.75);box-shadow:0 10px 30px rgba(0,0,0,.4)">
+    <div class="flex items-center justify-between mb-2 px-0.5">
+      <span class="text-[11px] font-semibold text-sand/80 uppercase tracking-wide">${t('sr-pick-title')}</span>
+      <button type="button" onclick="srToggleMatPick(${i},'${kind}',${ii})" class="text-muted hover:text-cream text-sm leading-none px-1.5 py-0.5 rounded border border-white/10 hover:border-white/25">✕</button>
+    </div>
+    <div class="overflow-y-auto pr-0.5 space-y-1.5" style="max-height:22rem" data-lenis-prevent>
+      <div>${_srMatFolderHdr(cat,'__mine','🛠',t('mat-folder-mine'),custom.length,mineOpen,true)}${mineBody}</div>
+      ${popular.length?`<div>${_srMatFolderHdr(cat,'__popular','⭐',t('mat-folder-popular'),popular.length,popOpen,false)}${popBody}</div>`:''}
+      <div>${_srMatFolderHdr(cat,'__catalog','📁',t('mat-folder-catalog'),rest.length,catOpen,false)}${catBody}</div>
+    </div>
   </div>`;
 }
 function srSetType(i,typeId){
@@ -10378,9 +10386,10 @@ function simpleRoomsEditorInner(){
       <button type="button" id="sr-sel-${i}-${kind}-${ii}" onclick="srToggleMatPick(${i},'${kind}',${ii})" class="wi py-1.5 text-sm w-full flex items-center justify-between gap-2 text-left" style="${layered?'opacity:.6':''}" title="${layered?t('sr-r-from-layers-tip'):t('simple-mat-lbl')}">
         <span class="truncate">${sxEsc(curName)}</span>
         <span class="flex items-center gap-1.5 flex-shrink-0"><span class="mono text-[11px] text-amber">R ${curR}</span><svg class="w-3 h-3 text-muted transition-transform ${pickOpen?'rotate-180':''}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </button>
-      ${pickOpen?_srMatPanel(i,kind,ii,cat,curId):''}</div>`;
+      </button></div>`;
   };
+  /* Панель пикера рендерится на всю ширину карточки (не в узкой колонке) — под сеткой полей */
+  const matPanelSlot=(i,kind,ii,it)=>(_srMatPick===i+'|'+kind+'|'+ii)?_srMatPanel(i,kind,ii,kind,it.presetId):'';
 
   const itemFields=(i,kind,it,ii,color)=>{
     if(kind==='walls') return `
@@ -10392,13 +10401,15 @@ function simpleRoomsEditorInner(){
         ${numFld(i,'walls',ii,'height',it.height||2.7,t('simple-hgt'),0.1,0.1)}
         ${matFld(i,'walls',ii,'walls',it)}
       </div>
+      ${matPanelSlot(i,'walls',ii,it)}
       ${_srLayersBlock(i,'walls',it,ii)}`;
     if(kind==='windows') return `
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'windows',ii,'length',it.length||1.2,t('simple-len'),0.1,0.05)}
         ${numFld(i,'windows',ii,'height',it.height||1.4,t('simple-hgt'),0.1,0.05)}
         ${matFld(i,'windows',ii,'windows',it)}
-      </div>`;
+      </div>
+      ${matPanelSlot(i,'windows',ii,it)}`;
     if(kind==='doors') return `
       <div class="mb-2"><label class="block text-[11px] text-muted mb-1">${t('simple-door-type-lbl')}</label>
         <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'doors',${ii},'doorType',this.value)">
@@ -10407,13 +10418,15 @@ function simpleRoomsEditorInner(){
         ${numFld(i,'doors',ii,'length',it.length||0.9,t('simple-len'),0.1,0.05)}
         ${numFld(i,'doors',ii,'height',it.height||2.1,t('simple-hgt'),0.1,0.05)}
         ${matFld(i,'doors',ii,'doors',it)}
-      </div>`;
+      </div>
+      ${matPanelSlot(i,'doors',ii,it)}`;
     if(kind==='floors') return `
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'floors',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'floors',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
         ${matFld(i,'floors',ii,'floors',it)}
       </div>
+      ${matPanelSlot(i,'floors',ii,it)}
       ${_srLayersBlock(i,'floors',it,ii)}`;
     /* ceilings */
     return `
@@ -10434,6 +10447,7 @@ function simpleRoomsEditorInner(){
                 ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>`;})()}
         ${matFld(i,'ceilings',ii,'ceilings',it)}
       </div>
+      ${matPanelSlot(i,'ceilings',ii,it)}
       ${_srLayersBlock(i,'ceilings',it,ii)}`;
   };
 
