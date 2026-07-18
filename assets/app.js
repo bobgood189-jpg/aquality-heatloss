@@ -17233,7 +17233,9 @@ void main(void){
     vec2 p=uv;float d=length(p);
     col+=.00125/d*(cos(sin(i)*vec3(1,2,3))+1.);
     float b=noise(i+p+bg*1.731);
-    col+=.002*b/length(max(p,vec2(b*p.x*.02,p.y)));
+    float streak=length(max(p,vec2(b*p.x*.02,p.y*.6)));
+    col+=.0075*b/streak;
+    col+=.0026*b/(streak+.3);
     col=mix(col,vec3(bg*.25,bg*.137,bg*.05),d);
   }
   // Dark palette: thermal cold — deep blue-black with azure nebula (FLIR exterior)
