@@ -7215,6 +7215,7 @@ const _i18n = {
     'mat-folder-mine':'Мои материалы','mat-folder-catalog':'Каталог материалов','mat-folder-popular':'Популярно',
     'mat-create-in-ws':'Создать в Мастерской','mat-mine-empty':'Пока пусто — создайте свой материал в Мастерской','sr-pick-title':'Выберите материал',
     'sr-floors-title':'Этажи и подвал','sr-add-floor':'Добавить этаж','sr-add-basement':'Добавить подвал','sr-floor-lbl':'Этаж','sr-floor-empty':'На этом этаже пока нет комнат','sr-basement-word':'подвал','sr-floor-remove':'Удалить этаж','sr-basement-remove':'Убрать подвал','sr-basement-t-title':'Расчётная температура подвала',
+    'sr-dir-lbl':'Сторона света','sr-dir-none':'не задано','sr-height-tip':'Надбавка на высоту >4 м (СНиП): +2% за метр, максимум +15%',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -7772,6 +7773,7 @@ const _i18n = {
     'mat-folder-mine':"Mening materiallarim",'mat-folder-catalog':"Materiallar katalogi",'mat-folder-popular':"Ommabop",
     'mat-create-in-ws':"Ustaxonada yaratish",'mat-mine-empty':"Hozircha bo'sh — Ustaxonada o'z materialingizni yarating",'sr-pick-title':"Material tanlang",
     'sr-floors-title':"Qavatlar va yerto'la",'sr-add-floor':"Qavat qo'shish",'sr-add-basement':"Yerto'la qo'shish",'sr-floor-lbl':"Qavat",'sr-floor-empty':"Bu qavatda hozircha xona yo'q",'sr-basement-word':"yerto'la",'sr-floor-remove':"Qavatni o'chirish",'sr-basement-remove':"Yerto'lani olib tashlash",'sr-basement-t-title':"Yerto'laning hisobiy harorati",
+    'sr-dir-lbl':"Dunyo tomoni",'sr-dir-none':"belgilanmagan",'sr-height-tip':"Balandlik >4 m uchun ustama (SNiP): metriga +2%, maksimum +15%",
     'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
     'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
     'simple-attic-lbl':"Cherdak / tom",
@@ -8353,6 +8355,7 @@ const _i18n = {
     'mat-folder-mine':'My materials','mat-folder-catalog':'Materials catalog','mat-folder-popular':'Popular',
     'mat-create-in-ws':'Create in Workshop','mat-mine-empty':'Empty for now — create your material in the Workshop','sr-pick-title':'Choose a material',
     'sr-floors-title':'Floors & basement','sr-add-floor':'Add floor','sr-add-basement':'Add basement','sr-floor-lbl':'Floor','sr-floor-empty':'No rooms on this floor yet','sr-basement-word':'basement','sr-floor-remove':'Remove floor','sr-basement-remove':'Remove basement','sr-basement-t-title':'Basement design temperature',
+    'sr-dir-lbl':'Orientation','sr-dir-none':'not set','sr-height-tip':'Height surcharge >4 m (SNiP): +2%/m, max +15%',
     'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
     'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
     'simple-attic-lbl':'Attic / roof',
@@ -8442,6 +8445,12 @@ const BETA_ORIENT = {N:0.10, NE:0.10, E:0.10, SE:0.05, S:0.0, SW:0.0, W:0.05, NW
 const R_PARTITION = 0.45;          // приведённое R внутренней перегородки (½ кирпича оштукатуренная)
 const CORNER_SURCHARGE = 0.05;     // +5% на угловые помещения (2+ наружных стены) — СНиП
 const WALL_HOMOG_DEFAULT = 0.85;   // коэф. однородности; мостики холода (швы раствора, перемычки) по СП 50.13330.2012 прил. В
+/* Надбавка на высоту помещения >4 м: +2% трансмиссионных потерь за каждый метр сверх 4 м,
+   максимум +15% (СНиП). Применяется к вертикальным ограждениям (стены/окна/двери). Всегда вкл. */
+function heightSurcharge(H){ return Math.min(0.15, Math.max(0, ((H||0)-4)*0.02)); }
+/* Подписи 8 сторон света для селектора ориентации (в ru — русские, иначе — код компаса) */
+function dirLabel8(code){ if(!code) return '—'; const ru={N:'С',NE:'СВ',E:'В',SE:'ЮВ',S:'Ю',SW:'ЮЗ',W:'З',NW:'СЗ'}; return (_lang==='ru'&&ru[code])?ru[code]:code; }
+const DIR8=['N','NE','E','SE','S','SW','W','NW'];
 
 /* ── Коэффициенты теплоотдачи поверхностей α [Вт/(м²·°C)] (КМК 2.01.04-18) ──
    Конверт стены R_si+R_se = 1/8.7 + 1/23 = 0.115+0.043 = 0.158.
@@ -8848,6 +8857,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
   const extDirs = new Set();
   for(const ed of edges){ if(ed.segs.some(s=>s.ext)) extDirs.add(ed.dir); }
   const cornerK = extDirs.size>=2 ? (1+CORNER_SURCHARGE) : 1;
+  const hs = heightSurcharge(H);   // надбавка на высоту >4 м (СНиП)
 
   for(const ed of edges){
     if(!ed.segs.length) continue;
@@ -8865,7 +8875,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
       const pl = op.type==='window' ? 'windows' : 'doors';
       const pp = findPreset(pl, op.presetId) || findPreset(pl, op.type==='window'?ST.mat.windowId:ST.mat.doorId);
       const dBeta = doorBeta(op);                          // надбавка на открывание наружной двери (КМК)
-      const k = seg.ext ? (1+beta+dBeta)*cornerK : 1;
+      const k = seg.ext ? (1+beta+dBeta)*(1+hs)*cornerK : 1;
       const opR = op.customU>0 ? 1/op.customU : (pp?pp.r:0);
       if(opR>0) breakdown[op.type] += (localDT/opR)*a*k;
     }
@@ -8884,7 +8894,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
       if(netWall<=0) return;
       const R = seg.ext ? edgeR : R_PARTITION;
       if(R<=0) return;
-      const k = seg.ext ? (1+beta)*cornerK : 1;
+      const k = seg.ext ? (1+beta)*(1+hs)*cornerK : 1;
       breakdown.wall += (localDT/R)*netWall*k;
     });
   }
@@ -9373,6 +9383,25 @@ function runSelfTest(){
       const wOutdoor =computeSimpleRoom(room,-14,false).breakdown.wall;
       return wBasement>0 && wBasement<wOutdoor;   // ΔT к −6 меньше, чем к −14 → меньше потерь
     })(), 'подвал −6 даёт меньше потерь стены, чем улица −14');
+    /* ── Фаза 4: добавочные коэффициенты ── */
+    ok('Ф4.1 ориентация ПРО: северная стена = +10% к потерям стены', (()=>{
+      const base={typeId:'living_room',tInt:20,height:2.7,corner:'auto',
+        walls:[{length:10,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],floors:[],ceilings:[]};
+      const noDir=computeSimpleRoom(base,-14).breakdown.wall;
+      const nDir=computeSimpleRoom({...base,walls:[{...base.walls[0],dir:'N'}]},-14).breakdown.wall;
+      return noDir>0 && Math.abs(nDir-noDir*1.10)<1e-6;
+    })(), 'С (+10%) корректно множит потери стены');
+    ok('Ф4.2 высота: +2%/м сверх 4 м, максимум +15%', (()=>{
+      return heightSurcharge(2.7)===0 && heightSurcharge(4)===0 &&
+        Math.abs(heightSurcharge(5)-0.02)<1e-9 && Math.abs(heightSurcharge(10)-0.12)<1e-9 && Math.abs(heightSurcharge(20)-0.15)<1e-9;
+    })(), 'H5→2%, H10→12%, H20→15% (капа)');
+    ok('Ф4.3 слоёная стена ПРО = слоёная стена МАКС (0.85 убран)', (()=>{
+      const lp=[{name:'Кирпич',d:'380',l:'0.7'},{name:'Минвата',d:'100',l:'0.045'}];
+      const rPro=computeSimpleRoom({typeId:'living_room',tInt:20,height:2.7,corner:'auto',
+        walls:[{length:1,height:1,presetId:ST.mat.wallId,layers:lp}],windows:[],doors:[],floors:[],ceilings:[]},-14).breakdown.wall;
+      const rMax=34/calcLayerR([{name:'Кирпич',lambda:0.7,thick:380},{name:'Минвата',lambda:0.045,thick:100}],'wall');
+      return rPro>0 && Math.abs(rPro-rMax)<0.5;   // S=1, cornerK=1, hs=0 при H=2.7
+    })(), 'слои ПРО == слои МАКС');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -10514,23 +10543,32 @@ function simpleRoomsEditorInner(){
   };
   /* Панель пикера рендерится на всю ширину карточки (не в узкой колонке) — под сеткой полей */
   const matPanelSlot=(i,kind,ii,it)=>(_srMatPick===i+'|'+kind+'|'+ii)?_srMatPanel(i,kind,ii,kind,it.presetId):'';
+  /* Ф4.1: сторона света (ориентация) для стен/окон/дверей — надбавка BETA_ORIENT */
+  const dirFld=(i,kind,ii,it)=>`
+      <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('sr-dir-lbl')}</label>
+        <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'${kind}',${ii},'dir',this.value)">
+          <option value="" ${!it.dir?'selected':''}>— ${t('sr-dir-none')}</option>
+          ${DIR8.map(d=>`<option value="${d}" ${it.dir===d?'selected':''}>${dirLabel8(d)}${BETA_ORIENT[d]>0?' +'+Math.round(BETA_ORIENT[d]*100)+'%':''}</option>`).join('')}
+        </select></div>`;
 
   const itemFields=(i,kind,it,ii,color)=>{
     if(kind==='walls') return `
       <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
         <input type="checkbox" class="accent-amber" ${it.basement?'checked':''} onchange="srSetItemBool(${i},'walls',${ii},'basement',this.checked)">
         <span class="text-xs text-sand">${t('simple-basement')}</span></label>
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         ${numFld(i,'walls',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'walls',ii,'height',it.height||2.7,t('simple-hgt'),0.1,0.1)}
+        ${dirFld(i,'walls',ii,it)}
         ${matFld(i,'walls',ii,'walls',it)}
       </div>
       ${matPanelSlot(i,'walls',ii,it)}
       ${_srLayersBlock(i,'walls',it,ii)}`;
     if(kind==='windows') return `
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         ${numFld(i,'windows',ii,'length',it.length||1.2,t('simple-len'),0.1,0.05)}
         ${numFld(i,'windows',ii,'height',it.height||1.4,t('simple-hgt'),0.1,0.05)}
+        ${dirFld(i,'windows',ii,it)}
         ${matFld(i,'windows',ii,'windows',it)}
       </div>
       ${matPanelSlot(i,'windows',ii,it)}`;
@@ -10538,9 +10576,10 @@ function simpleRoomsEditorInner(){
       <div class="mb-2"><label class="block text-[11px] text-muted mb-1">${t('simple-door-type-lbl')}</label>
         <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'doors',${ii},'doorType',this.value)">
           ${Object.entries(BETA_DOOR).map(([id,o])=>`<option value="${id}" ${(it.doorType||'none')===id?'selected':''}>${o.name}</option>`).join('')}</select></div>
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         ${numFld(i,'doors',ii,'length',it.length||0.9,t('simple-len'),0.1,0.05)}
         ${numFld(i,'doors',ii,'height',it.height||2.1,t('simple-hgt'),0.1,0.05)}
+        ${dirFld(i,'doors',ii,it)}
         ${matFld(i,'doors',ii,'doors',it)}
       </div>
       ${matPanelSlot(i,'doors',ii,it)}`;
@@ -10654,9 +10693,9 @@ function simpleRoomsEditorInner(){
           <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-tint')}</label>
             <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="5" max="35" step="1"
               value="${r.tInt||20}" oninput="ST.simpleRooms[${i}].tInt=Math.max(5,Math.min(35,+this.value||20));srResults()"></div>
-          <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-height')}</label>
+          <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-height')}${(r.height||2.7)>4?` <span style="font-size:8px;color:#f59e0b;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.3);border-radius:3px;padding:0 4px;white-space:nowrap" title="${t('sr-height-tip')}">+${Math.round(heightSurcharge(r.height)*100)}% >4м</span>`:''}</label>
             <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1.8" max="12" step="0.1"
-              value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7);srResults()"></div>
+              value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7);srResults()" onchange="srRerender()"></div>
         </div>
 
         <div class="grid ${floorSel?'grid-cols-2':'grid-cols-1'} gap-2">
@@ -10766,27 +10805,32 @@ function computeSimpleRoom(r,tExt,isBasement){
   const dTbase=isBasement?dTout:(tInt-simpleBasementT());  // к подвальной стене
   const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
   const cornerK=simpleCornerK(r);   // 'auto': ≥2 наружных стен → +5%, как в Макс
+  const hs=heightSurcharge(H);      // надбавка на высоту >4 м (СНиП, Ф4)
 
   // ── Стены (каждая — отдельная строка, как в боте) ──
   for(const w of (r.walls||[])){
     const S=(w.length||0)*(w.height||0); if(S<=0) continue;
     const wp=_srItemPreset('walls',w); if(!wp) continue;
-    const R=regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT);
+    /* Ф4.3: слои — точная сборка (как МАКС edgeMats.layers), без коэф. однородности 0.85 и без regimeR */
+    const R=wp.__layered?wp.r:regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT);
+    const betaW=BETA_ORIENT[w.dir]||0;                    // Ф4.1: ориентация стены
     const dT=w.basement?dTbase:dTout;
-    if(R>0&&dT>0) bd.wall+=(dT/R)*S*cornerK;
+    if(R>0&&dT>0) bd.wall+=(dT/R)*S*(1+betaW)*(1+hs)*cornerK;
   }
   // ── Окна ──
   for(const win of (r.windows||[])){
     const S=(win.length||0)*(win.height||0); if(S<=0) continue;
     const wp=findPreset('windows',win.presetId||ST.mat.windowId);
-    if(wp&&wp.r>0&&dTout>0) bd.window+=(dTout/wp.r)*S*cornerK;
+    const betaWin=BETA_ORIENT[win.dir]||0;
+    if(wp&&wp.r>0&&dTout>0) bd.window+=(dTout/wp.r)*S*(1+betaWin)*(1+hs)*cornerK;
   }
   // ── Двери ──
   for(const dr of (r.doors||[])){
     const S=(dr.length||0)*(dr.height||0); if(S<=0) continue;
     const dp=findPreset('doors',dr.presetId||ST.mat.doorId);
     const dBeta=(BETA_DOOR[dr.doorType||'none']||BETA_DOOR.none).beta;
-    if(dp&&dp.r>0&&dTout>0) bd.door+=(dTout/dp.r)*S*(1+dBeta)*cornerK;
+    const betaDr=BETA_ORIENT[dr.dir]||0;
+    if(dp&&dp.r>0&&dTout>0) bd.door+=(dTout/dp.r)*S*(1+betaDr+dBeta)*(1+hs)*cornerK;
   }
   // ── Полы: «на грунте» — зональный метод как в Макс (ΔT к улице, R грунта по зонам
   //    + утепление addR); прочие (над подвалом/подпольем) — плоское R и ΔT к t под полом ──
