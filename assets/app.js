@@ -11577,7 +11577,7 @@ const ESSENTIAL_TOOLS = ['draw','poly','select','delete','zoom-in','zoom-out','f
 /* Манифест записанных роликов-подсказок (assets/tool-videos/<id>.webm).
    Заполняется скриптом scripts/record-tool-videos.mjs после записи, напр. {draw:1,poly:1}. */
 const TOOL_VIDEOS = {"draw":1,"poly":1,"select":1,"delete":1,"zoom-in":1,"zoom-out":1,"fit":1};
-function toolVideoSrc(id){ return TOOL_VIDEOS[id] ? 'assets/tool-videos/'+id+'.webm' : null; }
+function toolVideoSrc(id){ return TOOL_VIDEOS[id] ? '/assets/tool-videos/'+id+'.webm' : null; }
 
 /* Пошаговые подсказки для карточек инструментов (i18n-ключи ts-<id>-N, тексты — в словарях). */
 const TOOL_STEPS = {
