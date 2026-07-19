@@ -6785,13 +6785,23 @@ const _i18n = {
     'mr-wall-reset':'Сбросить','mr-wall-global':'— Как глобальный —','mr-wall-manual':'✏ Вручную (λ и толщина)',
     'mr-wall-label-lam':'λ (Вт/м·К)','mr-wall-label-thick':'Толщина мм',
     // Tool categories
+    'tc-essential':'Основные','er-more-tools':'Ещё инструменты · PRO',
     'tc-draw':'Черчение','tc-modify':'Редактирование','tc-heating':'Отопление',
     'tc-rooms':'Помещения','tc-annotate':'Аннотации','tc-measure':'Измерения','tc-view':'Вид',
     // Tool labels
+    // Пошаговые подсказки карточек (Revit-стиль)
+    'ts-draw-1':'Нажми кнопку «Прямоугольник»','ts-draw-2':'Зажми мышь или палец на плане и тяни','ts-draw-3':'Отпусти — комната готова',
+    'ts-poly-1':'Кликай по углам комнаты один за другим','ts-poly-2':'Замкни на первой точке или нажми Enter',
+    'ts-select-1':'Кликни по комнате, чтобы выбрать','ts-select-2':'Тяни за квадратики по краям — размер, за середину — перемещение',
+    'ts-delete-1':'Выбери комнату инструментом «Выбрать»','ts-delete-2':'Нажми «Удалить» (или клавишу Del)',
+    'ts-zoom-in-1':'Нажимай кнопку — или крути колесо мыши вверх, щипок двумя пальцами',
+    'ts-zoom-out-1':'Нажимай кнопку — или колесо мыши вниз, щипок двумя пальцами',
+    'ts-fit-1':'Нажми — весь план впишется в экран. «Потерялся» — жми сюда',
+    'ts-view3d-1':'Нажми — дом станет объёмным','ts-view3d-2':'Вращай мышью или пальцем, колесо — приблизить','ts-view3d-3':'Нажми ещё раз — вернуться к плану',
     'tool-draw':'Прямоугольник','tool-poly':'Полигон','tool-line':'Линия','tool-arc':'Дуга','tool-circle':'Окружность',
     'tool-select':'Выбрать','tool-duplicate':'Копировать','tool-rotate':'Повернуть','tool-mirror':'Зеркало',
     'tool-scale':'Масштаб','tool-align':'Выровнять','tool-offset':'Смещение',
-    'tool-bring-front':'На перед','tool-delete-room':'Удалить',
+    'tool-bring-front':'На перед','tool-delete':'Удалить',
     'tool-radiator':'Радиатор','tool-warm-floor':'Тёплый пол','tool-boiler':'Котёл',
     'tool-pipe':'Трасса','tool-collector':'Коллектор','tool-thermostat':'Термостат',
     'tool-area-tag':'Тег площади','tool-room-type':'Тип комнаты','tool-ext-wall':'Нар. стена',
@@ -7336,13 +7346,23 @@ const _i18n = {
     'mr-wall-reset':'Tozalash','mr-wall-global':'— Global kabi —','mr-wall-manual':"✏ Qo'lda (λ va qalinlik)",
     'mr-wall-label-lam':'λ (Vt/m·K)','mr-wall-label-thick':'Qalinlik mm',
     // Tool categories
+    'tc-essential':'Asosiy','er-more-tools':'Boshqa asboblar · PRO',
     'tc-draw':'Chizish','tc-modify':'Tahrirlash','tc-heating':'Isitish',
     'tc-rooms':'Xonalar','tc-annotate':'Izohlar','tc-measure':"O'lchashlar",'tc-view':"Ko'rinish",
     // Tool labels
+    // Kartochka-maslahat qadamlari (Revit uslubida)
+    "ts-draw-1":"«To'rtburchak» tugmasini bos","ts-draw-2":"Rejada sichqoncha yoki barmoqni bosib turib tort","ts-draw-3":"Qo'yib yubor — xona tayyor",
+    "ts-poly-1":"Xona burchaklarini ketma-ket bos","ts-poly-2":"Birinchi nuqtada tugat yoki Enter bos",
+    "ts-select-1":"Tanlash uchun xonani bos","ts-select-2":"Chekka kvadratchalardan tort — o'lcham, o'rtasidan — ko'chirish",
+    "ts-delete-1":"«Tanlash» asbobi bilan xonani tanla","ts-delete-2":"«O'chirish»ni bos (yoki Del tugmasi)",
+    "ts-zoom-in-1":"Tugmani bos — yoki sichqoncha g'ildiragini yuqoriga, ikki barmoq bilan chimdi",
+    "ts-zoom-out-1":"Tugmani bos — yoki g'ildirakni pastga, ikki barmoq bilan chimdi",
+    "ts-fit-1":"Bos — butun reja ekranga sig'adi. «Yo'qotding» — shuni bos",
+    "ts-view3d-1":"Bos — uy hajmli bo'ladi","ts-view3d-2":"Sichqoncha yoki barmoq bilan aylantir, g'ildirak — yaqinlashtirish","ts-view3d-3":"Yana bos — rejaga qaytish",
     "tool-draw":"To'rtburchak","tool-poly":"Ko'pburchak",'tool-line':'Chiziq','tool-arc':'Yoy','tool-circle':'Aylana',
     'tool-select':'Tanlash','tool-duplicate':'Nusxalash','tool-rotate':'Burish','tool-mirror':"Ko'zgu",
     "tool-scale":"O'lcham",'tool-align':'Tekislash','tool-offset':'Siljitish',
-    'tool-bring-front':'Oldinga','tool-delete-room':"O'chirish",
+    'tool-bring-front':'Oldinga','tool-delete':"O'chirish",
     'tool-radiator':'Radiator','tool-warm-floor':'Issiq pol','tool-boiler':'Qozon',
     'tool-pipe':'Quvur','tool-collector':'Kollektor','tool-thermostat':'Termostat',
     'tool-area-tag':'Maydon tegi','tool-room-type':'Xona turi','tool-ext-wall':'Tashqi devor',
@@ -7902,13 +7922,23 @@ const _i18n = {
     'mr-wall-reset':'Reset','mr-wall-global':'— Same as global —','mr-wall-manual':'✏ Manual (λ and thickness)',
     'mr-wall-label-lam':'λ (W/m·K)','mr-wall-label-thick':'Thickness mm',
     // Tool categories
+    'tc-essential':'Essentials','er-more-tools':'More tools · PRO',
     'tc-draw':'Drawing','tc-modify':'Modify','tc-heating':'Heating',
     'tc-rooms':'Rooms','tc-annotate':'Annotate','tc-measure':'Measure','tc-view':'View',
     // Tool labels
+    // Tooltip card steps (Revit-style)
+    'ts-draw-1':'Press the “Rectangle” button','ts-draw-2':'Hold the mouse or finger on the plan and drag','ts-draw-3':'Release — the room is ready',
+    'ts-poly-1':'Click the room corners one by one','ts-poly-2':'Close on the first point or press Enter',
+    'ts-select-1':'Click a room to select it','ts-select-2':'Drag the edge squares to resize, the middle to move',
+    'ts-delete-1':'Pick the room with the “Select” tool','ts-delete-2':'Press “Delete” (or the Del key)',
+    'ts-zoom-in-1':'Tap the button — or scroll the wheel up, pinch out',
+    'ts-zoom-out-1':'Tap the button — or scroll the wheel down, pinch in',
+    'ts-fit-1':'Tap — the whole plan fits the screen. Lost it? Tap here',
+    'ts-view3d-1':'Tap — the house becomes 3D','ts-view3d-2':'Rotate with mouse or finger, wheel to zoom','ts-view3d-3':'Tap again — back to the plan',
     'tool-draw':'Rectangle','tool-poly':'Polygon','tool-line':'Line','tool-arc':'Arc','tool-circle':'Circle',
     'tool-select':'Select','tool-duplicate':'Duplicate','tool-rotate':'Rotate','tool-mirror':'Mirror',
     'tool-scale':'Scale','tool-align':'Align','tool-offset':'Offset',
-    'tool-bring-front':'Bring Front','tool-delete-room':'Delete',
+    'tool-bring-front':'Bring Front','tool-delete':'Delete',
     'tool-radiator':'Radiator','tool-warm-floor':'Radiant floor','tool-boiler':'Boiler',
     'tool-pipe':'Pipe run','tool-collector':'Manifold','tool-thermostat':'Thermostat',
     'tool-area-tag':'Area tag','tool-room-type':'Room type','tool-ext-wall':'Ext. wall',
@@ -10885,6 +10915,28 @@ const TOOL_REGISTRY=[
    action:()=>setEdTool('north-arrow')},
 ];
 
+/* ═══ Панель быстрого доступа: состав «Основных» больших кнопок.
+   Меняется правкой ТОЛЬКО этой строки — панель перестроится сама.
+   Полный справочник ID — в TOOL_REGISTRY выше. ═══ */
+const ESSENTIAL_TOOLS = ['draw','poly','select','delete','zoom-in','zoom-out','fit','view3d'];
+
+/* Манифест записанных роликов-подсказок (assets/tool-videos/<id>.webm).
+   Заполняется скриптом scripts/record-tool-videos.mjs после записи, напр. {draw:1,poly:1}. */
+const TOOL_VIDEOS = {"draw":1,"poly":1,"select":1,"delete":1,"zoom-in":1,"zoom-out":1,"fit":1};
+function toolVideoSrc(id){ return TOOL_VIDEOS[id] ? 'assets/tool-videos/'+id+'.webm' : null; }
+
+/* Пошаговые подсказки для карточек инструментов (i18n-ключи ts-<id>-N, тексты — в словарях). */
+const TOOL_STEPS = {
+  'draw':['ts-draw-1','ts-draw-2','ts-draw-3'],
+  'poly':['ts-poly-1','ts-poly-2'],
+  'select':['ts-select-1','ts-select-2'],
+  'delete':['ts-delete-1','ts-delete-2'],
+  'zoom-in':['ts-zoom-in-1'],
+  'zoom-out':['ts-zoom-out-1'],
+  'fit':['ts-fit-1'],
+  'view3d':['ts-view3d-1','ts-view3d-2','ts-view3d-3'],
+};
+
 /* VIEW3D — 3D вид (≥18 функций) */
 /* ═══ ШАГ 3/5: Three.js (r128 + OrbitControls) подключается ЛЕНИВО — только
    при первом реальном открытии 3D-вида. На старте страницы не грузится вовсе. ═══ */
@@ -11864,33 +11916,58 @@ function buildEditorUI(){
 /* ─── Ribbon builder ─── */
 function _rsvg(p){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">${p}</svg>`;}
 
-function erToolBtn(tool){
+function erToolBtn(tool,big){
   const hk=HOTKEYS.get(tool.id);
   const selRoom=edSelRoom&&edSelRoom();
   const active=(tool.id===EDITOR.tool)||(tool.id==='snap'&&EDITOR.snap)||(tool.id==='dims'&&EDITOR.showDims)||
     (tool.id==='area-tag'&&EDITOR.showAreaTags)||(tool.id==='heat-label'&&EDITOR.showHeatLabels)||(tool.id==='view3d'&&VIEW3D.active)||
     (tool.id==='schedule'&&EDITOR._scheduleMode)||(tool.id==='pin'&&selRoom&&selRoom.pinned);
-  return `<button class="er-ico${active?' active':''}" data-tool-id="${tool.id}" onclick="erClick('${tool.id}')">
+  return `<button class="er-ico${big?' er-ico--big':''}${active?' active':''}" data-tool-id="${tool.id}" onclick="erClick('${tool.id}')">
     ${_rsvg(tool.icon)}<span>${toolLabel(tool.id)||tool.label}</span>${hk?`<span class="er-hk">${hk}</span>`:''}
   </button>`;
 }
 
 function buildRibbon(){
+  erMigrateV2();
   const catState=erLoadCats();
   const rows=TOOL_CATEGORIES.map(cat=>{
-    const open=catState[cat.id]!==undefined?catState[cat.id]:true;
+    const open=catState[cat.id]!==undefined?catState[cat.id]:false;
     const tools=TOOL_REGISTRY.filter(tool=>tool.category===cat.id);
     return `<div class="er-cat"><div class="er-head${open?' open':''}" id="er-head-${cat.id}" onclick="erToggleCat('${cat.id}')">
       ${_rsvg(cat.sp)}<span>${catLabel(cat.id)}</span><span class="er-chev">›</span></div>
       <div class="er-body${open?'':' hidden'}" id="er-body-${cat.id}">${tools.map(tool=>erToolBtn(tool)).join('')}</div></div>`;
   }).join('');
+  const essBtns=ESSENTIAL_TOOLS.map(id=>{const tool=TOOL_REGISTRY.find(x=>x.id===id);return tool?erToolBtn(tool,true):'';}).join('');
+  const moreOpen=erLoadMore();
+  const essSp='<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>';
+  const moreSp='<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>';
   return `<div class="ed-ribbon" id="ed-ribbon" data-lenis-prevent>
     <div class="er-search"><input type="text" id="er-search" placeholder="${t('mr-search-ph')}" oninput="erFilter(this.value)" autocomplete="off"></div>
-    ${rows}</div>`;
+    <div class="er-essential" id="er-essential">
+      <div class="er-ess-head">${_rsvg(essSp)}<span>${catLabel('essential')}</span></div>
+      <div class="er-ess-body" id="er-ess-body">${essBtns}</div>
+    </div>
+    <div class="er-more" id="er-more">
+      <div class="er-more-head${moreOpen?' open':''}" id="er-more-head" onclick="erToggleMore()">
+        ${_rsvg(moreSp)}<span>${t('er-more-tools')}</span><span class="er-chev">›</span></div>
+      <div class="er-more-body${moreOpen?'':' hidden'}" id="er-more-body">${rows}</div>
+    </div></div>`;
 }
 
 function erLoadCats(){try{return JSON.parse(localStorage.getItem('mr_cats')||'{}');}catch(e){return {};}}
 function erSaveCats(s){localStorage.setItem('mr_cats',JSON.stringify(s));}
+/* Миграция на панель v2: раньше про-категории по умолчанию были развёрнуты (open=true).
+   В новой схеме они свёрнуты и живут в папке «Ещё инструменты» → один раз чистим старое состояние. */
+function erMigrateV2(){ if(!localStorage.getItem('aq_ribbon_v2')){ localStorage.removeItem('mr_cats'); localStorage.setItem('aq_ribbon_v2','1'); } }
+/* Состояние папки «Ещё инструменты · PRO» (по умолчанию свёрнута). */
+function erLoadMore(){ return localStorage.getItem('aq_ribbon_more')==='1'; }
+function erSaveMore(v){ localStorage.setItem('aq_ribbon_more', v?'1':'0'); }
+function erToggleMore(){
+  const body=document.getElementById('er-more-body'), head=document.getElementById('er-more-head');
+  if(!body) return; const open=!body.classList.contains('hidden');
+  body.classList.toggle('hidden',open); head&&head.classList.toggle('open',!open);
+  erSaveMore(!open);
+}
 
 function erToggleCat(id){
   const body=document.getElementById('er-body-'+id), head=document.getElementById('er-head-'+id);
@@ -11915,18 +11992,44 @@ function erUpdateActive(){
 
 function erFilter(q){
   q=q.trim().toLowerCase();
+  const matchTool=(id)=>{
+    const tl=TOOL_REGISTRY.find(x=>x.id===id); if(!tl) return true;
+    return !q||(toolLabel(tl.id)||tl.label).toLowerCase().includes(q)||tl.label.toLowerCase().includes(q)||tl.description.toLowerCase().includes(q)||(HOTKEYS.get(tl.id)||'').toLowerCase().includes(q);
+  };
+  // Секция «Основные»
+  const essBody=document.getElementById('er-ess-body');
+  if(essBody){
+    let ev=0;
+    essBody.querySelectorAll('.er-ico').forEach(btn=>{ const m=matchTool(btn.dataset.toolId); btn.style.display=m?'':'none'; if(m) ev++; });
+    const essSec=document.getElementById('er-essential'); if(essSec) essSec.style.display=(q&&ev===0)?'none':'';
+  }
+  // Категории внутри папки «Ещё инструменты»
+  let moreMatches=0;
   for(const cat of TOOL_CATEGORIES){
     const body=document.getElementById('er-body-'+cat.id);
     const head=document.getElementById('er-head-'+cat.id);
     if(!body) continue;
     let vis=0;
-    body.querySelectorAll('.er-ico').forEach(btn=>{
-      const t=TOOL_REGISTRY.find(x=>x.id===btn.dataset.toolId);
-      const match=!q||!t||(toolLabel(t.id)||t.label).toLowerCase().includes(q)||t.label.toLowerCase().includes(q)||t.description.toLowerCase().includes(q)||(HOTKEYS.get(t.id)||'').toLowerCase().includes(q);
-      btn.style.display=match?'':'none'; if(match) vis++;
-    });
-    const cat2=head?.closest('.er-cat'); if(cat2) cat2.style.display=(vis===0&&q)?'none':'';
-    if(q&&vis>0){body.classList.remove('hidden');head?.classList.add('open');}
+    body.querySelectorAll('.er-ico').forEach(btn=>{ const m=matchTool(btn.dataset.toolId); btn.style.display=m?'':'none'; if(m) vis++; });
+    const cat2=head?head.closest('.er-cat'):null; if(cat2) cat2.style.display=(vis===0&&q)?'none':'';
+    if(q&&vis>0){ body.classList.remove('hidden'); head&&head.classList.add('open'); }
+    moreMatches+=vis;
+  }
+  // Папка «Ещё инструменты»: раскрыть при совпадениях, вернуть сохранённое состояние при очистке
+  const moreBody=document.getElementById('er-more-body'), moreHead=document.getElementById('er-more-head');
+  if(moreBody&&moreHead){
+    if(q){
+      if(moreMatches>0){ moreBody.classList.remove('hidden'); moreHead.classList.add('open'); }
+    } else {
+      const catState=erLoadCats();
+      for(const cat of TOOL_CATEGORIES){
+        const body=document.getElementById('er-body-'+cat.id), head=document.getElementById('er-head-'+cat.id);
+        if(!body) continue;
+        const open=catState[cat.id]!==undefined?catState[cat.id]:false;
+        body.classList.toggle('hidden',!open); head&&head.classList.toggle('open',open);
+      }
+      const mo=erLoadMore(); moreBody.classList.toggle('hidden',!mo); moreHead.classList.toggle('open',mo);
+    }
   }
 }
 
@@ -13233,6 +13336,8 @@ const HOTKEYS={
 
 function erRebuildRibbon(){
   // Rebuild just the tool buttons to reflect new hotkeys / active states
+  const essBody=document.getElementById('er-ess-body');
+  if(essBody) essBody.innerHTML=ESSENTIAL_TOOLS.map(id=>{const tl=TOOL_REGISTRY.find(x=>x.id===id);return tl?erToolBtn(tl,true):'';}).join('');
   for(const cat of TOOL_CATEGORIES){
     const body=document.getElementById('er-body-'+cat.id); if(!body) continue;
     const tools=TOOL_REGISTRY.filter(t=>t.category===cat.id);
@@ -13245,40 +13350,66 @@ function erRebuildRibbon(){
    TOOL TOOLTIP SYSTEM
 ═══════════════════════════════════════════════════════════ */
 const TOOLTIP={
-  _timer:null, _el:null,
+  _timer:null, _el:null, _lp:null, _lpFired:false,
   show(toolId,anchor){ clearTimeout(this._timer); this._timer=setTimeout(()=>this._render(toolId,anchor),360); },
-  hide(){ clearTimeout(this._timer); if(this._el){
-    const el=this._el; this._el=null;
-    gsap.to(el.querySelector('.et-tip'),{opacity:0,scale:.94,y:4,duration:.15,ease:'power2.in',onComplete:()=>el.remove()});
-  }},
+  hide(){
+    clearTimeout(this._timer);
+    if(this._el){
+      const el=this._el; this._el=null;
+      const vid=el.querySelector('.et-video'); // освобождаем видео-память (важно на телефонах)
+      if(vid){ try{vid.pause();}catch(e){} vid.removeAttribute('src'); try{vid.load();}catch(e){} }
+      gsap.to(el.querySelector('.et-tip'),{opacity:0,scale:.94,y:4,duration:.15,ease:'power2.in',onComplete:()=>el.remove()});
+    }
+  },
   _render(toolId,anchor){
     const tool=TOOL_REGISTRY.find(t=>t.id===toolId); if(!tool||!anchor.isConnected) return;
     if(this._el){this._el.remove();this._el=null;}
     const hk=HOTKEYS.get(toolId);
+    const vsrc=toolVideoSrc(toolId);
+    const steps=(TOOL_STEPS[toolId]||[]).map(k=>t(k)).filter(Boolean);
     const div=document.createElement('div'); div.className='et-tip-wrap';
     div.innerHTML=`<div class="et-tip">
       <div class="et-tip-label">${toolLabel(toolId)||tool.label}</div>
+      ${vsrc?`<video class="et-video" autoplay muted loop playsinline preload="metadata" onerror="this.style.display='none'"></video>`:''}
       <div class="et-tip-desc">${tool.description}</div>
+      ${steps.length?`<ol class="et-steps">${steps.map(s=>`<li>${s}</li>`).join('')}</ol>`:''}
       <div class="et-tip-foot">
         ${hk?`<kbd class="hk">${hk}</kbd>`:`<span style="color:#3a3025;font-size:.66rem">${t('mr-no-key')||'—'}</span>`}
         <span class="et-tip-change" onclick="HOTKEYS.startCapture('${toolId}');TOOLTIP.hide()">${t('mr-change-key')||'…'}</span>
       </div></div>`;
     document.body.appendChild(div); this._el=div;
+    // src ставим только при показе; при hide() — очищаем (экономия памяти)
+    const vid=div.querySelector('.et-video'); if(vid&&vsrc){ vid.src=vsrc; }
     const ar=anchor.getBoundingClientRect(), tip=div.querySelector('.et-tip');
-    const TW=240, pad=10;
-    let left=ar.right+pad; if(left+TW>window.innerWidth) left=ar.left-TW-pad;
-    let top=ar.top; if(top+130>window.innerHeight) top=Math.max(pad,window.innerHeight-135);
-    div.style.left=Math.max(pad,left)+'px'; div.style.top=Math.max(pad,top)+'px';
+    const pad=10, TW=tip.offsetWidth||300, TH=tip.offsetHeight||200;
+    let left=ar.right+pad; if(left+TW>window.innerWidth) left=ar.left-TW-pad; if(left<pad) left=pad;
+    let top=ar.top; if(top+TH+pad>window.innerHeight) top=Math.max(pad,window.innerHeight-TH-pad);
+    div.style.left=left+'px'; div.style.top=top+'px';
     gsap.fromTo(tip,{opacity:0,scale:.94,y:6},{opacity:1,scale:1,y:0,duration:.22,ease:'power2.out'});
   },
   attach(el,toolId){
     if(!el||!toolId) return;
+    // Десктоп: наведение / фокус
     el.addEventListener('mouseenter',()=>this.show(toolId,el));
     el.addEventListener('mouseleave',()=>this.hide());
     el.addEventListener('focus',()=>this.show(toolId,el));
     el.addEventListener('blur',()=>this.hide());
+    // Телефон (hover нет): долгое нажатие ~450мс показывает карточку; короткий тап включает инструмент
+    el.addEventListener('touchstart',()=>{
+      this._lpFired=false; clearTimeout(this._lp);
+      this._lp=setTimeout(()=>{ this._lpFired=true; this._render(toolId,el); },450);
+    },{passive:true});
+    el.addEventListener('touchmove',()=>clearTimeout(this._lp),{passive:true});
+    el.addEventListener('touchend',(e)=>{ clearTimeout(this._lp); if(this._lpFired) e.preventDefault(); });
+    // Если было долгое нажатие — гасим последующий click (инструмент НЕ активируется)
+    el.addEventListener('click',(e)=>{ if(this._lpFired){ e.preventDefault(); e.stopPropagation(); this._lpFired=false; } },true);
+    el.addEventListener('contextmenu',(e)=>e.preventDefault());
   }
 };
+/* Тап вне карточки закрывает её (телефоны) */
+document.addEventListener('touchstart',(e)=>{
+  if(TOOLTIP._el && e.target && e.target.closest && !e.target.closest('.et-tip') && !e.target.closest('.er-ico')) TOOLTIP.hide();
+},{passive:true,capture:true});
 
 /* ═══════════════════════════════════════════════════════════
    ANNOTATIONS — рендер и вспомогательные функции
