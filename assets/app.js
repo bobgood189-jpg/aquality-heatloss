@@ -355,6 +355,7 @@ async function aqLoadSession(session){
     _aqCacheProf(prof, u.id);
     try{ if(typeof aqMergeCloudPresets==='function') aqMergeCloudPresets(prof); }catch(e){}
     try{ if(typeof aqMergeCloudMats==='function') aqMergeCloudMats(prof); }catch(e){}
+    try{ if(typeof aqMergeCloudHidden==='function') aqMergeCloudHidden(prof); }catch(e){}
   } else {
     console.warn('[AQ] профиль не загружен', profRes.reason);
     prof = _aqReadCachedProf(u.id);   // резерв: сохранённые роль/имя, чтобы не терять админа
@@ -4808,11 +4809,11 @@ function _wsRunCompare(){
   el.innerHTML = `<div class="space-y-2 mt-2">
     ${picked.map(p=>`
       <div class="rounded-xl border border-sand/10 bg-sand/3 p-3">
-        <div class="flex justify-between mb-1"><span class="text-sm font-bold text-cream">${p.name}</span><span class="mono text-amber font-bold">R ${(p.r||0).toFixed(3)}</span></div>
+        <div class="flex justify-between mb-1"><span class="text-sm font-bold text-cream">${sxEsc(p.name)}</span><span class="mono text-amber font-bold">R ${(p.r||0).toFixed(3)}</span></div>
         <div class="rounded-full overflow-hidden h-2" style="background:rgba(255,255,255,.08)">
           <div class="h-full rounded-full" style="width:${Math.round((p.r||0)/maxR*100)}%;background:var(--aq-accent)"></div>
         </div>
-        <p class="text-xs text-muted mt-1">${p.desc||''}</p>
+        <p class="text-xs text-muted mt-1">${sxEsc(p.desc||'')}</p>
       </div>`).join('')}
   </div>`;
 }
@@ -6291,8 +6292,97 @@ function addCustomMat(name, lambda){
   return {ok:true};
 }
 function removeCustomMat(id){ CUSTOM_MATS=CUSTOM_MATS.filter(m=>m.id!==id); saveCustomMats(); }
-function presetList(cat){ return [...BASE_PRESETS[cat], ...CUSTOM[cat].map(p=>({...p,custom:true}))]; }
+function presetList(cat){ return [...BASE_PRESETS[cat], ...CUSTOM[cat].map(p=>({...p,custom:true}))]; }   /* ПОЛНЫЙ список — для findPreset/расчёта, старые расчёты не рвём */
 function findPreset(cat,id){ return presetList(cat).find(p=>p.id===id)||null; }
+
+/* ── Скрытые встроенные пресеты: пользователь прячет ненужные из каталога ──
+   Ключ aq_hidden_presets_v1 + зеркало profiles.hidden_presets (как custom_presets).
+   Прячем ТОЛЬКО встроенные (BASE_PRESETS); свои удаляются через deleteCustom.
+   Скрытие — чисто отображение: findPreset и расчёт по-прежнему видят пресет,
+   поэтому сохранённые расчёты со скрытым материалом дают прежний результат. */
+const HIDDEN_KEY='aq_hidden_presets_v1';
+function loadHidden(){
+  try{ const h=JSON.parse(localStorage.getItem(HIDDEN_KEY)); if(h&&typeof h==='object') return Object.assign({walls:[],windows:[],doors:[],floors:[],ceilings:[]},h); }catch(e){}
+  return {walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+}
+let HIDDEN=loadHidden();
+let _hpSyncT=null;
+function saveHidden(){
+  try{ localStorage.setItem(HIDDEN_KEY,JSON.stringify(HIDDEN)); }catch(e){}
+  try{ clearTimeout(_hpSyncT); _hpSyncT=setTimeout(aqSyncHiddenPresets,1500); }catch(e){}
+}
+async function aqSyncHiddenPresets(){
+  try{
+    if(typeof sb!=='function'||typeof _AQ==='undefined') return;
+    const c=sb(), u=_AQ&&_AQ.user;
+    if(!c||!u||!u._sb) return;
+    await c.from('profiles').update({hidden_presets:HIDDEN}).eq('id',u.id);
+  }catch(e){ /* колонки hidden_presets может не быть — работаем только с localStorage */ }
+}
+function aqMergeCloudHidden(prof){
+  const cloud=prof&&prof.hidden_presets;
+  if(!cloud||typeof cloud!=='object') return;
+  let added=0;
+  for(const cat of ['walls','windows','doors','floors','ceilings']){
+    const arr=Array.isArray(cloud[cat])?cloud[cat]:[];
+    if(!Array.isArray(HIDDEN[cat])) HIDDEN[cat]=[];
+    for(const id of arr){ if(id&&!HIDDEN[cat].includes(id)){ HIDDEN[cat].push(id); added++; } }
+  }
+  if(added){ try{ localStorage.setItem(HIDDEN_KEY,JSON.stringify(HIDDEN)); }catch(e){} }
+}
+function isPresetHidden(cat,id){ return (HIDDEN[cat]||[]).includes(id); }
+/* Видимый каталог: скрытые встроенные убраны, свои (custom) не прячем */
+function presetListVisible(cat){ const hid=HIDDEN[cat]||[]; return presetList(cat).filter(p=>p.custom||!hid.includes(p.id)); }
+/* Список для селекта-пикера: гарантирует, что выбранный пресет присутствует, даже если скрыт */
+function _presetOptsList(cat,curId){
+  let list=presetListVisible(cat);
+  if(curId&&!list.some(p=>p.id===curId)){ const c=findPreset(cat,curId); if(c) list=[c,...list]; }
+  return list;
+}
+/* Опции <select> с папками-optgroup: 🛠 Мои → ⭐ Популярно → 📁 Каталог (встроенные).
+   Единый вид для всех селектов материалов (ПРО, проёмы мини-Ревита, стена). */
+function _matOptGroups(cat,curId){
+  const list=_presetOptsList(cat,curId);
+  const custom=list.filter(p=>p.custom);
+  const builtin=list.filter(p=>!p.custom);
+  const popSet=new Set((typeof POPULAR_UZ!=='undefined'&&POPULAR_UZ[cat])||[]);
+  const popular=builtin.filter(p=>popSet.has(p.id));
+  const rest=builtin.filter(p=>!popSet.has(p.id));
+  const opt=p=>`<option value="${p.id}" ${p.id===curId?'selected':''}>${sxEsc(p.name)} (R ${(p.r||0).toFixed(2)})</option>`;
+  let html='';
+  if(custom.length)  html+=`<optgroup label="🛠 ${t('mat-folder-mine')}">${custom.map(opt).join('')}</optgroup>`;
+  if(popular.length) html+=`<optgroup label="⭐ ${t('mat-folder-popular')}">${popular.map(opt).join('')}</optgroup>`;
+  if(rest.length)    html+=`<optgroup label="📁 ${t('mat-folder-catalog')}">${rest.map(opt).join('')}</optgroup>`;
+  return html;
+}
+const _MAT_ID_KEYS={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
+/* Перерисовать всё, что зависит от каталога (после скрытия/возврата пресета) */
+function _afterCatalogChange(){
+  try{ if(ST.step===5 && typeof renderStep==='function') renderStep(); }catch(e){}
+  try{ if(typeof srRerender==='function' && document.getElementById('sr-editor')) srRerender(); }catch(e){}
+  try{ if(typeof updateLivePanel==='function') updateLivePanel(); }catch(e){}
+  try{ if(document.getElementById('ed-props')&&typeof edProps==='function') edProps(); }catch(e){}
+}
+/* Скрыть встроенный пресет из каталога (нельзя скрыть последний видимый) */
+function hidePreset(cat,id){
+  if(isPresetHidden(cat,id)) return;
+  if(presetListVisible(cat).length<=1){ toast(t('mat-hide-last-err'),'err'); return; }
+  if(!Array.isArray(HIDDEN[cat])) HIDDEN[cat]=[];
+  HIDDEN[cat].push(id); saveHidden();
+  const k=_MAT_ID_KEYS[cat];
+  if(ST&&ST.mat&&ST.mat[k]===id){ const nv=presetListVisible(cat)[0]; if(nv){ ST.mat[k]=nv.id; toast(t('mat-hide-reselect').replace('{name}',nv.name)); } }
+  else toast(t('mat-hidden-toast'));
+  _afterCatalogChange();
+}
+/* Вернуть скрытый пресет в каталог */
+function unhidePreset(cat,id){ HIDDEN[cat]=(HIDDEN[cat]||[]).filter(x=>x!==id); saveHidden(); _afterCatalogChange(); }
+function unhideAll(cat){
+  if(cat) HIDDEN[cat]=[]; else HIDDEN={walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+  saveHidden(); _afterCatalogChange();
+}
+/* Возврат из Мастерской: снять скрытие и перерисовать модалку */
+function wsUnhide(cat,id){ unhidePreset(cat,id); if(typeof renderWorkshop==='function') renderWorkshop(cat); }
+function wsUnhideAll(cat){ unhideAll(cat); if(typeof renderWorkshop==='function') renderWorkshop(cat); }
 
 /* ── Поиск в пикере материалов (шаг 5) ── */
 const _matSearch = {walls:'',windows:'',doors:'',floors:'',ceilings:''};
@@ -6329,8 +6419,8 @@ function renderCard(p, fn, currentId, isWall, view){
     return `<div onclick="${fn}('${p.id}')" class="pcard pcard-compact text-left relative ${activeCls}" style="cursor:pointer">
       <div class="flex items-center gap-2">
         <div class="flex-1 min-w-0">
-          <p class="font-medium text-cream text-xs leading-tight truncate">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber">★</span>':''}</p>
-          ${p.desc?`<p class="text-[10px] text-muted truncate">${p.desc}</p>`:''}
+          <p class="font-medium text-cream text-xs leading-tight truncate">${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber">★</span>':''}</p>
+          ${p.desc?`<p class="text-[10px] text-muted truncate">${sxEsc(p.desc)}</p>`:''}
         </div>
         <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20 flex-shrink-0">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
@@ -6344,26 +6434,26 @@ function renderCard(p, fn, currentId, isWall, view){
         <span class="rounded bg-w900 px-1.5 py-0.5 mono text-[10px] text-amber border border-amber/20">R ${rDisp.toFixed(2)}${lv!=null?` · λ${lv}`:''}</span>
         ${menuBtn}
       </div>
-      <p class="font-semibold text-cream text-xs leading-snug">${p.name}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber text-[9px] ml-0.5">★</span>':''}</p>
-      ${p.desc?`<p class="text-[10px] text-muted mt-0.5 leading-tight" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.desc}</p>`:''}
+      <p class="font-semibold text-cream text-xs leading-snug">${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}${p.recommended?' <span class="text-amber text-[9px] ml-0.5">★</span>':''}</p>
+      ${p.desc?`<p class="text-[10px] text-muted mt-0.5 leading-tight" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${sxEsc(p.desc)}</p>`:''}
     </div>`;
   }
 
   // list view (full card)
   const uVal  = p.u!=null ? p.u : (p.r>0 ? Math.round((1/p.r)*100)/100 : null);
   const chips = [];
-  if(p.brand) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-sky-900/40 text-sky-300 border border-sky-700/30">${p.brand}</span>`);
+  if(p.brand) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-sky-900/40 text-sky-300 border border-sky-700/30">${sxEsc(p.brand)}</span>`);
   if(p.thickness) chips.push(`<span class="inline-block px-1.5 py-0 rounded text-[10px] bg-w800/60 text-muted border border-white/10">${p.thickness}мм</span>`);
   return `<div onclick="${fn}('${p.id}')" class="pcard text-left relative ${activeCls}" style="cursor:pointer">
     <div class="flex items-start justify-between gap-1">
-      <p class="font-semibold text-cream text-sm leading-snug flex-1">${p.name}${p.custom?' <span class="chip ml-1">своё</span>':''}${p.recommended?' <span class="inline-block px-1 py-0 rounded text-[10px] bg-amber/15 text-amber border border-amber/30 ml-1">★ Рекомендуем</span>':''}</p>
+      <p class="font-semibold text-cream text-sm leading-snug flex-1">${sxEsc(p.name)}${p.custom?' <span class="chip ml-1">своё</span>':''}${p.recommended?' <span class="inline-block px-1 py-0 rounded text-[10px] bg-amber/15 text-amber border border-amber/30 ml-1">★ Рекомендуем</span>':''}</p>
       <div class="flex items-center gap-1 flex-shrink-0">
         <span class="rounded-md bg-w900 px-2 py-0.5 mono text-xs text-amber border border-amber/20">R ${rEff!=null?rEff.toFixed(3):p.r.toFixed(3)}</span>
         ${menuBtn}
       </div>
     </div>
     ${chips.length?`<div class="flex gap-1 mt-1 flex-wrap">${chips.join('')}</div>`:''}
-    <p class="text-xs text-muted mt-1">${p.desc||''}</p>
+    <p class="text-xs text-muted mt-1">${sxEsc(p.desc||'')}</p>
     ${lv!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">λ = ${lv} Вт/(м·°C)</p>`:''}
     ${p.u!=null?`<p class="text-xs text-muted/70 mt-0.5 mono">U = ${uVal} Вт/(м²·°C)</p>`:''}
     ${isWall&&p.homog!=null?`<p class="text-xs text-muted/60 mt-0.5 mono">номин. R ${p.r.toFixed(3)} × r₀ ${p.homog}</p>`:''}
@@ -6379,16 +6469,20 @@ document.addEventListener('click', _closePcardMenu);
 function pcardMenu(btn, id, cat, r){
   _closePcardMenu();
   const p = findPreset(cat, id);
+  const isCustom = !!(p&&p.custom);
   const rect = btn.getBoundingClientRect();
   const menu = document.createElement('div');
   menu.className = 'pcard-menu';
   menu.innerHTML = `
     <button onclick="_closePcardMenu();pcardChangeR('${id}','${cat}',${r})">✏ Изменить R</button>
     <button onclick="_closePcardMenu();pcardCopyToCustom('${id}','${cat}')">⧉ Копировать в своё</button>
-    <button onclick="_closePcardMenu();pcardInfo('${id}','${cat}')">ℹ Инфо</button>`;
+    <button onclick="_closePcardMenu();pcardInfo('${id}','${cat}')">ℹ Инфо</button>
+    ${isCustom
+      ? `<button onclick="_closePcardMenu();pcardDelete('${id}','${cat}')" style="color:#f87171">🗑 ${t('mat-delete')}</button>`
+      : `<button onclick="_closePcardMenu();hidePreset('${cat}','${id}')">🚫 ${t('mat-hide')}</button>`}`;
   document.body.appendChild(menu);
   _pcardMenuEl = menu;
-  const mw = 170, mh = 100;
+  const mw = 190, mh = 132;
   let top = rect.bottom + 4, left = rect.left - mw + rect.width;
   if(top + mh > window.innerHeight) top = rect.top - mh - 4;
   if(left < 4) left = 4;
@@ -6430,12 +6524,41 @@ function pcardInfo(id, cat){
   if(p.desc) lines.push(`Описание: ${p.desc}`);
   alert(lines.join('\n'));
 }
+/* Удалить свой (custom) материал из каталога — из меню карточки «⋮» */
+function pcardDelete(id, cat){
+  const p=findPreset(cat,id); if(!p||!p.custom) return;
+  if(!confirm(t('mat-delete-confirm').replace('{name}',p.name))) return;
+  deleteCustom(cat, id);   // сам сохраняет, переселектит и перерисовывает Мастерскую/шаг5/live
+  _afterCatalogChange();
+  toast(t('mat-deleted-toast'));
+}
 
-function toggleGrp(cat, grp){
-  const key = cat+'|'+grp;
-  _grpOpen[key] = (_grpOpen[key]===false) ? true : false;
+/* Явно задать состояние папки/группы (val передаётся из разметки как !текущее —
+   без «двух кликов», в отличие от прежнего toggleGrp). */
+function setGrpOpen(cat, grp, val){
+  _grpOpen[cat+'|'+grp] = !!val;
   const el = document.getElementById('matgrid-'+cat);
   if(el) el.innerHTML = renderMatCards(cat);
+}
+function toggleGrp(cat, grp){   /* совместимость: инвертируем текущее эффективное значение */
+  setGrpOpen(cat, grp, !(_grpOpen[cat+'|'+grp]===true));
+}
+/* Шапка сворачиваемой папки каталога (Мои / Каталог). isMine → фиолетовый акцент. */
+function _matFolderHtml(cat, gkey, label, count, hasActive, open, inner, isMine){
+  const tint = isMine ? '192,132,252' : '245,158,11';
+  const hdrStyle = hasActive ? `background:rgba(${tint},.12);border-color:rgba(${tint},.32)` : '';
+  return `<div class="mb-1.5">
+    <button type="button" onclick="setGrpOpen('${cat}','${gkey}',${open?'false':'true'})"
+      class="w-full flex items-center justify-between px-3 py-2 rounded-xl mb-1 border transition-colors ${hasActive?'':'bg-w900/60 border-w800/40 hover:border-w800/70'}" style="${hdrStyle}">
+      <span class="text-xs font-semibold uppercase tracking-wide" style="color:${isMine?'#d8b4fe':'rgba(226,215,190,.92)'}">${label}</span>
+      <span class="flex items-center gap-2 flex-shrink-0">
+        ${hasActive?`<span class="w-1.5 h-1.5 rounded-full inline-block" style="background:rgb(${tint})"></span>`:''}
+        <span class="text-xs text-muted">${count}</span>
+        <svg class="w-3 h-3 text-muted transition-transform duration-150 ${open?'':'rotate-[-90deg]'}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    ${open?inner:''}
+  </div>`;
 }
 
 function renderMatCards(cat){
@@ -6458,40 +6581,25 @@ function renderMatCards(cat){
     </button>
   </div>`;
 
-  let list = presetList(cat);
+  let list = presetListVisible(cat);
+  /* выбранный, но скрытый (напр. из сохранённого расчёта) — всё равно показываем как активный */
+  if(currentId && !list.some(p=>p.id===currentId)){ const cur=findPreset(cat,currentId); if(cur) list=[...list,cur]; }
   if(q){
     list = list.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q));
     if(!list.length) return viewBar + '<p class="text-xs text-muted py-3 text-center">Ничего не найдено</p>';
     return viewBar + `<div class="${gridCls}">${list.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`;
   }
-  // Popular block (Fergana oblast) — always open, not shown during search
+  // ── Разделяем: свои конструкции (Мастерская) ↕ встроенный каталог ──
+  const customList  = list.filter(p=>p.custom);
+  const builtinList = list.filter(p=>!p.custom);
   const popIds = POPULAR_UZ[cat]||[];
-  let popularHtml = '';
-  if(popIds.length){
-    const popItems = popIds.map(id=>list.find(p=>p.id===id)).filter(Boolean);
-    if(popItems.length){
-      popularHtml = `<div class="mb-2">
-        <div class="px-1 mb-1.5"><span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">⭐ Популярно в Ферганской обл.</span></div>
-        <div class="${gridCls}">${popItems.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>
-        <div class="border-b border-white/5 mt-2 mb-2"></div>
-      </div>`;
-    }
-  }
-  // Grouped accordion view
-  const grpMap={}, grpOrder=[];
-  list.forEach(p=>{
-    const g=p.group||'Прочее';
-    if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);}
-    grpMap[g].push(p);
-  });
 
-  return viewBar + popularHtml + grpOrder.map(grp=>{
-    const items=grpMap[grp];
+  // одна группа-аккордеон встроенного каталога (как раньше), но с явным setGrpOpen
+  const grpBlock = (grp, items)=>{
     const hasActive=items.some(p=>p.id===currentId);
-    const key=cat+'|'+grp;
-    const open=_grpOpen.hasOwnProperty(key) ? _grpOpen[key]===true : hasActive;
+    const open=_grpOpen.hasOwnProperty(cat+'|'+grp) ? _grpOpen[cat+'|'+grp]===true : hasActive;
     return `<div class="mb-1.5">
-      <button type="button" onclick="toggleGrp('${cat}','${grp}')"
+      <button type="button" onclick="setGrpOpen('${cat}','${grp}',${open?'false':'true'})"
         class="w-full flex items-center justify-between px-3 py-2 rounded-xl mb-1 border transition-colors
                ${hasActive?'bg-amber/10 border-amber/25':'bg-w900/60 border-w800/40 hover:border-w800/70'}">
         <span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">${grp}</span>
@@ -6503,7 +6611,38 @@ function renderMatCards(cat){
       </button>
       ${open?`<div class="${gridCls} pl-1">${items.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`:''}
     </div>`;
-  }).join('');
+  };
+
+  // ── Папка «Мои материалы» (свои конструкции) — сверху, открыта по умолчанию ──
+  const createBtn = `<button type="button" onclick="openWorkshop('${cat}')" class="w-full mt-1 rounded-xl border border-dashed py-2 text-xs font-semibold transition-colors" style="border-color:rgba(192,132,252,.4);background:rgba(192,132,252,.06);color:#c084fc" onmouseover="this.style.background='rgba(192,132,252,.12)'" onmouseout="this.style.background='rgba(192,132,252,.06)'">+ ${t('mat-create-in-ws')}</button>`;
+  const mineInner = (customList.length
+    ? `<div class="${gridCls} pl-1">${customList.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>`
+    : `<p class="text-[11px] text-muted italic px-1 pb-1">${t('mat-mine-empty')}</p>`) + createBtn;
+  const mineActive = customList.some(p=>p.id===currentId);
+  const mineOpen = _grpOpen.hasOwnProperty(cat+'|__mine') ? _grpOpen[cat+'|__mine']===true : true;
+  const mineFolder = _matFolderHtml(cat,'__mine','🛠 '+t('mat-folder-mine'),customList.length,mineActive,mineOpen,mineInner,true);
+
+  // ── Популярно (как раньше, всегда открыто) ──
+  let popularHtml = '';
+  if(popIds.length){
+    const popItems = popIds.map(id=>builtinList.find(p=>p.id===id)).filter(Boolean);
+    if(popItems.length){
+      popularHtml = `<div class="mb-2">
+        <div class="px-1 mb-1.5"><span class="text-xs font-semibold text-sand/90 uppercase tracking-wide">⭐ Популярно в Ферганской обл.</span></div>
+        <div class="${gridCls}">${popItems.map(p=>renderCard(p,fn,currentId,isWall,view)).join('')}</div>
+      </div>`;
+    }
+  }
+
+  // ── Папка «Каталог материалов» (все встроенные, свёрнута; авто-открытие если выбран встроенный) ──
+  const grpMap={}, grpOrder=[];
+  builtinList.forEach(p=>{ const g=p.group||'Прочее'; if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);} grpMap[g].push(p); });
+  const catalogInner = `<div class="pl-1">${grpOrder.map(grp=>grpBlock(grp,grpMap[grp])).join('')}</div>`;
+  const catalogActive = builtinList.some(p=>p.id===currentId) && popIds.indexOf(currentId)<0;
+  const catalogOpen = _grpOpen.hasOwnProperty(cat+'|__catalog') ? _grpOpen[cat+'|__catalog']===true : catalogActive;
+  const catalogFolder = _matFolderHtml(cat,'__catalog','📁 '+t('mat-folder-catalog'),builtinList.length,catalogActive,catalogOpen,catalogInner,false);
+
+  return viewBar + mineFolder + popularHtml + catalogFolder;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -7071,6 +7210,24 @@ const _i18n = {
     'sr-layer-add':'слой',
     'sr-layer-mat-ph':'материал',
     'sr-layers-hint':'Добавьте слои: материал → толщина (мм) → λ. R посчитается сам.',
+    // ── Фаза 1: каталог (скрытие) + «Мои материалы» в слоях ПРО ──
+    'mat-hide':'Скрыть из списка','mat-delete':'Удалить',
+    'mat-hide-last-err':'Нельзя скрыть последний материал в категории',
+    'mat-hide-reselect':'Материал скрыт → выбран «{name}»',
+    'mat-hidden-toast':'Материал скрыт · вернуть можно в Мастерской',
+    'mat-delete-confirm':'Удалить свой материал «{name}»?','mat-deleted-toast':'Материал удалён',
+    'ws-hidden-lbl':'Скрытые','ws-unhide':'Вернуть','ws-unhide-all':'Вернуть все',
+    'sr-my-mats':'Мои материалы','sr-my-mats-hint':'клик — добавить слоем',
+    'sr-my-mats-add':'Добавить слой из этого материала','sr-my-mats-del':'Удалить из «Моих материалов»',
+    'sr-save-mat':'Сохранить материал (имя + λ) в «Мои материалы»',
+    'sr-open-workshop-tip':'Мастерская: создать конструкцию и сохранить в свой список','sr-workshop-short':'Мастерская',
+    'sr-r-from-layers':'R из слоёв','sr-r-from-layers-tip':'R берётся из слоёв ниже — выбранный пресет не участвует',
+    'mat-folder-mine':'Мои материалы','mat-folder-catalog':'Каталог материалов','mat-folder-popular':'Популярно',
+    'mat-create-in-ws':'Создать в Мастерской','mat-mine-empty':'Пока пусто — создайте свой материал в Мастерской','sr-pick-title':'Выберите материал',
+    'sr-floors-title':'Этажи и подвал','sr-add-floor':'Добавить этаж','sr-add-basement':'Добавить подвал','sr-floor-lbl':'Этаж','sr-floor-empty':'На этом этаже пока нет комнат','sr-basement-word':'подвал','sr-floor-remove':'Удалить этаж','sr-basement-remove':'Убрать подвал','sr-basement-t-title':'Расчётная температура подвала',
+    'sr-dir-lbl':'Сторона света','sr-dir-none':'не задано','sr-height-tip':'Надбавка на высоту >4 м (СНиП): +2% за метр, максимум +15%',
+    'sr-room-dims':'Размеры комнаты Д×Ш, м','sr-room-dims-hint':'Нужны для объёма (инфильтрация), если полы не введены','sr-vol-warn':'Объём не задан — инфильтрация не считается. Введите пол или размеры комнаты.',
+    'sr-vent-nat':'естеств.','sr-vent-mech':'механ.','sr-vent-hrv':'рекуп.','sr-set-airtight':'Герметичность','sr-set-vent':'Вентиляция','sr-hrv-eff':'КПД','sr-by-type':'По конструкциям',
     'hint-simple-3':'Укажите количество помещений',
     'hint-simple-4':'Добавьте хотя бы одну стену в каждом помещении',
 
@@ -7623,6 +7780,24 @@ const _i18n = {
     'simple-same-floor':"Pol bilan bir xil o'lcham (avto)",
     'simple-door-type-lbl':"Eshik turi",
     'simple-mat-lbl':"Material",
+    // ── Faza 1: katalog (yashirish) + «Mening materiallarim» PRO qatlamlarida ──
+    'mat-hide':"Ro'yxatdan yashirish",'mat-delete':"O'chirish",
+    'mat-hide-last-err':"Bo'limdagi oxirgi materialni yashirib bo'lmaydi",
+    'mat-hide-reselect':"Material yashirildi → «{name}» tanlandi",
+    'mat-hidden-toast':"Material yashirildi · Ustaxonada qaytarish mumkin",
+    'mat-delete-confirm':"«{name}» materialingizni o'chirilsinmi?",'mat-deleted-toast':"Material o'chirildi",
+    'ws-hidden-lbl':"Yashirilgan",'ws-unhide':"Qaytarish",'ws-unhide-all':"Hammasini qaytarish",
+    'sr-my-mats':"Mening materiallarim",'sr-my-mats-hint':"bosing — qatlam qo'shiladi",
+    'sr-my-mats-add':"Shu materialdan qatlam qo'shish",'sr-my-mats-del':"«Mening materiallarim»dan o'chirish",
+    'sr-save-mat':"Materialni (nom + λ) «Mening materiallarim»ga saqlash",
+    'sr-open-workshop-tip':"Ustaxona: konstruksiya yaratib, ro'yxatga saqlash",'sr-workshop-short':"Ustaxona",
+    'sr-r-from-layers':"R qatlamlardan",'sr-r-from-layers-tip':"R quyidagi qatlamlardan olinadi — tanlangan preset qatnashmaydi",
+    'mat-folder-mine':"Mening materiallarim",'mat-folder-catalog':"Materiallar katalogi",'mat-folder-popular':"Ommabop",
+    'mat-create-in-ws':"Ustaxonada yaratish",'mat-mine-empty':"Hozircha bo'sh — Ustaxonada o'z materialingizni yarating",'sr-pick-title':"Material tanlang",
+    'sr-floors-title':"Qavatlar va yerto'la",'sr-add-floor':"Qavat qo'shish",'sr-add-basement':"Yerto'la qo'shish",'sr-floor-lbl':"Qavat",'sr-floor-empty':"Bu qavatda hozircha xona yo'q",'sr-basement-word':"yerto'la",'sr-floor-remove':"Qavatni o'chirish",'sr-basement-remove':"Yerto'lani olib tashlash",'sr-basement-t-title':"Yerto'laning hisobiy harorati",
+    'sr-dir-lbl':"Dunyo tomoni",'sr-dir-none':"belgilanmagan",'sr-height-tip':"Balandlik >4 m uchun ustama (SNiP): metriga +2%, maksimum +15%",
+    'sr-room-dims':"Xona o'lchami U×K, m",'sr-room-dims-hint':"Hajm uchun kerak (infiltratsiya), agar pollar kiritilmagan bo'lsa",'sr-vol-warn':"Hajm berilmagan — infiltratsiya hisoblanmaydi. Pol yoki xona o'lchamini kiriting.",
+    'sr-vent-nat':"tabiiy",'sr-vent-mech':"mexanik",'sr-vent-hrv':"rekup.",'sr-set-airtight':"Germetiklik",'sr-set-vent':"Ventilyatsiya",'sr-hrv-eff':"FIK",'sr-by-type':"Konstruksiyalar bo'yicha",
     'simple-len':"Uzunlik, m",'simple-wid':"Kenglik, m",'simple-hgt':"Balandlik, m",
     'simple-room-height':"Shift balandligi, m",'simple-room-tint':"Ichki t, °C",
     'simple-attic-lbl':"Cherdak / tom",
@@ -8199,6 +8374,24 @@ const _i18n = {
     'simple-same-floor':'Same size as floor (auto)',
     'simple-door-type-lbl':'Door type',
     'simple-mat-lbl':'Material',
+    // ── Phase 1: catalog (hide) + “My materials” in PRO layers ──
+    'mat-hide':'Hide from list','mat-delete':'Delete',
+    'mat-hide-last-err':'Cannot hide the last material in a category',
+    'mat-hide-reselect':'Material hidden → selected “{name}”',
+    'mat-hidden-toast':'Material hidden · restore it in the Workshop',
+    'mat-delete-confirm':'Delete your material “{name}”?','mat-deleted-toast':'Material deleted',
+    'ws-hidden-lbl':'Hidden','ws-unhide':'Restore','ws-unhide-all':'Restore all',
+    'sr-my-mats':'My materials','sr-my-mats-hint':'click to add as a layer',
+    'sr-my-mats-add':'Add a layer from this material','sr-my-mats-del':'Remove from “My materials”',
+    'sr-save-mat':'Save material (name + λ) to “My materials”',
+    'sr-open-workshop-tip':'Workshop: build a construction and save it to your list','sr-workshop-short':'Workshop',
+    'sr-r-from-layers':'R from layers','sr-r-from-layers-tip':'R is taken from the layers below — the selected preset is not used',
+    'mat-folder-mine':'My materials','mat-folder-catalog':'Materials catalog','mat-folder-popular':'Popular',
+    'mat-create-in-ws':'Create in Workshop','mat-mine-empty':'Empty for now — create your material in the Workshop','sr-pick-title':'Choose a material',
+    'sr-floors-title':'Floors & basement','sr-add-floor':'Add floor','sr-add-basement':'Add basement','sr-floor-lbl':'Floor','sr-floor-empty':'No rooms on this floor yet','sr-basement-word':'basement','sr-floor-remove':'Remove floor','sr-basement-remove':'Remove basement','sr-basement-t-title':'Basement design temperature',
+    'sr-dir-lbl':'Orientation','sr-dir-none':'not set','sr-height-tip':'Height surcharge >4 m (SNiP): +2%/m, max +15%',
+    'sr-room-dims':'Room size L×W, m','sr-room-dims-hint':'Needed for volume (infiltration) when no floors are entered','sr-vol-warn':'Volume not set — infiltration is not computed. Enter a floor or the room size.',
+    'sr-vent-nat':'natural','sr-vent-mech':'mech.','sr-vent-hrv':'HRV','sr-set-airtight':'Airtightness','sr-set-vent':'Ventilation','sr-hrv-eff':'Eff.','sr-by-type':'By component',
     'simple-len':'Length, m','simple-wid':'Width, m','simple-hgt':'Height, m',
     'simple-room-height':'Ceiling height, m','simple-room-tint':'Indoor t, °C',
     'simple-attic-lbl':'Attic / roof',
@@ -8288,6 +8481,12 @@ const BETA_ORIENT = {N:0.10, NE:0.10, E:0.10, SE:0.05, S:0.0, SW:0.0, W:0.05, NW
 const R_PARTITION = 0.45;          // приведённое R внутренней перегородки (½ кирпича оштукатуренная)
 const CORNER_SURCHARGE = 0.05;     // +5% на угловые помещения (2+ наружных стены) — СНиП
 const WALL_HOMOG_DEFAULT = 0.85;   // коэф. однородности; мостики холода (швы раствора, перемычки) по СП 50.13330.2012 прил. В
+/* Надбавка на высоту помещения >4 м: +2% трансмиссионных потерь за каждый метр сверх 4 м,
+   максимум +15% (СНиП). Применяется к вертикальным ограждениям (стены/окна/двери). Всегда вкл. */
+function heightSurcharge(H){ return Math.min(0.15, Math.max(0, ((H||0)-4)*0.02)); }
+/* Подписи 8 сторон света для селектора ориентации (в ru — русские, иначе — код компаса) */
+function dirLabel8(code){ if(!code) return '—'; const ru={N:'С',NE:'СВ',E:'В',SE:'ЮВ',S:'Ю',SW:'ЮЗ',W:'З',NW:'СЗ'}; return (_lang==='ru'&&ru[code])?ru[code]:code; }
+const DIR8=['N','NE','E','SE','S','SW','W','NW'];
 
 /* ── Коэффициенты теплоотдачи поверхностей α [Вт/(м²·°C)] (КМК 2.01.04-18) ──
    Конверт стены R_si+R_se = 1/8.7 + 1/23 = 0.115+0.043 = 0.158.
@@ -8694,6 +8893,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
   const extDirs = new Set();
   for(const ed of edges){ if(ed.segs.some(s=>s.ext)) extDirs.add(ed.dir); }
   const cornerK = extDirs.size>=2 ? (1+CORNER_SURCHARGE) : 1;
+  const hs = heightSurcharge(H);   // надбавка на высоту >4 м (СНиП)
 
   for(const ed of edges){
     if(!ed.segs.length) continue;
@@ -8711,7 +8911,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
       const pl = op.type==='window' ? 'windows' : 'doors';
       const pp = findPreset(pl, op.presetId) || findPreset(pl, op.type==='window'?ST.mat.windowId:ST.mat.doorId);
       const dBeta = doorBeta(op);                          // надбавка на открывание наружной двери (КМК)
-      const k = seg.ext ? (1+beta+dBeta)*cornerK : 1;
+      const k = seg.ext ? (1+beta+dBeta)*(1+hs)*cornerK : 1;
       const opR = op.customU>0 ? 1/op.customU : (pp?pp.r:0);
       if(opR>0) breakdown[op.type] += (localDT/opR)*a*k;
     }
@@ -8730,7 +8930,7 @@ function computeRoom(room, floor, floorIndex, lastIndex, tExt, rooms){
       if(netWall<=0) return;
       const R = seg.ext ? edgeR : R_PARTITION;
       if(R<=0) return;
-      const k = seg.ext ? (1+beta)*cornerK : 1;
+      const k = seg.ext ? (1+beta)*(1+hs)*cornerK : 1;
       breakdown.wall += (localDT/R)*netWall*k;
     });
   }
@@ -9159,6 +9359,136 @@ function runSelfTest(){
       CUSTOM_MATS.length=0; snapM.forEach(m=>CUSTOM_MATS.push(m));   // восстановить
       return r1.ok && lamOk;
     })(), 'своя λ подставляется из «Моих материалов»');
+    /* ── Фаза 1: скрытие пресетов ── */
+    ok('Скрытие: presetListVisible прячет, findPreset/расчёт — нет', (()=>{
+      const snap=HIDDEN.walls.slice();
+      const tid=BASE_PRESETS.walls[1].id;
+      if(!HIDDEN.walls.includes(tid)) HIDDEN.walls.push(tid);
+      const gone=!presetListVisible('walls').some(p=>p.id===tid);
+      const stillFound=!!findPreset('walls',tid);
+      HIDDEN.walls.length=0; snap.forEach(x=>HIDDEN.walls.push(x));   // восстановить
+      return gone && stillFound;
+    })(), 'скрытый исчезает из каталога, но расчёт его находит');
+    ok('_srMatOpts всегда включает выбранный пресет, даже если он скрыт', (()=>{
+      const snap=HIDDEN.walls.slice();
+      const tid=BASE_PRESETS.walls[1].id;
+      if(!HIDDEN.walls.includes(tid)) HIDDEN.walls.push(tid);
+      const opts=_srMatOpts('walls', tid);
+      HIDDEN.walls.length=0; snap.forEach(x=>HIDDEN.walls.push(x));
+      return opts.indexOf('value="'+tid+'"')>=0;
+    })(), 'скрытый-но-выбранный остаётся в селекте');
+    ok('PRO-слои: авто-λ пола ищет и «Мои материалы» (пул поверхности)', (()=>{
+      const snapM=CUSTOM_MATS.slice();
+      const uniq='__ТестПол '+Math.random().toString(36).slice(2,6);
+      addCustomMat(uniq, 0.033);
+      const m=leMatByName({mats:_srSurfaceMats('floors')}, uniq);
+      const lamOk=m && Math.abs(leMatLambda(m)-0.033)<1e-9;
+      const idx=CUSTOM_MATS.findIndex(x=>x.name===uniq); if(idx>=0) removeCustomMat(CUSTOM_MATS[idx].id);
+      CUSTOM_MATS.length=0; snapM.forEach(x=>CUSTOM_MATS.push(x));
+      return lamOk;
+    })(), 'своя λ подставится в слой пола ПРО');
+    /* ── Фаза 2: конверт слоёв ПРО по направлению потока (пол 0.21 / потолок 0.14 / стена 0.17) ── */
+    ok('PRO _srItemR: конверт пол 0.21 / потолок 0.14 / стена 0.17 (как МАКС)', (()=>{
+      const it={layers:[{name:'XPS',d:'100',l:'0.034'}]};   // ΣR = 0.1/0.034 ≈ 2.941
+      const sum=0.1/0.034;
+      const rF=_srItemR('floors',it), rC=_srItemR('ceilings',it), rW=_srItemR('walls',it);
+      return Math.abs(rF-(sum+0.21))<1e-6 && Math.abs(rC-(sum+0.14))<1e-6 && Math.abs(rW-(sum+0.17))<1e-6;
+    })(), 'пол +0.21, потолок +0.14, стена +0.17');
+    ok('PRO слои пола = МАКС calcLayerR(...,floor) (одинаковый конверт)', (()=>{
+      const rPro=_srItemR('floors',{layers:[{name:'XPS',d:'100',l:'0.034'},{name:'Стяжка',d:'50',l:'1.2'}]});
+      const rMax=calcLayerR([{name:'XPS',lambda:0.034,thick:100},{name:'Стяжка',lambda:1.2,thick:50}],'floor');
+      return Math.abs(rPro-rMax)<1e-3;
+    })(), 'слоёный пол ПРО == слоёный пол МАКС');
+    /* ── Фаза 3: этажи + подвал в ПРО ── */
+    ok('Ф3 миграция: комната без floorId → первый этаж, один уровень результата', (()=>{
+      const sf=ST.simpleFloors, sb=ST.simpleBasement, sr=ST.simpleRooms, st=ST.tExt;
+      ST.tExt=-14; ST.simpleFloors=[]; ST.simpleBasement=null;
+      ST.simpleRooms=[{typeId:'living_room',tInt:20,height:2.7,corner:'auto',
+        walls:[{length:5,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],
+        floors:[{length:5,width:4,presetId:ST.mat.floorId}],ceilings:[]}];
+      const res=computeSimple();
+      const okOne=res.floors.length===1 && !res.floors[0].isBasement;
+      const migrated=ST.simpleRooms[0].floorId===ST.simpleFloors[0].id;
+      ST.simpleFloors=sf; ST.simpleBasement=sb; ST.simpleRooms=sr; ST.tExt=st;
+      return okOne && migrated;
+    })(), 'старый плоский расчёт = один этаж, floorId проставлен');
+    ok('Ф3 подвал: комната считается от t подвала (−6), а не от улицы (−14)', (()=>{
+      const room={typeId:'living_room',tInt:20,height:2.7,corner:'auto',floorId:'b',
+        walls:[{length:5,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],floors:[],ceilings:[]};
+      const wBasement=computeSimpleRoom(room,-6,true).breakdown.wall;
+      const wOutdoor =computeSimpleRoom(room,-14,false).breakdown.wall;
+      return wBasement>0 && wBasement<wOutdoor;   // ΔT к −6 меньше, чем к −14 → меньше потерь
+    })(), 'подвал −6 даёт меньше потерь стены, чем улица −14');
+    /* ── Фаза 4: добавочные коэффициенты ── */
+    ok('Ф4.1 ориентация ПРО: северная стена = +10% к потерям стены', (()=>{
+      const base={typeId:'living_room',tInt:20,height:2.7,corner:'auto',
+        walls:[{length:10,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],floors:[],ceilings:[]};
+      const noDir=computeSimpleRoom(base,-14).breakdown.wall;
+      const nDir=computeSimpleRoom({...base,walls:[{...base.walls[0],dir:'N'}]},-14).breakdown.wall;
+      return noDir>0 && Math.abs(nDir-noDir*1.10)<1e-6;
+    })(), 'С (+10%) корректно множит потери стены');
+    ok('Ф4.2 высота: +2%/м сверх 4 м, максимум +15%', (()=>{
+      return heightSurcharge(2.7)===0 && heightSurcharge(4)===0 &&
+        Math.abs(heightSurcharge(5)-0.02)<1e-9 && Math.abs(heightSurcharge(10)-0.12)<1e-9 && Math.abs(heightSurcharge(20)-0.15)<1e-9;
+    })(), 'H5→2%, H10→12%, H20→15% (капа)');
+    ok('Ф4.3 слоёная стена ПРО = слоёная стена МАКС (0.85 убран)', (()=>{
+      const lp=[{name:'Кирпич',d:'380',l:'0.7'},{name:'Минвата',d:'100',l:'0.045'}];
+      const rPro=computeSimpleRoom({typeId:'living_room',tInt:20,height:2.7,corner:'auto',
+        walls:[{length:1,height:1,presetId:ST.mat.wallId,layers:lp}],windows:[],doors:[],floors:[],ceilings:[]},-14).breakdown.wall;
+      const rMax=34/calcLayerR([{name:'Кирпич',lambda:0.7,thick:380},{name:'Минвата',lambda:0.045,thick:100}],'wall');
+      return rPro>0 && Math.abs(rPro-rMax)<0.5;   // S=1, cornerK=1, hs=0 при H=2.7
+    })(), 'слои ПРО == слои МАКС');
+    /* ── Фаза 5: инфильтрация в ПРО ── */
+    ok('Ф5.1 инфильтрация от габаритов комнаты (без введённых полов)', (()=>{
+      const sv=ST.ventMode, sa=ST.airtight; ST.ventMode='natural'; ST.airtight='normal';
+      const room={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:5,width:4,
+        walls:[{length:5,height:2.7,presetId:ST.mat.wallId}],windows:[],doors:[],floors:[],ceilings:[]};
+      const inf=computeSimpleRoom(room,-14).breakdown.infil;
+      const inf0=computeSimpleRoom({...room,length:0,width:0},-14).breakdown.infil;   // без габаритов и полов → 0
+      ST.ventMode=sv; ST.airtight=sa;
+      return inf>300 && inf<900 && inf0===0;
+    })(), 'габариты 5×4×2.7 → V>0; без объёма → 0 (совместимость)');
+    ok('Ф5.1 рекуператор заметно уменьшает инфильтрацию', (()=>{
+      const sv=ST.ventMode, se=ST.hrvEff;
+      const room={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:5,width:4,
+        walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+      ST.ventMode='natural'; const nat=computeSimpleRoom(room,-14).breakdown.infil;
+      ST.ventMode='hrv'; ST.hrvEff=0.75; const hrv=computeSimpleRoom(room,-14).breakdown.infil;
+      ST.ventMode=sv; ST.hrvEff=se;
+      return nat>0 && hrv>0 && hrv<nat*0.3;   // рекуператор + режим нормы → сильное снижение
+    })(), 'HRV 75% снижает инфильтрацию в разы');
+    ok('Ф5.1 площадь комнаты = сумма полов, иначе габариты', (()=>{
+      const withFloor={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:9,width:9,
+        walls:[],windows:[],doors:[],floors:[{length:5,width:4}],ceilings:[]};
+      const noFloor ={typeId:'living_room',tInt:20,height:2.7,corner:'auto',length:5,width:4,
+        walls:[],windows:[],doors:[],floors:[],ceilings:[]};
+      return Math.abs(computeSimpleRoom(withFloor,-14).area-20)<1e-9 && Math.abs(computeSimpleRoom(noFloor,-14).area-20)<1e-9;
+    })(), 'полы (5×4) приоритетнее габаритов; иначе Д×Ш');
+    /* ── Ревью-фиксы: паритет режима Б для слоёв ПРО + перегенерация id этажей ── */
+    ok('Режим Б: слоёная стена ПРО == МАКС (per-layer wetRatio)', (()=>{
+      const sm=ST.lambdaMode; ST.lambdaMode='B';
+      const lp=[{name:'Кирпич глиняный',d:'380',l:'0.7'},{name:'Минеральная вата',d:'100',l:'0.045'}];
+      const rPro=_srItemR('walls',{layers:lp});
+      const rMax=calcLayerR([{name:'Кирпич глиняный',lambda:0.7,thick:380},{name:'Минеральная вата',lambda:0.045,thick:100}],'wall');
+      ST.lambdaMode=sm;
+      return Math.abs(rPro-rMax)<1e-3;   // calcLayerR округляет до 4 знаков (.toFixed(4))
+    })(), 'влажностная поправка Б учтена в ΣR слоёв ПРО, как в МАКС');
+    ok('Режим А: слои ПРО без изменений (wetRatio≡1)', (()=>{
+      const sm=ST.lambdaMode; ST.lambdaMode='A';
+      const r=_srItemR('walls',{layers:[{name:'Кирпич глиняный',d:'380',l:'0.7'}]});
+      ST.lambdaMode=sm;
+      return Math.abs(r-(0.38/0.7+0.17))<1e-6;   // как раньше
+    })(), 'режим А не тронут (совместимость)');
+    ok('Ф3: sxRestore перегенерирует id этажей/подвала (нет коллизии uid)', (()=>{
+      const KEYS=['calcMode','cityId','cityName','tExt','tGround','tBasement','ventMode','hrvEff','airtight','heatRegime','lambdaMode','pipeType','heatingTypes','attic','simpleRooms','simpleRoomCount','simpleFloors','simpleBasement'];
+      const snap={}; KEYS.forEach(k=>snap[k]=ST[k]); const matSnap={...ST.mat};
+      sxRestore({calcMode:'simple',tExt:-14,simpleRoomCount:1,
+        simpleRooms:[{typeId:'living_room',tInt:20,height:2.7,corner:'auto',floorId:'sf_dup',walls:[],windows:[],doors:[],floors:[],ceilings:[]}],
+        simpleFloors:[{id:'sf_dup',name:'1 этаж'}], simpleBasement:{id:'sb_dup',name:'Подвал',tExt:-6}});
+      const okRemap = ST.simpleFloors[0].id!=='sf_dup' && ST.simpleRooms[0].floorId===ST.simpleFloors[0].id && ST.simpleBasement && ST.simpleBasement.id!=='sb_dup';
+      KEYS.forEach(k=>ST[k]=snap[k]); ST.mat=matSnap;
+      return okRemap;
+    })(), 'id сменились, floorId комнаты синхронизирован');
 
     /* ── Инженерное ядро (Santexprog-методика) ── режим 90/70 → Δt=20, t_ср=80 ── */
     const fr=flowRate(193,20,80);
@@ -9298,6 +9628,8 @@ const ST = {
   simpleRoomCount: 1,
   simpleRoomIdx: 0,
   simpleRooms: [],
+  simpleFloors: [],       // ПРО-этажи [{id,name}]; дефолт создаётся в _ensureSimpleFloors (uid ещё не готов в литерале)
+  simpleBasement: null,   // ПРО-подвал {id,name,tExt:10|2|-3|-6} | null
 };
 
 /* ════════════════════════════════════════════════════════════
@@ -9806,11 +10138,11 @@ function sanityBadgeHTML(res){
 /* Жёлтый баннер на шаге результата ПРО: у каких комнат не указан пол/потолок (результат занижен) */
 function simpleIncompleteBanner(){
   if(ST.calcMode!=='simple') return '';
-  const bad=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)}))
-    .filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));   // без стен комната и так помечена «!»
+  const bad=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r),e:_srFloorExpectations(r.floorId)}))
+    .filter(x=>x.c.walls&&((x.e.floor&&!x.c.floor)||(x.e.ceiling&&!x.c.ceiling)));   // пол/потолок ждём только там, где они есть (нижний/верхний этаж/подвал)
   if(!bad.length) return '';
   const names=bad.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ');
-  const missFloor=bad.some(x=>!x.c.floor), missCeil=bad.some(x=>!x.c.ceiling);
+  const missFloor=bad.some(x=>x.e.floor&&!x.c.floor), missCeil=bad.some(x=>x.e.ceiling&&!x.c.ceiling);
   const what=[missFloor?t('cat-floors').toLowerCase():null, missCeil?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / ');
   const msg=t('simple-incomplete-banner').replace('{rooms}',names).replace('{what}',what);
   return `<div class="mb-5 rounded-xl border border-amber/35 bg-amber/10 p-3 flex items-start gap-2.5">
@@ -9819,13 +10151,100 @@ function simpleIncompleteBanner(){
   </div>`;
 }
 
+/* ════════════════════════════════════════════════════════════
+   ПРО: этажи + подвал (паритет с МАКС ST.floors/ST.basement)
+   ST.simpleFloors=[{id,name}] · ST.simpleBasement={id,name,tExt}|null
+   У комнаты — floorId; комнаты без floorId (старые расчёты) → первый этаж.
+════════════════════════════════════════════════════════════ */
+const SIMPLE_BASEMENT_TEXTS=[{v:10,l:'Отапл. +10°C'},{v:2,l:'Полу +2°C'},{v:-3,l:'Холод. −3°C'},{v:-6,l:'Неотапл. −6°C'}];
+/* Гарант целостности: есть ≥1 этаж, все комнаты привязаны к существующему уровню */
+function _ensureSimpleFloors(){
+  if(!Array.isArray(ST.simpleFloors)||!ST.simpleFloors.length){ ST.simpleFloors=[{id:uid('sf'),name:'1 этаж'}]; }
+  if(ST.simpleBasement && !ST.simpleBasement.id) ST.simpleBasement=null;
+  const valid=new Set(ST.simpleFloors.map(f=>f.id));
+  if(ST.simpleBasement) valid.add(ST.simpleBasement.id);
+  const firstId=ST.simpleFloors[0].id;
+  for(const r of (ST.simpleRooms||[])){ if(!r.floorId||!valid.has(r.floorId)) r.floorId=firstId; }
+}
+/* Уровни в порядке отображения/расчёта: этажи сверху вниз (как заданы), подвал — в конце */
+function _srLevels(){
+  _ensureSimpleFloors();
+  const lv=ST.simpleFloors.map(f=>({id:f.id,name:f.name,tExt:ST.tExt,isBasement:false}));
+  if(ST.simpleBasement) lv.push({id:ST.simpleBasement.id,name:ST.simpleBasement.name,tExt:(ST.simpleBasement.tExt!=null?ST.simpleBasement.tExt:-6),isBasement:true});
+  return lv;
+}
+/* Ожидается ли пол/потолок у комнаты этого уровня: пол — только нижний этаж/подвал, потолок — только верхний/подвал */
+function _srFloorExpectations(floorId){
+  _ensureSimpleFloors();
+  if(ST.simpleBasement && floorId===ST.simpleBasement.id) return {floor:true,ceiling:true};
+  const idx=ST.simpleFloors.findIndex(f=>f.id===floorId), i=idx<0?0:idx;
+  return {floor:i===0, ceiling:i===ST.simpleFloors.length-1};
+}
+function sfAddFloor(){ _ensureSimpleFloors(); ST.simpleFloors.push({id:uid('sf'),name:(ST.simpleFloors.length+1)+' этаж'}); srRerender(); }
+function sfRemoveFloor(id){
+  _ensureSimpleFloors();
+  if(ST.simpleFloors.length<=1){ toast('Нужен хотя бы один этаж','err'); return; }
+  const idx=ST.simpleFloors.findIndex(f=>f.id===id); if(idx<0) return;
+  const nb=ST.simpleFloors[idx-1]||ST.simpleFloors[idx+1];   // сосед для переноса комнат
+  let moved=0; for(const r of (ST.simpleRooms||[])){ if(r.floorId===id){ r.floorId=nb.id; moved++; } }
+  ST.simpleFloors.splice(idx,1); srRerender();
+  if(moved) toast('Комнат перенесено на «'+nb.name+'»: '+moved);
+}
+function sfSetFloorName(id,v){ const f=(ST.simpleFloors||[]).find(x=>x.id===id); if(f) f.name=v; srResults(); }
+function sfAddBasement(){ ST.simpleBasement={id:uid('sb'),name:'Подвал',tExt:-6}; srRerender(); }
+function sfRemoveBasement(){
+  if(ST.simpleBasement){ const bid=ST.simpleBasement.id; _ensureSimpleFloors(); const fid=ST.simpleFloors[0].id; for(const r of (ST.simpleRooms||[])){ if(r.floorId===bid) r.floorId=fid; } }
+  ST.simpleBasement=null; srRerender();
+}
+function sfSetBasementT(v){ if(ST.simpleBasement){ ST.simpleBasement.tExt=+v; srResults(); } }
+function sfSetBasementName(v){ if(ST.simpleBasement){ ST.simpleBasement.name=v; srResults(); } }
+function srSetRoomFloor(i,fid){ const r=ST.simpleRooms[i]; if(!r) return; r.floorId=fid; _srFocusRoom=i; srRerender(); }
+function srSetRoomDim(i,field,val){ const r=ST.simpleRooms[i]; if(!r) return; r[field]=Math.max(0,parseFloat(val)||0); srResults(); }
+/* Ф5.1: объём комнаты задан? (для инфильтрации) — есть введённые полы ИЛИ габариты Д×Ш */
+function _srRoomHasVolume(r){
+  const fa=(r&&r.floors||[]).reduce((s,f)=>s+((f.length||0)*(f.width||0)),0);
+  return fa>0 || ((r&&r.length||0)>0 && (r&&r.width||0)>0);
+}
+/* Панель управления этажами/подвалом ПРО (упрощённая копия s3) */
+function _sfPanel(){
+  _ensureSimpleFloors();
+  const rows=ST.simpleFloors.map((f,i)=>`
+    <div class="flex items-center gap-2 rounded-lg border border-sand/12 bg-w800/40 p-2">
+      <span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-amber/15 text-amber font-bold text-xs">${i+1}</span>
+      <input class="wi flex-1 min-w-0 py-1.5 text-sm" value="${sxEsc(f.name)}" oninput="sfSetFloorName('${f.id}',this.value)">
+      <button type="button" onclick="sfRemoveFloor('${f.id}')" class="flex-shrink-0 text-muted hover:text-ember text-sm px-1.5 ${ST.simpleFloors.length<=1?'opacity-30 pointer-events-none':''}" title="${t('sr-floor-remove')}">✕</button>
+    </div>`).join('');
+  const bs=ST.simpleBasement?`
+    <div class="flex items-center gap-2 rounded-lg border border-blue-400/25 bg-blue-900/15 p-2">
+      <span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded bg-blue-700/40 text-blue-300 font-bold text-xs">B</span>
+      <input class="wi flex-1 min-w-0 py-1.5 text-sm" value="${sxEsc(ST.simpleBasement.name)}" oninput="sfSetBasementName(this.value)">
+      <select class="wi py-1.5 text-sm flex-shrink-0" style="width:132px" title="${t('sr-basement-t-title')}" onchange="sfSetBasementT(this.value)">${SIMPLE_BASEMENT_TEXTS.map(o=>`<option value="${o.v}" ${((ST.simpleBasement.tExt==null?-6:ST.simpleBasement.tExt))===o.v?'selected':''}>${o.l}</option>`).join('')}</select>
+      <button type="button" onclick="sfRemoveBasement()" class="flex-shrink-0 text-muted hover:text-ember text-sm px-1.5" title="${t('sr-basement-remove')}">✕</button>
+    </div>`:'';
+  const open=(ST.simpleFloors.length>1||ST.simpleBasement);
+  return `<details class="help mb-4" ${open?'open':''}>
+    <summary>${t('sr-floors-title')} <span class="text-muted font-normal">· ${ST.simpleFloors.length}${ST.simpleBasement?' + '+t('sr-basement-word'):''}</span></summary>
+    <div class="help-body pt-3 space-y-2">
+      ${rows}
+      ${bs}
+      <div class="flex flex-wrap gap-2 pt-1">
+        <button type="button" onclick="sfAddFloor()" class="tool-btn text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${t('sr-add-floor')}</button>
+        ${ST.simpleBasement?'':`<button type="button" onclick="sfAddBasement()" class="tool-btn text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${t('sr-add-basement')}</button>`}
+      </div>
+    </div>
+  </details>`;
+}
+
 function initSimpleRooms(){
+  _ensureSimpleFloors();
   const n=ST.simpleRoomCount;
   const ex=ST.simpleRooms||[];
+  const fid=ST.simpleFloors[0].id;
   ST.simpleRooms=Array.from({length:n},(_,i)=>ex[i]||{
-    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'auto',
+    name:'', typeId:'living_room', tInt:20, height:2.7, corner:'auto', floorId:fid,
     walls:[], windows:[], doors:[], floors:[], ceilings:[]
   });
+  _ensureSimpleFloors();   // проставить floorId старым комнатам без него
 }
 
 function setSimpleRoomCount(n){
@@ -9836,6 +10255,81 @@ function setSimpleRoomCount(n){
 
 /* --- Simple step helpers --- */
 let _srFocusRoom=0;
+/* ── ПРО: сворачиваемый пикер материала (замена нативного select — optgroup не
+   сворачивается). Открыт один пикер за раз (_srMatPick), состояние папок — в _grpOpen
+   под ключами 'srp|cat|...'. По умолчанию видна только «🛠 Мои материалы»; папка с
+   текущим выбором авто-раскрывается. ── */
+let _srMatPick=null;
+function srToggleMatPick(i,kind,ii){
+  const key=i+'|'+kind+'|'+ii;
+  _srMatPick=(_srMatPick===key)?null:key;
+  _srFocusRoom=i; srRerender();
+}
+function srPickMat(i,kind,ii,id){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii]; if(!it) return;
+  it.presetId=id; _srMatPick=null; _srFocusRoom=i; srRerender();
+}
+function srPickFolder(cat,gkey,open){ _grpOpen['srp|'+cat+'|'+gkey]=!!open; srRerender(); }
+function _srMatRow(i,kind,ii,p,curId){
+  const active=p.id===curId;
+  const lv=(typeof dispLambda==='function')?dispLambda(p):null;
+  return `<button type="button" onclick="srPickMat(${i},'${kind}',${ii},'${p.id}')" title="${sxEsc(p.name)}" class="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-left border transition-colors ${active?'border-amber/50 bg-amber/10':'border-white/[.06] bg-w800/30 hover:border-white/20 hover:bg-white/[.04]'}">
+    <span class="min-w-0 flex-1 text-xs leading-snug ${active?'text-amber font-semibold':'text-cream'}"><span class="block truncate">${active?'✓ ':''}${sxEsc(p.name)}${p.custom?' <span class="chip">своё</span>':''}</span></span>
+    <span class="mono text-[10px] flex-shrink-0 text-right ${active?'text-amber':'text-muted'}">R ${(p.r||0).toFixed(2)}${lv!=null?`<span class="block text-[9px] opacity-70">λ${lv}</span>`:''}</span>
+  </button>`;
+}
+function _srMatFolderHdr(cat,gkey,icon,label,count,open,isMine){
+  return `<button type="button" onclick="srPickFolder('${cat}','${gkey}',${open?'false':'true'})" class="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border transition-colors ${open?'border-white/10 bg-white/[.05]':'border-white/[.06] bg-w800/40 hover:bg-white/[.04]'}">
+    <span class="flex items-center gap-1.5 min-w-0 text-[11px] font-bold uppercase tracking-wide" style="color:${isMine?'#d8b4fe':'rgba(226,215,190,.9)'}">${icon?`<span class="flex-shrink-0">${icon}</span>`:''}<span class="truncate">${label}</span></span>
+    <span class="flex items-center gap-2 flex-shrink-0 text-muted"><span class="text-[10px] font-semibold rounded-full px-1.5 py-0.5" style="background:rgba(255,255,255,.07)">${count}</span><svg class="w-3.5 h-3.5 transition-transform duration-150 ${open?'':'rotate-[-90deg]'}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+  </button>`;
+}
+function _srMatPanel(i,kind,ii,cat,curId){
+  const list=_presetOptsList(cat,curId);
+  const custom=list.filter(p=>p.custom);
+  const builtin=list.filter(p=>!p.custom);
+  const popSet=new Set((typeof POPULAR_UZ!=='undefined'&&POPULAR_UZ[cat])||[]);
+  const popular=builtin.filter(p=>popSet.has(p.id));
+  const rest=builtin.filter(p=>!popSet.has(p.id));
+  const isOpen=(gk,def)=>{ const k='srp|'+cat+'|'+gk; return _grpOpen.hasOwnProperty(k)?_grpOpen[k]===true:def; };
+  const rg='grid grid-cols-1 sm:grid-cols-2 gap-1.5';
+  const rows=arr=>`<div class="${rg} pt-1.5 pb-1">${arr.map(p=>_srMatRow(i,kind,ii,p,curId)).join('')}</div>`;
+
+  // 🛠 Мои — открыта по умолчанию
+  const mineOpen=isOpen('__mine',true);
+  const createBtn=`<button type="button" onclick="srOpenItemWorkshop(${i},'${kind}',${ii})" class="w-full rounded-lg border border-dashed py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1 transition-colors" style="border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.07);color:#c084fc" onmouseover="this.style.background='rgba(192,132,252,.14)'" onmouseout="this.style.background='rgba(192,132,252,.07)'">+ ${t('mat-create-in-ws')}</button>`;
+  const mineBody=mineOpen?`<div class="pt-1.5 pb-1">${custom.length?`<div class="${rg} mb-1.5">${custom.map(p=>_srMatRow(i,kind,ii,p,curId)).join('')}</div>`:`<p class="text-[11px] text-muted italic px-1 py-1.5">${t('mat-mine-empty')}</p>`}${createBtn}</div>`:'';
+
+  // ⭐ Популярно — свёрнуто (авто-раскрытие, если выбран популярный)
+  const popOpen=popular.length?isOpen('__popular',popSet.has(curId)):false;
+  const popBody=popular.length&&popOpen?rows(popular):'';
+
+  // 📁 Каталог — свёрнуто; внутри группы (Кирпич/Газоблок…), авто-раскрытие группы с выбором
+  const catDef=builtin.some(p=>p.id===curId)&&!popSet.has(curId);
+  const catOpen=isOpen('__catalog',catDef);
+  let catBody='';
+  if(catOpen){
+    const grpMap={},grpOrder=[];
+    rest.forEach(p=>{ const g=p.group||'Прочее'; if(!grpMap[g]){grpMap[g]=[];grpOrder.push(g);} grpMap[g].push(p); });
+    catBody=`<div class="mt-1 ml-1 pl-2 border-l border-white/[.07] space-y-1">${grpOrder.map(g=>{
+      const gk='g__'+g;
+      const gOpen=isOpen(gk, grpMap[g].some(p=>p.id===curId));
+      return `<div>${_srMatFolderHdr(cat,gk,'',g,grpMap[g].length,gOpen,false)}${gOpen?rows(grpMap[g]):''}</div>`;
+    }).join('')}</div>`;
+  }
+
+  return `<div id="sr-matpick-${i}-${kind}-${ii}" class="mt-2 rounded-xl border border-sand/15 p-2.5" style="background:rgba(8,10,18,.75);box-shadow:0 10px 30px rgba(0,0,0,.4)">
+    <div class="flex items-center justify-between mb-2 px-0.5">
+      <span class="text-[11px] font-semibold text-sand/80 uppercase tracking-wide">${t('sr-pick-title')}</span>
+      <button type="button" onclick="srToggleMatPick(${i},'${kind}',${ii})" class="text-muted hover:text-cream text-sm leading-none px-1.5 py-0.5 rounded border border-white/10 hover:border-white/25">✕</button>
+    </div>
+    <div class="overflow-y-auto pr-0.5 space-y-1.5" style="max-height:22rem" data-lenis-prevent>
+      <div>${_srMatFolderHdr(cat,'__mine','🛠',t('mat-folder-mine'),custom.length,mineOpen,true)}${mineBody}</div>
+      ${popular.length?`<div>${_srMatFolderHdr(cat,'__popular','⭐',t('mat-folder-popular'),popular.length,popOpen,false)}${popBody}</div>`:''}
+      <div>${_srMatFolderHdr(cat,'__catalog','📁',t('mat-folder-catalog'),rest.length,catOpen,false)}${catBody}</div>
+    </div>
+  </div>`;
+}
 function srSetType(i,typeId){
   const rt=ROOM_TYPES.find(x=>x.id===typeId);
   const r=ST.simpleRooms[i]; if(!r) return;
@@ -9900,10 +10394,13 @@ function srSetRoomField(i,field,val){
   r[field]=val;
   srResults();
 }
-function srAddRoom(){
-  ST.simpleRoomCount++;
-  initSimpleRooms();
-  _srFocusRoom=ST.simpleRoomCount-1; srRerender();
+function srAddRoom(floorId){
+  _ensureSimpleFloors();
+  const fid=floorId||ST.simpleFloors[0].id;
+  ST.simpleRooms.push({name:'',typeId:'living_room',tInt:20,height:2.7,corner:'auto',floorId:fid,
+    walls:[],windows:[],doors:[],floors:[],ceilings:[]});
+  ST.simpleRoomCount=ST.simpleRooms.length;
+  _srFocusRoom=ST.simpleRooms.length-1; srRerender();
   setTimeout(()=>{const d=document.querySelectorAll('#sr-editor details');if(d.length)d[d.length-1].scrollIntoView({behavior:'smooth',block:'start'});},50);
 }
 function srDeleteRoom(i){
@@ -9959,7 +10456,7 @@ const SR_SECTIONS = [
   {kind:'ceilings', color:'#fb923c', dims:'lw'},
 ];
 function _srMatOpts(cat,curId){
-  return presetList(cat).map(p=>`<option value="${p.id}" ${p.id===curId?'selected':''}>${p.name} (R=${(p.r||0).toFixed(2)})</option>`).join('');
+  return _matOptGroups(cat,curId);
 }
 function _srItemArea(r,kind,it){
   if(kind==='ceilings'&&it.sameAsFloor){ const f=(r.floors||[])[0]; return f?(f.length||0)*(f.width||0):0; }
@@ -9971,12 +10468,52 @@ function _srItemArea(r,kind,it){
    поверхности есть валидные слои — R берётся по ним, иначе по готовому пресету. */
 function _srLayersSum(it){
   let sum=0;
-  for(const ly of (it&&it.layers||[])){ const d=parseFloat(ly.d), la=parseFloat(ly.l); if(d>0&&la>0) sum+=d/1000/la; }
+  /* per-layer влажностная поправка (режим Б) — точно как МАКС calcLayerSum; в режиме А wetRatio≡1 */
+  for(const ly of (it&&it.layers||[])){ const d=parseFloat(ly.d), la=parseFloat(ly.l); if(d>0&&la>0) sum+=d/1000/(la*wetRatio(clsOf(ly.name))); }
   return sum;
 }
+/* ── «Мои материалы» в слоях ПРО (паритет с единым le-редактором) ──
+   Пул поверхности: стены → RAW_MATERIALS, полы → FLOOR_MATS, потолки → CEIL_MATS. */
+function _srSurfaceMats(kind){ return kind==='floors'?FLOOR_MATS:kind==='ceilings'?CEIL_MATS:RAW_MATERIALS; }
+/* datalist для строки слоя: «Мои материалы» первыми + пул поверхности + весь справочник, без дублей по имени */
+function _srDatalist(kind){
+  const seen=new Set(), opts=[];
+  /* только value (без текста-λ): native datalist иначе рисует λ второй строкой (см. _leDatalist) */
+  for(const pool of [CUSTOM_MATS,_srSurfaceMats(kind),RAW_MATERIALS]){
+    for(const m of pool){ if(m&&m.name&&!seen.has(m.name)){ seen.add(m.name); opts.push(`<option value="${sxEsc(m.name)}"></option>`); } }
+  }
+  return opts.join('');
+}
+/* Материал слоя уже в справочнике/«Моих» с той же λ? Тогда 💾 не предлагаем */
+function _srMatKnown(kind,ly){
+  const nm=(ly&&ly.name||'').trim(); const la=parseFloat(ly&&ly.l);
+  if(!nm||!(la>0)) return true;
+  const m=leMatByName({mats:_srSurfaceMats(kind)}, nm);
+  return !!(m && Math.abs((leMatLambda(m)||0)-la)<1e-6);
+}
+/* 💾 из строки слоя ПРО: сохранить материал (имя+λ) в «Мои материалы» */
+function srSaveLayerMat(i,kind,ii,li){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii];
+  const ly=it&&it.layers&&it.layers[li]; if(!ly) return;
+  const res=addCustomMat(ly.name, ly.l);
+  if(res.ok){ toast(res.updated?'λ обновлена в «Моих материалах»':'Материал сохранён в «Мои материалы»'); _srFocusRoom=i; srRerender(); }
+  else toast(res.err||'Не сохранено','err');
+}
+/* Чип «Мои материалы» → вставить новым слоем */
+function srInsertMat(i,kind,ii,id){
+  const it=ST.simpleRooms[i]&&ST.simpleRooms[i][kind]&&ST.simpleRooms[i][kind][ii];
+  const m=CUSTOM_MATS.find(x=>x.id===id); if(!it||!m) return;
+  _srEnsureLayers(it).push({name:m.name,d:'',l:String(m.lambda)});
+  _srFocusRoom=i; srRerender();
+}
+/* × на чипе «Мои материалы» → удалить из личной библиотеки */
+function srDeleteMat(i,id){ removeCustomMat(id); _srFocusRoom=i; srRerender(); }
 function _srItemR(kind,it){
   const s=_srLayersSum(it); if(s<=0) return null;
-  return kind==='walls' ? s+WALL_ENVELOPE_R : s;
+  /* Rsi+Rse по направлению потока — как в МАКС calcLayerR: стена 0.17 / пол 0.21 / потолок 0.14.
+     (раньше конверт добавлялся только стенам, пол/потолок считались голой ΣR — исправлено.) */
+  const k = kind==='walls'?'wall':kind==='floors'?'floor':kind==='ceilings'?'ceiling':null;
+  return k ? s+envelopeR(k) : s;
 }
 /* пресет для движка: при заданных слоях подменяем только R (коэффициенты n/flat/
    однородность берём от выбранного базового материала). */
@@ -10003,8 +10540,9 @@ function srSetLayerName(i,kind,ii,li,val){
   const it=ST.simpleRooms[i]?.[kind]?.[ii]; if(!it) return;
   _srEnsureLayers(it); if(!it.layers[li]) return;
   it.layers[li].name=val;
-  const mat=RAW_MATERIALS.find(m=>m.name===val);           // авто-λ из базы
-  if(mat && !(parseFloat(it.layers[li].l)>0)) it.layers[li].l=String(mat.λ);
+  const mat=leMatByName({mats:_srSurfaceMats(kind)}, val);   // авто-λ: пул поверхности → Мои материалы → справочник
+  const lam=leMatLambda(mat);
+  if(lam!=null && !(parseFloat(it.layers[li].l)>0)) it.layers[li].l=String(lam);
   _srFocusRoom=i; srRerender();
 }
 /* живое обновление R по слою + ΣR без полного ре-рендера (сохраняет фокус) */
@@ -10018,27 +10556,46 @@ function _srRecalcLayers(i,kind,ii){
   const sum=_srItemR(kind,it);
   const badge=document.getElementById(`sr-sumr-${i}-${kind}-${ii}`);
   if(badge){ if(sum!=null){ badge.textContent='ΣR '+sum.toFixed(2); badge.classList.remove('hidden'); } else badge.classList.add('hidden'); }
+  /* «R из слоёв» бейдж + приглушение селекта пресета — вживую вслед за ΣR */
+  const layered=sum!=null;
+  const rfl=document.getElementById(`sr-rfl-${i}-${kind}-${ii}`); if(rfl) rfl.classList.toggle('hidden', !layered);
+  const sel=document.getElementById(`sr-sel-${i}-${kind}-${ii}`); if(sel) sel.style.opacity=layered?'0.5':'';
   srResults();
 }
 function _srLayersBlock(i,kind,it,ii){
   const layers=Array.isArray(it.layers)?it.layers:[];
   const sum=_srItemR(kind,it);
-  const gc='grid-template-columns:1fr 52px 58px 44px 18px';
+  const gc='grid-template-columns:1fr 46px 50px 62px 16px';
   const rows=layers.map((ly,li)=>{
     const d=parseFloat(ly.d), la=parseFloat(ly.l); const lr=(d>0&&la>0)?d/1000/la:0;
+    const canSave=!_srMatKnown(kind,ly);
     return `<div class="grid gap-1 items-center" style="${gc}">
-      <input list="sr-rm-list" class="wi py-1 px-1.5 text-xs" placeholder="${t('sr-layer-mat-ph')}" value="${(ly.name||'').replace(/"/g,'&quot;')}" onchange="srSetLayerName(${i},'${kind}',${ii},${li},this.value)" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'name',this.value)">
-      <input type="number" min="0" step="1" class="wi py-1 px-0.5 text-xs text-center" placeholder="мм" value="${ly.d}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'d',this.value)">
-      <input type="number" min="0.001" step="0.001" class="wi py-1 px-0.5 text-xs text-center" placeholder="λ" value="${ly.l}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'l',this.value)">
-      <span id="sr-lr-${i}-${kind}-${ii}-${li}" class="text-[10px] font-mono text-center" style="color:#f59e0b">${lr>0?('R'+lr.toFixed(2)):'—'}</span>
+      <input list="sr-rm-list-${kind}" class="wi py-1 px-1.5 text-xs" placeholder="${t('sr-layer-mat-ph')}" value="${(ly.name||'').replace(/"/g,'&quot;')}" onchange="srSetLayerName(${i},'${kind}',${ii},${li},this.value)" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'name',this.value)">
+      <input type="number" min="0" step="1" class="wi py-1 px-0.5 text-xs text-center" placeholder="мм" value="${ly.d}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'d',this.value)" onchange="srRerender()">
+      <input type="number" min="0.001" step="0.001" class="wi py-1 px-0.5 text-xs text-center" placeholder="λ" value="${ly.l}" oninput="srSetLayerRaw(${i},'${kind}',${ii},${li},'l',this.value)" onchange="srRerender()">
+      <div class="flex items-center justify-center gap-0.5" style="min-width:0">
+        <span id="sr-lr-${i}-${kind}-${ii}-${li}" class="text-[10px] font-mono" style="color:#f59e0b">${lr>0?('R'+lr.toFixed(2)):'—'}</span>
+        ${canSave?`<button type="button" onclick="srSaveLayerMat(${i},'${kind}',${ii},${li})" title="${t('sr-save-mat')}" style="font-size:10px;line-height:1;color:#c084fc;background:none;border:none;cursor:pointer;padding:0">💾</button>`:''}
+      </div>
       <button type="button" onclick="srRemoveLayer(${i},'${kind}',${ii},${li})" class="text-muted hover:text-ember text-sm leading-none">×</button>
     </div>`;
   }).join('');
+  const myMats=CUSTOM_MATS.length?`<div class="mb-1.5">
+    <div style="font-size:9px;color:rgba(192,132,252,.75);margin-bottom:3px;letter-spacing:.04em;text-transform:uppercase">🛠 ${t('sr-my-mats')} <span style="opacity:.6;text-transform:none">— ${t('sr-my-mats-hint')}</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px">${CUSTOM_MATS.map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 4px 2px 7px;border-radius:4px;background:rgba(192,132,252,.09);border:1px solid rgba(192,132,252,.24);color:#d8b4fe;white-space:nowrap">
+      <button type="button" onclick="srInsertMat(${i},'${kind}',${ii},'${m.id}')" title="${t('sr-my-mats-add')}" style="background:none;border:none;color:inherit;cursor:pointer;font-size:9px;padding:0">${sxEsc(m.name)} · λ${m.lambda}</button>
+      <button type="button" onclick="srDeleteMat(${i},'${m.id}')" title="${t('sr-my-mats-del')}" style="background:none;border:none;color:rgba(248,113,113,.8);cursor:pointer;font-size:10px;padding:0;line-height:1">×</button>
+    </span>`).join('')}</div>
+  </div>`:'';
   return `<div class="mt-2 rounded-lg border border-amber/15 p-2" style="background:rgba(245,158,11,.04)">
-    <div class="flex items-center justify-between mb-1.5">
+    <div class="flex items-center justify-between gap-2 mb-1.5">
       <span class="text-[11px] font-semibold" style="color:rgba(245,158,11,.85)">${t('sr-layers-title')}</span>
-      <span id="sr-sumr-${i}-${kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded ${sum!=null?'':'hidden'}" style="background:rgba(245,158,11,.12);color:#f59e0b">ΣR ${(sum||0).toFixed(2)}</span>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <button type="button" onclick="srOpenItemWorkshop(${i},'${kind}',${ii})" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:1px 6px;white-space:nowrap">🛠 ${t('sr-workshop-short')}</button>
+        <span id="sr-sumr-${i}-${kind}-${ii}" class="text-[10px] font-mono px-1.5 py-0.5 rounded ${sum!=null?'':'hidden'}" style="background:rgba(245,158,11,.12);color:#f59e0b">ΣR ${(sum||0).toFixed(2)}</span>
+      </div>
     </div>
+    ${myMats}
     ${layers.length?`<div class="grid gap-1 mb-1 text-[9px] text-muted px-0.5" style="${gc}"><span>${t('sr-layer-mat-ph')}</span><span class="text-center">мм</span><span class="text-center">λ</span><span class="text-center">R</span><span></span></div>`:''}
     <div class="space-y-1">${rows||`<p class="text-[10px] text-muted italic">${t('sr-layers-hint')}</p>`}</div>
     <button type="button" onclick="srAddLayer(${i},'${kind}',${ii})" class="text-[11px] font-semibold mt-1.5 hover:underline" style="color:#f59e0b">+ ${t('sr-layer-add')}</button>
@@ -10053,47 +10610,82 @@ function sSimple4(){
 function simpleRoomsEditorHTML(){ return `<div id="sr-editor">${simpleRoomsEditorInner()}</div>`; }
 function simpleRoomsEditorInner(){
   if(!ST.simpleRooms||!ST.simpleRooms.length) initSimpleRooms();
+  _ensureSimpleFloors();   // гарантируем этажи до чтения ST.simpleFloors[0].id ниже
 
   const numFld=(i,kind,ii,field,val,label,min,step)=>`
     <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${label}</label>
       <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="${min}" step="${step}"
         value="${val}" oninput="srSetItemNum(${i},'${kind}',${ii},'${field}',this.value)"></div>`;
-  const matFld=(i,kind,ii,cat,curId)=>`
-    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-mat-lbl')}</label>
-      <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'${kind}',${ii},'presetId',this.value)">${_srMatOpts(cat,curId)}</select></div>`;
+  /* Селект пресета. Если у элемента заданы валидные слои (_srItemR!=null), R берётся
+     из слоёв, а не из пресета — приглушаем селект и показываем бейдж «R из слоёв». */
+  const matFld=(i,kind,ii,cat,it)=>{
+    const curId=it.presetId;
+    const layered=_srItemR(kind,it)!=null;
+    const key=i+'|'+kind+'|'+ii;
+    const pickOpen=_srMatPick===key;
+    const cur=findPreset(cat,curId)||_presetOptsList(cat,curId)[0]||null;
+    const curName=cur?cur.name:'—';
+    const curR=cur?(cur.r||0).toFixed(2):'—';
+    /* окна/двери не имеют блока слоёв — даём кнопку Мастерской прямо у поля */
+    const wsBtn=(kind==='windows'||kind==='doors')?`<button type="button" onclick="srOpenItemWorkshop(${i},'${kind}',${ii})" title="${t('sr-open-workshop-tip')}" style="font-size:9px;color:#c084fc;background:rgba(192,132,252,.1);border:1px solid rgba(192,132,252,.3);border-radius:4px;cursor:pointer;padding:0 5px;margin-left:5px">🛠</button>`:'';
+    /* Сворачиваемый пикер вместо нативного select: у native <optgroup> нельзя
+       свернуть группы — поэтому кнопка текущего материала + инлайн-панель с папками. */
+    return `
+    <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-mat-lbl')}<span id="sr-rfl-${i}-${kind}-${ii}" class="${layered?'':'hidden'}" style="font-size:8px;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:3px;padding:0 4px;margin-left:4px;white-space:nowrap" title="${t('sr-r-from-layers-tip')}">${t('sr-r-from-layers')}</span>${wsBtn}</label>
+      <button type="button" id="sr-sel-${i}-${kind}-${ii}" onclick="srToggleMatPick(${i},'${kind}',${ii})" class="wi py-1.5 text-sm w-full flex items-center justify-between gap-2 text-left" style="${layered?'opacity:.6':''}" title="${layered?t('sr-r-from-layers-tip'):t('simple-mat-lbl')}">
+        <span class="truncate">${sxEsc(curName)}</span>
+        <span class="flex items-center gap-1.5 flex-shrink-0"><span class="mono text-[11px] text-amber">R ${curR}</span><svg class="w-3 h-3 text-muted transition-transform ${pickOpen?'rotate-180':''}" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </button></div>`;
+  };
+  /* Панель пикера рендерится на всю ширину карточки (не в узкой колонке) — под сеткой полей */
+  const matPanelSlot=(i,kind,ii,it)=>(_srMatPick===i+'|'+kind+'|'+ii)?_srMatPanel(i,kind,ii,kind,it.presetId):'';
+  /* Ф4.1: сторона света (ориентация) для стен/окон/дверей — надбавка BETA_ORIENT */
+  const dirFld=(i,kind,ii,it)=>`
+      <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('sr-dir-lbl')}</label>
+        <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'${kind}',${ii},'dir',this.value)">
+          <option value="" ${!it.dir?'selected':''}>— ${t('sr-dir-none')}</option>
+          ${DIR8.map(d=>`<option value="${d}" ${it.dir===d?'selected':''}>${dirLabel8(d)}${BETA_ORIENT[d]>0?' +'+Math.round(BETA_ORIENT[d]*100)+'%':''}</option>`).join('')}
+        </select></div>`;
 
   const itemFields=(i,kind,it,ii,color)=>{
     if(kind==='walls') return `
       <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
         <input type="checkbox" class="accent-amber" ${it.basement?'checked':''} onchange="srSetItemBool(${i},'walls',${ii},'basement',this.checked)">
         <span class="text-xs text-sand">${t('simple-basement')}</span></label>
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         ${numFld(i,'walls',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'walls',ii,'height',it.height||2.7,t('simple-hgt'),0.1,0.1)}
-        ${matFld(i,'walls',ii,'walls',it.presetId)}
+        ${dirFld(i,'walls',ii,it)}
+        ${matFld(i,'walls',ii,'walls',it)}
       </div>
+      ${matPanelSlot(i,'walls',ii,it)}
       ${_srLayersBlock(i,'walls',it,ii)}`;
     if(kind==='windows') return `
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         ${numFld(i,'windows',ii,'length',it.length||1.2,t('simple-len'),0.1,0.05)}
         ${numFld(i,'windows',ii,'height',it.height||1.4,t('simple-hgt'),0.1,0.05)}
-        ${matFld(i,'windows',ii,'windows',it.presetId)}
-      </div>`;
+        ${dirFld(i,'windows',ii,it)}
+        ${matFld(i,'windows',ii,'windows',it)}
+      </div>
+      ${matPanelSlot(i,'windows',ii,it)}`;
     if(kind==='doors') return `
       <div class="mb-2"><label class="block text-[11px] text-muted mb-1">${t('simple-door-type-lbl')}</label>
         <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'doors',${ii},'doorType',this.value)">
           ${Object.entries(BETA_DOOR).map(([id,o])=>`<option value="${id}" ${(it.doorType||'none')===id?'selected':''}>${o.name}</option>`).join('')}</select></div>
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         ${numFld(i,'doors',ii,'length',it.length||0.9,t('simple-len'),0.1,0.05)}
         ${numFld(i,'doors',ii,'height',it.height||2.1,t('simple-hgt'),0.1,0.05)}
-        ${matFld(i,'doors',ii,'doors',it.presetId)}
-      </div>`;
+        ${dirFld(i,'doors',ii,it)}
+        ${matFld(i,'doors',ii,'doors',it)}
+      </div>
+      ${matPanelSlot(i,'doors',ii,it)}`;
     if(kind==='floors') return `
       <div class="grid grid-cols-3 gap-2">
         ${numFld(i,'floors',ii,'length',it.length||5,t('simple-len'),0.1,0.1)}
         ${numFld(i,'floors',ii,'width',it.width||4,t('simple-wid'),0.1,0.1)}
-        ${matFld(i,'floors',ii,'floors',it.presetId)}
+        ${matFld(i,'floors',ii,'floors',it)}
       </div>
+      ${matPanelSlot(i,'floors',ii,it)}
       ${_srLayersBlock(i,'floors',it,ii)}`;
     /* ceilings */
     return `
@@ -10112,8 +10704,9 @@ function simpleRoomsEditorInner(){
             :`<div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-attic-lbl')}</label>
               <select class="wi py-1.5 text-sm" onchange="srSetItemStr(${i},'ceilings',${ii},'attic',this.value)">
                 ${Object.keys(ATTIC).map(a=>`<option value="${a}" ${(it.attic||'closed')===a?'selected':''}>${_pick(ATTIC[a],'name','nameUz','nameEn')}</option>`).join('')}</select></div>`;})()}
-        ${matFld(i,'ceilings',ii,'ceilings',it.presetId)}
+        ${matFld(i,'ceilings',ii,'ceilings',it)}
       </div>
+      ${matPanelSlot(i,'ceilings',ii,it)}
       ${_srLayersBlock(i,'ceilings',it,ii)}`;
   };
 
@@ -10143,7 +10736,7 @@ function simpleRoomsEditorInner(){
     </div>`;
   };
 
-  const cards=ST.simpleRooms.map((r,i)=>{
+  const roomCard=(r,i)=>{
     ['walls','windows','doors','floors','ceilings'].forEach(k=>{ if(!Array.isArray(r[k])) r[k]=[]; });
     const rtBtns=ROOM_TYPES.slice(0,10).map(rt=>`
       <button type="button" onclick="srSetType(${i},'${rt.id}')"
@@ -10155,16 +10748,22 @@ function simpleRoomsEditorInner(){
     const cornerOpts=[['auto','simple-corner-auto'],['one','simple-corner-one'],['corner','simple-corner-corner'],['two','simple-corner-two']]
       .map(([v,k])=>`<option value="${v}" ${(r.corner||'auto')===v?'selected':''}>${t(k)}</option>`).join('');
     const comp=simpleRoomCompleteness(r);
+    const exp=_srFloorExpectations(r.floorId);   // пол/потолок критичны только для нижнего/верхнего этажа/подвала
     const compChip=(on,label,critical)=>`<span style="white-space:nowrap;${on?'color:rgba(74,222,128,.75)':critical?'color:rgba(251,191,36,.85)':'color:rgba(154,134,117,.5)'}">${label} ${on?'✓':critical?'✗':'—'}</span>`;
     const checklist=`<span class="flex-shrink-0 hidden sm:flex items-center gap-1.5 text-[9px] font-medium" title="${t('simple-completeness-tip')}">
-      ${compChip(comp.walls,t('cat-walls'),true)}${compChip(comp.windows,t('cat-windows'),false)}${compChip(comp.floor,t('cat-floors'),true)}${compChip(comp.ceiling,t('cat-ceilings'),true)}
+      ${compChip(comp.walls,t('cat-walls'),true)}${compChip(comp.windows,t('cat-windows'),false)}${compChip(comp.floor,t('cat-floors'),exp.floor)}${compChip(comp.ceiling,t('cat-ceilings'),exp.ceiling)}
     </span>`;
+    const levels=_srLevels();
+    const floorSel=(levels.length>1)?`<div>
+          <label class="block text-[11px] text-muted mb-1">${t('sr-floor-lbl')}</label>
+          <select class="wi py-1.5 text-sm" onchange="srSetRoomFloor(${i},this.value)">${levels.map(lv=>`<option value="${lv.id}" ${(r.floorId||levels[0].id)===lv.id?'selected':''}>${sxEsc(lv.name)}${lv.isBasement?' ('+t('sr-basement-word')+')':''}</option>`).join('')}</select>
+        </div>`:'';
 
     return `<details ${isOpen?'open':''} ontoggle="if(this.open)_srFocusRoom=${i}" class="rounded-2xl border ${hasErr?'border-ember/30':'border-sand/10'} bg-w850/40 mb-3 overflow-hidden">
       <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none hover:bg-white/[.02] transition-colors">
         <div class="flex items-center gap-2.5 min-w-0">
           <span class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-amber/15 text-amber text-xs font-bold">${i+1}</span>
-          <span class="text-sm font-semibold text-cream truncate">${rLabel}</span>
+          <span class="text-sm font-semibold text-cream truncate">${sxEsc(rLabel)}</span>
           ${hasErr?'<span class="flex-shrink-0 text-[10px] font-bold text-ember bg-ember/10 rounded-full px-2 py-0.5">!</span>':''}
           ${checklist}
         </div>
@@ -10178,7 +10777,7 @@ function simpleRoomsEditorInner(){
         <div>
           <label class="block text-xs font-semibold text-sand mb-1.5">${t('simple-name-lbl')} <span class="text-muted font-normal">${t('simple-opt-lbl')}</span></label>
           <input class="wi" type="text" maxlength="40" placeholder="${t('simple-room-name-ph').replace('{n}',i+1)}"
-            value="${r.name||''}" oninput="ST.simpleRooms[${i}].name=this.value">
+            value="${sxEsc(r.name||'')}" oninput="ST.simpleRooms[${i}].name=this.value">
         </div>
 
         <div>
@@ -10190,14 +10789,27 @@ function simpleRoomsEditorInner(){
           <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-tint')}</label>
             <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="5" max="35" step="1"
               value="${r.tInt||20}" oninput="ST.simpleRooms[${i}].tInt=Math.max(5,Math.min(35,+this.value||20));srResults()"></div>
-          <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-height')}</label>
+          <div class="min-w-0"><label class="block text-[11px] text-muted mb-1">${t('simple-room-height')}${(r.height||2.7)>4?` <span style="font-size:8px;color:#f59e0b;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.3);border-radius:3px;padding:0 4px;white-space:nowrap" title="${t('sr-height-tip')}">+${Math.round(heightSurcharge(r.height)*100)}% >4м</span>`:''}</label>
             <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="1.8" max="12" step="0.1"
-              value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7);srResults()"></div>
+              value="${r.height||2.7}" oninput="ST.simpleRooms[${i}].height=Math.max(1.8,+this.value||2.7);srResults()" onchange="srRerender()"></div>
+        </div>
+
+        <div class="grid ${floorSel?'grid-cols-2':'grid-cols-1'} gap-2">
+          <div>
+            <label class="block text-[11px] text-muted mb-1">${t('simple-corner-lbl')}</label>
+            <select class="wi py-1.5 text-sm" onchange="srSetRoomField(${i},'corner',this.value)">${cornerOpts}</select>
+          </div>
+          ${floorSel}
         </div>
 
         <div>
-          <label class="block text-[11px] text-muted mb-1">${t('simple-corner-lbl')}</label>
-          <select class="wi py-1.5 text-sm" onchange="srSetRoomField(${i},'corner',this.value)">${cornerOpts}</select>
+          <label class="block text-[11px] text-muted mb-1">${t('sr-room-dims')} <span class="text-muted/70 font-normal">${t('simple-opt-lbl')}</span></label>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="0" step="0.1" placeholder="${t('simple-len')}" value="${r.length||''}" oninput="srSetRoomDim(${i},'length',this.value)" onchange="srRerender()">
+            <input type="number" class="wi py-1.5 px-1 text-sm text-center" style="min-width:0" min="0" step="0.1" placeholder="${t('simple-wid')}" value="${r.width||''}" oninput="srSetRoomDim(${i},'width',this.value)" onchange="srRerender()">
+          </div>
+          <p class="text-[10px] text-muted mt-1">${t('sr-room-dims-hint')}</p>
+          ${(comp.walls && !_srRoomHasVolume(r))?`<p class="text-[10px] text-amber mt-1">⚠️ ${t('sr-vol-warn')}</p>`:''}
         </div>
 
         <div class="space-y-3 pt-1">
@@ -10205,25 +10817,48 @@ function simpleRoomsEditorInner(){
         </div>
       </div>
     </details>`;
+  };
+
+  /* Комнаты сгруппированы по уровням (этажи + подвал). Один уровень → без заголовков. */
+  const firstId=ST.simpleFloors[0].id;
+  const levels=_srLevels();
+  const multi=levels.length>1;
+  const grouped=levels.map(lv=>{
+    const rr=ST.simpleRooms.map((r,i)=>[r,i]).filter(x=>(x[0].floorId||firstId)===lv.id);
+    const header=multi?`<div class="flex items-center gap-2 mt-4 mb-2 px-1">
+        <span class="text-xs font-bold uppercase tracking-wide ${lv.isBasement?'text-blue-300':'text-amber/85'}">${lv.isBasement?'▽ ':'▨ '}${sxEsc(lv.name)}</span>
+        <span class="text-[10px] text-muted">· ${rr.length}</span>
+        <div class="flex-1 border-b ${lv.isBasement?'border-blue-400/15':'border-amber/15'}"></div>
+      </div>`:'';
+    const body=rr.length?rr.map(x=>roomCard(x[0],x[1])).join(''):`<p class="text-[11px] text-muted italic px-1 py-2">${t('sr-floor-empty')}</p>`;
+    const add=`<button type="button" onclick="srAddRoom('${lv.id}')"
+      class="mt-1 mb-2 w-full rounded-2xl border border-dashed ${lv.isBasement?'border-blue-400/30 bg-blue-900/10 text-blue-300 hover:bg-blue-900/20':'border-amber/30 bg-amber/5 text-amber hover:bg-amber/10'} py-2.5 text-sm font-semibold transition-colors">+ ${t('simple-add-room')}${multi?' — «'+sxEsc(lv.name)+'»':''}</button>`;
+    return header+body+add;
   }).join('');
 
-  return `<datalist id="sr-rm-list">${RAW_MATERIALS.map(m=>`<option value="${m.name}">`).join('')}</datalist>
-  ${cards}
-  <button type="button" onclick="srAddRoom()"
-    class="mt-1 w-full rounded-2xl border border-dashed border-amber/30 bg-amber/5 py-3 text-sm font-semibold text-amber hover:bg-amber/10 transition-colors">
-    + ${t('simple-add-room')}
-  </button>`;
+  return `<datalist id="sr-rm-list-walls">${_srDatalist('walls')}</datalist>
+  <datalist id="sr-rm-list-floors">${_srDatalist('floors')}</datalist>
+  <datalist id="sr-rm-list-ceilings">${_srDatalist('ceilings')}</datalist>
+  ${_sfPanel()}
+  ${grouped}`;
 }
 
 /* ПРО (простой) — единый шаг «Комнаты»: свёрнутые общие настройки объекта
    (герметичность, режим, λ, трубы, тип отопления) + покомнатный редактор,
    где материалы задаются у каждой поверхности. Бывший отдельный «Шаг
    материалов» распущен внутрь комнат — как в @Santexprog_bot. */
+/* Ф5.2: краткая сводка герметичности/вентиляции — видна в шапке свёрнутых настроек */
+function _srSettingsSummary(){
+  const at=AIRTIGHT[ST.airtight]||AIRTIGHT.normal;
+  const vm=ST.ventMode||'natural';
+  const ventShort = vm==='hrv'?(t('sr-vent-hrv')+' '+Math.round(hrvEff()*100)+'%') : vm==='mech'?t('sr-vent-mech') : t('sr-vent-nat');
+  return sxEsc(_pick(at,'name','nameUz','nameEn'))+' · '+at.ach+' 1/ч · '+ventShort;
+}
 function sSimpleRooms(){
   return `<h3 class="text-xl font-extrabold text-cream mb-1">${t('simple-step-enter')}</h3>
   <p class="text-sm text-muted mb-4">${t('simple-step-enter-sub')}</p>
   <details class="help mb-5">
-    <summary>${t('simple-gen-settings')}</summary>
+    <summary>${t('simple-gen-settings')} <span class="text-[10px] font-normal" style="color:rgba(245,158,11,.85)">· ${_srSettingsSummary()}</span></summary>
     <div class="help-body pt-4">
       <button onclick="openWorkshop()" class="tool-btn mb-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>${t('workshop-btn')}</button>
       ${objectParamsBlock()}
@@ -10237,18 +10872,26 @@ function sSimple5(){ return s6(); }
 /* --- Simple mode computation --- */
 function computeSimple(){
   if(ST.tExt==null||!ST.simpleRooms||!ST.simpleRooms.length) return null;
-  let totalW=0, totalArea=0, totalSections=0, roomCount=0;
+  _ensureSimpleFloors();
+  let totalW=0, totalArea=0, totalSections=0, roomCount=0, gi=0;
   const byType={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
-  const rres=[];
-  for(const r of ST.simpleRooms){
-    const cr=computeSimpleRoom(r,ST.tExt);
-    totalW+=cr.qW; totalArea+=cr.area; totalSections+=cr.sections; roomCount++;
-    for(const k in byType) byType[k]+=cr.breakdown[k];
-    const rn=r.name||(roomTypeName(r.typeId)||('Помещение '+(rres.length+1)));
-    rres.push({id:'sr'+rres.length,name:rn,typeId:r.typeId,tInt:r.tInt,qKw:cr.qW/1000,...cr});
+  const firstId=ST.simpleFloors[0].id;
+  const fres=[];
+  for(const lv of _srLevels()){
+    const roomsHere=ST.simpleRooms.filter(r=>(r.floorId||firstId)===lv.id);
+    let fW=0,fArea=0,fSec=0; const rres=[];
+    for(const r of roomsHere){
+      const cr=computeSimpleRoom(r, lv.tExt, lv.isBasement);
+      fW+=cr.qW; fArea+=cr.area; fSec+=cr.sections; roomCount++;
+      for(const k in byType) byType[k]+=cr.breakdown[k];
+      const rn=r.name||(roomTypeName(r.typeId)||('Помещение '+(gi+1)));
+      rres.push({id:'sr'+(gi++),name:rn,typeId:r.typeId,tInt:r.tInt,qKw:cr.qW/1000,...cr});
+    }
+    totalW+=fW; totalArea+=fArea; totalSections+=fSec;
+    fres.push({id:lv.id,name:lv.name,height:2.7,qW:fW,qKw:fW/1000,area:fArea,sections:fSec,rooms:rres,isBasement:lv.isBasement});
   }
   return {
-    floors:[{id:'simple',name:'Объект',height:2.7,qW:totalW,qKw:totalW/1000,area:totalArea,sections:totalSections,rooms:rres}],
+    floors:fres,
     byType, totalW, totalKw:totalW/1000,
     boilerKw:(totalW/1000)*_tgG('safeFactor',1.25)/(_tgG('boilerEff',90)/100),
     totalArea, totalSections, roomCount
@@ -10266,34 +10909,41 @@ function simpleGroundT(){
 }
 function simpleBasementT(){ return ST.tBasement!=null?ST.tBasement:SIMPLE_BASEMENT_T; }
 
-function computeSimpleRoom(r,tExt){
+function computeSimpleRoom(r,tExt,isBasement){
   const tInt=r.tInt||20, H=r.height||2.7;
-  const dTout=tInt-tExt;                                   // к наружному воздуху
-  const dTfloor=tInt-simpleGroundT();                      // под полом (не на грунте)
-  const dTbase=tInt-simpleBasementT();                     // к подвальной стене
+  const dTout=tInt-tExt;                                   // к наружному воздуху (для подвала tExt = t подвала)
+  /* Комната подвала: весь конверт к t подвала (как МАКС computeRoom — единый ΔT).
+     Обычная комната: пол к t под полом, «подвальная» стена — к t за подвалом. */
+  const dTfloor=isBasement?dTout:(tInt-simpleGroundT());   // под полом (не на грунте)
+  const dTbase=isBasement?dTout:(tInt-simpleBasementT());  // к подвальной стене
   const bd={wall:0,window:0,door:0,floor:0,ceiling:0,infil:0};
   const cornerK=simpleCornerK(r);   // 'auto': ≥2 наружных стен → +5%, как в Макс
+  const hs=heightSurcharge(H);      // надбавка на высоту >4 м (СНиП, Ф4)
 
   // ── Стены (каждая — отдельная строка, как в боте) ──
   for(const w of (r.walls||[])){
     const S=(w.length||0)*(w.height||0); if(S<=0) continue;
     const wp=_srItemPreset('walls',w); if(!wp) continue;
-    const R=regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT);
+    /* Ф4.3: слои — точная сборка (как МАКС edgeMats.layers), без коэф. однородности 0.85 и без regimeR */
+    const R=wp.__layered?wp.r:regimeR(wp.r,WALL_ENVELOPE_R,presetClass(wp))*(wp.homog!=null?wp.homog:WALL_HOMOG_DEFAULT);
+    const betaW=BETA_ORIENT[w.dir]||0;                    // Ф4.1: ориентация стены
     const dT=w.basement?dTbase:dTout;
-    if(R>0&&dT>0) bd.wall+=(dT/R)*S*cornerK;
+    if(R>0&&dT>0) bd.wall+=(dT/R)*S*(1+betaW)*(1+hs)*cornerK;
   }
   // ── Окна ──
   for(const win of (r.windows||[])){
     const S=(win.length||0)*(win.height||0); if(S<=0) continue;
     const wp=findPreset('windows',win.presetId||ST.mat.windowId);
-    if(wp&&wp.r>0&&dTout>0) bd.window+=(dTout/wp.r)*S*cornerK;
+    const betaWin=BETA_ORIENT[win.dir]||0;
+    if(wp&&wp.r>0&&dTout>0) bd.window+=(dTout/wp.r)*S*(1+betaWin)*(1+hs)*cornerK;
   }
   // ── Двери ──
   for(const dr of (r.doors||[])){
     const S=(dr.length||0)*(dr.height||0); if(S<=0) continue;
     const dp=findPreset('doors',dr.presetId||ST.mat.doorId);
     const dBeta=(BETA_DOOR[dr.doorType||'none']||BETA_DOOR.none).beta;
-    if(dp&&dp.r>0&&dTout>0) bd.door+=(dTout/dp.r)*S*(1+dBeta)*cornerK;
+    const betaDr=BETA_ORIENT[dr.dir]||0;
+    if(dp&&dp.r>0&&dTout>0) bd.door+=(dTout/dp.r)*S*(1+betaDr+dBeta)*(1+hs)*cornerK;
   }
   // ── Полы: «на грунте» — зональный метод как в Макс (ΔT к улице, R грунта по зонам
   //    + утепление addR); прочие (над подвалом/подпольем) — плоское R и ΔT к t под полом ──
@@ -10310,7 +10960,8 @@ function computeSimpleRoom(r,tExt){
       const addR=fp.__layered?fp.r:(fp.addR!=null?fp.addR:0);   // слои Мастерской = утепление поверх грунта
       if(dTout>0) bd.floor+=zonalFloorQ(S,P,addR,dTout,n);
     } else {
-      const R=regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0);
+      /* слои уже несут per-layer wetRatio в fp.r → без regimeR (иначе двойная поправка в режиме Б); пресеты — regimeR */
+      const R=fp.__layered?fp.r:(regimeR(fp.r,0.17,presetClass(fp))+(fp.addR!=null?fp.addR:0));
       if(R>0&&dTfloor>0) bd.floor+=(dTfloor/R)*S*n;
     }
   }
@@ -10318,16 +10969,19 @@ function computeSimpleRoom(r,tExt){
   for(const cl of (r.ceilings||[])){
     const S=_srItemArea(r,'ceilings',cl); if(S<=0) continue;
     const cp=_srItemPreset('ceilings',cl); if(!cp) continue;
-    const R=regimeR(cp.r,0.17,presetClass(cp));
+    const R=cp.__layered?cp.r:regimeR(cp.r,0.17,presetClass(cp));   // слои: per-layer wetRatio уже в cp.r
     const n=(cp.flat)?1:(ATTIC[cl.attic]||ATTIC.closed).n;  /* C1: без чердака → n=1 */
     if(R>0&&dTout>0) bd.ceiling+=(dTout/R)*S*n;
   }
-  // ── Инфильтрация (объём = площадь пола × высота) ──
-  const V=floorArea*H, rho=(1.293*273)/(273+tExt);
+  // ── Инфильтрация (объём = площадь комнаты × высота) ──
+  //   Ф5.1: площадь = сумма введённых полов, иначе габариты комнаты Д×Ш (не зависеть
+  //   от полов — комната среднего этажа без полов тоже считается). Без полов и габаритов → V=0.
+  const effArea = floorArea>0 ? floorArea : ((r.length||0)*(r.width||0));
+  const V=effArea*H, rho=(1.293*273)/(273+tExt);
   if(V>0&&dTout>0) bd.infil=0.28*1.005*V*rho*dTout*ventAchFor(r.typeId)*ventFactor();
 
   const qW=Object.values(bd).reduce((s,v)=>s+v,0);
-  const area=floorArea;
+  const area=effArea;
   return {area,qW,breakdown:bd,sections:Math.ceil((qW*1.15)/sectionWatt(tInt))};
 }
 
@@ -14019,7 +14673,7 @@ function buildWallMatsPanel(room){
       <label class="text-[10px] text-muted mb-1 block">Конструкция стены</label>
       <select class="wi mb-2 text-xs py-1.5" onchange="edSetEdgeMat('${room.id}',${sel},'preset',this.value)">
         <option value="">— Глобальный пресет этажа</option>
-        ${wallPresets.map(p=>`<option value="${p.id}" ${selPreset===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
+        ${_matOptGroups('walls',selPreset)}
         <option value="__manual" ${isManual?'selected':''}>✏ Ручной λ + толщина</option>
         <option value="__manualR" ${hasCustomR?'selected':''}>✏ Ручное R (готовое значение)</option>
         <option value="__layers" ${(hasLayersSel||em.layersMode)?'selected':''}>🧱 Многослойная конструкция (слои)</option>
@@ -14182,9 +14836,11 @@ function _leTotHtml(key,t){
 }
 function _leDatalist(cfg){
   const seen=new Set(), opts=[];
-  /* «Мои материалы» первыми — они у пользователя под свой вкус */
+  /* «Мои материалы» первыми — они у пользователя под свой вкус.
+     Только value (без текста-λ): иначе native datalist рисует λ отдельной строкой и
+     список раздувается/наезжает на поля (λ и так подставляется в поле при выборе). */
   for(const pool of [(cfg&&cfg.mats)||[], CUSTOM_MATS, RAW_MATERIALS]){
-    for(const m of pool){ if(!seen.has(m.name)){ seen.add(m.name); const lam=leMatLambda(m); opts.push(`<option value="${m.name.replace(/"/g,'&quot;')}">${lam!=null?'λ '+lam:''}</option>`); } }
+    for(const m of pool){ if(!seen.has(m.name)){ seen.add(m.name); opts.push(`<option value="${sxEsc(m.name)}"></option>`); } }
   }
   return opts.join('');
 }
@@ -14745,7 +15401,7 @@ function opRow(room,op,extSides){
       <button onclick="removeOpening('${room.id}','${op.id}')" class="text-muted hover:text-ember"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <select class="wi text-xs py-1" onchange="setOp('${room.id}','${op.id}','presetId',this.value)">
-      ${presetList(pl).map(p=>`<option value="${p.id}" ${op.presetId===p.id?'selected':''}>${p.name} (R ${p.r.toFixed(2)})</option>`).join('')}
+      ${_matOptGroups(pl,op.presetId)}
     </select>
     <div class="grid grid-cols-3 gap-1.5">
       <div><label class="text-[10px] text-muted">${t('op-w-lbl')||'W'}</label><input class="wi text-xs py-1" type="number" min="0.1" step="0.1" value="${op.w}" oninput="setOp('${room.id}','${op.id}','w',this.value)"></div>
@@ -14970,7 +15626,7 @@ function opOverridesNote(type){
 }
 function presetGrid(label,cat,currentId,onselect){
   const isWall = cat==='walls';
-  const total = presetList(cat).length;
+  const total = presetListVisible(cat).length;
   return `<div class="mb-6">
     <h4 class="text-xs font-semibold uppercase tracking-widest text-amber/70 mb-2">${label}${isWall?' '+tip('homog'):''}</h4>
     <div class="relative mb-2">
@@ -15076,7 +15732,7 @@ function renderWorkshop(cat){
       <div class="space-y-1.5">${CUSTOM[cat].map(p=>`
         <div class="flex items-center gap-2 text-xs rounded-lg border border-sand/10 bg-w800/30 px-3 py-2">
           <div class="flex-1">
-            <span class="font-semibold text-cream">${p.name}</span>
+            <span class="font-semibold text-cream">${sxEsc(p.name)}</span>
             ${p.layers&&p.layers.length?`<span class="text-muted ml-1">(${p.layers.length} ${t('ws-layers-abbr')})</span>`:''}
           </div>
           <span class="mono text-amber font-bold">R ${p.r.toFixed(3)}</span>
@@ -15087,6 +15743,19 @@ function renderWorkshop(cat){
           </button>
         </div>`).join('')}
       </div>
+    </div>`:''}
+
+    ${(HIDDEN[cat]&&HIDDEN[cat].length)?`<div class="mt-5 border-t border-sand/10 pt-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-semibold text-sand">${t('ws-hidden-lbl')} (${HIDDEN[cat].length})</p>
+        <button onclick="wsUnhideAll('${cat}')" class="text-[11px] text-amber hover:underline">${t('ws-unhide-all')}</button>
+      </div>
+      <div class="space-y-1.5">${HIDDEN[cat].map(id=>{ const bp=BASE_PRESETS[cat].find(p=>p.id===id); if(!bp) return ''; return `
+        <div class="flex items-center gap-2 text-xs rounded-lg border border-sand/10 bg-w800/20 px-3 py-2 opacity-70">
+          <span class="flex-1 text-cream truncate">${bp.name}</span>
+          <span class="mono text-muted flex-shrink-0">R ${(bp.r||0).toFixed(2)}</span>
+          <button onclick="wsUnhide('${cat}','${id}')" class="text-[11px] text-amber px-2 py-0.5 rounded border border-amber/30 hover:bg-amber/10 flex-shrink-0">${t('ws-unhide')}</button>
+        </div>`; }).join('')}</div>
     </div>`:''}`;
 }
 
@@ -15128,6 +15797,13 @@ function _wsApplyToTarget(cat, obj){
     } else if(c.target==='floorSlab'||c.target==='floorCeil'){
       const f=(ST.basement&&ST.basement.id===c.floorId)?ST.basement:(ST.floors.find(x=>x.id===c.floorId)||activeFloor());
       f[c.target==='floorSlab'?'floorLayers':'ceilingLayers']=mkLayers();
+    } else if(c.target==='srItem'){
+      /* ПРО-комната: применить созданную конструкцию как выбранный пресет item'а */
+      if(cat!==c.kind) return false;   // переключили вкладку категории в Мастерской — не применяем к чужому item'у
+      const it=ST.simpleRooms[c.i]&&ST.simpleRooms[c.i][c.kind]&&ST.simpleRooms[c.i][c.kind][c.ii]; if(!it) return false;
+      it.presetId=obj.id; it.layers=[];   // ручные слои очищаем — теперь материал берётся из конструкции
+      _srMatPick=null; _srFocusRoom=c.i;
+      return true;   // без edPushHist (это ПРО, не мини-Revit)
     } else return false;
     if(typeof edPushHist==='function') edPushHist();
     return true;
@@ -15167,12 +15843,15 @@ function saveWorkshop(cat){
   if(ST.step===5) renderStep();
   updateLivePanel();
   if(document.getElementById('ed-props')&&typeof edProps==='function') edProps();
+  if(typeof srRerender==='function' && document.getElementById('sr-editor')) srRerender();   // ПРО-редактор (в т.ч. Santex Workspace)
   toast(applied?'Сохранено и применено к элементу':t('toast-ws-mat-saved'));
 }
+/* Открыть Мастерскую для конкретного item'а ПРО — созданная конструкция применится к нему */
+function srOpenItemWorkshop(i,kind,ii){ openWorkshop(kind,{fromEditor:true,target:'srItem',i:i,kind:kind,ii:ii}); }
 function deleteCustom(cat,id,silent){
   CUSTOM[cat]=CUSTOM[cat].filter(p=>p.id!==id); saveCustom();
   const map={walls:'wallId',windows:'windowId',doors:'doorId',floors:'floorId',ceilings:'ceilingId'};
-  if(ST.mat[map[cat]]===id) ST.mat[map[cat]]=BASE_PRESETS[cat][0].id;
+  if(ST.mat[map[cat]]===id){ const nv=(typeof presetListVisible==='function'&&presetListVisible(cat)[0])||BASE_PRESETS[cat][0]; ST.mat[map[cat]]=nv.id; }
   if(!silent){ renderWorkshop(cat); if(ST.step===5) renderStep(); updateLivePanel(); if(document.getElementById('ed-props')&&typeof edProps==='function') edProps(); }
 }
 
@@ -16688,7 +17367,9 @@ void main(void){
     vec2 p=uv;float d=length(p);
     col+=.00125/d*(cos(sin(i)*vec3(1,2,3))+1.);
     float b=noise(i+p+bg*1.731);
-    col+=.002*b/length(max(p,vec2(b*p.x*.02,p.y)));
+    float streak=length(max(p,vec2(b*p.x*.02,p.y*.6)));
+    col+=.0075*b/streak;
+    col+=.0026*b/(streak+.3);
     col=mix(col,vec3(bg*.25,bg*.137,bg*.05),d);
   }
   // Dark palette: thermal cold — deep blue-black with azure nebula (FLIR exterior)
@@ -18887,7 +19568,8 @@ function sxSnapshot(){
     mat:{...ST.mat}, attic:ST.attic, airtight:ST.airtight, heatRegime:ST.heatRegime, lambdaMode:ST.lambdaMode,
     pipeType:ST.pipeType, heatingTypes:ST.heatingTypes, tGround:ST.tGround, tBasement:ST.tBasement,
     ventMode:ST.ventMode, hrvEff:ST.hrvEff,
-    simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])) };
+    simpleRoomCount:ST.simpleRoomCount, simpleRooms:JSON.parse(JSON.stringify(ST.simpleRooms||[])),
+    simpleFloors:JSON.parse(JSON.stringify(ST.simpleFloors||[])), simpleBasement:ST.simpleBasement?JSON.parse(JSON.stringify(ST.simpleBasement)):null };
 }
 function sxRestore(s){
   ST.calcMode='simple';
@@ -18900,6 +19582,17 @@ function sxRestore(s){
     if(Array.isArray(s.heatingTypes)) ST.heatingTypes=s.heatingTypes;
     ST.simpleRooms=Array.isArray(s.simpleRooms)?JSON.parse(JSON.stringify(s.simpleRooms)):[];
     ST.simpleRoomCount=s.simpleRoomCount||ST.simpleRooms.length||1;
+    ST.simpleFloors=Array.isArray(s.simpleFloors)?JSON.parse(JSON.stringify(s.simpleFloors)):[];
+    ST.simpleBasement=s.simpleBasement?JSON.parse(JSON.stringify(s.simpleBasement)):null;
+    /* uid-счётчик сбрасывается при перезагрузке → сохранённые id этажей могут совпасть с новыми
+       (коллизия → computeSimple задваивает этаж). Перегенерируем id как MAX loadState, floorId комнат — по карте. */
+    if(ST.simpleFloors.length || ST.simpleBasement){
+      const map={};
+      ST.simpleFloors.forEach(f=>{ const nid=uid('sf'); if(f&&f.id){ map[f.id]=nid; f.id=nid; } });
+      if(ST.simpleBasement){ const nid=uid('sb'); if(ST.simpleBasement.id) map[ST.simpleBasement.id]=nid; ST.simpleBasement.id=nid; }
+      (ST.simpleRooms||[]).forEach(r=>{ if(r&&r.floorId&&map[r.floorId]) r.floorId=map[r.floorId]; });
+    }
+    _ensureSimpleFloors();   // старый проект без этажей → один «1 этаж», комнаты к нему
   }
   if(ST.tExt==null) ST.tExt=-14;   // проектная наружная t по умолчанию (как в боте)
   if(!ST.cityName) ST.cityName='Фергана';
@@ -18978,7 +19671,9 @@ function sxCreateProject(){
   const inp=document.getElementById('sx-new-name');
   const name=(inp&&inp.value.trim())||sxt('untitled');
   const list=sxLoadProjects();
-  ST.calcMode='simple'; ST.simpleRooms=[]; ST.simpleRoomCount=1; initSimpleRooms();
+  ST.calcMode='simple'; ST.simpleRooms=[]; ST.simpleRoomCount=1;
+  ST.simpleFloors=[]; ST.simpleBasement=null;   // не тащить этажи/подвал предыдущего проекта
+  initSimpleRooms();
   const proj={ id:'sx'+Date.now(), label:name, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(),
     roomCount:1, kw:0, sx:sxSnapshot() };
   list.unshift(proj); sxSaveProjects(list);
@@ -19046,6 +19741,10 @@ function sxRenderPage(){
   else if(SW.page==='engineering'){ host.innerHTML=sxEngineeringPage(); try{ if(typeof initEngineeringModules==='function') setTimeout(initEngineeringModules,60); }catch(e){} }
   if(SW.page==='heat') sxRenderResults();
 }
+/* Ф5.2: герметичность/вентиляция прямо в воркспейсе */
+function sxSetAirtight(id){ if(AIRTIGHT[id]) ST.airtight=id; sxRenderPage(); }
+function sxSetVent(id){ ST.ventMode=(id==='mech'||id==='hrv')?id:'natural'; sxRenderPage(); }
+function sxSetHrv(pct){ ST.hrvEff=Math.max(0.4,Math.min(0.95,(+pct||75)/100)); const el=document.getElementById('sx-hrv-pct'); if(el) el.textContent=Math.round(hrvEff()*100)+'%'; try{ sxRenderResults(); }catch(e){} }
 
 /* ── PAGE: heat loss (reuses room editor) ── */
 function sxHeatPage(){
@@ -19060,6 +19759,23 @@ function sxHeatPage(){
           <div><label style="font-size:11px;color:#8ea0bd;display:block;margin-bottom:5px">${sxt('extT')}</label>
             <input type="number" class="sx-input" value="${ST.tExt!=null?ST.tExt:-14}" onchange="ST.tExt=parseFloat(this.value)||0;srResults()"></div>
         </div>
+        <div style="margin-top:14px">
+          <label style="font-size:11px;color:#8ea0bd;display:block;margin-bottom:6px">${t('sr-set-airtight')}</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${Object.entries(AIRTIGHT).map(([id,o])=>{const on=ST.airtight===id;return `<button type="button" onclick="sxSetAirtight('${id}')" style="font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;border:1px solid ${on?'rgba(245,181,68,.6)':'rgba(255,255,255,.12)'};background:${on?'rgba(245,181,68,.14)':'rgba(255,255,255,.03)'};color:${on?'#f5b544':'#c8d4e6'}">${sxEsc(_pick(o,'name','nameUz','nameEn'))} · ${o.ach} 1/ч</button>`;}).join('')}
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <label style="font-size:11px;color:#8ea0bd;display:block;margin-bottom:6px">${t('sr-set-vent')}</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${[['natural',t('sr-vent-nat')],['mech',t('sr-vent-mech')],['hrv',t('sr-vent-hrv')]].map(([id,lbl])=>{const on=(ST.ventMode||'natural')===id;return `<button type="button" onclick="sxSetVent('${id}')" style="font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;border:1px solid ${on?'rgba(91,224,160,.5)':'rgba(255,255,255,.12)'};background:${on?'rgba(91,224,160,.12)':'rgba(255,255,255,.03)'};color:${on?'#5be0a0':'#c8d4e6'}">${lbl}</button>`;}).join('')}
+          </div>
+          ${(ST.ventMode==='hrv')?`<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:#8ea0bd">${t('sr-hrv-eff')}</span>
+            <input type="range" min="60" max="90" step="5" value="${Math.round(hrvEff()*100)}" oninput="sxSetHrv(this.value)" style="width:140px">
+            <span id="sx-hrv-pct" style="font-size:12px;color:#f5b544;font-weight:700">${Math.round(hrvEff()*100)}%</span>
+          </div>`:''}
+        </div>
       </div>
       ${simpleRoomsEditorHTML()}
     </div>
@@ -19071,10 +19787,16 @@ function sxRenderResults(){
   let res=null; try{ res=computeSimple(); }catch(e){}
   if(!res){ host.innerHTML=`<div class="sx-card">${sxt('addFirst')}</div>`; return; }
   const gasDay=(res.totalKw*24/8.4);
-  const rows=(res.floors&&res.floors[0]&&res.floors[0].rooms||[]).map(r=>`
+  const allRooms=(res.floors||[]).flatMap(f=>f.rooms||[]);   // Ф3: все этажи, не только первый
+  const rows=allRooms.map(r=>`
     <tr><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.area||0).toFixed(1)}</td><td class="mono" style="text-align:right;color:#f5b544">${Math.round(r.qW||0)}</td></tr>`).join('');
-  const incompl=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r)})).filter(x=>x.c.walls&&(!x.c.floor||!x.c.ceiling));
-  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ')).replace('{what}',[incompl.some(x=>!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
+  const incompl=(ST.simpleRooms||[]).map((r,i)=>({r,i,c:simpleRoomCompleteness(r),e:_srFloorExpectations(r.floorId)})).filter(x=>x.c.walls&&((x.e.floor&&!x.c.floor)||(x.e.ceiling&&!x.c.ceiling)));
+  const incomplNote=incompl.length?`<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.09);font-size:11px;color:#f5b544;line-height:1.45">⚠️ ${t('simple-incomplete-banner').replace('{rooms}',incompl.map(x=>sxEsc(x.r.name||roomTypeName(x.r.typeId)||('№'+(x.i+1)))).join(', ')).replace('{what}',[incompl.some(x=>x.e.floor&&!x.c.floor)?t('cat-floors').toLowerCase():null,incompl.some(x=>x.e.ceiling&&!x.c.ceiling)?t('cat-ceilings').toLowerCase():null].filter(Boolean).join(' / '))}</div>`:'';
+  /* Ф5.2: мини-разбивка по конструкциям (в т.ч. инфильтрация) с процентами */
+  const _infLbl = ST.ventMode==='hrv'?(t('col-component-infil')+' ('+t('sr-vent-hrv')+' '+Math.round(hrvEff()*100)+'%)') : ST.ventMode==='mech'?(t('sr-set-vent')+' ('+t('sr-vent-mech')+')') : t('col-component-infil');
+  const BT=[['wall',t('col-component-wall')],['window',t('col-component-window')],['door',t('col-component-door')],['floor',t('col-component-floor')],['ceiling',t('col-component-ceiling')],['infil',_infLbl]];
+  const bt=res.byType||{}, sumW=res.totalW||1;
+  const btRows=BT.filter(([k])=>(bt[k]||0)>0).map(([k,lbl])=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:#c8d4e6">${lbl}</span><span class="mono" style="color:#8ea0bd">${Math.round(bt[k])} Вт · ${Math.round(bt[k]/sumW*100)}%</span></div>`).join('');
   host.innerHTML=`
     <div class="sx-card">
       <div class="sx-res-hd"><svg viewBox="0 0 24 24" fill="none" stroke="#5be0a0" stroke-width="2" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>${sxt('results')}</div>
@@ -19087,6 +19809,7 @@ function sxRenderResults(){
         <div class="sx-mini"><div style="font-size:11px;color:#8ea0bd">${sxt('boiler')}</div><div class="sx-num" style="font-weight:700;font-size:17px">${(res.boilerKw).toFixed(1)} kW</div></div>
         <div class="sx-mini"><div style="font-size:11px;color:#8ea0bd">${sxt('gasDay')}</div><div class="sx-num" style="font-weight:700;font-size:17px">${gasDay.toFixed(1)} m³</div></div>
       </div>
+      ${btRows?`<div style="font-size:11px;color:#6a7b9e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${t('sr-by-type')||'По конструкциям'}</div><div style="margin-bottom:12px">${btRows}</div>`:''}
       <div style="font-size:11px;color:#6a7b9e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${sxt('perRoom')}</div>
       <table class="sx-tbl"><thead><tr><th>${sxt('room')}</th><th style="text-align:right">${sxt('area')}</th><th style="text-align:right">${sxt('q')}</th></tr></thead><tbody>${rows}</tbody></table>
     </div>`;
@@ -19097,7 +19820,7 @@ function sxReportPage(){
   let res=null; try{ res=computeSimple(); }catch(e){}
   if(!res) return `<div class="sx-page-h">${sxt('pReport')}</div><div class="sx-card">${sxt('addFirst')}</div>`;
   const gasDay=(res.totalKw*24/8.4);
-  const rooms=(res.floors[0].rooms||[]);
+  const rooms=(res.floors||[]).flatMap(f=>f.rooms||[]);   // Ф3: все этажи
   const rows=rooms.map((r,i)=>{
     const b=r.breakdown||{};
     return `<tr><td>${i+1}</td><td>${sxEsc(r.name||'')}</td><td class="mono" style="text-align:right">${(r.tInt||20)}</td>
@@ -19128,7 +19851,7 @@ function sxReportPage(){
 function sxRadiatorsPage(){
   let res=null; try{ res=computeSimple(); }catch(e){}
   if(!res) return `<div class="sx-page-h">${sxt('pRad')}</div><div class="sx-card">${sxt('addFirst')}</div>`;
-  const rows=(res.floors[0].rooms||[]).map(r=>{
+  const rows=(res.floors||[]).flatMap(f=>f.rooms||[]).map(r=>{   // Ф3: все этажи, не только первый
     const reqW=Math.round(r.qW||0);
     let panel='—';
     try{ const opts=autoSelectPanels(reqW, r.tInt||20); if(opts&&opts.length){ const o=opts[0]; panel=`${o.n}× Tip${o.type} ${o.h}×${o.l} <span style="color:#7f90ad">(${o.cover}%)</span>`; } }catch(e){}

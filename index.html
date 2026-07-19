@@ -64,7 +64,7 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
 <!-- Three.js подключается лениво (ensureThree в app.js) только при открытии 3D -->
-<script defer src="/assets/app.js?v=20260719-toolbar1"></script>
+<script defer src="/assets/app.js?v=20260719-calc-phases2-toolbar"></script>
 <style>
 /* ═══ Критический CSS первого экрана: фон/цвет до прихода внешних CSS,
        CSS-заглушка WebGL-фона («кометы» — только transform/opacity). ═══ */
@@ -73,16 +73,16 @@ html[data-theme="light"]{background:#EEF2FA}
 body{margin:0;background:#07090F;color:#ECF0FA;font-family:Manrope,system-ui,sans-serif}
 html[data-theme="light"] body{background:#EEF2FA;color:#2A3651}
 .bg-comets{position:absolute;inset:0;overflow:hidden;pointer-events:none;contain:strict}
-.bgc{position:absolute;left:0;height:2px;width:170px;opacity:0;border-radius:2px;
-  background:linear-gradient(90deg,transparent 0%,rgba(125,211,252,.1) 40%,rgba(125,211,252,.85) 85%,rgba(224,246,255,1) 100%);
+.bgc{position:absolute;left:0;height:3px;width:170px;opacity:0;border-radius:2px;
+  background:linear-gradient(90deg,transparent 0%,rgba(125,211,252,.18) 35%,rgba(125,211,252,.95) 85%,rgba(224,246,255,1) 100%);
   animation:bgc-fly 9s linear infinite;will-change:transform,opacity}
-.bgc::after{content:'';position:absolute;right:-2px;top:50%;width:5px;height:5px;
+.bgc::after{content:'';position:absolute;right:-3px;top:50%;width:7px;height:7px;
   transform:translateY(-50%);border-radius:50%;background:rgba(224,246,255,1);
-  box-shadow:0 0 8px 2px rgba(125,211,252,.9),0 0 18px 5px rgba(125,211,252,.4)}
+  box-shadow:0 0 14px 4px rgba(125,211,252,1),0 0 30px 10px rgba(125,211,252,.55)}
 .bgc2{top:38%;width:220px;animation-delay:2.6s;animation-duration:11.5s}
 .bgc3{top:60%;width:140px;animation-delay:5.2s;animation-duration:8.5s;
-  background:linear-gradient(90deg,transparent 0%,rgba(245,158,11,.1) 40%,rgba(245,158,11,.8) 85%,rgba(255,224,168,1) 100%)}
-.bgc3::after{background:rgba(255,224,168,1);box-shadow:0 0 8px 2px rgba(245,158,11,.9),0 0 18px 5px rgba(245,158,11,.4)}
+  background:linear-gradient(90deg,transparent 0%,rgba(245,158,11,.18) 35%,rgba(245,158,11,.9) 85%,rgba(255,224,168,1) 100%)}
+.bgc3::after{background:rgba(255,224,168,1);box-shadow:0 0 14px 4px rgba(245,158,11,1),0 0 30px 10px rgba(245,158,11,.5)}
 .bgc4{top:76%;width:190px;animation-delay:7.4s;animation-duration:13s}
 .bgc1{top:20%}
 @keyframes bgc-fly{
@@ -94,10 +94,10 @@ html[data-theme="light"] body{background:#EEF2FA;color:#2A3651}
 /* WebGL стартовал → кометы гасим, canvas проявляется (см. site.css #shader-bg).
    На tier-low WebGL не инициализируется вовсе — кометы остаются постоянным фоном. */
 html.webgl-on .bg-comets{display:none}
-[data-theme="light"] .bgc{background:linear-gradient(90deg,transparent 0%,rgba(49,83,161,.06) 40%,rgba(49,83,161,.55) 85%,rgba(180,205,255,.95) 100%)}
-[data-theme="light"] .bgc::after{background:rgba(180,205,255,1);box-shadow:0 0 8px 2px rgba(49,83,161,.6),0 0 18px 5px rgba(49,83,161,.25)}
-[data-theme="light"] .bgc3{background:linear-gradient(90deg,transparent 0%,rgba(217,119,6,.06) 40%,rgba(217,119,6,.5) 85%,rgba(255,214,150,.95) 100%)}
-[data-theme="light"] .bgc3::after{background:rgba(255,214,150,1);box-shadow:0 0 8px 2px rgba(217,119,6,.55),0 0 18px 5px rgba(217,119,6,.25)}
+[data-theme="light"] .bgc{background:linear-gradient(90deg,transparent 0%,rgba(49,83,161,.1) 35%,rgba(49,83,161,.7) 85%,rgba(180,205,255,.95) 100%)}
+[data-theme="light"] .bgc::after{background:rgba(180,205,255,1);box-shadow:0 0 14px 4px rgba(49,83,161,.85),0 0 30px 10px rgba(49,83,161,.4)}
+[data-theme="light"] .bgc3{background:linear-gradient(90deg,transparent 0%,rgba(217,119,6,.1) 35%,rgba(217,119,6,.65) 85%,rgba(255,214,150,.95) 100%)}
+[data-theme="light"] .bgc3::after{background:rgba(255,214,150,1);box-shadow:0 0 14px 4px rgba(217,119,6,.75),0 0 30px 10px rgba(217,119,6,.35)}
 @media (prefers-reduced-motion: reduce){.bgc{animation:none;opacity:0}}
 /* ════ PERF: tier-правила качества (вешаются PerfManager'ом на <html>) ════
    На мобильных (tier-medium/low) отключаем backdrop-filter — он крайне дорог
@@ -174,11 +174,11 @@ html.tier-low .thermal-path-bg{display:none!important}
 </script>
 <!-- Supabase JS подгружается ДИНАМИЧЕСКИ и только если заданы ключи (см. loadSupabaseLib).
      В офлайн-режиме внешний бэкенд-CDN не запрашивается вообще. -->
-<link rel="stylesheet" href="/assets/site.css?v=20260719-toolbar1">
+<link rel="stylesheet" href="/assets/site.css?v=20260719-calc-phases2-toolbar">
 <!-- Tailwind: статическая сборка вместо CDN JIT (конфиг: tailwind.config.js, пересборка: npm run build:css).
      ВАЖНО: линк стоит ПОСЛЕ site.css — Play CDN вставлял свои стили в конец head,
      и утилиты Tailwind побеждали кастомные правила той же специфичности (проверено). -->
-<link rel="stylesheet" href="/assets/tailwind.css?v=20260709-calc6">
+<link rel="stylesheet" href="/assets/tailwind.css?v=20260719-calc-phases">
 </head>
 <body class="bg-w950">
 <!-- Scroll progress bar -->
