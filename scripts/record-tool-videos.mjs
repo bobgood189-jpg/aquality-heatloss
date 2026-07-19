@@ -101,6 +101,7 @@ const CURSOR = `(()=>{ if(document.getElementById('__fc'))return;
 })()`;
 
 let cur = { x: VW / 2, y: VH / 2 };
+let dialogAnswer = '2';            // ответ на prompt() (scale/offset задают своё значение)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function moveCursor(page, x, y, steps = 26) {
@@ -120,20 +121,39 @@ async function clickAt(page, x, y){ await moveCursor(page, x, y); await press(pa
 async function dragTo(page, x1, y1, x2, y2){ await moveCursor(page, x1, y1); await press(page); await moveCursor(page, x2, y2, 34); await release(page); }
 
 async function toolPt(page, id){
-  const box = await page.locator(`.er-ico[data-tool-id="${id}"]`).first().boundingBox();
+  const loc = page.locator(`.er-ico[data-tool-id="${id}"]`).first();
+  // Инструмент может быть в свёрнутой папке/категории — раскрываем, чтобы кнопка стала видимой
+  await page.evaluate((tid) => {
+    const btn = document.querySelector(`.er-ico[data-tool-id="${tid}"]`); if (!btn) return;
+    const mb = document.getElementById('er-more-body'); if (mb) mb.classList.remove('hidden');
+    const mh = document.getElementById('er-more-head'); if (mh) mh.classList.add('open');
+    const body = btn.closest('.er-body'); if (body) { body.classList.remove('hidden');
+      const cat = body.closest('.er-cat'); const head = cat && cat.querySelector('.er-head'); if (head) head.classList.add('open'); }
+  }, id);
+  await loc.scrollIntoViewIfNeeded().catch(() => {});
+  const box = await loc.boundingBox();
   if (!box) throw new Error('кнопка не найдена: ' + id);
   return { x: box.x + box.width/2, y: box.y + box.height/2 };
 }
 async function clickTool(page, id){ const p = await toolPt(page, id); await clickAt(page, p.x, p.y); await sleep(350); }
 async function canvasRect(page){ return page.locator('#ed-canvas').boundingBox(); }
 
-/* Нарисовать образцовую комнату — база для сцен select/delete/zoom/fit/3D */
+/* Нарисовать образцовую комнату — база для многих сцен */
 async function drawSampleRoom(page){
   const c = await canvasRect(page); const cx = c.x + c.width/2, cy = c.y + c.height/2;
   await clickTool(page, 'draw');
   await dragTo(page, cx - 170, cy - 110, cx + 130, cy + 100);
   await sleep(500);
 }
+/* Нарисовать комнату и выбрать её — база для сцен «изменение выбранной комнаты» */
+async function selectRoom(page){
+  await drawSampleRoom(page);
+  const c = await canvasRect(page); const cx = c.x + c.width/2, cy = c.y + c.height/2;
+  await clickTool(page, 'select');
+  await clickAt(page, cx - 10, cy - 10); await sleep(500);
+  return { cx, cy };
+}
+const cc = c => ({ cx: c.x + c.width/2, cy: c.y + c.height/2 });
 
 /* ── Сценарии (4–7 с плавных движений) ───────────────────────────────────── */
 const SCENARIOS = {
@@ -197,6 +217,48 @@ const SCENARIOS = {
     await release(page); await sleep(1000);
     await clickTool(page, 'view3d'); await sleep(600);             // назад в план
   },
+  // ── Черчение ──
+  async line(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'line'); await clickAt(page,cx-160,cy+80); await sleep(300); await clickAt(page,cx+160,cy-70); await sleep(1200); },
+  async arc(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'arc'); await clickAt(page,cx-150,cy+40); await sleep(280); await clickAt(page,cx+150,cy+40); await sleep(280); await clickAt(page,cx,cy-110); await sleep(1200); },
+  async circle(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'circle'); await dragTo(page,cx,cy,cx+130,cy+90); await sleep(1300); },
+  // ── Редактирование (над выбранной комнатой) ──
+  async duplicate(page){ await selectRoom(page); await clickTool(page,'duplicate'); await sleep(1300); },
+  async rotate(page){ await selectRoom(page); await clickTool(page,'rotate'); await sleep(600); await clickTool(page,'rotate'); await sleep(1000); },
+  async mirror(page){ await selectRoom(page); await clickTool(page,'mirror'); await sleep(1300); },
+  async 'bring-front'(page){ await selectRoom(page); await clickTool(page,'bring-front'); await sleep(1200); },
+  async pin(page){ await selectRoom(page); await clickTool(page,'pin'); await sleep(1400); },
+  async scale(page){ dialogAnswer='1.4'; await selectRoom(page); await clickTool(page,'scale'); await sleep(1400); },
+  async offset(page){ dialogAnswer='0.4'; await selectRoom(page); await clickTool(page,'offset'); await sleep(1400); },
+  // ── Отопление ──
+  async radiator(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'radiator'); await clickAt(page,cx-170,cy); await sleep(1300); },
+  async 'warm-floor'(page){ await selectRoom(page); await clickTool(page,'warm-floor'); await sleep(1400); },
+  async boiler(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'boiler'); await clickAt(page,cx+180,cy-90); await sleep(1300); },
+  async pipe(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'pipe'); for(const [dx,dy] of [[-150,60],[-40,60],[-40,-60],[120,-60]]){ await clickAt(page,cx+dx,cy+dy); await sleep(300);} await page.keyboard.press('Enter'); await sleep(1200); },
+  async collector(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'collector'); await clickAt(page,cx+180,cy+90); await sleep(1300); },
+  async thermostat(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'thermostat'); await clickAt(page,cx,cy); await sleep(1300); },
+  // ── Помещения ──
+  async 'area-tag'(page){ await drawSampleRoom(page); await clickTool(page,'area-tag'); await sleep(1500); },
+  async perimeter(page){ await selectRoom(page); await clickTool(page,'perimeter'); await sleep(1400); },
+  // ── Аннотации ──
+  async dim(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'dim'); await clickAt(page,cx-150,cy+90); await sleep(280); await clickAt(page,cx+150,cy+90); await sleep(1300); },
+  async text(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'text'); await clickAt(page,cx-80,cy); await sleep(400); await page.keyboard.type('Кухня',{delay:90}); await sleep(400); await page.keyboard.press('Enter'); await sleep(1200); },
+  async leader(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'leader'); await clickAt(page,cx,cy); await sleep(280); await clickAt(page,cx+170,cy-110); await sleep(1300); },
+  async 'heat-label'(page){ await drawSampleRoom(page); await clickTool(page,'heat-label'); await sleep(1500); },
+  async 'level-marker'(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'level-marker'); await clickAt(page,cx-120,cy-90); await sleep(280); await clickAt(page,cx+120,cy-90); await sleep(1300); },
+  async 'section-line'(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'section-line'); await clickAt(page,cx-150,cy); await sleep(280); await clickAt(page,cx+150,cy); await sleep(1300); },
+  async 'grid-line'(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'grid-line'); await clickAt(page,cx,cy-120); await sleep(280); await clickAt(page,cx,cy+120); await sleep(1300); },
+  async 'spot-elevation'(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'spot-elevation'); await clickAt(page,cx,cy); await sleep(1300); },
+  async 'tag-room'(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'tag-room'); await clickAt(page,cx,cy); await sleep(1300); },
+  async 'north-arrow'(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'north-arrow'); await clickAt(page,cx+180,cy-120); await sleep(1300); },
+  // ── Измерения ──
+  async distance(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'distance'); await clickAt(page,cx-140,cy-80); await sleep(280); await clickAt(page,cx+140,cy+80); await sleep(1300); },
+  async 'area-measure'(page){ const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'area-measure'); for(const [dx,dy] of [[-140,-90],[150,-80],[120,100],[-100,110]]){ await clickAt(page,cx+dx,cy+dy); await sleep(300);} await page.keyboard.press('Enter'); await sleep(1300); },
+  // ── Вид ──
+  async hand(page){ await drawSampleRoom(page); const {cx,cy}=cc(await canvasRect(page)); await clickTool(page,'hand'); await dragTo(page,cx,cy,cx-140,cy+90); await sleep(400); await dragTo(page,cx-140,cy+90,cx+60,cy-40); await sleep(1000); },
+  async snap(page){ await drawSampleRoom(page); await clickTool(page,'snap'); await sleep(700); await clickTool(page,'snap'); await sleep(900); },
+  async grid(page){ await drawSampleRoom(page); await clickTool(page,'grid'); await sleep(800); await clickTool(page,'grid'); await sleep(900); },
+  async dims(page){ await drawSampleRoom(page); await clickTool(page,'dims'); await sleep(700); await clickTool(page,'dims'); await sleep(900); },
+  async schedule(page){ await drawSampleRoom(page); await clickTool(page,'schedule'); await sleep(1700); },
 };
 
 /* ── Поиск установленного chromium (на случай рассинхрона версии Playwright) ─ */
@@ -234,31 +296,41 @@ function findFfmpeg(){
   } catch { /* нет кэша */ }
   return null;
 }
-/* trimStart — сколько секунд отрезать с начала (загрузка сайта до открытия редактора). */
+/* trimStart — сколько секунд отрезать с начала (загрузка сайта до открытия редактора).
+   Два прохода: (1) убрать заставку + масштаб; (2) оставить последние ~8с —
+   действие инструмента у нас в конце сценария (сначала рисуем комнату, потом жмём). */
+const CLIP_TAIL = 8;
 async function finalize(rawPath, id, ff, trimStart){
   const out = path.join(OUT_DIR, id + '.webm');
   if (ff) {
-    const args = [];
-    if (trimStart > 0.05) args.push('-ss', trimStart.toFixed(2));
-    args.push('-i', rawPath, '-vf', 'scale=640:-2', '-c:v', 'libvpx', '-b:v', '480k', '-an', '-y', out);
-    const r = spawnSync(ff, args, { stdio: 'ignore' });
-    if (r.status === 0) return out;
+    const tmp = path.join(TMP_DIR, id + '_t.webm');
+    const a1 = [];
+    if (trimStart > 0.05) a1.push('-ss', trimStart.toFixed(2));
+    a1.push('-i', rawPath, '-vf', 'scale=640:-2', '-c:v', 'libvpx', '-b:v', '480k', '-an', '-y', tmp);
+    const r1 = spawnSync(ff, a1, { stdio: 'ignore' });
+    if (r1.status === 0) {
+      const r2 = spawnSync(ff, ['-sseof', '-' + CLIP_TAIL, '-i', tmp, '-c:v', 'libvpx', '-b:v', '480k', '-an', '-y', out], { stdio: 'ignore' });
+      if (r2.status === 0) { try { await fsp.rm(tmp, { force: true }); } catch {} return out; }
+      await fsp.copyFile(tmp, out); return out;   // 2-й проход не удался — отдаём результат 1-го
+    }
     console.warn('  ⚠ ffmpeg упал — кладу исходный webm');
   }
   await fsp.copyFile(rawPath, out);
   return out;
 }
 
-/* ── Обновляем манифест TOOL_VIDEOS в app.js по факту записанного ─────────── */
-async function updateManifest(ids){
+/* ── Манифест TOOL_VIDEOS = все .webm, реально лежащие в assets/tool-videos ── */
+async function updateManifest(){
   const f = path.join(ROOT, 'assets', 'app.js');
   let src = await fsp.readFile(f, 'utf8');
-  const body = ids.length ? ids.map(id => JSON.stringify(id) + ':1').join(',') : '';
+  let files = [];
+  try { files = (await fsp.readdir(OUT_DIR)).filter(n => n.endsWith('.webm')).map(n => n.replace(/\.webm$/, '')).sort(); } catch { /* пусто */ }
+  const body = files.map(id => JSON.stringify(id) + ':1').join(',');
   const next = 'const TOOL_VIDEOS = {' + body + '};';
   const re = /const TOOL_VIDEOS = \{[^}]*\};/;
   if (!re.test(src)) { console.warn('⚠ не нашёл TOOL_VIDEOS в app.js — манифест не обновлён'); return; }
   await fsp.writeFile(f, src.replace(re, next));
-  console.log('✓ манифест TOOL_VIDEOS обновлён:', ids.join(', ') || '(пусто)');
+  console.log('✓ манифест TOOL_VIDEOS (' + files.length + '):', files.join(', ') || '(пусто)');
 }
 
 /* ── main ────────────────────────────────────────────────────────────────── */
@@ -285,6 +357,8 @@ for (const id of ids) {
   const ctx = await browser.newContext({ viewport: { width: VW, height: VH }, recordVideo: { dir: TMP_DIR, size: { width: VW, height: VH } } });
   await ctx.addInitScript(INIT);
   const page = await ctx.newPage();
+  page.on('dialog', d => { try { d.accept(d.type() === 'prompt' ? dialogAnswer : undefined); } catch (e) {} }); // авто-ответ scale/offset
+  dialogAnswer = '2';
   let ok = false, readyMs = 0;
   try {
     const tGoto = Date.now();
@@ -317,7 +391,7 @@ for (const id of ids) {
 }
 await browser.close();
 server.close();
-if (done.length) await updateManifest(done);
+await updateManifest();
 try { await fsp.rm(TMP_DIR, { recursive: true, force: true }); } catch {}
 console.log(`\nГотово. Записано: ${done.length}/${ids.length}${done.length ? ' → assets/tool-videos/' : ''}`);
 process.exit(0);
