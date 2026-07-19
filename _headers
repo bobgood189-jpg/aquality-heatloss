@@ -11,6 +11,9 @@
 #    index.html всегда ревалидируется, поэтому смена ?v= доезжает мгновенно. ──
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+# Видео-подсказки инструментов: неделя (могут перезаписываться под тем же именем).
+/assets/tool-videos/*
+  Cache-Control: public, max-age=604800
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
 /
